@@ -1,0 +1,44 @@
+.toolbar { flex-direction: row; height: 48px; align-items: center; background-color: rgb(28, 35, 46); padding-left: 12px; padding-right: 12px; }
+.brand { font-size: 21px; -unity-font-style: bold; margin-right: 18px; color: rgb(122, 225, 205); }
+.file-row { flex-direction: row; height: 35px; background-color: rgb(34, 41, 51); padding-left: 8px; padding-right: 8px; }
+.body { flex-direction: row; flex-grow: 1; }
+.sidebar { width: 238px; background-color: rgb(28, 35, 46); padding-left: 12px; padding-right: 12px; padding-top: 12px; }
+.transport { flex-direction: row; min-height: 54px; align-items: center; background-color: rgb(28, 35, 46); padding-left: 10px; padding-right: 10px; }
+.status { height: 28px; padding-left: 14px; padding-top: 4px; background-color: rgb(19, 25, 34); color: rgb(168, 189, 208); }
+.hint { color: rgb(173, 190, 207); background-color: rgba(15, 21, 30, 0.8); align-self: center; margin-top: 12px; padding-left: 10px; padding-right: 10px; padding-top: 6px; padding-bottom: 6px; }
+.morph-box { margin-top: 9px; padding-bottom: 8px; border-bottom-width: 1px; border-bottom-color: rgb(50, 59, 73); }
+Button { margin-left: 3px; margin-right: 3px; padding-left: 10px; padding-right: 10px; min-height: 27px; background-color: rgb(48, 61, 76); color: rgb(233, 240, 246); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px; }
+Button:hover { background-color: rgb(66, 92, 111); }
+Toggle { min-height: 27px; }
+TextField { min-height: 25px; }
+Label { white-space: normal; }
+.toolbar, .file-row, .transport, .status { flex-shrink: 0; }
+.body { flex-basis: 0; min-height: 0; flex-shrink: 1; }
+.sidebar { flex-shrink: 0; min-height: 0; }
+.file-row TextField { min-width: 0; flex-basis: 0; }
+.unity-base-field__label { min-width: 0; width: auto; margin-right: 8px; flex-shrink: 0; }
+.sidebar Toggle > Label { flex-grow: 1; }
+.unity-base-field__input { background-color: rgb(42, 51, 64); color: rgb(234, 240, 247); }
+.unity-text-field__input, .unity-base-text-field__input, .unity-base-popup-field__input { background-color: rgb(42, 51, 64); color: rgb(234, 240, 247); }
+.unity-base-slider__text-field { width: 48px; min-width: 48px; }
+.transport Slider { min-width: 100px; }
+.transport Toggle { width: 84px; flex-shrink: 0; }
+.transport > Button { flex-shrink: 0; }
+.transport .unity-base-field__label { min-width: 0; }
+#startup-settings, #advanced-files { flex-shrink: 0; background-color: rgb(28, 35, 46); }
+
+/* Keep Japanese glyphs inside controls at the larger reading size. The default
+   popup text box has a short fixed height, which clipped the inherited font. */
+.file-row { height: auto; min-height: 46px; flex-wrap: wrap; align-items: center; padding-top: 3px; padding-bottom: 3px; }
+.unity-base-popup-field { min-height: 38px; flex-shrink: 0; }
+.unity-base-popup-field__input { height: 34px; min-height: 34px; align-items: center; padding-top: 2px; padding-bottom: 2px; }
+.unity-base-popup-field__text { height: auto; min-height: 28px; font-size: 17px; -unity-text-align: middle-left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.unity-base-field__label { -unity-text-align: middle-left; }
+Button { font-size: 17px; min-height: 34px; }
+Toggle { min-height: 32px; }
+TextField { min-height: 34px; }
+.toolbar { height: auto; min-height: 52px; flex-wrap: wrap; }
+.transport { min-height: 62px; flex-wrap: wrap; }
+.status { height: auto; min-height: 34px; padding-bottom: 5px; }
+#current-set-status { min-width: 90px; -unity-text-align: middle-left; }
+.sidebar Button { white-space: normal; height: auto; padding-top: 5px; padding-bottom: 5px; }

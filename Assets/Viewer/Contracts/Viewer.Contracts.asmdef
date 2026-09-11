@@ -1,0 +1,6 @@
+{
+  "name": "Viewer.Contracts",
+  "references": ["Unity.Newtonsoft.Json"],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}

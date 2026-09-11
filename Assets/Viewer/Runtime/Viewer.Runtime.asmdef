@@ -1,0 +1,5 @@
+{
+  "name": "Viewer.Runtime",
+  "references": ["Viewer.Contracts", "Unity.Newtonsoft.Json"],
+  "autoReferenced": true
+}

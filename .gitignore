@@ -1,0 +1,14 @@
+Library/
+Temp/
+Obj/
+Logs/
+UserSettings/
+Builds/
+GeneratedPacks/
+Assets/LocalContent/
+Assets/GeneratedPacks/
+Assets/Viewer/Profiles/
+*.csproj
+*.sln
+*.slnx
+.vs/
