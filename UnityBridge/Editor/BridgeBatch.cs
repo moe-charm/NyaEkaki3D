@@ -64,6 +64,7 @@ namespace NyaForge.UnityBridge.Editor
                 checks.Add("Explicit scene parent preserves world geometry; prefab uses ordinary components only.");
                 VerifyRejectedOutputDoesNotCreateAssets(scale1Path);
                 checks.Add("Output traversal is rejected before asset creation.");
+                VerifyPhysBonesBridge(checks);
                 if (Array.IndexOf(args,"--nyaforge-surface") >= 0)
                     VerifySurface(RequiredArgument(args,"--nyaforge-surface"),checks,folders);
                 if (Array.IndexOf(args,"--nyaforge-material") >= 0)

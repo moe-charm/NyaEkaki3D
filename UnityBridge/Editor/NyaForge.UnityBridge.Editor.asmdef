@@ -1,7 +1,7 @@
 {
   "name": "NyaForge.UnityBridge.Editor",
   "rootNamespace": "NyaForge.UnityBridge.Editor",
-  "references": ["NyaForge.Authoring", "NyaForge.Rendering"],
+  "references": ["NyaForge.Authoring", "NyaForge.Rendering", "NyaForge.UnityBridge"],
   "includePlatforms": ["Editor"],
   "autoReferenced": true
 }

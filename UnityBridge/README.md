@@ -20,6 +20,20 @@ NyaForge の静的メッシュを、別の Unity プロジェクトで通常の 
 
 毎回 `NyaForgeImport-<GUID>` という新しいフォルダーを作ります。既存ファイルへの上書きはありません。失敗した場合は、その処理で作った専用フォルダーを取り消します。
 
+## PhysBones target package
+
+Workbenchの「PhysBones targetを書き出す」は、次の3ファイルからなる自己完結パッケージを生成します。
+
+- `physbones.nyaforge-target.json` — target identity、SDK/package version、payload hash
+- `physbones-target.nyaforge.bin` — `PhysBonesTargetProfile`（`NYPP` v1）
+- `skeleton.nyaforge.bin` — stable bone ID付きの骨格
+
+manifestとpayloadはhashとskeleton identityを検査して読み込みます。元のNyaForge projectやBlenderは受け取り側に不要です。collider groupを使うprofileでは、受け取り側が同じstable IDのcolliderを明示的に解決します。名前推測や暗黙のbone index変換は行いません。
+
+Editor側の`PhysBonesBridge`は、実行時に見つかったSDK component typeへreflectionで設定を書き込みます。初回は`CreateOrUpdateManaged`、再出力はNyaForgeの所有markerが付いたcomponentだけを対象にする`UpdateManagedOnly`を選べます。未管理componentや古いchainは削除せず、能力不足はloss reportで停止します。
+
+receiver検証はSDK形状fixtureによる合成確認です。実際のVRChat SDK、アバターprefab、VRChat内の動作確認を完了したことを意味しません。`UnityBridge/Runtime/PhysBonesReflectionFixtureComponent.cs`はreflection検証専用の非表示fixtureで、production PhysBones componentではありません。
+
 Prefab の頂点は、Bake の正の均一スケールと平行移動を一度だけ適用したメートル座標です。Prefab の Transform は位置ゼロ・回転ゼロ・スケール 1 です。UV0、法線、接線、頂点順、サブメッシュと三角形順を保持します。法線の自動再計算・頂点結合・最適化は行いません。
 
 「シーンにも配置する」を有効にすると、読み込んだ Prefab を配置します。親は任意のシーン Transform を明示して選べます。親子関係の変更時にはワールド位置を維持するため、骨名や首の位置からの推測はありません。親のスケールは正の均一値に限定します。これは首へのフィットや rest-pose の骨対応を実装した機能ではなく、通常の Unity の親子付けです。位置を調整して使ってください。シーン配置は Unity Undo で取り消せますが、書き出したアセットの削除は行いません。

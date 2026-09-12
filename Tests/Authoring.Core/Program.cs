@@ -29,6 +29,7 @@ internal static partial class Program
         RunGlbSourceSkinImporterTests();
         RunGlbSceneInventoryTests();
         RunSecondaryMotionContractTests();
+        RunPhysBonesTargetPackageTests();
         RunGlbNodeTransformTests();
         RunFaceInspectionTests();
         RunPolygonWireTests();
