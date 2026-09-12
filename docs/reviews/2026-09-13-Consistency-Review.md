@@ -1,5 +1,9 @@
 # 2026-09-13 consistency review receipt
 
+## 再照合（2026-09-13 / `eba2b36`）
+
+現行mainで4件のP1修正を再確認し、Core **446 passed / 0 failed**（artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-9f228fff09904971b5264b15059fb465`）を取得した。合成Bridgeの合格は実VRChat SDKの受入とは分け、次の作業をSDKの版・完全修飾型を固定した実component生成／更新へ限定する。
+
 提示されたレビュー（基準: `1c76e4a`）を現行 `main` と照合した。4件のP1は後続コミットで修正済みであり、同じ不具合を未対応として再実装しない。以下は現行コードと回帰の対応表である。
 
 | 指摘 | 現行対応 | 回帰・境界 |
