@@ -153,6 +153,7 @@ namespace NyaForge.UnityRuntime
                 VerifyGraphProjection(output, checks);
                 VerifySaveFailureGuard(output, checks);
                 VerifySpringCore(checks);
+                VerifyVrmImportRoundtrip(output, checks);
                 VerifyGraphExports(output, checks, graphExports);
                 TopologyVerification.Verify(output, checks);
                 RigGraphVerification.Verify(output, checks);

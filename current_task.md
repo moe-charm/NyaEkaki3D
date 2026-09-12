@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01〜R09はCore自動検証まで完了。R10の検証範囲の最終照合と実素材受入は未完了。最新のCoreは326件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
+更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01〜R10は下記のCore/Windows自動検証範囲で完了。実素材・実操作受入は独立して未完了。最新のCoreは326件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
 
 ## 開発の入口
 
@@ -10,7 +10,7 @@
 
 ## 最優先: 実装レビューの修正タスク（2026-09-12）
 
-ユーザー依頼「ここまでチェック」「チェック後current_task更新してタスク化」に対応したレビューを起点に修正を進める。詳細な再現条件、対象行、完了条件、証拠は [Rig / VRMレビュー](docs/reviews/2026-09-12-Rig-Vrm-Review.md) を参照する。R01/R02/R03/R09はCore/Windows自動検証まで完了し、次はR10の最終照合とVRM入力契約。実マウス・実VRMの受入は各自動検証と区別する。
+ユーザー依頼「ここまでチェック」「チェック後current_task更新してタスク化」に対応したレビューを起点に修正を進める。詳細な再現条件、対象行、完了条件、証拠は [Rig / VRMレビュー](docs/reviews/2026-09-12-Rig-Vrm-Review.md) を参照する。R01/R02/R03/R09はCore/Windows自動検証まで完了し、次はVRM入力契約・mapping永続化。実マウス・実VRMの受入は各自動検証と区別する。
 
 - [x] **R03 / P1 — 保存全体の成功判定と失敗時の保護**。schema 4の単一manifestで本体とVRM設定のblob参照を一括公開し、失敗時の旧作品・設定・dirty・versionを保持。Core共通保存service、Windows GUI/MCP handlerの再試行・終了防止・Save As/Openを検証した。外部MCP transport経由のmetadata専用試験と実マウスの受入は未実施。
 - [x] **R01 / P1 — VRM1 authors配列**。文字列として扱うreaderと誤ったfixtureを修正する。複数作者をimportからsession保存・再読込まで保持し、既存形式の移行も定める。
@@ -21,23 +21,36 @@
 - [x] **R06 / P2 — chainごとの衝突参照**。全chainのgroup参照を混合せず、所属chainの参照だけをjointへ渡す。参照なしBが別chain Aの追加で約0.290426 m動く再現を回帰化する。
 - [x] **R07 / P2 — 長さと衝突の同時制約**。押し出し後の長さ制約でsphere内へ戻る問題を直す。複数sphere、hitRadius、同軸例、解なし／反復上限の診断を確認する。
 - [x] **R08 / P2 — 停止・再開と時間刻み**。dt=0でもtailが約0.079304 m動く問題を直す。物理履歴を停止中に進めず、固定step / 可変stepの契約と再開を検証する。
-- [ ] **R10 / P2 — 入力検査と実際の経路を通る回帰**。null collider groupをdomain errorで検出する。空groupの衝突テスト、初期Stateからの反復だけのテストを改め、R01〜R09の回帰を各修正と同時に追加する。保存失敗・終了防止はWindows Playerの専用検証も必要。
+- [x] **R10 / P2 — 入力検査と実際の経路を通る回帰**。null collider groupをdomain errorで検出する。空groupの衝突テスト、初期Stateからの反復だけのテストを改め、R01〜R09の回帰を各修正と同時に追加する。保存失敗・終了防止はWindows Playerの専用検証も必要。
 
 検証済み: このレビューでCore **297 passed / 0 failed**を再実行。別fixtureで作者情報拒否、session往復失敗、保存失敗後dirty=False、step2姿勢ずれ、親子gap、chain間衝突混入、貫通、dt=0の進行、null参照例外、省略値の相違を確認した。Player/Bridgeは今回再実行していない。実VRM全体・手動見た目受入も未確認。
 
-再開順: **R10のVRM取込→Workbench往復 → VRM入力契約・mapping永続化 → runtime接続**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
+再開順: **VRM入力契約 → mapping永続化 → runtime接続**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
 
 ### 実行単位と完了判定
 
 - [x] **R01 + R02 + R09（取込・保存、自動検証完了）**。作者名の配列保持と旧session移行、コライダーnode列の重複保持、省略値と明示0の区別を同じ段階で直す。正規の合成VRM0/1を使うCore往復テストとWindows Workbench Save/Openを完了条件とする。
 - [x] **R04 + R05（姿勢・階層、Core検証完了）**。連続stepのPose/State一致と親子変換を修正する。2〜3joint、変化するbase pose、登録順、非simulated子孫と初期offsetを回帰対象にする。
-- [ ] **続く実装: R06 + R07 + R08（衝突・時間）**。chain単位の参照分離、長さと衝突の同時制約、停止・再開の契約を修正する。解なしの診断、有限値、可変dtを含めて検証する。
-- [ ] **各実装に同梱: R10（検証強化）**。修正前に失敗する再現を正式テストへ移す。保存・OpenはPlayer経路も通し、数値計算は前stepのStateを引き継ぎ、実際の衝突参照を指定する。null groupのdomain errorも確認する。
+- [x] **R06 + R07 + R08（衝突・時間、自動検証完了）**。chain単位の参照分離、長さと衝突の同時制約、停止・再開の契約を修正する。解なしの診断、有限値、可変dtを含めて検証する。
+- [x] **各実装に同梱: R10（検証強化、自動検証完了）**。修正前に失敗する再現を正式テストへ移す。保存・OpenはPlayer経路も通し、数値計算は前stepのStateを引き継ぎ、実際の衝突参照を指定する。null groupのdomain errorも確認する。
 - [ ] **基礎修正後の受入**。実VRMの読込・保存・再読込、GUIの保存して終了、文字サイズ・隠れ、姿勢と見た目をWindowsで確認する。外部MCP transportのmetadata保存も別途確認する。各記録に対象buildと確認方法を残す。
 
 状況照合時点では未修正だったR01/R02/R09を、下記の実装と自動検証で更新した。チェック済みは自動検証範囲であり、実素材と実マウスによる受入は別タスクのまま維持する。
 
 修正後は、未保持のgravityDir・collider shape値と保存移行を含むVRM入力契約を整え、node→stable BoneId、preview接続へ進む。一般node transform、skin/morph出力、実アバター受入、C1〜C5の全体目標は維持する。
+
+### R10完了: 同じVRMの取込→Workbench保存→Open（2026-09-12）
+
+- `VrmVerificationFixture`は第三者素材を含まない合成GLB/VRM bytesを生成する。skin、morph、表情、VRM0同一node複数sphere、VRM1同一/異なるnodeとcapsule inventoryを含む。完全な製品アバターのVRM仕様適合fixtureではなく、取込対応profileを通す検証データ。
+- `AuthoringWorkbench.VrmImportVerification`は実ファイルへ書出し、GUIの`ImportModel`→`TrySaveProject`→空workspace→`OpenProject`をVRM0/1それぞれで実行。graph hash、attachment hash、source identity、作者列、表情weight、collider node列、VRM1省略値/明示0を確認した。
+- Windows-VrmImportRoundtrip build **PASS**: `Logs/build-player-20260912-140900-452.log`。Authoring suite **PASS**: `Artifacts/Authoring-20260912-140928-5c88b52461154cfe828d5a6bb9cc23cf/report.json`。専用の`VRM0/1 file import to Workbench graph...` checkが成功。追加検証はUnityRuntimeのみでCore本体は変更せず、Coreは前段の326件合格記録を維持。
+- [検証範囲の照合](docs/reviews/2026-09-12-Repair-Coverage.md)で残っていたR02/R10の分断された経路を埋めた。実ファイルpickerのマウス操作、実VRMの見た目、外部MCP transportのmetadata専用受入は別タスクのまま。R01〜R10の終了はC0〜C5全体の完成ではない。
+
+### 次の実装単位: VRM入力契約とpreview接続
+
+- [ ] **I01 — Spring入力の完全保持**。gravityDirとsphere/capsuleのoffset・radius・tailをtyped metadataへ保持する。旧sessionは不明値を捏造せず、移行方針と再取込の必要性を定める。Core solverのsphere対応とVRM capsule対応は区別する。
+- [ ] **I02 — 骨対応の保存**。ImportedBoneMap/humanoid bindingをnative保存へつなぎ、同一snapshotで保存・Openできるようにする。source/skeleton hashとnode参照を検査し、骨格編集時のstaleを明示する。
+- [ ] **I03 — runtime preview**。VRM node→BoneId、centerとcollider座標系、VRM設定の時間的意味をadapterで変換する。未対応node/shapeを黙って除外しない。Workbenchの再生・停止・リセットは保存/Undoとは分離して接続する。
 
 ### VRM骨対応adapterと修正範囲の照合（2026-09-12）
 
