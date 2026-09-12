@@ -112,6 +112,10 @@ namespace NyaForge.UnityRuntime
             bool hadPreview = springPlayback != null;
             springPlayback = null; springWorkspace = null;
             projection?.EndSpringPreview();
+            // The authored evaluation hash is unchanged by transient playback, so
+            // invalidate this projection key explicitly when the rendered mesh is
+            // replaced by the normal graph result.
+            sourceSkinProjectionKey = "";
             if (restore && hadPreview && workspace != null)
                 using (var prepared = projection.PrepareGraph(workspace.Document, workspace.Preview)) prepared.Commit();
             if (restore && workspace != null) RefreshSourceSkinDisplayProjection();

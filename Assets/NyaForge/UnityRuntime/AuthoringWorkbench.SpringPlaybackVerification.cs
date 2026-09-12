@@ -83,6 +83,8 @@ namespace NyaForge.UnityRuntime
                 StartSpringPlayback(); TickSpringPlayback(1f / 60); var mcpReset = DispatchSecondaryMotionMcp("secondary_motion_reset");
                 Check((bool)mcpReset["success"] && !(bool)mcpReset["playing"], "MCP secondary-motion reset did not clear playback");
                 Check(springPlayback == null && !springReset.enabledSelf && projection.PointBatchCount > 0, "Reset did not restore editing projection");
+                var resetVertices = projection.DisplayMesh.vertices;
+                Check(!resetVertices.Where((v, i) => (v - baseline[i]).sqrMagnitude > 1e-10f).Any(), "Reset did not restore the authored source-skin display");
                 StartSpringPlayback();
                 springPlayback.Pause();
                 long beforeStep = springPlayback.CompletedSteps;

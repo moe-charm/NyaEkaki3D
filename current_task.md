@@ -1160,3 +1160,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthori
 - Core **426 passed / 0 failed**。metadata rebindをUndo/Redoすると、Document geometryを変えずにattachment bytesと再読込可能なmetadataを元へ戻し、Redoでrebound bytesへ戻す。
 - Windows Player **PASS / 74 checks**（`Builds/RebindUndo/NyaForge.exe`, `Logs/build-all-20260913-014245-743.log`, `Artifacts/Authoring-20260913-014317-08b047e74a554ba88b3f760ba11a05e1/report.json`）。実RadDollV3 VRMでstale skeleton→same-BoneId rebind→Undo/Redoのattachment復元を確認した。
 - Unity Bridge **PASS**（Unity 2022.3.22f1, `Artifacts/BridgeReceiver-20260913-014429-987-190b810cf80a499cba2ed3c8ca51a256/bridge-report.json`）。実VRChat SDK内の動作受入と揺れリセットcacheは未完了。
+
+## 揺れリセット表示cache検証 2026-09-13
+
+- `ClearSpringPlayback`でsource-skin投影cache keyを無効化し、transient spring meshから通常graph表示へ戻すとき同じevaluation hashでも再投影するよう修正した。
+- Windows Player **PASS / 74 checks**（`Builds/ResetCache/NyaForge.exe`, `Logs/build-all-20260913-014541-107.log`, `Artifacts/Authoring-20260913-014601-ad53de01f4a34333926580298d3f1c36/report.json`）。VRM1/VRM0で再生→reset後のsource-skin表示がbaselineへ戻る回帰を確認した。
+- Unity Bridge **PASS**（Unity 2022.3.22f1, `Artifacts/BridgeReceiver-20260913-014712-999-fcdbade261d64afe917d7e3c338f925a/bridge-report.json`）。
