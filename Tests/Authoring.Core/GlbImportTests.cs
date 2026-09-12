@@ -5,6 +5,7 @@ using System.Text;
 using Newtonsoft.Json.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Import;
+using NyaForge.Authoring.Paint;
 
 internal static partial class Program
 {
@@ -103,6 +104,23 @@ internal static partial class Program
             Near(.214041f, material.Parameters.BaseColor.X); Near(.050876f, material.Parameters.BaseColor.Y); Near(1f, material.Parameters.BaseColor.Z); Near(.75f, material.Parameters.BaseColor.W);
             Near(.7f, material.Parameters.Metallic); Near(.2f, material.Parameters.Roughness); Near(.1f, material.Parameters.Emission.X); Near(.3f, material.Parameters.Emission.Z);
             Equal(NyaForge.Authoring.Graph.MaterialAlphaMode.Blend, material.Parameters.AlphaMode); Near(.3f, material.Parameters.AlphaCutoff);
+            var missingMaterials = JObject.Parse(ReadJsonChunk(BuildGlb()));
+            ((JObject)((JArray)((JObject)((JArray)missingMaterials["meshes"]!)[0]!) ["primitives"]!)[0]!) ["material"] = 0;
+            Expect("INVALID_IMPORT", () => GlbImporter.Read(ReplaceJsonChunk(BuildGlb(), missingMaterials.ToString(Newtonsoft.Json.Formatting.None))));
+        });
+        Test("GLB importer exposes an embedded base color image without fetching external resources", () =>
+        {
+            var source = BuildGlb(); var root = JObject.Parse(ReadJsonChunk(source)); var bin = ReadBinChunk(source);
+            var image = PaintPng.Encode(new PaintImage(2, 1, new Rgba32(220, 30, 60, 255))); int offset = bin.Length;
+            var combinedBin = bin.Concat(image).ToArray();
+            ((JObject)((JArray)root["buffers"]!)[0]!) ["byteLength"] = combinedBin.Length;
+            ((JArray)root["bufferViews"]!).Add(new JObject { ["buffer"] = 0, ["byteOffset"] = offset, ["byteLength"] = image.Length });
+            root["images"] = new JArray(new JObject { ["bufferView"] = 3, ["mimeType"] = "image/png", ["name"] = "red" });
+            root["textures"] = new JArray(new JObject { ["source"] = 0 });
+            root["materials"] = new JArray(new JObject { ["pbrMetallicRoughness"] = new JObject { ["baseColorTexture"] = new JObject { ["index"] = 0 } } });
+            var primitive = (JObject)((JArray)((JObject)((JArray)root["meshes"]!)[0]!) ["primitives"]!)[0]!; primitive["material"] = 0;
+            var imported = GlbImporter.Read(BuildGlbContainer(Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), combinedBin));
+            Equal(1, imported.Materials.Count); var material = imported.Materials[0]; True(material.HasTextureReferences); True(material.HasEmbeddedBaseColorImage); Equal(0, material.BaseColorImageIndex); Equal("image/png", material.BaseColorImageMimeType); True(image.SequenceEqual(material.CopyBaseColorImageBytes()));
         });
         Test("GLB importer allows an unskinned accessory beside a skinned mesh", () =>
         {
@@ -160,6 +178,12 @@ internal static partial class Program
     static string ReadJsonChunk(byte[] bytes)
     {
         int length = BitConverter.ToInt32(bytes, 12); return Encoding.UTF8.GetString(bytes, 20, length).TrimEnd(' ', '\0', '\n', '\r', '\t');
+    }
+
+    static byte[] ReadBinChunk(byte[] bytes)
+    {
+        int jsonLength = BitConverter.ToInt32(bytes, 12); int binHeader = 20 + jsonLength; int binLength = BitConverter.ToInt32(bytes, binHeader);
+        return bytes.Skip(binHeader + 8).Take(binLength).ToArray();
     }
 
     static byte[] ReplaceJsonChunk(byte[] bytes, string json)

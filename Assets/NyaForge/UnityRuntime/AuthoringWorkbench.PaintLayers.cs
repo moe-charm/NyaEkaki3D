@@ -61,8 +61,9 @@ namespace NyaForge.UnityRuntime
         PaintImage RefreshPaintLayers(GraphNode node,GraphImageValue value)
         {
             bool layered=node?.LayerStack!=null;
+            bool importedImage=node?.TypeId==BuiltinNodes.Paint && node.PaintImage!=null && node.PaintUvHash=="" && node.ExpectedDomain=="";
             migratePaint.style.display=node?.TypeId==BuiltinNodes.Paint ? DisplayStyle.Flex : DisplayStyle.None;
-            migratePaint.SetEnabled(value!=null);
+            migratePaint.SetEnabled(value!=null && !importedImage);
             layerPanel.style.display=layered ? DisplayStyle.Flex : DisplayStyle.None;
             layerPanel.SetEnabled(value!=null);
             paintLayerIds=layered ? node.LayerStack.Layers.Select(l=>l.Id).ToArray() : Array.Empty<string>();

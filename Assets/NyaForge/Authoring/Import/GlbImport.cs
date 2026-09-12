@@ -108,7 +108,7 @@ namespace NyaForge.Authoring.Import
                 mesh = transformed.Mesh; morphs = transformed.Morphs;
             }
             var diagnostics = GlbImportDiagnostics.ForMesh(root, meshToken);
-            var materials = GlbMaterialSourceReader.Read(root, meshToken, parts.Select(part => part.MaterialIndex).ToArray());
+            var materials = GlbMaterialSourceReader.Read(root, meshToken, parts.Select(part => part.MaterialIndex).ToArray(), bin, views);
             var warnings = new List<string> { "Imported as " + parts.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " static triangle primitive(s); original glTF scene hierarchy, texture/image resources and skin bindings are not retained. Basic PBR material factors are retained when a primitive material is present." };
             warnings.AddRange(GlbImportDiagnostics.WarningText(diagnostics));
             if (instanceWorld != null) warnings.Add("Selected node instance world transform was applied to mesh positions, normals, tangents and POSITION morph deltas.");
@@ -157,7 +157,8 @@ namespace NyaForge.Authoring.Import
                 if (target["NORMAL"] != null) { normalMorphs[i] = Vec3Accessor(accessors, views, bin, Int(target, "NORMAL", 0, accessors.Count - 1), "morph normal"); Checks.Require(normalMorphs[i].Length == positions.Length, "INVALID_IMPORT", "Morph NORMAL count must match the primitive base mesh."); }
                 if (target["TANGENT"] != null) { tangentMorphs[i] = Vec3Accessor(accessors, views, bin, Int(target, "TANGENT", 0, accessors.Count - 1), "morph tangent"); Checks.Require(tangentMorphs[i].Length == positions.Length, "INVALID_IMPORT", "Morph TANGENT count must match the primitive base mesh."); }
             }
-            int materialIndex = primitive["material"] == null ? -1 : Int(primitive, "material", 0, Math.Max(0, materialCount - 1));
+            Checks.Require(primitive["material"] == null || materialCount > 0, "INVALID_IMPORT", "GLB primitive material reference requires a materials array.");
+            int materialIndex = primitive["material"] == null ? -1 : Int(primitive, "material", 0, materialCount - 1);
             return new PrimitiveData { Positions = positions, Normals = normals, Tangents = tangents, Uv0 = uv0, Indices = indices, MorphDeltas = morphs, MorphNormalDeltas = normalMorphs, MorphTangentDeltas = tangentMorphs, MaterialIndex = materialIndex };
         }
 

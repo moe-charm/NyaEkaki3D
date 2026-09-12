@@ -16,7 +16,15 @@ namespace NyaForge.Authoring.Graph
     {
         internal static GraphImageValue Apply(GraphNode node,GraphMeshValue input)
         {
-            Checks.Require(input.Polygon != null,"UV_MISSING","Paint requires polygon UVs.");
+            // Imported GLB images are immutable, unbound base-color resources. They
+            // intentionally bypass polygon UV validation and are connected directly
+            // to a StandardMaterial node; authored paint still requires a polygon UV
+            // binding and follows the strict path below.
+            if (input.Polygon == null)
+            {
+                Checks.Require(node.PaintImage != null && node.PaintUvHash == "" && node.ExpectedDomain == "", "UV_MISSING", "Paint requires polygon UVs.");
+                return new GraphImageValue(node.PaintImage, "", input.DomainId);
+            }
             string uvHash=PaintUvBinding.Hash(input.Polygon);
             if(node.PaintImage != null)
             {
@@ -29,7 +37,12 @@ namespace NyaForge.Authoring.Graph
         {
             if(image == null) return mesh;
             Checks.Require(mesh.Material==null && mesh.SlotMaterials==null,"MATERIAL_ALREADY_ASSIGNED","Connect the image to the material node instead of overriding the assigned material at Output.");
-            Checks.Require(mesh.Polygon != null && image.MeshDomain == mesh.DomainId,"PAINT_UV_CHANGED","Base color input belongs to another mesh.");
+            if (mesh.Polygon == null)
+            {
+                Checks.Require(image.UvHash == "" && image.MeshDomain == mesh.DomainId, "PAINT_UV_CHANGED", "Imported base color input belongs to another mesh.");
+                return new GraphMeshValue(mesh.Mesh,mesh.Transform,mesh.DomainId,mesh.Polygon,mesh.PolygonRendering,image);
+            }
+            Checks.Require(image.MeshDomain == mesh.DomainId,"PAINT_UV_CHANGED","Base color input belongs to another mesh.");
             PaintUvBinding.RequireMatch(image.UvHash,mesh.Polygon);
             return new GraphMeshValue(mesh.Mesh,mesh.Transform,mesh.DomainId,mesh.Polygon,mesh.PolygonRendering,image);
         }

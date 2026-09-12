@@ -14,7 +14,9 @@ namespace NyaForge.Authoring.Graph
             if (image != null)
             {
                 Checks.Require(image.Width == width && image.Height == height,"INVALID_IMAGE_SIZE","Paint payload dimensions differ from node.");
-                Checks.HashText(uvHash); Checks.HashText(domain);
+                Checks.Require((uvHash == "" && domain == "") || (uvHash != "" && domain != ""), "INVALID_PAINT_BINDING", "Paint image binding must provide both UV and domain hashes, or neither for an imported image.");
+                if (uvHash != "") Checks.HashText(uvHash);
+                if (domain != "") Checks.HashText(domain);
             }
             else Checks.Require(uvHash == "" && domain == "","INVALID_PAINT_BINDING","Unpainted nodes cannot carry a stale image binding.");
             return new GraphNode(id,BuiltinNodes.Paint,1,null,Identity,0,0,0,true,"",domain,Empty,"")

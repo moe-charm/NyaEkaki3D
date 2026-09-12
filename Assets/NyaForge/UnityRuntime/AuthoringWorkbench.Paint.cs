@@ -84,12 +84,13 @@ namespace NyaForge.UnityRuntime
             var node = selectedPaint == "" ? null : graph.Nodes[selectedPaint];
             RefreshPaintRebind(node,value);
             var editableImage=RefreshPaintLayers(node,value);
+            bool importedImage=node?.TypeId==BuiltinNodes.Paint && node.PaintImage!=null && node.PaintUvHash=="" && node.ExpectedDomain=="";
             string key = workspace.InstanceId + ":" + selectedPaint + ":" + (node?.LayerStack!=null ? workspace.Document.StateHash+":"+selectedPaintLayer : value?.ImageHash ?? workspace.Document.StateHash) + ":" + value?.UvHash + ":" + value?.MeshDomain;
-            paintCanvas.Bind(editableImage,key+":"+EditingMask); paintCanvas.SetEnabled(value != null && editableImage!=null);
+            paintCanvas.Bind(editableImage,key+":"+EditingMask); paintCanvas.SetEnabled(value != null && editableImage!=null && !importedImage);
             paintPalette.style.display=EditingMask ? DisplayStyle.None : DisplayStyle.Flex;
             paintOpacity.label=EditingMask ? "筆の強さ 0〜1" : "不透明度 0〜1";
             exportPaintPng.SetEnabled(value != null);
-            paintInfo.text = value == null ? (node == null ? "四角面などを作り、色塗りを追加してください。" : "UV対応が未解決です。旧画像は保持し、描画を停止しています。") :
+            paintInfo.text = value == null ? (node == null ? "四角面などを作り、色塗りを追加してください。" : "UV対応が未解決です。旧画像は保持し、描画を停止しています。") : importedImage ? "GLB埋め込み画像を表示中です。編集するには、このメッシュへUV対応のPaintを追加してください。PNG書き出しは可能です。" :
                 value.Image.Width + "×" + value.Image.Height + "。画像をドラッグして描画。離すと確定、Escapeで取消。3Dは確定後に更新。";
             if(node?.LayerStack!=null && value!=null) paintInfo.text="2Dは選択レイヤー、3D・PNG・Unity出力は全層の合成。下から上の順に重ねます。";
             if(EditingMask && value!=null) paintInfo.text="マスク：白は表示、黒は非表示。色画像は保持します。離すと確定、Escapeで取消。3Dと出力は全層の合成です。";

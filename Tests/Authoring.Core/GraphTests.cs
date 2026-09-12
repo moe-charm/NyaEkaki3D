@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
+using NyaForge.Authoring.Paint;
 
 internal static partial class Program
 {
@@ -27,6 +28,20 @@ internal static partial class Program
             Equal(original.Output.Mesh.TopologyHash, result.Output.Mesh.TopologyHash);
             Equal(4, result.Output.Mesh.Uv0.Count); Equal(-1f, result.Output.Mesh.Normals[0].Z);
             Equal(original.Output.Mesh.ContentHash, GraphEvaluator.Evaluate(graph).Output.Mesh.ContentHash);
+        });
+        Test("unbound imported image can feed a material on a render-index mesh", () =>
+        {
+            string source = GraphId(), image = GraphId(), red = GraphId(), green = GraphId(), assign = GraphId(), output = GraphId();
+            var mesh = AuthoringFixtures.Panel(1); var imagePayload = new PaintImage(2, 2, new Rgba32(220, 30, 60, 255));
+            var nodes = new[] { GraphNode.Source(source, mesh, new RestTransform(1, new Vec3())), GraphNode.Paint(image, 2, 2, imagePayload), GraphNode.StandardMaterial(red), GraphNode.StandardMaterial(green), GraphNode.AssignMaterials(assign, new[] { 0, 1 }), GraphNode.Output(output) };
+            var edges = new[]
+            {
+                new GraphEdge(source, "mesh", image, "mesh"), new GraphEdge(image, "image", red, "baseColor"), new GraphEdge(image, "image", green, "baseColor"),
+                new GraphEdge(source, "mesh", assign, "mesh"), new GraphEdge(red, "material", assign, GraphNode.MaterialSlotPort(0)), new GraphEdge(green, "material", assign, GraphNode.MaterialSlotPort(1)),
+                new GraphEdge(assign, "mesh", output, "mesh")
+            };
+            var evaluation = GraphEvaluator.Evaluate(new AuthoringGraph(GraphId(), nodes, edges, output));
+            True(evaluation.IsComplete); Equal(2, evaluation.Output.SlotMaterials.Count); Equal(imagePayload.Width, evaluation.ImageOutputs[image].Image.Width); True(evaluation.Output.SlotMaterials[0].Material.BaseColor.ImageHash == evaluation.Output.SlotMaterials[1].Material.BaseColor.ImageHash);
         });
         Test("scalar mesh ports reject wrong types and evaluate parameters", () =>
         {
