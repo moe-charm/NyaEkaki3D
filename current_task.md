@@ -1148,3 +1148,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthori
 - 既存の大量の未コミット変更を保持。今回commit/pushなし。既存Playerを終了・上書きしない。
 
 保持する残件: Mirror中心切断・結合、厚み品質と自己交差、cut/merge/bridge/create/curves、全削除・空polygon、UV回転/拡縮handle・seam・unwrap、複数object、skin/morph・rig・target出力。UV表示2048面・画像1024角・layer16枚/保持payload32MiBを最終製品要件と読み替えない。
+
+## レビュー追従の回帰証拠 2026-09-13
+
+- MCP sidecarはPNGの`data`だけをstructured/textから除去し、画像ごとのcamera・解像度・hash・撮影条件を保持する。`Tests/Mcp.Transport/CaptureResultVerification.cs`でbytes非重複とcamera保持を検証し、transport suite 3項目PASS。
+- PhysBonesは削除curve初期化とstable target/root/name marker再利用を実装済み。Unity Bridge 2022.3.22f1の最新検証はPASS。
+- 実VRChat SDK内の受入、揺れリセットキャッシュ、secondary-motion再bindのUndoは未完了。
