@@ -7,18 +7,22 @@ namespace NyaForge.UnityRuntime
     public sealed partial class AuthoringWorkbench
     {
         Foldout objectSelectionPanel;
+        Toggle showAllObjects;
 
         void BuildObjectSelection(VisualElement parent)
         {
             objectSelectionPanel = new Foldout { text = "制作対象", value = true, name = "object-selection" };
             objectSelectionPanel.Add(new Label("対象を切り替えると、頂点編集・材質・リグの表示先も切り替わります。"));
+            showAllObjects = new Toggle("他の制作対象も表示") { value = true, name = "object-show-all" };
+            showAllObjects.RegisterValueChangedCallback(_ => { if (objectProjection != null) { objectProjection.Visible = showAllObjects.value; Refresh(); } });
+            objectSelectionPanel.Add(showAllObjects);
             parent.Add(objectSelectionPanel);
         }
 
         void RefreshObjectSelection()
         {
             if (objectSelectionPanel == null) return;
-            while (objectSelectionPanel.childCount > 1) objectSelectionPanel.RemoveAt(1);
+            while (objectSelectionPanel.childCount > 2) objectSelectionPanel.RemoveAt(2);
             if (workspace == null || workspace.Document.IsEmpty)
             {
                 objectSelectionPanel.Add(new Label("制作対象はまだありません。"));

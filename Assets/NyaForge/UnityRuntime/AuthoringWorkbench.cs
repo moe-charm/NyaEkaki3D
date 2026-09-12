@@ -26,6 +26,7 @@ namespace NyaForge.UnityRuntime
         Camera camera;
         GameObject stage;
         OwnedMeshProjection projection;
+        MultiObjectProjection objectProjection;
         AuthoringWorkspace workspace;
         AuthoringCommandService commands;
         string savedDirectory;
@@ -60,6 +61,7 @@ namespace NyaForge.UnityRuntime
                 camera.fieldOfView = 35;
                 camera.depth = 10;
                 projection = new OwnedMeshProjection(stage.transform);
+                objectProjection = new MultiObjectProjection(stage.transform);
                 ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null);
             }
             active = true;
@@ -279,6 +281,7 @@ namespace NyaForge.UnityRuntime
             if (springPlayback != null && (workspace != springWorkspace || workspace.Document.StateHash != springDocumentHash || workspace.Attachments.ContentHash != springMetadataHash)) ClearSpringPlayback(true);
             RefreshGraphEditing();
             RefreshObjectSelection();
+            objectProjection?.Refresh(workspace.Document);
             RefreshSourceSkinDisplayProjection();
             graphCanvas.Bind(workspace, operations => Execute(operations), node => Try(() => SelectEditStage(editStageIds.IndexOf(node))));
             var displayed = DisplayedGraphValue();
@@ -310,7 +313,7 @@ namespace NyaForge.UnityRuntime
 
         void Frame()
         {
-            var points = projection.FramingPoints.ToArray();
+            var points = projection.FramingPoints.Concat(objectProjection?.FramingPoints ?? Enumerable.Empty<Vector3>()).ToArray();
             if (points.Length == 0) { target=Vector3.zero;distance=.5f;orbit=Quaternion.Euler(0,180,0);UpdateCamera();return; }
             var bounds = new Bounds(points[0], Vector3.zero);
             foreach (var p in points) bounds.Encapsulate(p);
@@ -368,6 +371,7 @@ namespace NyaForge.UnityRuntime
             surfacePreparationWatch?.Pause();surfacePreparation.Dispose();
             CancelSurfaceStroke();
             projection?.Dispose();
+            objectProjection?.Dispose();
             boundaryHighlight?.Dispose();
             bridgeHighlight?.Dispose();
             faceCreateOutline?.Dispose();edgeCutLine?.Dispose();cutPathLine?.Dispose();cutHoverEdge?.Dispose();

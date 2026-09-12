@@ -162,6 +162,7 @@ namespace NyaForge.UnityRuntime
                 VerifyGraphProjection(output, checks);
                 VerifySaveFailureGuard(output, checks);
                 VerifySpringCore(checks);
+                VerifyMultiObjectDisplay(output, checks);
                 VerifyVrmImportRoundtrip(output, checks);
                 VerifySecondaryMotionRebind(checks);
                 VerifyPhysBonesTargetStatus(output, checks);
