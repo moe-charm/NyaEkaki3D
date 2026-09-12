@@ -74,7 +74,15 @@
 - `VrmExpression` と `VrmMetadata.Expressions` を追加。VRM 1.0 `expressions.preset/custom` と VRM 0.x `blendShapeMaster.blendShapeGroups` から、名前、preset/custom区分、morph/material bind件数だけを最大256件まで読む。source内のbindをNyaForgeのmorph/materialへ自動適用する処理はまだ持たない。
 - GUIのモデル取り込みstatusにVRM expression件数を表示し、対応範囲ラベルをidentity・humanoid・expression inventoryまで更新した。
 - Core **291 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-26953d296bb74bd1a44480faeaa939b3`。VRM 1.0／0.xテストでexpression名称、preset/custom区分、morph/material bind件数を確認した。
+- 追加のCore **291 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-08598e8437b14a6aa9741ffc44bd1cef`。source morph bindのindex/weight保持と、単一ownerから`MorphSet` stable IDへの解決を確認した。
 - Windows-VrmExpressions Player build / Authoring suite **PASS**: `Logs/build-player-20260912-115915-345.log`、`Artifacts/Authoring-20260912-115941-fe34fb0e48c749fe9b2d7d2701d315d8/report.json`。標準fixtureの起動・描画・既存GUI回帰を目視した。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-120017-323-9b0849f34ded4f3db2c762fe93bcd6da/bridge-report.json`。実VRMファイルの表情適用、MToon、spring、look-at、一般transformは未確認・未対応のまま。
+
+### VRM expression → Morph対応境界（2026-09-12）
+
+- `VrmMorphBinding` がVRM 1.0のnode/index/weightとVRM 0.xのmesh/index/0〜100 weightを正規化して保持する。`VrmExpressionMapper.ResolveForSingleOwner` は1つのownerと既存`MorphSet`のtarget indexを照合し、stable target IDと0..1 weightの辞書へ変換する。owner違い、範囲外index、同一targetの重複bindは推測せず拒否する。
+- Core VRMテストでVRM 1.0／0.xのsource bind値と、GLB morph targetへのweight解決（0.5）を確認した。これはexpression payloadをnative graphへ保存・適用するUIではなく、次段の表情編集へ渡すための純粋なadapterである。
+- 実VRMの複数mesh owner、material bind適用、表情スライダー、spring、look-at、一般transform、skin exportは未確認・未対応のまま。
+- Windows-VrmExpressionMap Player build / Authoring suite **PASS**: `Logs/build-player-20260912-120714-065.log`、`Artifacts/Authoring-20260912-120743-92d014c8543840c89f8a81945b1f1459/report.json`。新Import module追加後も標準fixtureの起動・描画・既存GUI回帰を目視した。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-120817-875-6fde4712d8d3474b83139201c12a4326/bridge-report.json`。
 
 - `Authoring.Rig` を独立モジュールとして追加。`SkeletonDefinition` はcanonical UUIDのbone、親子階層、head/tailのrest座標を不変データとして保持し、循環・欠落親・重複IDを公開前に拒否する。
 - `SkinBinding` はmeshのtopology hashとskeleton hashを固定し、全頂点に1〜4本の明示boneを要求して、重みを降順・決定的順序で正規化する。同一boneの重複、未知bone、未weight、上限超過を拒否する。
