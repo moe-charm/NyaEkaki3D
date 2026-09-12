@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。VRM1の再生/停止/リセットGUIと一時mesh表示を接続し、Windows Playerのhandler検証が合格。全source node階層の保存（T01）を追加し、Coreの直近検証は354件合格。R01〜R12は記録した自動検証範囲で修正済み。VRM0展開、一般node変換、実素材・実操作・負荷の受入は未完了。
+更新: 2026-09-12。VRM1の再生/停止/リセットGUIと一時mesh表示を接続し、Windows Playerのhandler検証が合格。全source node階層の保存（T01）を追加し、Coreの直近検証は357件合格。R01〜R12は記録した自動検証範囲で修正済み。VRM0展開、一般node変換、実素材・実操作・負荷の受入は未完了。
 
 ## 開発の入口
 
@@ -30,6 +30,13 @@
 - [ ] **A01 — Windows実素材・実操作受入**。利用可能なローカルモデルで取込・保存/Open・姿勢・揺れ・文字サイズと欠け・保存して終了を確認する。外部MCP transportのmetadata保存も別項目で検証する。完了条件: build名、入力、確認手順、結果、未対応事項の記録。素材はprivate/追跡除外を維持。
 
 初回レビュー時点の証拠（現状は下段参照）: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
+
+### T02前段: VRM0 source subtree展開（2026-09-12）
+
+- `Vrm0SpringExpansion`を独立adapterとして追加。root/children順で全子孫（非jointを含む）を展開し、最初の子または親からの方向へ7cm延ばした仮想末端を保持。元設定・center/collider参照を残し、重複subtreeや方向不明の末端は明示拒否する。[契約と公式根拠](docs/VRM0-Spring-Expansion.md)。
+- Core **357 passed / 0 failed**: `Logs/core-vrm0-expansion.txt`、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-9975b1e36afb460abcd75c44d75d6d54`。分岐順・全子孫・仮想末端数値・設定継承・拒否条件、合成VRM0 reader→rig codec→Resolveで非joint末端まで確認。
+- Windows-Vrm0Expansion build **PASS**: `Logs/build-player-20260912-155712-181.log`。今回はCore adapter追加で、Player GUI suiteは再実行していない。実素材受入は未実施。
+- T02は継続中。次は通常nodeを含む実行骨格/poseとsource mappingの接続。揺れの実行、center/collider、skinへの投影、Workbench所有者とGUIは未接続。VRM0を再生可能とは表示しない。
 
 ### T01: 全source階層の保存（2026-09-12）
 

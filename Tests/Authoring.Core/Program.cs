@@ -15,6 +15,7 @@ internal static partial class Program
         Directory.CreateDirectory(Root);
         if(args.Contains("--surface-profile")) return SurfacePaintProfile.Run(Root);
         RunAuthoringStateTests();
+        RunVrm0SpringExpansionTests();
         RunFaceInspectionTests();
         RunPolygonWireTests();
         RunPaintWireTests();
