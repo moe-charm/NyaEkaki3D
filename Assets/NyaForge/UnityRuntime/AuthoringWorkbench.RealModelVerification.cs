@@ -62,6 +62,12 @@ namespace NyaForge.UnityRuntime
             Check(exportedInventory.Meshes.Count == 1 && exportedInventory.Skins.Count == 1, "Real model skinned GLB output did not retain one mesh and skin.");
             var exportedSkin = GlbSkinImporter.Read(exportedBytes, 0, 0);
             Check(exportedSkin.Mesh.Positions.Count > 0 && exportedSkin.Skeleton.Bones.Count == importedRigSession.SourceSkin.Joints.Count, "Real model skinned GLB output changed mesh or skeleton cardinality.");
+            if (importedPaints.Length > 0)
+            {
+                int exportedImages = exportedSkin.Materials.Count(material => material.HasEmbeddedBaseColorImage);
+                Check(exportedImages > 0, "Real model skinned GLB output lost embedded base-color images.");
+                checks.Add("standard skinned GLB output retains embedded base-color images");
+            }
             checks.Add("real GLB/VRM command-line import: candidate selection, generated EditMesh, vertex edit, native Save/Open, standard skinned GLB output and reimport cardinality");
             // Return the verifier to a freshly persisted empty project so the
             // following fixture suite starts with a clean command history and
