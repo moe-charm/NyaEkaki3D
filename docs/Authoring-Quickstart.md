@@ -208,6 +208,14 @@ PNGはRGBA8・sRGB・straight alphaで、上下方向を標準PNGに合わせる
 
 初期対応は全submeshに同じ画像を使う不透明材質。透明/cutout・輪郭線・skin/morph・揺れ・再import更新は未対応。照明による見た目は確認用Viewerと異なる。形式の詳細は [Surface Bake](Surface-Bake-Format.md)。
 
+## 小物をavatarのボーンへ装着する
+
+先にGLB/VRM avatarを取り込み、次に「チョーカー形状を追加」などで小物を別のgraph objectとして作る。小物を対象にした状態で「小物をボーンへ装着」を開き、アバター対象と表示されたBoneIdを選び、必要ならbone localのX/Y/Z offset (mm)を入力して「この小物を装着」を押す。名前ではなくstable BoneIdとskeleton hashで対応を確認するので、別の骨へ推測で接続されない。
+
+装着後も小物の頂点編集、Undo、保存・再読込、pose変更時のプレビュー追従が同じ制作履歴で使える。装着情報を含む作品で「Unity用に書き出す」を押すと、通常の独立multi-object Bakeではなく、avatarと小物・graph・attachmentを含むnative project packageへ出力する。標準GLBはgeometry交換用でattachment metadataを表現しないため、位置と対応を保ったまま再開する場合はnative packageを保持する。
+
+現在の装着機能は剛体root追従までで、自動fit、体型補正、貫通検出、実VRChat内の見た目確認は別の受入項目である。offsetは基準姿勢のbone-localメートルとして保存される。
+
 
 ## 小物の制作から受け取り側の描画まで再検証
 
