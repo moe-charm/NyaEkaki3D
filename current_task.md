@@ -84,6 +84,12 @@
 - 実VRMの複数mesh owner、material bind適用、表情スライダー、spring、look-at、一般transform、skin exportは未確認・未対応のまま。
 - Windows-VrmExpressionMap Player build / Authoring suite **PASS**: `Logs/build-player-20260912-120714-065.log`、`Artifacts/Authoring-20260912-120743-92d014c8543840c89f8a81945b1f1459/report.json`。新Import module追加後も標準fixtureの起動・描画・既存GUI回帰を目視した。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-120817-875-6fde4712d8d3474b83139201c12a4326/bridge-report.json`。
 
+### VRM expression UI接続（2026-09-12）
+
+- `MorphSet`のstable ID生成を`GlbImporter.MorphTargetId`へ共通化し、`VrmExpressionMapper`がMorphSetの並び順ではなく元のsource morph indexからtarget IDを解決するよう修正した。複数Morphを含むfixtureでindex 0の対応を確認した。
+- WorkbenchのMorphパネルへ「VRM表情」選択と「選択したVRM表情を適用」を追加。GLB/VRM取り込み時に単一mesh ownerを解決できた表情だけを一覧にし、選択すると全Morph weightを更新して既存の`UpdateNode`とUndoへ渡す。新規／開き直したprojectへVRM metadataを永続化する処理はまだ持たない。
+- Core **291 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-c9e2b12978f543c583125e3dadb12fdb`。Windows-VrmExpressionUi2 Player build / Authoring suite **PASS**: `Logs/build-player-20260912-121732-971.log`、`Artifacts/Authoring-20260912-121804-8ece484896984c1d970e44ba2b804a66/report.json`。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-121838-049-71972bc3cce24c78b7e8f09e398683f7/bridge-report.json`。実VRMをpickerから選び表情適用する手動受入は未確認。
+
 - `Authoring.Rig` を独立モジュールとして追加。`SkeletonDefinition` はcanonical UUIDのbone、親子階層、head/tailのrest座標を不変データとして保持し、循環・欠落親・重複IDを公開前に拒否する。
 - `SkinBinding` はmeshのtopology hashとskeleton hashを固定し、全頂点に1〜4本の明示boneを要求して、重みを降順・決定的順序で正規化する。同一boneの重複、未知bone、未weight、上限超過を拒否する。
 - `PoseTransform` と `SkinDeformer` を追加。bone headを基準にしたrest-relative affine poseを適用し、最大4 influenceの位置を線形ブレンドする。mesh topology hash / skeleton hash / 全bone poseを毎回照合し、normal・tangent・UVは元mesh所有のまま保持する。

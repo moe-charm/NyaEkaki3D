@@ -34,6 +34,7 @@ namespace NyaForge.UnityRuntime
             catch { projection.PreviewNodeId = oldStage; throw; }
             activeEditContext = null;
             selectedFaces.Clear(); faceMode.SetValueWithoutNotify(false);
+            ClearImportedVrmExpressions();
             workspace = next; commands = new AuthoringCommandService(workspace);
             savedDirectory = loadedPath == null ? null : Path.GetFullPath(loadedPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             projectPath.SetValueWithoutNotify(loadedPath ?? Path.Combine(Application.persistentDataPath, "Authoring", "Project-" + Guid.NewGuid().ToString("N").Substring(0, 8)));

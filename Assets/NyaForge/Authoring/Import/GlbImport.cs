@@ -116,9 +116,15 @@ namespace NyaForge.Authoring.Import
                 foreach (var part in parts) { foreach (var delta in part.MorphDeltas[i].Select((delta, index) => new MorphDelta(index + vertexOffset, delta))) if (delta.Delta.X != 0 || delta.Delta.Y != 0 || delta.Delta.Z != 0) entries.Add(delta); vertexOffset += part.Positions.Length; }
                 string name = "Morph " + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 if (names != null && i < names.Count && names[i].Type == JTokenType.String && !string.IsNullOrWhiteSpace((string)names[i])) name = (string)names[i];
-                result.Add(MorphTarget.Create(mesh, StableId(sourceHash + ":morph:" + i), name, entries));
+                result.Add(MorphTarget.Create(mesh, MorphTargetId(sourceHash, i), name, entries));
             }
             return MorphSet.Create(mesh, result);
+        }
+
+        internal static string MorphTargetId(string sourceHash, int index)
+        {
+            Checks.HashText(sourceHash); Checks.Require(index >= 0, "INVALID_MORPH", "Morph target index must be non-negative.");
+            return StableId(sourceHash + ":morph:" + index.ToString(System.Globalization.CultureInfo.InvariantCulture));
         }
 
         static string StableId(string text)

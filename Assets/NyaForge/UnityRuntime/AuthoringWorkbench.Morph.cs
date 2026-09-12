@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
+using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Rig;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace NyaForge.UnityRuntime
@@ -15,7 +17,10 @@ namespace NyaForge.UnityRuntime
         DropdownField morphTargetChoice;
         FloatField morphWeight;
         Button applyMorphWeight;
+        DropdownField vrmExpressionChoice;
+        Button applyVrmExpression;
         readonly List<string> morphTargetIds = new List<string>();
+        IReadOnlyList<MappedVrmExpression> importedVrmExpressions = Array.Empty<MappedVrmExpression>();
 
         void BuildMorph(VisualElement parent)
         {
@@ -24,6 +29,8 @@ namespace NyaForge.UnityRuntime
             morphTargetChoice = new DropdownField("対象target", new List<string> { "なし" }, 0) { name = "morph-target-choice" }; morphPanel.Add(morphTargetChoice);
             morphWeight = new FloatField("weight (0〜1)") { value = 0, name = "morph-weight" }; morphWeight.style.minHeight = 36; morphPanel.Add(morphWeight);
             applyMorphWeight = Button("Morph weightを適用", SetSelectedMorphWeight, "morph-set-weight"); morphPanel.Add(applyMorphWeight);
+            vrmExpressionChoice = new DropdownField("VRM表情", new List<string> { "なし" }, 0) { name = "vrm-expression-choice" }; morphPanel.Add(vrmExpressionChoice);
+            applyVrmExpression = Button("選択したVRM表情を適用", ApplySelectedVrmExpression, "vrm-expression-apply"); morphPanel.Add(applyVrmExpression);
             morphPanel.Add(new Label("Morphはrest meshの頂点差分です。mesh topologyが変わった場合は自動適用しません。"));
             parent.Add(morphPanel);
         }
@@ -35,7 +42,7 @@ namespace NyaForge.UnityRuntime
             if (workspace == null || workspace.Document.IsEmpty)
             {
                 morphStatus.text = "Morphサンプルまたはmorph nodeを追加すると表情差分を編集できます。";
-                morphTargetChoice.choices = new List<string> { "なし" }; morphTargetChoice.SetValueWithoutNotify("なし"); applyMorphWeight.SetEnabled(false); morphWeight.SetEnabled(false); return;
+                morphTargetChoice.choices = new List<string> { "なし" }; morphTargetChoice.SetValueWithoutNotify("なし"); applyMorphWeight.SetEnabled(false); morphWeight.SetEnabled(false); ResetVrmExpressionUi(); return;
             }
             var graph = workspace.Document.Objects[0].Graph;
             var morphNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.MorphSet && node.Morphs != null);
@@ -43,7 +50,7 @@ namespace NyaForge.UnityRuntime
             if (morphNode == null || deformNode == null)
             {
                 morphStatus.text = "Morph nodeがありません。ノード表示の「Morphサンプル」から始められます。";
-                morphTargetChoice.choices = new List<string> { "なし" }; morphTargetChoice.SetValueWithoutNotify("なし"); applyMorphWeight.SetEnabled(false); morphWeight.SetEnabled(false); return;
+                morphTargetChoice.choices = new List<string> { "なし" }; morphTargetChoice.SetValueWithoutNotify("なし"); applyMorphWeight.SetEnabled(false); morphWeight.SetEnabled(false); ResetVrmExpressionUi(); return;
             }
             morphTargetIds.AddRange(morphNode.Morphs.Targets.Select(target => target.TargetId));
             var labels = morphNode.Morphs.Targets.Select(target => target.Name + " · " + target.TargetId.Substring(0, 8)).ToList();
@@ -62,6 +69,10 @@ namespace NyaForge.UnityRuntime
             morphStatus.text = "target " + morphNode.Morphs.Targets.Count + "個 · 差分 " + morphNode.Morphs.Targets.Sum(target => target.Deltas.Count) + "頂点" + (fresh ? "" : " · stale: mesh topologyを確認");
             bool editable = !workspace.Document.Objects[0].IsStaticProfile && fresh;
             applyMorphWeight.SetEnabled(editable); morphWeight.SetEnabled(editable);
+            var expressionLabels = importedVrmExpressions.Count == 0 ? new List<string> { "なし" } : importedVrmExpressions.Select(expression => expression.Name + (expression.IsCustom ? " · custom" : " · preset")).ToList();
+            vrmExpressionChoice.choices = expressionLabels; if (vrmExpressionChoice.index < 0 || vrmExpressionChoice.index >= expressionLabels.Count) vrmExpressionChoice.SetValueWithoutNotify(expressionLabels[0]);
+            applyVrmExpression.SetEnabled(editable && importedVrmExpressions.Count > 0);
+            if (importedVrmExpressions.Count > 0) morphStatus.text += " · VRM表情 " + importedVrmExpressions.Count + "件";
         }
 
         string SelectedMorphTargetId(GraphNode deformNode)
@@ -83,6 +94,35 @@ namespace NyaForge.UnityRuntime
                 var weights = deformNode.MorphWeights.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal); weights[targetId] = morphWeight.value;
                 Execute(AuthoringOperation.UpdateNode(GraphNode.MorphDeformNode(deformNode.NodeId, weights)));
             });
+        }
+
+        void ApplySelectedVrmExpression()
+        {
+            Try(() =>
+            {
+                if (workspace == null || workspace.Document.IsEmpty || importedVrmExpressions.Count == 0) throw new InvalidOperationException("VRM表情を含むgraphを開いてください。");
+                int index = vrmExpressionChoice.index; if (index < 0 || index >= importedVrmExpressions.Count) throw new InvalidOperationException("VRM表情を選択してください。");
+                var graph = workspace.Document.Objects[0].Graph; var morphNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.MorphSet && node.Morphs != null); var deformNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.MorphDeform);
+                if (morphNode == null || deformNode == null) throw new InvalidOperationException("morph nodeが見つかりません。");
+                var selected = importedVrmExpressions[index]; var weights = morphNode.Morphs.Targets.ToDictionary(target => target.TargetId, target => selected.Weights.TryGetValue(target.TargetId, out var weight) ? weight : 0f, StringComparer.Ordinal);
+                Execute(AuthoringOperation.UpdateNode(GraphNode.MorphDeformNode(deformNode.NodeId, weights)));
+                SetStatus("VRM表情を適用しました: " + selected.Name + "。元に戻す・やり直すで確認できます。");
+            });
+        }
+
+        void SetImportedVrmExpressions(byte[] bytes, VrmMetadata metadata, MorphSet morphs)
+        {
+            importedVrmExpressions = Array.Empty<MappedVrmExpression>();
+            if (metadata == null || morphs == null) return;
+            try { importedVrmExpressions = VrmExpressionMapper.ResolveForImportedMesh(bytes, metadata, morphs); }
+            catch (AuthoringException error) { Debug.LogWarning("[NyaForge VRM] expression mapping unavailable: " + error.Code + ": " + error.Message); }
+        }
+
+        void ClearImportedVrmExpressions() { importedVrmExpressions = Array.Empty<MappedVrmExpression>(); }
+        void ResetVrmExpressionUi()
+        {
+            if (vrmExpressionChoice == null) return;
+            vrmExpressionChoice.choices = new List<string> { "なし" }; vrmExpressionChoice.SetValueWithoutNotify("なし"); applyVrmExpression.SetEnabled(false);
         }
     }
 }
