@@ -187,6 +187,8 @@ namespace NyaForge.UnityRuntime
                 MaterialProjectionVerification.Verify(output,checks);
                 MultiMaterialProjectionVerification.Verify(output,checks);
                 SetStatus("自動検証: scale 1 / 100 の 1cm編集・保存・出力が一致しました。");
+                Check(status.tooltip == status.text, "Status tooltip did not retain the complete diagnostic text");
+                checks.Add("narrow status footer stays one line while its complete text remains available as a tooltip");
             }
             catch (Exception e) { failure = e.ToString(); Debug.LogException(e); }
 

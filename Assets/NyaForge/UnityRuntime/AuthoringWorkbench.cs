@@ -363,7 +363,14 @@ namespace NyaForge.UnityRuntime
             try { action(); }
             catch (Exception error) { SetStatus(error.Message); Debug.LogWarning("[NyaForge authoring] " + error); }
         }
-        void SetStatus(string text) { status.text = text; Debug.Log("[NyaForge authoring] " + text); }
+        void SetStatus(string text)
+        {
+            status.text = text ?? "";
+            // The footer stays one line on compact windows; keep the complete
+            // diagnostic available through the native tooltip for inspection.
+            status.tooltip = status.text;
+            Debug.Log("[NyaForge authoring] " + status.text);
+        }
         bool WantsToQuit()
         {
             if (allowQuit || !HasUnsaved) return true;

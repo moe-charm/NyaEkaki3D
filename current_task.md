@@ -10,7 +10,7 @@
 
 ### 直近の実装カード（2026-09-13）
 
-- **T05 / Windows UI可読性**: 制作対象の長いGUIDは先頭8文字をボタンへ表示し、完全なobject identityはツールチップへ残して横方向の文字欠けを避けた。ステータス欄を狭い画面でも1行に固定し、表示更新でviewportが縮む問題を防いだ。Player `Builds/UiNarrowStatusV1/NyaForge.exe` の800x600 Authoring suite（report `Artifacts/Authoring-20260913-051538-c752078b3fda4fe0a68654792d67ba58/report.json`）と1600x1000 suite（report `Artifacts/Authoring-20260913-051607-d6073bc663c24d438d3e247db99c8a7a/report.json`）が合格。Unity 2022.3.22f1 Bridgeも合格（`Artifacts/BridgeReceiver-20260913-051636-908-559437b2ca5d48779a1f89f38eadcc7d/bridge-report.json`）。実マウス・DPI差・実VRChat受入は別境界として残る。
+- **T05 / Windows UI可読性**: 制作対象の長いGUIDは先頭8文字をボタンへ表示し、完全なobject identityはツールチップへ残して横方向の文字欠けを避けた。ステータス欄を狭い画面でも1行に固定し、表示更新でviewportが縮む問題を防いだ。ステータス全文もtooltipへ保持する。Player `Builds/UiNarrowStatusV2/NyaForge.exe` の800x600 Authoring suite（report `Artifacts/Authoring-20260913-052112-6c8f4cfef1e1407c9e807eaa5ba711eb/report.json`）が合格し、V1で1600x1000 suite（report `Artifacts/Authoring-20260913-051607-d6073bc663c24d438d3e247db99c8a7a/report.json`）も確認済み。Unity 2022.3.22f1 BridgeもV1で合格（`Artifacts/BridgeReceiver-20260913-051636-908-559437b2ca5d48779a1f89f38eadcc7d/bridge-report.json`）。実マウス・DPI差・実VRChat受入は別境界として残る。
 
 - **I04-E / 必須拡張ガード**: 完全なadapterがない `extensionsRequired` はGLB/VRM取込前に `UNSUPPORTED_EXTENSION` で拒否し、`extensionsUsed` は従来どおり partial 診断として保持する。Core 446件、Windows Authoring suite（Player `Builds/RequiredExtensionGuardV1/NyaForge.exe`、report `Artifacts/Authoring-20260913-045811-6f323347842b4d548e95a60aebd4700b/report.json`）合格。
 

@@ -4,7 +4,7 @@
 
 現行mainで4件のP1修正を再確認し、Core **446 passed / 0 failed**（artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-9f228fff09904971b5264b15059fb465`）を取得した。合成Bridgeの合格は実VRChat SDKの受入とは分け、次の作業をSDKの版・完全修飾型を固定した実component生成／更新へ限定する。
 
-狭いWindows画面の追加確認では、ステータス欄を1行へ固定する修正後に800x600／1600x1000のAuthoring suiteをともにPASSさせた。800x600 reportは `Artifacts/Authoring-20260913-051538-c752078b3fda4fe0a68654792d67ba58/report.json`、1600x1000 reportは `Artifacts/Authoring-20260913-051607-d6073bc663c24d438d3e247db99c8a7a/report.json`。これはPlayer内自動操作の受入であり、DPI差・実マウス・実VRChat内の確認とは分ける。
+狭いWindows画面の追加確認では、ステータス欄を1行へ固定し全文をtooltipへ残す修正後に800x600／1600x1000のAuthoring suiteをともにPASSさせた。最新800x600 reportは `Artifacts/Authoring-20260913-052112-6c8f4cfef1e1407c9e807eaa5ba711eb/report.json`、1600x1000 reportは `Artifacts/Authoring-20260913-051607-d6073bc663c24d438d3e247db99c8a7a/report.json`。これはPlayer内自動操作の受入であり、DPI差・実マウス・実VRChat内の確認とは分ける。
 
 提示されたレビュー（基準: `1c76e4a`）を現行 `main` と照合した。4件のP1は後続コミットで修正済みであり、同じ不具合を未対応として再実装しない。以下は現行コードと回帰の対応表である。
 
