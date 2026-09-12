@@ -8,7 +8,7 @@
 
 version 1で導入した`ImportedRigSessionCodec`の基本JSONは上記identityと対応列を持つ。node列はnode番号、humanoid列はordinal name順で決定的に書く。最大256骨・256semantic、UUID/hash形式、重複node/boneId/semantic、未知field、UTF-8、JSON深さ・末尾データを検査する。
 
-`ProjectAttachments.Rig`（`imported-rig-session.nyaforge.json`）を許可されたattachmentとして追加した。schema 4 envelopeは維持し、expression/Spring/rig/rig session table/PhysBones targetの最大6件を同じmanifestで一括公開する。複数graph objectでは`ProjectAttachments.RigSessions`（`imported-rig-sessions.nyaforge.bin`）にGraphId→session表を保存し、旧single attachmentはfallbackで移行する。writer lock、保存version、失敗時の旧snapshot保持を共用する。旧schemaの外部sidecar探索対象は許可済みのexpression/Spring/rig/rig session table/PhysBones/secondary-motionだけで、任意ファイルは取り込まない。
+`ProjectAttachments.Rig`（`imported-rig-session.nyaforge.json`）を許可されたattachmentとして追加した。schema 4 envelopeは維持し、expression/Spring/rig/rig session table/PhysBones target/GLB import diagnosticsの最大7件を同じmanifestで一括公開する。複数graph objectでは`ProjectAttachments.RigSessions`（`imported-rig-sessions.nyaforge.bin`）にGraphId→session表を保存し、旧single attachmentはfallbackで移行する。writer lock、保存version、失敗時の旧snapshot保持を共用する。旧schemaの外部sidecar探索対象は許可済みのexpression/Spring/rig/rig session table/PhysBones/secondary-motion/GLB import diagnosticsだけで、任意ファイルは取り込まない。
 
 このattachmentを持つ作品は、rig名を知らない旧NyaForgeでは開けない。既存作品に対応表がなければ、勝手に骨名から復元しない。必要なら元ファイルから再取込する。
 

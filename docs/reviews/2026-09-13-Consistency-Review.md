@@ -11,10 +11,12 @@
 
 ## 検証
 
-- Core: **437 passed / 0 failed** (`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`)
-- 最新artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-6bff3098e94c4eb2a0560bd6617b678e`
+- Core: **440 passed / 0 failed** (`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`)
+- 最新artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-cc0694a0273146b9a32dd79cdf99be7f`
 - 実RadDollV3はprivate素材としてのみ取込 smoke に使用し、public repositoryへ同梱していない。
 
 このレビューで残る実装対象は、I04-A/Bの複数mesh・共有mesh/skin/morph参照、I04-Eの材質・未知拡張の完全保持とGUI/MCP report、SIM-02B/SIM-07Aの実SDK/実VRChat受入である。I04-Eの入口として、GLB importerは材質・animation・extensionsRequired/Usedのコード付きdiagnosticsを返し、blocking/partialを区別する回帰を追加した。容量拡張としてnativeは512骨／32 influence／512 morph、GLB取込と拡張GLB出力は全JOINTS_n/WEIGHTS_n setへ対応した。標準SkinnedGeometry出力は受取先互換のため4 influenceを明示拒否する。Coreや合成Bridgeの合格を、実SDK・実VRChatでの受入完了とは扱わない。
 
-複数objectのinspection一覧（activeObjectId、graphId、評価状態、output要約、diagnostics）はCore回帰とPlayer compileで確認済み。
+複数objectのinspection一覧（activeObjectId、graphId、評価状態、output要約、diagnostics）はCore回帰とPlayer compileで確認済み。GLB取込diagnosticsは`import-diagnostics.nyaforge.json`へschema 4で保存し、再Open後のinspectionと取込後statusへ復元する経路もCoreで確認済み。GUIの詳細report表示と材質・animation・未知拡張の完全保持は残件。
+
+Windows Playerの再ビルドとAuthoring suiteもPASS（`Logs/build-player-20260913-032941-070.log`, `Builds/ImportDiagnosticsV2/NyaForge.exe`, `Artifacts/Authoring-20260913-032959-ca8fa373b3ef4e56b32c0f6660fe4dcf/report.json`）。

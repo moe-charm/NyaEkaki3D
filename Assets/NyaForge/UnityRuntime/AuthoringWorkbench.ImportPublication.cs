@@ -17,11 +17,13 @@ namespace NyaForge.UnityRuntime
             internal readonly VrmExpressionSession Expressions;
             internal readonly VrmSpringSession Springs;
             internal readonly ProjectAttachments Attachments;
+            internal readonly ImportedGlbDiagnostics GlbDiagnostics;
 
-            internal ImportMetadataCandidate(ImportedRigSession rig, VrmExpressionSession expressions, VrmMetadata metadata)
+            internal ImportMetadataCandidate(ImportedRigSession rig, VrmExpressionSession expressions, VrmMetadata metadata, ImportedGlbDiagnostics glbDiagnostics = null)
             {
                 Rig = rig; Expressions = expressions;
                 Springs = metadata == null ? null : VrmSpringSession.Create(metadata);
+                GlbDiagnostics = glbDiagnostics;
                 Attachments = PrepareImportedMetadata(Rig, Expressions, Springs);
             }
         }
@@ -34,6 +36,15 @@ namespace NyaForge.UnityRuntime
             var owned = new Dictionary<string, byte[]>();
             foreach (var name in existing.Hashes.Keys) owned[name] = existing.Read(name);
             foreach (var name in attachments.Hashes.Keys) owned[name] = attachments.Read(name);
+            if (candidate.GlbDiagnostics != null)
+            {
+                var records = new Dictionary<string, ImportedGlbDiagnostics>(StringComparer.Ordinal);
+                var existingDiagnostics = workspace.Attachments.Read(ProjectAttachments.ImportDiagnostics);
+                if (existingDiagnostics != null)
+                    foreach (var item in ImportedGlbDiagnosticsCodec.Read(existingDiagnostics)) records.Add(item.Key, item.Value);
+                records[candidate.GlbDiagnostics.GraphId] = candidate.GlbDiagnostics;
+                owned[ProjectAttachments.ImportDiagnostics] = ImportedGlbDiagnosticsCodec.Write(records.Values);
+            }
             if (secondary != null)
             {
                 owned[ProjectAttachments.SecondaryMotion] = SecondaryMotionCodec.Write(secondary);

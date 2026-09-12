@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring.Graph;
+using NyaForge.Authoring.Import;
 using Newtonsoft.Json.Linq;
 namespace NyaForge.Authoring.Inspection
 {
@@ -11,6 +13,7 @@ namespace NyaForge.Authoring.Inspection
             lock(workspace.Gate)
             {
                 var state=AuthoringStateReader.Read(workspace,instance);var doc=workspace.Document;
+                var importDiagnostics = ReadImportDiagnostics(workspace);
                 var result=new JObject { ["instanceId"]=instance,["documentId"]=doc.DocumentId,["revision"]=doc.DocumentRevision,["stateHash"]=doc.StateHash,["activeObjectId"]=doc.ActiveObjectId,["objects"]=new JArray(),["graph"]=JValue.CreateNull() };
                 if(doc.IsEmpty) return result;
                 result["objects"] = new JArray(doc.Objects.Select(item =>
@@ -25,7 +28,8 @@ namespace NyaForge.Authoring.Inspection
                         ["evaluationComplete"] = item == doc.ActiveObject ? workspace.Preview.IsComplete : itemEvaluation.IsComplete,
                         ["stalePreview"] = item == doc.ActiveObject && workspace.Preview.IsStale,
                         ["output"] = Mesh(itemEvaluation.Output),
-                        ["diagnostics"] = new JArray(itemEvaluation.Diagnostics.Select(d => new JObject { ["nodeId"] = d.NodeId, ["code"] = d.Code, ["message"] = d.Message }))
+                        ["diagnostics"] = new JArray(itemEvaluation.Diagnostics.Select(d => new JObject { ["nodeId"] = d.NodeId, ["code"] = d.Code, ["message"] = d.Message })),
+                        ["importDiagnostics"] = ImportDiagnostics(importDiagnostics, item.Graph.GraphId)
                     };
                 }));
                 var graph=doc.Objects[0].Graph;var evaluation=workspace.Preview.Evaluation;
@@ -64,7 +68,8 @@ namespace NyaForge.Authoring.Inspection
                         };
                     })),
                     ["edges"]=new JArray(graph.Edges.Select(e=>new JObject { ["fromNode"]=e.FromNode,["fromPort"]=e.FromPort,["toNode"]=e.ToNode,["toPort"]=e.ToPort })),
-                    ["diagnostics"]=new JArray(evaluation.Diagnostics.Select(d=>new JObject { ["nodeId"]=d.NodeId,["code"]=d.Code,["message"]=d.Message }))
+                    ["diagnostics"]=new JArray(evaluation.Diagnostics.Select(d=>new JObject { ["nodeId"]=d.NodeId,["code"]=d.Code,["message"]=d.Message })),
+                    ["importDiagnostics"] = ImportDiagnostics(importDiagnostics, graph.GraphId)
                 };
                 return result;
             }
@@ -95,5 +100,17 @@ namespace NyaForge.Authoring.Inspection
             ["meshTopologyHash"]=value.Morphs.MeshTopologyHash,["morphHash"]=value.Morphs.ContentHash,["targetCount"]=value.Morphs.Targets.Count,
             ["targets"]=new JArray(value.Morphs.Targets.OrderBy(t=>t.TargetId,StringComparer.Ordinal).Select(t=>new JObject { ["targetId"]=t.TargetId,["name"]=t.Name,["deltaCount"]=t.Deltas.Count,["contentHash"]=t.ContentHash }))
         };
+
+        static IReadOnlyDictionary<string, ImportedGlbDiagnostics> ReadImportDiagnostics(AuthoringWorkspace workspace)
+        {
+            var bytes = workspace.Attachments.Read(ProjectAttachments.ImportDiagnostics);
+            return bytes == null ? new Dictionary<string, ImportedGlbDiagnostics>(StringComparer.Ordinal) : ImportedGlbDiagnosticsCodec.Read(bytes);
+        }
+
+        static JToken ImportDiagnostics(IReadOnlyDictionary<string, ImportedGlbDiagnostics> records, string graphId)
+        {
+            if (records == null || !records.TryGetValue(graphId, out var record)) return JValue.CreateNull();
+            return new JObject { ["sourceHash"] = record.SourceHash, ["meshIndex"] = record.MeshIndex, ["skinIndex"] = record.SkinIndex.HasValue ? (JToken)new JValue(record.SkinIndex.Value) : JValue.CreateNull(), ["items"] = new JArray(record.Diagnostics.Select(item => new JObject { ["code"] = item.Code, ["path"] = item.Path, ["isBlocking"] = item.IsBlocking, ["message"] = item.Message })) };
+        }
     }
 }

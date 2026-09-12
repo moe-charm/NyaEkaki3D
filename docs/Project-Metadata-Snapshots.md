@@ -25,7 +25,7 @@ metadataを持つprojectは、次のenvelopeを使う。`ProjectSnapshotCodec`�
 }
 ```
 
-例の`...`と`SHA256`は説明用の省略表記。実際のwriterは完全なproject manifestと64文字のhashを出す。attachment名は上記2種類、`imported-rig-session.nyaforge.json`、`imported-rig-sessions.nyaforge.bin`、`physbones-target.nyaforge.bin`、`secondary-motion.nyaforge.bin`を許可し、最大6件。`imported-rig-sessions.nyaforge.bin`はgraph IDごとの複数rig session表で、旧single attachmentをfallbackとして扱う。secondary-motionの内容は `NYSM` v1 codecとskeleton/topology pinで検査し、PhysBones target保存は揺れ・布adapter計画を参照する。内容は既存`blobs/<hash>.bin`へ保存し、読込時にサイズ・hash・名前・参照重複・envelopeの未知fieldを検査する。
+例の`...`と`SHA256`は説明用の省略表記。実際のwriterは完全なproject manifestと64文字のhashを出す。attachment名は上記2種類、`imported-rig-session.nyaforge.json`、`imported-rig-sessions.nyaforge.bin`、`physbones-target.nyaforge.bin`、`secondary-motion.nyaforge.bin`、`import-diagnostics.nyaforge.json`を許可し、最大7件。GLB import diagnosticsはgraphIdごとのsource locatorとblocking／partial reportを保存する。`imported-rig-sessions.nyaforge.bin`はgraph IDごとの複数rig session表で、旧single attachmentをfallbackとして扱う。secondary-motionの内容は `NYSM` v1 codecとskeleton/topology pinで検査し、PhysBones target保存は揺れ・布adapter計画を参照する。内容は既存`blobs/<hash>.bin`へ保存し、読込時にサイズ・hash・名前・参照重複・envelopeの未知fieldを検査する。
 
 設定なしの新しいprojectは従来のschema 2/3を維持する。一度schema 4で保存した保存先は、全設定を除去してもschema 4と空attachmentsを保持し、残っている旧sidecarが復活しないようにする。metadata付きprojectを古いNyaForgeで開くと未対応schemaとして拒否される。
 

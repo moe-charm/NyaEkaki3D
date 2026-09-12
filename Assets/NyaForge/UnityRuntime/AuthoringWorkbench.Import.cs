@@ -89,8 +89,9 @@ namespace NyaForge.UnityRuntime
             }
             nodes.Add(GraphNode.Output(outputId)); edges.Add(new GraphEdge(finalNode, "mesh", outputId, "mesh"));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
-            CommitImportedGraph(graph, new ImportMetadataCandidate(null, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm));
-            Refresh(); SetStatus("GLBを取り込みました。mesh " + meshIndex + " · " + (imported.Morphs == null ? " morphなし" : " morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12));
+            var diagnostics = imported.Diagnostics.Count == 0 ? null : new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, null, imported.Diagnostics);
+            CommitImportedGraph(graph, new ImportMetadataCandidate(null, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm, diagnostics));
+            Refresh(); SetStatus("GLBを取り込みました。mesh " + meshIndex + " · " + (imported.Morphs == null ? " morphなし" : " morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(imported.Diagnostics));
         }
 
         void ImportSkinnedModel(byte[] bytes, VrmMetadata vrm, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null)
@@ -111,8 +112,15 @@ namespace NyaForge.UnityRuntime
             var sourceCandidate = GlbSourceSkinImporter.Read(bytes, meshIndex, skinIndex);
             var rigSession = ImportedRigSession.Create(imported, vrm, graph.GraphId, skeletonId)
                 .WithSourceSkin(sourceCandidate.Skin, sourceCandidate.Binding);
-            CommitImportedGraph(graph, new ImportMetadataCandidate(rigSession, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm));
-            Refresh(); SetStatus("GLB skinを取り込みました。mesh " + meshIndex + " · skin " + skinIndex + " · bone " + imported.Skeleton.Bones.Count + " · weight " + imported.Binding.Weights.Count + (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12));
+            var diagnostics = imported.Diagnostics.Count == 0 ? null : new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, imported.SkinIndex, imported.Diagnostics);
+            CommitImportedGraph(graph, new ImportMetadataCandidate(rigSession, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm, diagnostics));
+            Refresh(); SetStatus("GLB skinを取り込みました。mesh " + meshIndex + " · skin " + skinIndex + " · bone " + imported.Skeleton.Bones.Count + " · weight " + imported.Binding.Weights.Count + (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(imported.Diagnostics));
+        }
+
+        static string ImportDiagnosticSummary(IReadOnlyList<GlbImportDiagnostic> diagnostics)
+        {
+            if (diagnostics == null || diagnostics.Count == 0) return "";
+            return " · 診断 " + string.Join(" / ", diagnostics.Select(item => (item.IsBlocking ? "保持不可" : "一部保持") + ":" + item.Code));
         }
 
         IEnumerator PickModel()
