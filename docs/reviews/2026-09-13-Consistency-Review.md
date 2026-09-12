@@ -1,6 +1,6 @@
 # 2026-09-13 authoring validation skin capacity
 
-The read-only output check now reports evaluated skin capacity for skinned graphs. It derives bone count and maximum per-vertex influence from `SkeletonOutputs` and `SkinBindingOutputs`, checks them against the NyaForge authoring capacities of 512 bones and 32 influences, and keeps static graphs and avatar fit as `unknown` where the evidence is unavailable. Core passed **464 / 0** (`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-506128b4bbdd40fdb7f585c4774280d3`).
+The read-only output check now reports evaluated skin capacity for skinned graphs. It derives bone count and maximum per-vertex influence from output-reachable `SkeletonOutputs` and `SkinBindingOutputs`, checks them against the NyaForge authoring capacities of 512 bones and 32 influences, and excludes disconnected work-in-progress rigs. Static graphs and avatar fit remain `unknown` where the evidence is unavailable. Core passed **464 / 0** (`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-bce4bb3011f945c48f007146f1832ddf`). Windows Player `Builds/ValidationSkinV2/NyaForge.exe` passed the 800x600 Authoring suite with **78 checks** (`Artifacts/Authoring-20260913-085521-5878ee9bf1c8445088f7bcd868abdcee/report.json`), and the Unity **2022.3.22f1** synthetic Bridge receiver passed (`Artifacts/BridgeReceiver-20260913-085553-013-7fe69ac0c5bb4034b3d6a4168c574112/bridge-report.json`).
 
 # 2026-09-13 GLB skeleton/morph conformance
 

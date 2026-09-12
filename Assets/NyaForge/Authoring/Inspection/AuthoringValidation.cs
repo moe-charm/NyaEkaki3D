@@ -77,7 +77,7 @@ namespace NyaForge.Authoring.Inspection
                 AddBound(checks, "triangles", triangles, limits.Triangles, "Triangles");
                 AddBound(checks, "materials", materials, limits.Materials, "Materials");
                 AddBound(checks, "maxTextureDimension", maxTexture, limits.TextureDimension, "Largest texture dimension");
-                var skin = SummarizeSkin(evaluation);
+                var skin = SummarizeSkin(evaluation, workspace.Document.ActiveObject.Graph);
                 if (!skin.HasBinding)
                 {
                     checks.Add(new JObject { ["name"] = "bones", ["status"] = "unknown", ["reason"] = "No evaluated skin binding is present in the current authoring profile." });
@@ -101,19 +101,38 @@ namespace NyaForge.Authoring.Inspection
             public int MaxInfluences;
         }
 
-        static SkinSummary SummarizeSkin(GraphEvaluation evaluation)
+        static SkinSummary SummarizeSkin(GraphEvaluation evaluation, AuthoringGraph graph)
         {
             var result = new SkinSummary();
             if (evaluation == null || evaluation.SkinBindingOutputs == null || evaluation.SkinBindingOutputs.Count == 0) return result;
+            var reachable = ReachableNodes(graph);
+            var bindings = evaluation.SkinBindingOutputs.Where(pair => reachable.Contains(pair.Key)).Select(pair => pair.Value).ToArray();
+            if (bindings.Length == 0) return result;
             result.HasBinding = true;
-            result.MaxInfluences = evaluation.SkinBindingOutputs.Values
+            result.MaxInfluences = bindings
                 .SelectMany(value => value.Binding.Weights.Values)
                 .Select(weights => weights == null ? 0 : weights.Count)
                 .DefaultIfEmpty(0).Max();
             result.Bones = evaluation.SkeletonOutputs == null
                 ? 0
-                : evaluation.SkeletonOutputs.Values.Select(value => value.Skeleton.Bones.Count).DefaultIfEmpty(0).Max();
+                : evaluation.SkeletonOutputs.Where(pair => reachable.Contains(pair.Key)).Select(pair => pair.Value.Skeleton.Bones.Count).DefaultIfEmpty(0).Max();
             return result;
+        }
+
+        static HashSet<string> ReachableNodes(AuthoringGraph graph)
+        {
+            var reachable = new HashSet<string>(StringComparer.Ordinal);
+            if (graph == null || string.IsNullOrEmpty(graph.OutputNodeId) || !graph.Nodes.ContainsKey(graph.OutputNodeId)) return reachable;
+            var incoming = graph.Edges.GroupBy(edge => edge.ToNode).ToDictionary(group => group.Key, group => group.Select(edge => edge.FromNode).ToArray(), StringComparer.Ordinal);
+            var pending = new Stack<string>(); pending.Push(graph.OutputNodeId);
+            while (pending.Count > 0)
+            {
+                var node = pending.Pop();
+                if (!reachable.Add(node)) continue;
+                if (!incoming.TryGetValue(node, out var upstream)) continue;
+                foreach (var id in upstream) if (graph.Nodes.ContainsKey(id)) pending.Push(id);
+            }
+            return reachable;
         }
 
         static IEnumerable<PaintImage> Images(GraphMeshValue output)

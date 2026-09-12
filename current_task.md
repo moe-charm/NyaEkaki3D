@@ -1,6 +1,6 @@
 # 2026-09-13 authoring validation skin capacity
 
-「出力チェック」でスキン付きgraphの骨数と頂点あたり最大influenceが常にunknownになる境界を修正した。評価済みの`SkinBindingOutputs`／`SkeletonOutputs`から実値を集計し、NyaForgeのauthoring容量（512骨／32 influence）へ明示判定する。skin bindingが無い静的graphは従来どおりunknown、`fit`は実アバター受入を含むためunknownのままとする。Core **464 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-506128b4bbdd40fdb7f585c4774280d3`）。
+「出力チェック」でスキン付きgraphの骨数と頂点あたり最大influenceが常にunknownになる境界を修正した。評価済みの出力到達graphにある`SkinBindingOutputs`／`SkeletonOutputs`から実値を集計し、NyaForgeのauthoring容量（512骨／32 influence）へ明示判定する。未接続の作業用rigは集計から除外する。skin bindingが無い静的graphは従来どおりunknown、`fit`は実アバター受入を含むためunknownのままとする。Core **464 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-bce4bb3011f945c48f007146f1832ddf`）。Windows Player `Builds/ValidationSkinV2/NyaForge.exe` の800x600 Authoring suiteは **78 checks PASS**（`Artifacts/Authoring-20260913-085521-5878ee9bf1c8445088f7bcd868abdcee/report.json`）。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-085553-013-7fe69ac0c5bb4034b3d6a4168c574112/bridge-report.json`）。
 
 # 2026-09-13 GLB skeleton/morph conformance
 

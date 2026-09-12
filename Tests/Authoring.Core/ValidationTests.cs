@@ -50,14 +50,28 @@ internal static partial class Program
                 new SkinBinding.VertexWeightInput(i, child, .75f)
             }));
             var pose = PoseSet.Create(skeleton, skeleton.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head))));
+            string unusedRoot = GraphId(), unusedChild = GraphId(), unusedSkeletonNode = GraphId(), unusedSource = GraphId(), unusedBindingNode = GraphId(), unusedPoseNode = GraphId(), unusedDeform = GraphId();
+            var unusedSkeleton = new SkeletonDefinition(new[]
+            {
+                new BoneDefinition(unusedRoot, "UnusedRoot", "", new Vec3(), new Vec3(0, .1f, 0)),
+                new BoneDefinition(unusedChild, "UnusedChild", unusedRoot, new Vec3(0, .1f, 0), new Vec3(0, .2f, 0)),
+                new BoneDefinition(GraphId(), "UnusedLeaf", unusedChild, new Vec3(0, .2f, 0), new Vec3(0, .3f, 0))
+            });
+            var unusedBinding = SkinBinding.Create(mesh, unusedSkeleton, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, unusedRoot, 1f)));
+            var unusedPose = PoseSet.Create(unusedSkeleton, unusedSkeleton.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head))));
             var graph = new AuthoringGraph(GraphId(),
-                new[] { GraphNode.Source(source, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonNode, skeleton), GraphNode.SkinBindNode(bindingNode, binding), GraphNode.PoseNode(poseNode, pose), GraphNode.SkinDeformNode(deform), GraphNode.Output(output) },
+                new[] { GraphNode.Source(source, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonNode, skeleton), GraphNode.SkinBindNode(bindingNode, binding), GraphNode.PoseNode(poseNode, pose), GraphNode.SkinDeformNode(deform), GraphNode.Output(output),
+                    GraphNode.Source(unusedSource, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(unusedSkeletonNode, unusedSkeleton), GraphNode.SkinBindNode(unusedBindingNode, unusedBinding), GraphNode.PoseNode(unusedPoseNode, unusedPose), GraphNode.SkinDeformNode(unusedDeform) },
                 new[]
                 {
                     new GraphEdge(source, "mesh", bindingNode, "mesh"), new GraphEdge(skeletonNode, "skeleton", bindingNode, "skeleton"),
                     new GraphEdge(skeletonNode, "skeleton", poseNode, "skeleton"), new GraphEdge(source, "mesh", deform, "mesh"),
                     new GraphEdge(skeletonNode, "skeleton", deform, "skeleton"), new GraphEdge(bindingNode, "binding", deform, "binding"),
-                    new GraphEdge(poseNode, "pose", deform, "pose"), new GraphEdge(deform, "mesh", output, "mesh")
+                    new GraphEdge(poseNode, "pose", deform, "pose"), new GraphEdge(deform, "mesh", output, "mesh"),
+                    new GraphEdge(unusedSource, "mesh", unusedBindingNode, "mesh"), new GraphEdge(unusedSkeletonNode, "skeleton", unusedBindingNode, "skeleton"),
+                    new GraphEdge(unusedSkeletonNode, "skeleton", unusedPoseNode, "skeleton"), new GraphEdge(unusedSource, "mesh", unusedDeform, "mesh"),
+                    new GraphEdge(unusedSkeletonNode, "skeleton", unusedDeform, "skeleton"), new GraphEdge(unusedBindingNode, "binding", unusedDeform, "binding"),
+                    new GraphEdge(unusedPoseNode, "pose", unusedDeform, "pose")
                 }, output);
             var workspace = AuthoringWorkspace.CreateEmpty(); Ok(new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph))));
             var request = AuthoringValidationRequest.Read(new JObject { ["documentId"] = workspace.Document.DocumentId, ["expectedRevision"] = workspace.Document.DocumentRevision, ["profile"] = "pc" });
