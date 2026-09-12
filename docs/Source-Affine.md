@@ -15,9 +15,19 @@
 
 この段階は数値基盤。GLB取込のtranslation-only制限、RestTransform、PoseTransform、既存native codecは変更していない。
 
-1. node JSONのTRS/matrixのdecodeを別モジュールへ分離し、混在・配列長・型を検査する。source木の親合成は反復処理で行い、local/worldの両方を保持する。
+1. **実装済み**: `GlbNodeTransformReader`がnode JSONのTRS/matrixをdecodeし、混在・配列長・型を検査する。`SourceNodeTransforms`がsource木の親合成を反復処理で行い、local/worldの両方を保持する。詳細は下段。
 2. source scene候補へ完全なnode transformとskin slotごとのinverse-bindを持たせる。原点だけのImportedSourceHierarchyを、完全な基底を保持した型と呼び替えない。
 3. rig payloadの新versionを設計する。既存v1/v2/v3は既存経路で読めるようにし、元の一般transform/IBMがない旧作品へそれらを捏造しない。新情報が必要な操作は再取込を診断する。translation-onlyで保存済みの原点と骨対応は引き続き利用する。
 4. mesh/skin/morphの座標変換を新候補へ接続し、rest/複数pose/方向属性・保存/Openを確認してから一般取込の能力表示を有効にする。現在の表示制限を先に外さない。
 
 Core回帰は非一様TRSと親子合成の解析値、joint global×inverse-bind、point/vectorの差、shear/鏡映の逆変換、normal/tangent直交性、入力独立性、不正matrix/quaternion/方向、小さいscaleの往復を含む。実行結果はcurrent_taskへ記録。一般GLBの取込・実素材受入の証拠とは区別する。
+
+## node読取とworld合成
+
+`GlbNodeTransformReader.Read(bytes)`は既存のbounded GLB container readerを通し、元ファイルのSourceHashを引き継ぐ。nodeにmatrixがある場合はTRSとの混在を拒否。TRS省略はtranslation=0、rotation=identity、scale=1とし、明示nullや不正な型を省略扱いにしない。
+
+node最大4096、childrenの順序保持、範囲/重複/複数親/循環を検査する。source nodeはskin登録の有無に関係なく全件対象。`SourceNodeTransforms`はparent配列順に依存せず反復合成し、全local/world frameと、world原点付きImportedSourceHierarchyを不変保持する。matrixをTRSへ再分解しないためshearを無理に消さない。
+
+GLB geometry/skin importerへの接続は未実施。このreader単体が成功しても、mesh/skin/morph/材質を制作projectへ取り込めるという意味ではない。保存payloadもまだ変更していない。次は一般inverse-bindを含むsource skin候補と、完全な変換情報の保存/移行。
+
+追加Core回帰: 実GLB containerからのmatrix/TRSと配列後方の親、元children順、非jointを含むworld合成、4096段の木、translation-profileとの原点一致、明示null/型/配列長/範囲/重複/循環/特異scaleの拒否。入力JSON変更からの独立性も確認する。

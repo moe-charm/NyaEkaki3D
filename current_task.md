@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。T03の実素材調査と取込・情報保持・保存・出力の仕様整理が完了。I04-Aの数値基盤を追加し、次はnode decode・階層合成と保存への接続。VRM0/1の対応profileはGUI接続とPlayer handler検証済み。直近Core363件合格、任意の実モデル取込・実操作・性能の受入は未完了。
+更新: 2026-09-12。T03の実素材調査と取込・情報保持・保存・出力の仕様整理が完了。I04-Aの数値基盤とnode読取・階層合成を追加。次は一般inverse-bindの候補と保存への接続。VRM0/1の対応profileはGUI接続とPlayer handler検証済み。直近Core366件合格、任意の実モデル取込・実操作・性能の受入は未完了。
 
 ## 開発の入口
 
@@ -14,7 +14,7 @@
 
 | 状態 / ID | 実行する作業 | 完了条件・依存 |
 |---|---|---|
-| [ ] I04-A / P1 **次に実装** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 回転/scale/鏡映/階層/元原点とbindの差の数値回帰、旧translation/native移行契約。数値基盤SourceAffineは追加済み。次はnode decode/階層合成/保存への接続 |
+| [ ] I04-A / P1 **次に実装** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 回転/scale/鏡映/階層/元原点とbindの差の数値回帰、旧translation/native移行契約。SourceAffineとnode decode/階層合成は追加済み。次は一般inverse-bind候補と保存への接続 |
 | [ ] I04-B / P1 | 複数mesh/instance/skin、source→制作ID対応 | Objects[0]前提も監査。全対象・同名morph・共有参照を編集/保存/Openで保持。Aの変換契約に依存 |
 | [ ] I04-C / P1 | rig/weight/morph容量とcodec/hash/表示/出力 | 257骨・18weight・単一mesh262morph以上の入力を削減なしで往復。byte/メモリ予算と超過時の拒否を同時に決める |
 | [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
@@ -34,6 +34,7 @@
 
 ## 直近の証拠
 
+- I04-A node読取: Core **366 passed / 0 failed** (`Logs/core-node-transforms.txt`)、Windows-NodeTransforms build **PASS** (`Logs/build-player-20260912-163727-416.log`)。reader単体の確認で、一般mesh/skin取込や保存の接続は未完了。
 - I04-A数値基盤: Core **363 passed / 0 failed** (`Logs/core-source-affine.txt`)、Windows-SourceAffine build **PASS** (`Logs/build-player-20260912-163153-722.log`)。一般GLB取込/Player実素材の受入は未実施。
 - 実装基準 `4abd9d9`。Core **360 passed / 0 failed**: `Logs/core-vrm0-preview.txt`（前段の実行結果）。Windows-Vrm0Playback Player **PASS**: `Artifacts/Authoring-20260912-160736-8e0e5bae1c24440082b9c84dd1b27fc4/report.json`。今回の仕様整理ではCore/Playerを再実行していない。
 - T03: `Tools/Inspect-BlenderImport.py`をBlender 4.4.0で実行。詳細 `private/import-inspection/20260912-inventory.json`、3入力の存在/SHA256一致を再確認。素材・派生モデルの保存/出力はしていない。
@@ -44,6 +45,13 @@
 ## 実装と検証の履歴
 
 以下は記録当時の状況。「次」「未完了」は当時の記述を含む。最新の状態・着手順は冒頭の表を使用する。
+
+### I04-A: node transform読取と階層合成（2026-09-12）
+
+- `GlbNodeTransformReader`にTRS/matrix decodeとchildren検査、`SourceNodeTransforms`に全local/worldの不変保持と反復合成を分離。SourceHashと元children順を保持し、通常nodeを省略しない。既存の階層検査を共用する。[契約](docs/Source-Affine.md)。
+- Core **366 passed / 0 failed**: `Logs/core-node-transforms.txt`、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-d806dc6f63dc4921b688dd528efbaac0`。実GLBのmatrix/TRS・親配列順・4096段・旧profileとの原点一致、不正/曖昧入力の拒否を確認。
+- Windows-NodeTransforms build **PASS**: `Logs/build-player-20260912-163727-416.log`。今回Player GUI suiteは再実行していない。一般mesh/skin importやnative保存は未接続。
+- 次は一般inverse-bindを含むsource skin候補、完全な変換情報の保存と旧形式移行。GLB取込の既存translation-only制限は外さず、I04-A全体と実素材受入は未完了。
 
 ### I04-A前段: source affine数値モジュール（2026-09-12）
 

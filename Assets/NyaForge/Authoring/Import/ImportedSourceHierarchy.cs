@@ -59,7 +59,7 @@ namespace NyaForge.Authoring.Import
                 Checks.Require(pair.Key >= 0 && pair.Key < Origins.Count && Origins[pair.Key].Equals(pair.Value), "INVALID_IMPORT", "Hierarchy and joint origins disagree.");
         }
 
-        static void ValidateParents(IReadOnlyList<int> parents)
+        internal static void ValidateParents(IReadOnlyList<int> parents)
         {
             Checks.Require(parents != null && parents.Count > 0 && parents.Count <= MaxNodes, "BUDGET_EXCEEDED", "Source hierarchy requires 1..4096 nodes.");
             for (int i = 0; i < parents.Count; i++)
