@@ -40,5 +40,22 @@ internal static partial class Program
             var pose = PoseSet.Create(imported.Skeleton, imported.Skeleton.Bones.Select(b => new BonePose(b.BoneId, PoseTransform.FromTranslation(b.Head))));
             Expect("IMPORT_SOURCE_SKIN_MISSING", () => SourceSkinPosePalette.Build(session, graph, pose));
         });
+
+        Test("source skin display does not post-apply the selected skinned node affine", () =>
+        {
+            var bytes = BuildMappedVrm(false); var imported = GlbSkinImporter.Read(bytes);
+            var candidate = GlbSourceSkinImporter.Read(bytes); var metadata = VrmMetadataReader.Read(bytes);
+            string sourceId = Guid.NewGuid().ToString("D"), skeletonId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
+            var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), new[] {
+                GraphNode.Source(sourceId, imported.Mesh, new RestTransform(1, new Vec3())),
+                GraphNode.SkeletonNode(skeletonId, imported.Skeleton), GraphNode.Output(outputId) },
+                new[] { new GraphEdge(sourceId, "mesh", outputId, "mesh") }, outputId);
+            var transform = SourceAffine.FromTrs(new Vec3(5, 0, 0), new Vec4(0, 0, 0, 1), new Vec3(2, 2, 2));
+            var transformed = GlbSkinImporter.Read(bytes, 0, 0, transform);
+            var session = ImportedRigSession.Create(transformed, metadata, graph.GraphId, skeletonId).WithSourceSkin(candidate.Skin, candidate.Binding);
+            var pose = PoseSet.Create(imported.Skeleton, imported.Skeleton.Bones.Select(b => new BonePose(b.BoneId, PoseTransform.FromTranslation(b.Head))));
+            var output = SourceSkinGraphAdapter.Apply(GraphEvaluator.Evaluate(graph).Output, session, graph, pose);
+            for (int i = 0; i < imported.Mesh.VertexCount; i++) SpringPointNear(imported.Mesh.Positions[i], output.Mesh.Positions[i]);
+        });
     }
 }

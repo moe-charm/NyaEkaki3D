@@ -159,14 +159,14 @@ namespace NyaForge.UnityRuntime
         void ExportGlbSkinned() => Try(() =>
         {
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            var result = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedInstanceTransforms(), SkinnedInverseBindMatrices());
+            var result = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices());
             SetStatus("標準GLB（skin/morph保持）を書き出しました: " + result.Path);
         });
 
         void ExportGlbSkinnedExtended() => Try(() =>
         {
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-extended-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            var result = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedInstanceTransforms(), SkinnedInverseBindMatrices());
+            var result = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices());
             SetStatus("拡張GLB（全weight保持）を書き出しました: " + result.Path);
         });
 
@@ -184,6 +184,12 @@ namespace NyaForge.UnityRuntime
                 result[workspace.Document.ActiveObject.ObjectId] = importedRigSession.MeshInstanceTransform;
             return result;
         }
+
+        // glTF skinning uses the joint world frames and inverse-bind matrices;
+        // the selected skinned mesh node affine is metadata only and must not be
+        // emitted as a second post-skin matrix.
+        IReadOnlyDictionary<string, SourceAffine> SkinnedNodeTransformsForExport()
+            => new Dictionary<string, SourceAffine>(StringComparer.Ordinal);
 
         IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> SkinnedInverseBindMatrices()
         {

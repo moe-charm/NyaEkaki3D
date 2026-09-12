@@ -67,7 +67,7 @@ internal static partial class Program
             var session = ImportedRigSession.Create(imported, null, graph.GraphId, skeletonId).WithSourceSkin(source.Skin, source.Binding);
             var evaluation = GraphEvaluator.Evaluate(graph); True(evaluation.IsComplete);
             var projected = SourceSkinGraphAdapter.ApplyToEvaluation(evaluation, graph, session);
-            for (int i = 0; i < imported.Mesh.VertexCount; i++) SpringPointNear(instance.WorldTransform.TransformPoint(imported.Mesh.Positions[i]), projected.Mesh.Positions[i]);
+            for (int i = 0; i < imported.Mesh.VertexCount; i++) SpringPointNear(imported.Mesh.Positions[i], projected.Mesh.Positions[i]);
             Equal(evaluation.Output.DomainId, projected.DomainId); Equal(evaluation.Output.Transform.Scale, projected.Transform.Scale);
             var moved = PoseSet.Create(imported.Skeleton, imported.Skeleton.Bones.Select((b, i) => new BonePose(b.BoneId, i == 0 ? PoseTransform.RotationZ(25, b.Head) : PoseTransform.FromTranslation(b.Head))));
             var movedGraph = graph.ReplaceNode(GraphNode.PoseNode(poseId, moved)); var movedEvaluation = GraphEvaluator.Evaluate(movedGraph);

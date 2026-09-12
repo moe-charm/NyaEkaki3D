@@ -72,11 +72,11 @@ namespace NyaForge.Authoring.Graph
                 "IMPORT_SOURCE_SKIN_MISSING", "A complete source skin session is required.");
             var result = Apply(input, session.SourceSkin, session.SourceSkinBinding,
                 SourceSkinPosePalette.Build(session, graph, authoredPose));
-            if (session.MeshInstanceTransform == null) return result;
-            // A selected node instance is outside the skin palette. Apply its
-            // affine after skinning so authored edits stay in source-local space
-            // and the displayed/exported result matches the original scene.
-            return result.WithMesh(SourceMeshTransform.Apply(result.Mesh, session.MeshInstanceTransform).Mesh);
+            // A skinned mesh node's scene affine is not an additional post-skin
+            // transform. The source joint world frames and inverse-bind matrices
+            // already define the skin palette; applying the node affine here
+            // would translate/scale the result a second time.
+            return result;
         }
 
         static GraphMeshValue Apply(GraphMeshValue input, ImportedRigSession session,

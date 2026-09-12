@@ -11,7 +11,7 @@ namespace NyaForge.UnityRuntime
     {
         public Mesh Mesh { get; }
         public Vector3[] Points { get; }
-        public Vector3[] WorldPoints => root == null ? Array.Empty<Vector3>() : Points.Select(point => root.transform.TransformPoint(point)).ToArray();
+        public Vector3[] WorldPoints { get; }
         readonly GameObject root;
 
         public FinalResultProjection(Transform parent, GraphMeshValue value, Material material, PoseTransform? attachmentPose = null)
@@ -31,6 +31,7 @@ namespace NyaForge.UnityRuntime
                 root.AddComponent<MeshFilter>().sharedMesh = Mesh;
                 root.AddComponent<MeshRenderer>().sharedMaterials = Enumerable.Repeat(material, value.Mesh.Submeshes.Count).ToArray();
                 Points = value.Mesh.Positions.Select(p => OwnedMeshProjection.ToUnity(value.Transform.ToAvatarPoint(p))).ToArray();
+                WorldPoints = Points.Select(point => root.transform.TransformPoint(point)).ToArray();
             }
             catch { UnityEngine.Object.Destroy(Mesh); throw; }
         }

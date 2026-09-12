@@ -1,3 +1,7 @@
+# 2026-09-13 skinned node affine policy recheck
+
+skinned display and standard Workbench/MCP GLB output now use joint world frames plus retained inverse-bind matrices as the single transform basis. The selected skinned mesh node affine remains audit metadata and is not post-applied after skinning. Core **461 passed / 0 failed** (`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a7b92fd3fb184402a46aef4f4dfa676c`). Windows Player `Builds/SkinnedAffinePolicyV2/NyaForge.exe` passed the private RadDollV3 command-line smoke with **79 checks** (`Artifacts/Authoring-20260913-080806-87aacf4f39c74048b4c00a8a11c52212/report.json`); Unity **2022.3.22f1** Bridge passed (`Artifacts/BridgeReceiver-20260913-080912-368-fd387a22cef74d5faf30b6e7ab6e88f0/bridge-report.json`). The smoke covered candidate selection, EditMesh vertex edit, native Save/Open, standard skinned GLB output and re-import cardinality. RadDollV3 embedded material images were omitted by the existing size/format budget and reported explicitly; this is not complete material retention or real VRChat acceptance.
+
 # 2026-09-13 attachment selection and GLB material follow-up
 
 装着先Dropdownの選択保持を追加し、Refresh後もユーザーが選んだavatarを維持する。GUI/MCPのskinned GLB出力はgraph objectごとのinverse-bind保持経路を共有する。`baseColorFactor`は線形値として扱い、`metallicFactor`省略値は1へ合わせた。Core **460 passed / 0 failed**、Windows Player Authoring suite、Unity Bridgeで確認済み。

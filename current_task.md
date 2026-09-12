@@ -2,6 +2,10 @@
 
 glTF `baseColorFactor` は線形値として読み書きするよう修正し、取込時の不要なsRGB変換と出力時の逆変換を廃止した。`metallicFactor` の省略値もglTF仕様の1へ合わせ、linear RGBと省略既定値の回帰を追加した。Core **460 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-66295ed6bf6a4d98815455f15972ac53`）。Windows Player `Builds/MaterialLinearV1/NyaForge.exe` Authoring suite（`Artifacts/Authoring-20260913-074940-af62bbf5049a4276bccce18c480d93e2/report.json`）とUnity Bridge（`Artifacts/BridgeReceiver-20260913-075048-365-c4c2956b407148a6afe5110e50f45e0f/bridge-report.json`）はPASS。
 
+# 2026-09-13 skinned node affine policy
+
+skinned表示とWorkbench/MCPの標準skinned GLB出力で、mesh node affineをスキン結果へ二重適用しない方針へ揃えた。joint world frameとinverse-bindを正本にし、選択nodeのaffineはsource sessionの監査metadataとして保持する。Core **461 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a7b92fd3fb184402a46aef4f4dfa676c`）。Windows Player `Builds/SkinnedAffinePolicyV2/NyaForge.exe` で、private一時素材 `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm` を使った Authoring **79 checks PASS**（`Artifacts/Authoring-20260913-080806-87aacf4f39c74048b4c00a8a11c52212/report.json`）、Unity **2022.3.22f1** Bridge **PASS**（`Artifacts/BridgeReceiver-20260913-080912-368-fd387a22cef74d5faf30b6e7ab6e88f0/bridge-report.json`）。実モデルは取込・頂点編集・native Save/Open・標準skinned GLB出力と再取込の一致を確認した。材質画像はサイズ/形式制限でnative Paintへ保持せず、明示診断を残す。
+
 # 2026-09-13 attachment selection and MCP bind parity
 
 装着先Dropdownの選択値をRefresh間で保持し、別avatarを選んだ直後に先頭候補へ戻る経路を修正した。WorkbenchのGUIとMCPのskinned GLB出力へ、graph objectごとのimported inverse-bind行列を同じ経路で渡すよう統一した。Windows Player `Builds/AttachmentSelectionV1/NyaForge.exe` のAuthoring suite（`Artifacts/Authoring-20260913-075348-262a37a7fa964c90b373e7ce80254da5/report.json`）とUnity Bridge（`Artifacts/BridgeReceiver-20260913-075417-960-ac4b7ab2f333483ba5963fc238e1586b/bridge-report.json`）はPASS。

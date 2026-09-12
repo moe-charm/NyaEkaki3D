@@ -24,8 +24,7 @@ namespace NyaForge.UnityRuntime
         public int SelectedPointCount=>current?.PointMarkers?.SelectedCount ?? 0;
         public Vector3[] Points => current?.Points ?? Array.Empty<Vector3>();
         /// <summary>Points in the preview world's coordinates, including rigid attachment pose.</summary>
-        public Vector3[] WorldPoints => current?.Points == null || current.Root == null
-            ? Array.Empty<Vector3>() : current.Points.Select(point => current.Root.transform.TransformPoint(point)).ToArray();
+        public Vector3[] WorldPoints => current?.WorldPoints ?? Array.Empty<Vector3>();
         public string PreviewNodeId { get; set; } = "";
         public int HighlightedTriangleCount => current?.FaceHighlight?.TriangleCount ?? 0;
         public bool ShowFinalResult { get; set; } = true;
@@ -105,6 +104,7 @@ namespace NyaForge.UnityRuntime
                     {
                         candidate.EditPolygon=appearance.Polygon;
                         candidate.Points=NyaForge.Authoring.Topology.PolygonEditPoints.VertexIds(appearance.Polygon).Select(id=>ToUnity(transform.ToAvatarPoint(appearance.Polygon.Vertices[id].Position))).ToArray();
+                        candidate.WorldPoints = candidate.Points.Select(point => candidate.Root.transform.TransformPoint(point)).ToArray();
                         candidate.PointMarkers=new EditPointProjection(candidate.Root.transform,candidate.Points,point,selectedPoint,selected);
                     }
                     return candidate;
@@ -130,6 +130,7 @@ namespace NyaForge.UnityRuntime
                 candidate.Points = evaluated.Positions.Select(p => ToUnity(transform.ToAvatarPoint(p))).ToArray();
                 if(PreviewNodeId!="" && appearance?.Polygon!=null)
                     candidate.Points=NyaForge.Authoring.Topology.PolygonEditPoints.VertexIds(appearance.Polygon).Select(id=>ToUnity(transform.ToAvatarPoint(appearance.Polygon.Vertices[id].Position))).ToArray();
+                candidate.WorldPoints = candidate.Points.Select(point => candidate.Root.transform.TransformPoint(point)).ToArray();
                 candidate.PointMarkers=new EditPointProjection(candidate.Root.transform,candidate.Points,point,selectedPoint,selected);
                 return candidate;
             }
@@ -200,6 +201,7 @@ namespace NyaForge.UnityRuntime
             public FinalResultProjection FinalResult;
             public MaterialSurfaceSet BaseColor;
             public Vector3[] Points = Array.Empty<Vector3>();
+            public Vector3[] WorldPoints = Array.Empty<Vector3>();
             public NyaForge.Authoring.Topology.PolygonMesh EditPolygon;
             public EditPointProjection PointMarkers;
             public Prepared(OwnedMeshProjection owner) { this.owner = owner; }
