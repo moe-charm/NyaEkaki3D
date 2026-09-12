@@ -158,6 +158,10 @@ I04-Eのreport設計はAと同時に進め、完全取込の公開にはA〜Eの
 
 ## 標準GLB出力プロファイル（2026-09-13）
 
+### 同一skeletonの複数mesh（2026-09-13）
+
+`SkinnedGeometry`／`SkinnedGeometryExtended`は、同一skeleton hashを共有する複数graph objectをmeshごとのprimitive/nodeとして出力し、一つのshared skinを参照できる。異なるskeletonの結合、instance affine付き複数objectの同時出力、共有mesh／morph参照の完全保持は未対応である。
+
 `GlbExportService` はnative制作データを変更せず、明示的な2 profileで標準glTF 2.0 GLBを生成する。
 
 GLB/VRMの入出力にはnative blobと分離した128 MiBファイル予算と、1 mesh 200,000頂点の共通予算を適用する。native graph/blobの16 MiB予算を広げる変更ではない。予算超過は出力先を作成せず診断する。
