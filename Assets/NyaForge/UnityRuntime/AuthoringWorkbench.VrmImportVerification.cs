@@ -4,6 +4,7 @@ using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Rig;
+using NyaForge.Authoring.Simulation;
 
 namespace NyaForge.UnityRuntime
 {
@@ -32,6 +33,8 @@ namespace NyaForge.UnityRuntime
                 ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null);
                 ImportModel(path);
                 Check(!workspace.Document.IsEmpty && importedVrmSession != null && importedVrmSpringSession != null, "VRM import did not create graph and sessions");
+                var nativeSecondaryBytes = workspace.Attachments.Read(ProjectAttachments.SecondaryMotion);
+                Check(nativeSecondaryBytes != null && SecondaryMotionCodec.Read(nativeSecondaryBytes).Profile.SimulatorId == (legacy ? "vrm0" : "vrm1"), "VRM import did not publish the common secondary-motion attachment");
                 string graphHash = workspace.Document.EditSourceHash;
                 string metadataHash = workspace.Attachments.ContentHash;
                 string sourceHash = importedVrmSession.SourceHash;
@@ -44,6 +47,7 @@ namespace NyaForge.UnityRuntime
                 Check(!HasUnsaved && workspace.Document.EditSourceHash == graphHash, "Imported VRM graph changed on Open");
                 Check(workspace.Attachments.ContentHash == metadataHash, "Imported VRM settings changed on Open");
                 Check(importedVrmSession.SourceHash == sourceHash && importedVrmSpringSession.SourceHash == sourceHash, "Imported VRM source identity was lost");
+                Check(importedSecondaryMotionAsset != null && secondaryMotionStatus.text.Contains(legacy ? "vrm0" : "vrm1") && secondaryMotionStatus.text.Contains("保存済み"), "Common secondary-motion attachment was not restored after Open");
                 Check(importedRigSession != null && importedRigSession.SourceHash == sourceHash, "Imported rig mapping was lost");
                 var graph = workspace.Document.Objects[0].Graph;
                 var humanoid = importedRigSession.ResolveHumanoid(graph);
@@ -57,9 +61,11 @@ namespace NyaForge.UnityRuntime
                 var moved = SkeletonEditing.MoveBone(skeletonNode.Skeleton, humanoid["hips"], new Vec3(.01f, 0, 0), new Vec3(.01f, 0, 0));
                 Execute(AuthoringOperation.ReplaceGraph(graph.ReplaceNode(GraphNode.SkeletonNode(skeletonNode.NodeId, moved))));
                 Check(importedRigStatus.text.Contains("IMPORT_SKELETON_CHANGED"), "Edited skeleton did not report stale mapping");
+                Check(secondaryMotionStatus.text.Contains("再bind"), "Edited skeleton did not report stale secondary-motion binding");
                 Execute(AuthoringOperation.Undo());
                 importedRigSession.Resolve(workspace.Document.Objects[0].Graph);
                 Check(!importedRigStatus.text.Contains("IMPORT_SKELETON_CHANGED"), "Undo did not restore mapping status");
+                Check(secondaryMotionStatus.text.Contains("保存済み"), "Undo did not restore secondary-motion binding status");
                 Check(importedVrmSession.Expressions.Count == 1 && importedVrmSession.Expressions[0].Weights.Values.Single() == .5f, "Imported VRM morph expression was lost");
                 var nodes = importedVrmSpringSession.ColliderGroups[0].ColliderNodeIndices;
                 Check(importedVrmSpringSession.HasCompleteDetails, "Imported VRM lost detailed Spring geometry");

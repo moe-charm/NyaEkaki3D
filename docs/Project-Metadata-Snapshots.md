@@ -4,7 +4,7 @@
 
 ## 所有と公開
 
-`AuthoringWorkspace.Attachments`は、作品に属するexpression / Spring / rig / PhysBones targetの不変バイト列を保持する。`ProjectAttachments`は名前、サイズ、所有するコピー、決定的hashを管理する。`SetAttachments`はworkspaceのlock内で置き換え、文書が同じでも設定だけ変更されれば`IsDirty`になる。元VRMやprivate素材のコピーは含めない。
+`AuthoringWorkspace.Attachments`は、作品に属するexpression / Spring / rig / PhysBones target / simulator-neutral secondary-motion assetの不変バイト列を保持する。`ProjectAttachments`は名前、サイズ、所有するコピー、決定的hashを管理する。`SetAttachments`はworkspaceのlock内で置き換え、文書が同じでも設定だけ変更されれば`IsDirty`になる。元VRMやprivate素材のコピーは含めない。
 
 `ProjectStore.Save`は従来と同じworkspace lockとwriter lock、documentId / expectedSaveVersionの照合を使う。形状・graphと設定のblobを書き、内容hashを確認してから、最後に`project.nyaforge.json`を原子的に置き換える。SaveVersion、SavedStateHash、SavedAttachmentsHashの更新はその後だけ行う。GUIとMCPの`ProjectSaveService`は同じ処理を利用する。
 
@@ -25,13 +25,13 @@ metadataを持つprojectは、次のenvelopeを使う。`ProjectSnapshotCodec`�
 }
 ```
 
-例の`...`と`SHA256`は説明用の省略表記。実際のwriterは完全なproject manifestと64文字のhashを出す。attachment名は上記2種類、`imported-rig-session.nyaforge.json`、`physbones-target.nyaforge.bin`を許可し、最大4件。rig保存の契約は [ImportedRigSession](Imported-Rig-Sessions.md) を参照し、PhysBones target保存は揺れ・布adapter計画を参照する。内容は既存`blobs/<hash>.bin`へ保存し、読込時にサイズ・hash・名前・参照重複・envelopeの未知fieldを検査する。
+例の`...`と`SHA256`は説明用の省略表記。実際のwriterは完全なproject manifestと64文字のhashを出す。attachment名は上記2種類、`imported-rig-session.nyaforge.json`、`physbones-target.nyaforge.bin`、`secondary-motion.nyaforge.bin`を許可し、最大5件。secondary-motionの内容は `NYSM` v1 codecとskeleton/topology pinで検査し、PhysBones target保存は揺れ・布adapter計画を参照する。内容は既存`blobs/<hash>.bin`へ保存し、読込時にサイズ・hash・名前・参照重複・envelopeの未知fieldを検査する。
 
 設定なしの新しいprojectは従来のschema 2/3を維持する。一度schema 4で保存した保存先は、全設定を除去してもschema 4と空attachmentsを保持し、残っている旧sidecarが復活しないようにする。metadata付きprojectを古いNyaForgeで開くと未対応schemaとして拒否される。
 
 ## 旧形式からの移行
 
-schema 1/2/3を開いたときだけ、ルートの旧expression / Spring / PhysBones target sidecarを読み取り、workspaceへ取り込む。次の保存でblob参照へ移行する。旧sidecarは削除も上書きもしない。schema 1の本体は従来どおり別フォルダ保存による移行が必要である。
+schema 1/2/3を開いたときだけ、ルートの旧expression / Spring / PhysBones target / secondary-motion sidecarを読み取り、workspaceへ取り込む。次の保存でblob参照へ移行する。旧sidecarは削除も上書きもしない。schema 1の本体は従来どおり別フォルダ保存による移行が必要である。
 
 schema 4の読込はmutableな旧sidecarを参照しない。`OpenProject`はsnapshot内の設定をcodecでdecodeしてから表示を置き換える。設定自体のVRM仕様適合は保存transactionとは別に検査する。作者とコライダー列のcodec修正は以下を参照。
 

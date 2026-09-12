@@ -40,7 +40,16 @@ internal static partial class Program
             var chain = new PhysBonesChain("tail", rootId, new[] { rootId }, PhysBonesEndpointMode.Auto, "", null, PhysBonesMultiChildType.Ignore, null, null, null, PhysBonesParameters.Default, PhysBonesInteraction.Default, null);
             var profile = new PhysBonesTargetProfile("vrchat.physbones", "sdk", "package", skeleton.ContentHash, "", new[] { chain });
             var bytes = PhysBonesTargetCodec.Write(profile); var w = Fresh(); w.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]> { [ProjectAttachments.PhysBones] = bytes })); string directory = Dir("snapshot-physbones"); ProjectStore.Save(directory, w, 0);
-            var opened = ProjectStore.Open(directory); var restored = opened.Attachments.Read(ProjectAttachments.PhysBones); True(bytes.SequenceEqual(restored)); Equal(profile.ContentHash, PhysBonesTargetCodec.Read(restored).ContentHash); False(opened.IsDirty); Equal(4, ProjectAttachments.MaxCount);
+            var opened = ProjectStore.Open(directory); var restored = opened.Attachments.Read(ProjectAttachments.PhysBones); True(bytes.SequenceEqual(restored)); Equal(profile.ContentHash, PhysBonesTargetCodec.Read(restored).ContentHash); False(opened.IsDirty); Equal(5, ProjectAttachments.MaxCount);
+        });
+
+        Test("secondary motion attachment survives schema 4 snapshot Open", () =>
+        {
+            var skeleton = BuildSecondarySkeleton(out _, out var childId); var mesh = AuthoringFixtures.Panel(1);
+            var profile = new SecondaryMotionProfile("test.adapter", "test.simulator", 1, "1", "", SecondaryMotionOutputKind.BonePose, Array.Empty<byte>());
+            var asset = new SecondaryMotionAsset(profile, skeleton.ContentHash, mesh.TopologyHash, new[] { new SecondaryMotionChain("hair", new[] { childId }, Array.Empty<int>()) }, null, null);
+            var bytes = SecondaryMotionCodec.Write(asset); var w = Fresh(); w.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]> { [ProjectAttachments.SecondaryMotion] = bytes })); string directory = Dir("snapshot-secondary-motion"); ProjectStore.Save(directory, w, 0);
+            var opened = ProjectStore.Open(directory); var restored = opened.Attachments.Read(ProjectAttachments.SecondaryMotion); True(bytes.SequenceEqual(restored)); Equal(asset.ContentHash, SecondaryMotionCodec.Read(restored).ContentHash); False(opened.IsDirty);
         });
 
         foreach (string failedName in new[] { ProjectAttachments.Expressions, ProjectAttachments.Springs, ProjectAttachments.Rig })

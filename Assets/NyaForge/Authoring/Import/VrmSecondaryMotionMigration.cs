@@ -22,6 +22,18 @@ namespace NyaForge.Authoring.Import
             return FromSpringChains(profile, skeleton.ContentHash, meshHash, chains, colliders);
         }
 
+        /// <summary>Expands legacy VRM0 source-node subtrees and maps them to stable authored BoneIds.</summary>
+        public static SecondaryMotionAsset FromVrm0(VrmSpringSession source, ImportedRigSession rig, AuthoringGraph graph, PoseSet pose)
+        {
+            Checks.Require(source != null && rig != null && graph != null && pose != null, "INVALID_VRM", "VRM0 spring migration inputs are required.");
+            Checks.Require(source.Format == "vrm0", "UNSUPPORTED_FORMAT", "VRM0 spring migration requires a legacy spring session.");
+            var runtime = new Vrm0SpringRuntime(source, rig, graph);
+            var skeleton = graph.Nodes[rig.SkeletonNodeId].Skeleton;
+            string meshHash = rig.SourceSkinBinding == null ? "" : rig.SourceSkinBinding.MeshTopologyHash;
+            var profile = new SecondaryMotionProfile("nyaforge.vrm-spring", "vrm0", 1, "1", "", SecondaryMotionOutputKind.BonePose, Array.Empty<byte>());
+            return FromSpringChains(profile, skeleton.ContentHash, meshHash, runtime.Chains(pose), runtime.Colliders(pose));
+        }
+
         /// <summary>Builds common topology from any already-resolved bone spring adapter.</summary>
         public static SecondaryMotionAsset FromSpringChains(SecondaryMotionProfile profile, string skeletonHash, string meshTopologyHash,
             IEnumerable<SpringBoneChain> chains, IEnumerable<SpringBoneColliderGroup> colliderGroups)

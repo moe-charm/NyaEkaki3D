@@ -27,7 +27,9 @@
 | GUI/MCP | 同一command経由の設定変更、再構築・reset・一定時間再生・連続撮影。準備中/失敗/依存不足を表示する |
 | 出力adapter | VRChat PhysBones、VRM、Magicaを使うUnityアプリを別profileとして検証・出力。未対応項目をloss reportで報告する |
 
-保存はnative正本へ版付きで追加する。既存の4種類の型付きmetadata attachmentへ無制限のvendor JSONを混入させず、schema・byte予算・移行を設計する。依存packageなしでも作品を開き設定を保管できること。未知版は編集/再生不可を示して保持し、値を初期化しない。固定領域はmesh IDとtopology依存を持ち、頂点の追加/削除時に明示再対応する。
+保存はnative正本へ版付きで追加する。`secondary-motion.nyaforge.bin` は既存のVRM Spring／PhysBones attachmentとは別の共通 `NYSM` payloadとしてschema 4 envelopeへ保存する。依存packageなしでも作品を開き設定を保管できること。未知版は編集/再生不可を示して保持し、値を初期化しない。固定領域はmesh IDとtopology依存を持ち、頂点の追加/削除時に明示再対応する。
+
+VRM0はsource nodeのroot subtreeを元children順で展開し、取込rigのstable `BoneId`へ移行してから共通assetへ保存する。VRM0の元Spring sessionも既存sidecarとして残すため、移行後に元設定を再確認できる。skeleton/topologyが変わった場合はattachment bytesを保持したまま「再bindが必要」と表示し、自動で初期値へ戻さない。
 
 計算結果は一時表示。保存・Undo・出力は制作姿勢を使う。骨と頂点の両方を動かすadapterを同じ出力型へ無理に押し込まない。base pose→simulation→表示の順とworld root・collider更新時点を各adapterの契約に含め、同じ骨への二重適用を拒否する。
 
@@ -41,6 +43,7 @@
 
 実装カードの完了条件は以下の通り。
 
+- **SIM-01B**: 共通 `NYSM` attachmentをnative Save/Openでbyte/hash一致にし、VRM0 source-node移行後のstable chain、未知wire版保持、skeleton/topology stale診断を確認する。rebindは明示操作として別commandにする。
 - **SIM-02B**: SDK版・型を固定し、target packageを読み込んで managed componentだけを更新できる。unsupported/warningは書込み前に返し、失敗時のrollbackとSDK未導入buildを確認する。
 - **SIM-03B**: 固定step/warmupの連続frame、各画像hash、adapter/package/Unity/build、pose/root/collider条件、失敗ログを1 runへ束ねる。native revision・保存・制作姿勢は不変とする。
 - **SIM-07A**: root移動・停止・旋回・pose・colliderを、NyaForge preview／受取Unity／VRChat内の3面で別証拠として記録する。
@@ -57,7 +60,7 @@ SIM-03Aの追加検証: Windows-SIM03B build **PASS**（`Logs/build-player-20260
 | ID / 優先・段階 | 作業 | 依存 / 完了条件 |
 |---|---|---|
 | SIM-01A / P1・C2 **完了** | 共通データ・adapter能力・版付き保存契約 | `SecondaryMotionAsset`／`ISecondaryMotionAdapter`／`NYSM` v1 codec、VRM1 resolved spring migration、unknown version保持、skeleton/topology stale拒否を実装済み |
-| SIM-01B / P1・C2 | native attachmentとVRM0移行 | native Save/Open、未知版GUI表示、stale再bind、旧VRM0 source-node移行をI04-Aへ接続。SIM-03Aと並行可能 |
+| SIM-01B / P1・C2 | native attachmentとVRM0移行 | `secondary-motion.nyaforge.bin` のNYSM Save/Open、未知版保持・GUI表示、VRM0 source-node→stable BoneId移行、stale診断まで実装。明示rebind操作と実素材確認が残る |
 | SIM-02A / P1・C2 **完了** | PhysBones target packageと合成Bridge | `NYPP` v1、schema 4 attachment、target package、loss report、stable bone／collider mapping、managed-only、branch preflight、rollback、receiver Windowを合成fixtureで検証済み |
 | SIM-02B / P1・C2 **次** | 実SDK受け取り側 | SDK版・型を固定し、manifest/profile/skeleton読込、stable BoneId／collider group手動割当、実component生成・更新を確認。unsupportedは書込み前停止、未管理component保護、SDK未導入public build維持 |
 | SIM-03A / P1・C2 **完了** | 共通GUI/MCPと再生所有者 | GUI・内部MCP handler・外部sidecar toolのplay/pause/reset/rebuild/fixed-step/stateを同じtransient owner／generationへ接続し、再生・停止・再構築・固定step・reset・Save/Open非保存・編集時破棄を合成backendと実named-pipe経路で確認済み。非同期vendor構築は後続 |

@@ -105,7 +105,7 @@ flowchart LR
 
 ## 6. native保存と出力
 
-実装済み基盤: manifest schema 4でgraphとexpression/Spring/rig/PhysBones targetのattachmentを一括公開。rig payload v3は全source階層を保存し、旧v1/v2の階層不明を維持する。これは未知拡張の汎用保管が完成したという意味ではない。
+実装済み基盤: manifest schema 4でgraphとexpression/Spring/rig/PhysBones target/共通secondary-motionの型付きattachmentを一括公開。共通payloadは `secondary-motion.nyaforge.bin` の `NYSM` v1で、VRM0 source-node subtreeはstable BoneIdへ移行して保存する。rig payload v3は全source階層を保存し、旧v1/v2の階層不明を維持する。これは未知拡張の汎用保管が完成したという意味ではない。
 
 実装要件: 新しいscene/affine/大容量assetにはversion付きcodecと移行を付ける。writerだけでなくreader、hash、予算、GUI/MCP、exportへの影響を同じ変更単位で記録する。汎用payloadを既存の型付きattachmentへ無理に混ぜず、新しいtarget設定は専用schemaと名前を持たせる。
 

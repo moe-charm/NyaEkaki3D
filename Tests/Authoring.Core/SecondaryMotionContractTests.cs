@@ -87,6 +87,22 @@ internal static partial class Program
             asset.ValidateFor(imported.Skeleton, imported.Mesh); Equal(1, asset.Chains.Count); Equal(1, asset.Chains[0].BoneIds.Count); Equal(rig.NodeToBone[1], asset.Chains[0].BoneIds[0]); Equal(1, asset.ColliderGroups[0].Colliders.Count);
         });
 
+        Test("VRM0 spring session migration expands source nodes into authored BoneIds", () =>
+        {
+            var bytes = BuildMappedVrm(true); var json = JObject.Parse(ReadJsonChunk(bytes));
+            json["extensions"]["VRM"]["secondaryAnimation"] = new JObject {
+                ["colliderGroups"] = new JArray(),
+                ["boneGroups"] = new JArray(new JObject { ["comment"] = "legacy hair", ["bones"] = new JArray(2), ["center"] = -1, ["colliderGroups"] = new JArray(), ["stiffiness"] = .5f, ["gravityPower"] = .1f, ["gravityDir"] = new JObject { ["x"] = 0, ["y"] = -1, ["z"] = 0 } })
+            };
+            bytes = ReplaceJsonChunk(bytes, json.ToString()); var imported = GlbSkinImporter.Read(bytes); var metadata = VrmMetadataReader.Read(bytes);
+            string skeletonId = Guid.NewGuid().ToString("D"), sourceId = Guid.NewGuid().ToString("D"), poseId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
+            var pose = PoseSet.Create(imported.Skeleton, imported.Skeleton.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head))));
+            var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), new[] { GraphNode.SkeletonNode(skeletonId, imported.Skeleton), GraphNode.Source(sourceId, imported.Mesh, new RestTransform(1, new Vec3())), GraphNode.PoseNode(poseId, pose), GraphNode.Output(outputId) }, new[] { new GraphEdge(sourceId, "mesh", outputId, "mesh") }, outputId);
+            var rig = ImportedRigSession.Create(imported, metadata, graph.GraphId, skeletonId);
+            var asset = VrmSecondaryMotionMigration.FromVrm0(VrmSpringSession.Create(metadata), rig, graph, pose);
+            asset.ValidateFor(imported.Skeleton, imported.Mesh); Equal("vrm0", asset.Profile.SimulatorId); Equal(1, asset.Chains.Count); Equal(rig.NodeToBone[2], asset.Chains[0].BoneIds[0]);
+        });
+
         Test("PhysBones target DTO roundtrips stable mapping and preserves endpoint data", () =>
         {
             var skeleton = BuildPhysBonesSkeleton(out var rootId, out var childId, out var excludedId);

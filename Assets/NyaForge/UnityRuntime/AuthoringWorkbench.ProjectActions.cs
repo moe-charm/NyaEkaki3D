@@ -41,6 +41,7 @@ namespace NyaForge.UnityRuntime
             ClearImportedPhysBones();
             ClearImportedVrmExpressions();
             ClearImportedVrmSpring();
+            ClearImportedSecondaryMotion();
             workspace = next; commands = new AuthoringCommandService(workspace);
             saveIncomplete = false;
             savedDirectory = loadedPath == null ? null : Path.GetFullPath(loadedPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
@@ -59,9 +60,11 @@ namespace NyaForge.UnityRuntime
             var expressionBytes = next.Attachments.Read(ProjectAttachments.Expressions);
             var springBytes = next.Attachments.Read(ProjectAttachments.Springs);
             var physBonesBytes = next.Attachments.Read(ProjectAttachments.PhysBones);
+            var secondaryMotionBytes = next.Attachments.Read(ProjectAttachments.SecondaryMotion);
             var expressionSession = expressionBytes == null ? null : VrmExpressionSessionCodec.Read(expressionBytes);
             var springSession = springBytes == null ? null : VrmSpringSessionCodec.Read(springBytes);
             var physBonesDocument = physBonesBytes == null ? null : PhysBonesTargetCodec.ReadDocument(physBonesBytes);
+            var secondaryMotionDocument = secondaryMotionBytes == null ? null : SecondaryMotionCodec.ReadDocument(secondaryMotionBytes);
             if (rigSession != null && expressionSession != null) rigSession.ValidateSource(expressionSession.SourceHash);
             if (rigSession != null && springSession != null) rigSession.ValidateSource(springSession.SourceHash);
             ReplaceWorkspace(next, directory);
@@ -69,6 +72,9 @@ namespace NyaForge.UnityRuntime
             importedVrmSession = expressionSession; Refresh();
             importedVrmSpringSession = springSession; RefreshVrmSpringStatus();
             SetImportedPhysBones(physBonesDocument);
+            importedSecondaryMotionDocument = secondaryMotionDocument;
+            importedSecondaryMotionAsset = secondaryMotionDocument?.Asset;
+            RefreshSecondaryMotionStatus();
         }
 
         void Export() => Try(() =>
