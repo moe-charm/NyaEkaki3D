@@ -144,6 +144,12 @@
 - polygon.faces.materialを既存MaterialFaceEditingへ接続するwireを追加し、観測済みcontext/face IDsとmaterialSlotを明示する。
 - Core261 passed/0 failed: C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-5aaf49ad31f04d95a5f5dbe693651c46。疎slot 3/9のinspection、assign-materials node wireの並べ替え/文字列拒否を確認。
 - Windows-MultiMaterialInspect build/Player suite PASS: Logs/build-player-20260912-085516-488.log、Artifacts/Authoring-20260912-085555-0a7329c440c94cc3a6ff75ca944383cd/report.json。MCP生成/材質inspection/既存制作一周も成功。全体目標継続。
+## VRM SpringBone inventory境界（2026-09-12）
+
+- `VrmSpringBoneGroup`／`VrmSpringJoint`／`VrmSpringColliderGroup`を追加し、VRM 1.0の`extensions.VRMC_springBone`（colliders、colliderGroups、springs）とVRM 0.xの`secondaryAnimation`（boneGroups、colliderGroups）から、node参照、chain/root数、collider数、boundedな基本パラメータを読む。VRM 1.0ではshapeのsphere/capsuleとradius、0.xではsphere radiusの形式を検証する。
+- SpringBoneはinventory専用で、揺れの物理計算、姿勢適用、collider形状のruntime化はまだ行わない。node範囲外、重複joint、重複index、未対応spec version、予算超過は推測せず拒否する。取り込みstatusへ`spring <chain>/<colliderGroup>`を表示する。
+- 公式仕様の構造に合わせた境界である（[VRMC_springBone 1.0](https://github.com/vrm-c/vrm-specification/blob/master/specification/VRMC_springBone-1.0/README.md)、[VRM 0.x secondaryAnimation](https://github.com/vrm-c/vrm-specification/blob/master/specification/0.0/README.ja.md)）。
+- Core **292 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-d30603607f7d46c696603787788cf80a`。VRM 1.0／0.xのchain、joint、collider inventoryを追加検証した。Player/Authoring/BridgeのSpringBone表示を含むWindows実ビルド確認は次に行う。実VRMの実データ、SpringBone runtime挙動、手動見た目受入は未確認。
 ## 材質inspection
 
 - AuthoringMaterialReaderを分離追加。graph_inspectの各nodeにmaterialOutput（linear RGBA、metallic、roughness、emission、alphaMode/cutoff、contentHash、画像identity）とassignedMaterialを返す。画像本体は返さずhash/寸法のみ。

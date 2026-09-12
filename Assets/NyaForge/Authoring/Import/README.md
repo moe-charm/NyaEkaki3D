@@ -10,4 +10,6 @@ The adapter rejects skin bindings, mixed attribute or morph layouts, sparse acce
 
 `VrmExpressionSessionCodec` stores that mapped, source-independent expression list as a bounded deterministic JSON sidecar. The sidecar contains stable target IDs and weights only; it does not copy the original VRM or any private avatar asset.
 
+`VrmMetadataReader` also reads a bounded SpringBone inventory. VRM 1.0 `VRMC_springBone` chains, joints, collider groups and sphere/capsule radius fields are normalized alongside VRM 0.x `secondaryAnimation` root groups and sphere colliders. The adapter validates node/index/radius budgets and duplicate references but does not simulate motion, apply rotations, or recreate runtime colliders.
+
 The Windows workbench uses these adapters only from an empty project and creates a native Source → optional MorphDeform → Output graph. A skin import additionally creates Skeleton, SkinBind, an initial rest pose and SkinDeform nodes. The original file is read locally and is not copied into the public repository. VRM metadata/humanoid, general node transforms, normal/tangent morph deltas and export are separate adapters.

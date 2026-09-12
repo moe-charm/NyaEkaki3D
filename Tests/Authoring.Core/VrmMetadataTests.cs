@@ -26,5 +26,20 @@ internal static partial class Program
         {
             Expect("UNSUPPORTED_FORMAT", () => VrmMetadataReader.Read(BuildGlb())); var root = JObject.Parse(ReadJsonChunk(BuildGlb())); root["extensions"] = new JObject { ["VRMC_vrm"] = new JObject { ["specVersion"] = "2.0", ["meta"] = new JObject(), ["humanoid"] = new JObject() } }; Expect("UNSUPPORTED_FORMAT", () => VrmMetadataReader.Read(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None))));
         });
+
+        Test("VRM SpringBone inventory reads bounded VRM 1.0 and 0.x chains", () =>
+        {
+            var modernRoot = JObject.Parse(ReadJsonChunk(BuildGlb())); modernRoot["nodes"] = new JArray(new JObject { ["name"] = "Root" }, new JObject { ["name"] = "Tail" }, new JObject { ["name"] = "TailTip" });
+            var modernVrm = new JObject { ["specVersion"] = "1.0", ["meta"] = new JObject(), ["humanoid"] = new JObject { ["humanBones"] = new JObject { ["hips"] = new JObject { ["node"] = 0 } } } };
+            var modernSpring = new JObject { ["specVersion"] = "1.0", ["colliders"] = new JArray(new JObject { ["node"] = 0, ["shape"] = new JObject { ["sphere"] = new JObject { ["radius"] = 0.2 } } }), ["colliderGroups"] = new JArray(new JObject { ["name"] = "body", ["colliders"] = new JArray(0) }), ["springs"] = new JArray(new JObject { ["name"] = "tail", ["joints"] = new JArray(new JObject { ["node"] = 1, ["hitRadius"] = 0.05, ["dragForce"] = 0.2 }, new JObject { ["node"] = 2 }), ["colliderGroups"] = new JArray(0), ["center"] = 0 }) };
+            modernRoot["extensions"] = new JObject { ["VRMC_vrm"] = modernVrm, ["VRMC_springBone"] = modernSpring };
+            var modern = VrmMetadataReader.Read(ReplaceJsonChunk(BuildGlb(), modernRoot.ToString(Newtonsoft.Json.Formatting.None))); Equal(1, modern.SpringBones.Count); Equal(2, modern.SpringBones[0].Joints.Count); Equal(1, modern.SpringColliderGroups.Count); Equal(1, modern.SpringColliderGroups[0].ColliderCount); Equal(0, modern.SpringBones[0].CenterNodeIndex);
+
+            var legacyRoot = JObject.Parse(ReadJsonChunk(BuildGlb())); legacyRoot["nodes"] = new JArray(new JObject { ["name"] = "Root" }, new JObject { ["name"] = "Tail" });
+            var legacyVrm = new JObject { ["specVersion"] = "0.0", ["meta"] = new JObject(), ["humanoid"] = new JObject { ["humanBones"] = new JArray(new JObject { ["bone"] = "hips", ["node"] = 0 }) } };
+            var legacySecondary = new JObject { ["colliderGroups"] = new JArray(new JObject { ["node"] = 0, ["colliders"] = new JArray(new JObject { ["offset"] = new JObject { ["x"] = 0, ["y"] = 0, ["z"] = 0 }, ["radius"] = 0.1 }) }), ["boneGroups"] = new JArray(new JObject { ["comment"] = "tail", ["bones"] = new JArray(1), ["colliderGroups"] = new JArray(0), ["stiffiness"] = 1.0, ["dragForce"] = 0.3, ["hitRadius"] = 0.05 }) };
+            legacyVrm["secondaryAnimation"] = legacySecondary; legacyRoot["extensions"] = new JObject { ["VRM"] = legacyVrm };
+            var legacy = VrmMetadataReader.Read(ReplaceJsonChunk(BuildGlb(), legacyRoot.ToString(Newtonsoft.Json.Formatting.None))); Equal(1, legacy.SpringBones.Count); Equal(1, legacy.SpringBones[0].RootBoneNodes.Count); Equal(1, legacy.SpringColliderGroups[0].ColliderCount); Equal("tail", legacy.SpringBones[0].Name);
+        });
     }
 }
