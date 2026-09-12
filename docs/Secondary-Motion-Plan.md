@@ -35,11 +35,13 @@
 
 ## タスクと完了条件
 
-全項目未着手。SIM-01の成果に基づき実装interface名を決める。巨大な汎用物理層を先に作らず、既存VRMと髪束fixtureで必要な境界を確定する。
+SIM-01のCore契約を実装済み。`Authoring/Simulation`に安定ID付きchain、fixed vertex、collider group、bone/mesh出力種別、adapter capability/evaluation interface、unknown versionを保持する`NYSM` v1 codecを置いた。`Import/VrmSecondaryMotionMigration`はresolved VRM1 spring chainを共通topologyへ変換する。native attachment接続、未知版のWorkbench表示、PhysBones／MagicaCloth2実adapterは未着手。巨大な汎用物理層を先に作らず、既存VRMと髪束fixtureで境界を確定する方針は維持する。
+
+検証: Core **400 passed / 0 failed**（`Logs/core-secondary-motion.txt`）。Windows-SecondaryMotionCore2 build／Player（既存回帰70 checks）もPASS（`Logs/build-player-20260912-184902-690.log`、`Artifacts/Authoring-20260912-184923-60fa1a94c49d4c67833fcb32277bdfdf/report.json`）。これはUnityコンパイルと合成fixtureの自動検証であり、PhysBones/MagicaCloth2の実runtime、実アバター、VRChat内、実マウス操作、画像目視の受入ではない。
 
 | ID / 優先・段階 | 作業 | 依存 / 完了条件 |
 |---|---|---|
-| SIM-01 / P1・C2 | 共通データ・adapter能力・版付き保存契約 | I04-Aの保存/ID契約。chain/fixed/colliderと固有値を分離し、骨/頂点出力を区別。依存なしOpen・未知版保持・stale topology拒否・旧VRM保存移行のfixtureを定義して実装する |
+| SIM-01 / P1・C2 **実装継続** | 共通データ・adapter能力・版付き保存契約 | `Authoring/Simulation`の`SecondaryMotionAsset`／`ISecondaryMotionAdapter`／`NYSM` v1 codecでchain/fixed/colliderとtarget profileを分離し、骨/頂点出力を区別。依存なしOpenのためunknown wire versionをopaque保持し、skeleton/topology変更とstable ID欠落を拒否。VRM1 resolved spring migrationを追加。native attachmentへの保存/Open・未知版GUI表示・旧VRM0 source-node移行は次段 |
 | SIM-02 / P1・C2 | PhysBones target DTOとUnity Bridge | SIM-01とskin出力。stable bone対応、root/末端/除外/分岐、collider、制限、曲線、interaction設定を対象SDK版付きで扱う。対応/未対応一覧、再出力時の管理対象限定更新、受け取り側設定と動作の確認を記録 |
 | SIM-03 / P1・C2 | 共通GUI/MCPと再生所有者 | SIM-01。既存VRM0/1を段階接続。設定Undo・保存/Open、build待ち/失敗/取消、再構築中のproject切替、reset、一定時間再生、連続撮影を検証。外部MCP transportも別途確認 |
 | SIM-04 / P2・C2 | MagicaCloth2 BoneCloth最小評価 | SIM-01/03。利用可能package/ライセンスとUnity/Burst/Collections版を記録。任意assemblyに隔離し、未導入buildも成功。自作髪束1本でruntime生成・設定・構築完了待ち・固定根・sphere衝突・再構築/reset・破棄・写真列を確認して採用可否を記録 |

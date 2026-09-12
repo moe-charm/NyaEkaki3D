@@ -28,6 +28,7 @@
 | [使い方](Authoring-Quickstart.md) | 現在動く機能だけの起動・操作・再検証手順 |
 | [Core README](../Assets/NyaForge/Authoring/README.md) | 現在の制作CoreのAPI・保存形式・制限 |
 | [Rig Core](../Assets/NyaForge/Authoring/Rig/README.md) | rest skeletonと正規化skin bindingのC2基盤・未接続範囲 |
+| [Secondary motion Core](../Assets/NyaForge/Authoring/Simulation/README.md) | simulator-neutral contract、NYSM v1 codec、adapter境界と未接続範囲 |
 | [Unity Bridge](../UnityBridge/README.md) | 現在の受け取り用Editor packageの導入と制約 |
 | [Unity再取り込み](Unity-Import-Updates.md) | 生成資源の所有記録、変更検査、参照を保持する更新transactionの設計 |
 | [preview更新と所有権](Projection-Updates.md) | 形状の全体交換と色だけの交換、Prepare/Commit/Rollbackの契約 |
