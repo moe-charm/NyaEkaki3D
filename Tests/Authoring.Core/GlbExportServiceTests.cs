@@ -33,6 +33,20 @@ internal static partial class Program
             True(!Directory.Exists(directory));
         });
 
+        Test("GLB export refuses attachment metadata instead of dropping it", () =>
+        {
+            string planeId = GraphId(), attachmentId = GraphId(), outputId = GraphId();
+            var graph = new AuthoringGraph(GraphId(), new[] {
+                GraphNode.Plane(planeId),
+                GraphNode.AttachmentNode(attachmentId, GraphId(), GraphId(), Checks.Hash(new byte[] { 3, 1, 4 }), new Vec3()),
+                GraphNode.Output(outputId) },
+                new[] { new GraphEdge(planeId, "mesh", outputId, "mesh") }, outputId);
+            var workspace = AuthoringWorkspace.CreateEmpty(); Ok(Execute(workspace, AuthoringOperation.AddGraph(graph)));
+            string directory = Path.Combine(Root, "glb-attachment-refused-" + Guid.NewGuid().ToString("N"));
+            Expect("GLB_ATTACHMENT_METADATA_UNSUPPORTED", () => GlbExportService.ExportStatic(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory));
+            True(!Directory.Exists(directory));
+        });
+
         Test("standard skinned GLB export roundtrips skeleton and weights", () =>
         {
             var mesh = AuthoringFixtures.Panel(1);

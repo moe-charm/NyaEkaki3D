@@ -1,3 +1,8 @@
+## 2026-09-13 GLB attachment loss guard
+
+標準GLBにはNyaForgeのobject attachmentを表す共通フィールドがないため、装着ノードを含む作品のGLB出力を続行するとBoneId・target object・offsetが失われる。`GlbExportService`は装着ノードを検出した時点で`GLB_ATTACHMENT_METADATA_UNSUPPORTED`を返し、出力先を作らずnative project exportを案内する。single/multi-objectのnative routingと未解決target拒否は前カードの契約を維持する。
+
+Core **454 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2e1aa8cd7b834460b53cb64a49bef8ee`）。Windows Player `Builds/AttachmentV8/NyaForge.exe` のAuthoring suiteもPASS（report `Artifacts/Authoring-20260913-062245-9cb8fb0762e84c24bb7b9e6eb9780e30/report.json`）。装着ノードを黙ってGLBへ落とさないこと、native packageへ保存することを回帰した。
 ## 2026-09-13 attachment export routing
 
 監査で、装着ノードだけを含むgraphが通常のMesh/Surface Bakeへ誤ルーティングされると、GLB等の標準交換形式では表現できない装着メタデータが失われる経路を確認した。`ProjectExportService`が`object.attachment`を含むgraphをfeature-preserving native projectへ送るよう修正し、再読込後のtarget object・stable BoneId・offsetを回帰した。

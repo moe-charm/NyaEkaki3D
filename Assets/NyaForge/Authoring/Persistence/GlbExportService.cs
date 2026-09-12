@@ -81,6 +81,8 @@ namespace NyaForge.Authoring
                 Checks.Require(workspace.Document.DocumentRevision == revision, "REVISION_CONFLICT", "Document changed before export.");
                 Checks.Require(!workspace.Document.IsEmpty, "NO_EXPORTABLE_OBJECT", "Add a mesh before exporting.");
                 Checks.Require(workspace.Preview.IsComplete && !workspace.Preview.IsStale, "GRAPH_INCOMPLETE", "Export requires complete current evaluation.");
+                Checks.Require(!workspace.Document.Objects.Any(item => !item.IsStaticProfile && item.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.Attachment)),
+                    "GLB_ATTACHMENT_METADATA_UNSUPPORTED", "Standard GLB does not preserve object attachment metadata; use native project export.");
                 Checks.Require(!Directory.Exists(directory) && !File.Exists(directory), "EXPORT_DESTINATION_EXISTS", "Export destination already exists.");
             }
         }
