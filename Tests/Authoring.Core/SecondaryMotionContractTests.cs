@@ -103,6 +103,25 @@ internal static partial class Program
             asset.ValidateFor(imported.Skeleton, imported.Mesh); Equal("vrm0", asset.Profile.SimulatorId); Equal(1, asset.Chains.Count); Equal(rig.NodeToBone[2], asset.Chains[0].BoneIds[0]);
         });
 
+        Test("secondary-motion rebind requires explicit stable maps and repins identities", () =>
+        {
+            var sourceSkeleton = BuildSecondarySkeleton(out var sourceRoot, out var sourceChild); var targetSkeleton = BuildSecondarySkeleton(out var targetRoot, out var targetChild); var mesh = AuthoringFixtures.Panel(1);
+            var profile = new SecondaryMotionProfile("test.adapter", "test.simulator", 1, "1", "", SecondaryMotionOutputKind.BonePose, Array.Empty<byte>());
+            var source = new SecondaryMotionAsset(profile, sourceSkeleton.ContentHash, mesh.TopologyHash,
+                new[] { new SecondaryMotionChain("hair", new[] { sourceChild }, Array.Empty<int>()) },
+                new[] { new SecondaryMotionColliderGroup("body", new[] { new SecondaryMotionCollider(sourceRoot, new Vec3(), .1f) }) }, null);
+            Expect("SIMULATION_REBIND_REQUIRED", () => SecondaryMotionRebind.Apply(source, targetSkeleton, mesh, null));
+            var rebound = SecondaryMotionRebind.Apply(source, targetSkeleton, mesh, new Dictionary<string, string> { [sourceRoot] = targetRoot, [sourceChild] = targetChild });
+            rebound.ValidateFor(targetSkeleton, mesh); Equal(targetSkeleton.ContentHash, rebound.SkeletonHash); Equal(targetChild, rebound.Chains[0].BoneIds[0]); Equal(targetRoot, rebound.ColliderGroups[0].Colliders[0].BoneId);
+            Expect("SIMULATION_REBIND_AMBIGUOUS", () => SecondaryMotionRebind.Apply(source, targetSkeleton, mesh, new Dictionary<string, string> { [sourceRoot] = targetRoot, [sourceChild] = targetRoot }));
+            var meshProfile = new SecondaryMotionProfile("test.mesh.adapter", "test.simulator", 1, "1", "", SecondaryMotionOutputKind.MeshDeformation, Array.Empty<byte>());
+            var meshSource = new SecondaryMotionAsset(meshProfile, "", mesh.TopologyHash, null, null, new[] { 0, 1 });
+            var changedMesh = new MeshData(mesh.Positions.ToArray(), mesh.Normals.ToArray(), mesh.Tangents.ToArray(), mesh.Uv0.ToArray(), mesh.Submeshes.Select(indices => indices.Reverse().ToArray()).ToArray());
+            Expect("SIMULATION_REBIND_REQUIRED", () => SecondaryMotionRebind.Apply(meshSource, null, changedMesh, null));
+            var meshRebound = SecondaryMotionRebind.Apply(meshSource, null, changedMesh, new Dictionary<string, string>(), new Dictionary<int, int> { [0] = 2, [1] = 3 });
+            Equal(changedMesh.TopologyHash, meshRebound.MeshTopologyHash); True(meshRebound.FixedVertexIndices.SequenceEqual(new[] { 2, 3 }));
+        });
+
         Test("PhysBones target DTO roundtrips stable mapping and preserves endpoint data", () =>
         {
             var skeleton = BuildPhysBonesSkeleton(out var rootId, out var childId, out var excludedId);

@@ -60,7 +60,7 @@ SIM-03Aの追加検証: Windows-SIM03B build **PASS**（`Logs/build-player-20260
 | ID / 優先・段階 | 作業 | 依存 / 完了条件 |
 |---|---|---|
 | SIM-01A / P1・C2 **完了** | 共通データ・adapter能力・版付き保存契約 | `SecondaryMotionAsset`／`ISecondaryMotionAdapter`／`NYSM` v1 codec、VRM1 resolved spring migration、unknown version保持、skeleton/topology stale拒否を実装済み |
-| SIM-01B / P1・C2 | native attachmentとVRM0移行 | `secondary-motion.nyaforge.bin` のNYSM Save/Open、未知版保持・GUI表示、VRM0 source-node→stable BoneId移行、stale診断まで実装。明示rebind操作と実素材確認が残る |
+| SIM-01B / P1・C2 | native attachmentとVRM0移行 | `secondary-motion.nyaforge.bin` のNYSM Save/Open、未知版保持・GUI表示、VRM0 source-node→stable BoneId移行、stale診断、明示bone/vertex rebind APIまで実装。実素材確認が残る |
 | SIM-02A / P1・C2 **完了** | PhysBones target packageと合成Bridge | `NYPP` v1、schema 4 attachment、target package、loss report、stable bone／collider mapping、managed-only、branch preflight、rollback、receiver Windowを合成fixtureで検証済み |
 | SIM-02B / P1・C2 **次** | 実SDK受け取り側 | SDK版・型を固定し、manifest/profile/skeleton読込、stable BoneId／collider group手動割当、実component生成・更新を確認。unsupportedは書込み前停止、未管理component保護、SDK未導入public build維持 |
 | SIM-03A / P1・C2 **完了** | 共通GUI/MCPと再生所有者 | GUI・内部MCP handler・外部sidecar toolのplay/pause/reset/rebuild/fixed-step/stateを同じtransient owner／generationへ接続し、再生・停止・再構築・固定step・reset・Save/Open非保存・編集時破棄を合成backendと実named-pipe経路で確認済み。非同期vendor構築は後続 |
