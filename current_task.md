@@ -22,7 +22,7 @@ Core **458 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/N
 
 P2も、揺れreset時のsource-skin projection cache無効化、PhysBones managed markerのstable root/name再利用、削除curveの初期化、secondary-motion再bindのUndo、MCP captureのcamera metadata保持、負weightの事前拒否を実装・回帰済み。今回の再実行は **Core 454 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-40f038c9de1a437994666a376c0af406`）。Explorer project pickerを含むWindows PlayerとUnity Bridgeの直近PASSは前カードの記録を正とする。
 
-残る受入境界は、実VRChat SDKでのPhysBones component生成・更新、実マウス/DPI差、実アバターの自動fit・貫通修正、VRChat内の見た目、任意GLBの複数mesh結合・共有参照・完全な材質/animation保持。次の作業はこの境界を混ぜず、実SDKの版・完全修飾型を固定した受け取り検証、または複数mesh/共有参照の明示仕様化から選ぶ。
+残る受入境界は、実VRChat SDKでのPhysBones component生成・更新、実マウス/DPI差、実アバターの自動fit・貫通修正、VRChat内の見た目、異なるskeletonの結合・共有参照・完全な材質/animation保持。同一skeleton hashの複数skinned mesh出力は最新カードで回帰済み。次の作業はこの境界を混ぜず、実SDKの版・完全修飾型を固定した受け取り検証、または共有参照の明示仕様化から選ぶ。
 
 ## 2026-09-13 native project Explorer picker
 
@@ -108,8 +108,8 @@ reflection型解決は`VrcPhysBonesReflectionResolver`へ分離し、assembly-qu
 
 | 状態 / ID | 実行する作業 | 完了条件・依存 |
 |---|---|---|
-| [ ] I04-A / P1 **継続** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 数値/reader/codec/GUI生成/native原本なしOpen、mesh/POSITION/NORMAL/TANGENT morph変換、SourceSkinBinding/SourceSkinDeformer、GLB全JOINTS_n/WEIGHTS_n候補、NYSPとrig v5/native/GUI接続、評価済みGraphMeshValueへのSourceSkinGraphAdapter、authored poseからのSourceSkinPosePalette、Workbench取込後/揺れ再生中の自動表示を追加済み。次は複数mesh/instance/skin、再利用mesh/objectと失敗時原子性を検証。同一skeleton／poseを共有する複数SkinDeformのsource入力を対象にし、sparse weightは未対応。float weightとnormalized UBYTE/USHORT weightを読取可能 |
-| [ ] I04-B / P1 **継続** | 複数mesh/instance/skin、source→制作ID対応 | `GlbSceneInventoryReader`でmesh/primitive数、node instance、skin joint参照、node world transformを元indexのまま候補化し、候補確認・node instance選択GUIを追加した。native documentは最大64 objectのactive object方式へ拡張し、`object.select`、graph object追加、Save/Open、Workbench対象切替を検証済み。非active objectは読み取り専用の背面表示とFrame対象にでき、複数object package出力も追加した。GLB取込はgraph projectへ新objectとして追加する。複数graph objectのrig sessionをgraph IDで保存・active objectへ再選択する経路を追加済み。残りはmesh結合、同名morph/共有mesh・skin参照と実素材受入。 |
+| [ ] I04-A / P1 **継続** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 数値/reader/codec/GUI生成/native原本なしOpen、mesh/POSITION/NORMAL/TANGENT morph変換、SourceSkinBinding/SourceSkinDeformer、GLB全JOINTS_n/WEIGHTS_n候補、NYSPとrig v5/native/GUI接続、評価済みGraphMeshValueへのSourceSkinGraphAdapter、authored poseからのSourceSkinPosePalette、Workbench取込後/揺れ再生中の自動表示を追加済み。同一skeleton hashの複数graph objectをshared skinでSkinnedGeometry／Extended GLBへ出力する回帰を追加。次は異なるskeletonの明示的な出力境界、再利用mesh/objectと失敗時原子性を検証。sparse weightは未対応。float weightとnormalized UBYTE/USHORT weightを読取可能 |
+| [ ] I04-B / P1 **継続** | 複数mesh/instance/skin、source→制作ID対応 | `GlbSceneInventoryReader`でmesh/primitive数、node instance、skin joint参照、node world transformを元indexのまま候補化し、候補確認・node instance選択GUIを追加した。native documentは最大64 objectのactive object方式へ拡張し、`object.select`、graph object追加、Save/Open、Workbench対象切替を検証済み。非active objectは読み取り専用の背面表示とFrame対象にでき、複数object package出力も追加した。GLB取込はgraph projectへ新objectとして追加する。複数graph objectのrig sessionをgraph IDで保存・active objectへ再選択する経路を追加済み。同一skeleton hashの複数skinned meshはshared skin出力へ対応。残りは異なるskeletonの結合、同名morph/共有mesh・skin参照と実素材受入。 |
 | [ ] I04-C / P1 **継続** | rig/weight/morph容量とcodec/hash/表示/出力 | nativeは512骨・32 influence・512 morphへ拡張し、257骨・18weight・単一mesh262morphの削減なし往復、GLB全JOINTS_n/WEIGHTS_n取込、`SkinnedGeometryExtended`出力を回帰済み。標準SkinnedGeometryは互換上4 influenceを明示拒否する。実GLB受取先・VRChat側確認が残る |
 | [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
 | [ ] I04-E / P1 **継続** | 機能report、材質/animation/VRM意味情報/未知拡張の保持とGUI/MCP | GLB importerのコード付きdiagnosticsをnative attachmentへ保存し、MCP graph inspection・取込後status・GUI詳細パネルで表示。未実装の `extensionsRequired` は取込前拒否済み。依存資源込みopaque保持、既知VRM内の未保持field、完全材質/animation保持が残件 |
@@ -1335,3 +1335,8 @@ Coreの容量回帰で257骨・18 influence・262 morphのnative codec往復を�
 - `取込診断（保存済み）` foldoutをGLB取込パネルへ追加。保存済みrecord数、保持不可／一部保持の件数、active graphを表示し、各graphのsource hash・mesh／skin locator・診断のseverity／code／path／messageを確認できる。attachmentが壊れていても作品を置き換えず、読込エラーを同じ領域へ表示する。
 - Windows Player **PASS** (`Logs/build-player-20260913-033512-860.log`, `Builds/ImportDiagnosticsUiV2/NyaForge.exe`)、Authoring suite **PASS** (`Artifacts/Authoring-20260913-033534-e6ed3ced2eb04b8896208cde5f0f05ab/report.json`)。合成した保存済みdiagnosticsをGUIへ注入し、summary・active locator・詳細labelの表示を自動検証した。Core **441 passed / 0 failed** (`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-95fd651be1094560b029f04b72aa1d7c`)。旧GLB diagnostics sidecarの保存時schema 4移行も回帰した。
 - GUIは保持結果の確認導線であり、材質・animation・未知拡張を依存資源ごとnativeへ完全保存する機能や、実モデルを使った目視受入を含まない。
+## 2026-09-13 same-skeleton multi-mesh skinned GLB output
+
+標準 `SkinnedGeometry`／`SkinnedGeometryExtended` GLB出力を、同じskeleton hashを共有する複数graph objectへ拡張した。各objectの評価済みmesh、頂点編集、binding、材質／slotを個別primitiveとして保持し、writerは一つの共有skinとmesh/nodeごとのskin参照を出力する。異なるskeletonを混ぜる場合は `GLB_SKIN_SHARED_SKELETON`、複数objectへinstance affineを同時指定する場合は `GLB_SKIN_MULTI_INSTANCE_TRANSFORM` で明示拒否し、単一objectの既存契約は維持する。
+
+Core **459 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-e7be4d70eb884143bc56b3de26ef58d6`）。合成2mesh fixtureでGLBのmesh 2個・shared skin 1個、mesh node双方の同一skin index、各meshの再読込を回帰した。Windows Player `Builds/MultiSkinnedV1/NyaForge.exe` の800x600 Authoring suite **PASS**（report `Artifacts/Authoring-20260913-065647-9698b768b4444eaaa9fda875f9e1934a/report.json`）。Unity Bridge **PASS**（Unity 2022.3.22f1、`Artifacts/BridgeReceiver-20260913-065719-599-977c683e22af42a3bdf635526c1c7557/bridge-report.json`）。異なるskeletonの自動統合、共有mesh／morph参照の完全保持、実VRChat内の見た目と実マウス／DPI受入は別境界として残る。

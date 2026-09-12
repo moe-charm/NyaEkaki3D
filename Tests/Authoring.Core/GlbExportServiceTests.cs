@@ -71,6 +71,43 @@ internal static partial class Program
             True(restored.InstanceWorldTransform != null); Near(1f, restored.InstanceWorldTransform.TransformPoint(new Vec3()).X); Near(2f, restored.InstanceWorldTransform.TransformPoint(new Vec3()).Y); Near(3f, restored.InstanceWorldTransform.TransformPoint(new Vec3()).Z);
         });
 
+        Test("multi-mesh skinned GLB export shares one skeleton", () =>
+        {
+            var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(GraphId(), "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
+            AuthoringGraph BuildGraph(MeshData mesh)
+            {
+                string rootId = skeleton.Bones[0].BoneId;
+                string sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), outputId = GraphId();
+                var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, rootId, 1f)));
+                var pose = PoseSet.Create(skeleton, new[] { new BonePose(rootId, PoseTransform.FromTranslation(new Vec3())) });
+                return new AuthoringGraph(GraphId(),
+                    new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                    new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
+            }
+            var first = AuthoringFixtures.Panel(1);
+            var second = PrimitiveGeometry.Plane(.2f, .1f);
+            var workspace = AuthoringWorkspace.CreateEmpty();
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(BuildGraph(first))));
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(BuildGraph(second))));
+            string directory = Path.Combine(Root, "glb-skinned-multi-" + Guid.NewGuid().ToString("N"));
+            var result = GlbExportService.ExportSkinned(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory);
+            Equal(2, result.ObjectCount);
+            var bytes = File.ReadAllBytes(result.Path);
+            var json = JObject.Parse(ReadJsonChunk(bytes));
+            Equal(2, ((JArray)json["meshes"]!).Count);
+            Equal(1, ((JArray)json["skins"]!).Count);
+            var meshNodes = ((JArray)json["nodes"]!).OfType<JObject>().Where(node => node["mesh"] != null).ToArray();
+            Equal(2, meshNodes.Length);
+            Equal((int)meshNodes[0]["skin"]!, (int)meshNodes[1]["skin"]!);
+            var firstImported = GlbSkinImporter.Read(bytes, 0, 0);
+            var secondImported = GlbSkinImporter.Read(bytes, 1, 0);
+            Equal(2, new[] { firstImported.Mesh.VertexCount, secondImported.Mesh.VertexCount }.Distinct().Count());
+            True(new[] { first.VertexCount, second.VertexCount }.Contains(firstImported.Mesh.VertexCount));
+            True(new[] { first.VertexCount, second.VertexCount }.Contains(secondImported.Mesh.VertexCount));
+            Equal(1, firstImported.Skeleton.Bones.Count);
+            Equal(1, secondImported.Skeleton.Bones.Count);
+        });
+
         Test("extended skinned GLB export roundtrips every authored influence set", () =>
         {
             var mesh = PrimitiveGeometry.Plane(.2f, .1f);

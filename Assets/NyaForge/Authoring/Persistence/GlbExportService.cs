@@ -32,7 +32,7 @@ namespace NyaForge.Authoring
             lock (workspace.Gate)
             {
                 var objects = workspace.Document.Objects.Select(BuildStaticObject).ToArray();
-                string path = Write(directory, objects, null, GlbExportProfile.StaticGeometry);
+                string path = Write(directory, objects, (SkinnedObject[])null, GlbExportProfile.StaticGeometry);
                 return new GlbExportResult(path, GlbExportProfile.StaticGeometry, objects.Length);
             }
         }
@@ -46,10 +46,11 @@ namespace NyaForge.Authoring
             ValidateRequest(workspace, instance, document, revision, directory);
             lock (workspace.Gate)
             {
-                Checks.Require(workspace.Document.Objects.Count == 1, "GLB_SKIN_OBJECT_COUNT", "Skinned GLB export supports exactly one graph object.");
-                var skinned = BuildSkinnedObject(workspace.Document.Objects[0], instanceWorldTransform, GlbExportProfile.SkinnedGeometry);
-                string path = Write(directory, new[] { skinned.Mesh }, skinned, GlbExportProfile.SkinnedGeometry);
-                return new GlbExportResult(path, GlbExportProfile.SkinnedGeometry, 1);
+                Checks.Require(instanceWorldTransform == null || workspace.Document.Objects.Count == 1, "GLB_SKIN_MULTI_INSTANCE_TRANSFORM", "A selected node instance transform is only valid for a single-object export.");
+                var skinned = workspace.Document.Objects.Select(item => BuildSkinnedObject(item, instanceWorldTransform, GlbExportProfile.SkinnedGeometry)).ToArray();
+                ValidateSharedSkeleton(skinned);
+                string path = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, GlbExportProfile.SkinnedGeometry);
+                return new GlbExportResult(path, GlbExportProfile.SkinnedGeometry, skinned.Length);
             }
         }
 
@@ -63,11 +64,19 @@ namespace NyaForge.Authoring
             ValidateRequest(workspace, instance, document, revision, directory);
             lock (workspace.Gate)
             {
-                Checks.Require(workspace.Document.Objects.Count == 1, "GLB_SKIN_OBJECT_COUNT", "Skinned GLB export supports exactly one graph object.");
-                var skinned = BuildSkinnedObject(workspace.Document.Objects[0], instanceWorldTransform, GlbExportProfile.SkinnedGeometryExtended);
-                string path = Write(directory, new[] { skinned.Mesh }, skinned, GlbExportProfile.SkinnedGeometryExtended);
-                return new GlbExportResult(path, GlbExportProfile.SkinnedGeometryExtended, 1);
+                Checks.Require(instanceWorldTransform == null || workspace.Document.Objects.Count == 1, "GLB_SKIN_MULTI_INSTANCE_TRANSFORM", "A selected node instance transform is only valid for a single-object export.");
+                var skinned = workspace.Document.Objects.Select(item => BuildSkinnedObject(item, instanceWorldTransform, GlbExportProfile.SkinnedGeometryExtended)).ToArray();
+                ValidateSharedSkeleton(skinned);
+                string path = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, GlbExportProfile.SkinnedGeometryExtended);
+                return new GlbExportResult(path, GlbExportProfile.SkinnedGeometryExtended, skinned.Length);
             }
+        }
+
+        static void ValidateSharedSkeleton(IReadOnlyList<SkinnedObject> objects)
+        {
+            Checks.Require(objects != null && objects.Count > 0, "NO_EXPORTABLE_OBJECT", "No skinned graph objects were provided.");
+            string skeletonHash = objects[0].Skeleton.ContentHash;
+            Checks.Require(objects.All(item => item.Skeleton.ContentHash == skeletonHash), "GLB_SKIN_SHARED_SKELETON", "Skinned multi-object GLB export requires all graph objects to share one skeleton.");
         }
 
         static void ValidateRequest(AuthoringWorkspace workspace, string instance, string document, long revision, string directory)
@@ -178,14 +187,16 @@ namespace NyaForge.Authoring
         static PoseSet DefaultPose(SkeletonDefinition skeleton)
         { return PoseSet.Create(skeleton, skeleton.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head)))); }
 
-        static string Write(string directory, MeshObject[] objects, SkinnedObject skinned, GlbExportProfile profile)
+        static string Write(string directory, MeshObject[] objects, SkinnedObject[] skinned, GlbExportProfile profile)
         {
             Checks.Require(objects != null && objects.Length > 0, "NO_EXPORTABLE_OBJECT", "No mesh objects were provided.");
+            if (profile == GlbExportProfile.SkinnedGeometry || profile == GlbExportProfile.SkinnedGeometryExtended)
+                Checks.Require(skinned != null && skinned.Length == objects.Length, "GLB_SKIN_OBJECT_COUNT", "Each skinned mesh must have a matching binding.");
             string staging = directory + ".staging-" + Guid.NewGuid().ToString("N");
             try
             {
                 Directory.CreateDirectory(staging);
-                byte[] bytes = GlbWriter.Build(objects, skinned, profile);
+                byte[] bytes = GlbWriter.BuildMany(objects, skinned, profile);
                 Checks.Require(bytes.Length <= AuthoringLimits.MaxGlbExportBytes, "BUDGET_EXCEEDED", "GLB output exceeds the 128 MiB budget.");
                 string path = Path.Combine(staging, FileName); File.WriteAllBytes(path, bytes);
                 string parent = Path.GetDirectoryName(directory); if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent); Directory.Move(staging, directory);
@@ -263,13 +274,23 @@ namespace NyaForge.Authoring
         { return value <= .0031308f ? value * 12.92f : 1.055f * (float)Math.Pow(value, 1f / 2.4f) - .055f; }
 
         public static byte[] Build(GlbExportService.MeshObject[] objects, GlbExportService.SkinnedObject skinned, GlbExportProfile profile)
+            => BuildMany(objects, skinned == null ? null : new[] { skinned }, profile);
+
+        public static byte[] BuildMany(GlbExportService.MeshObject[] objects, GlbExportService.SkinnedObject[] skinnedObjects, GlbExportProfile profile)
         {
             var binary = new BinaryBuffer(); var views = new JArray(); var accessors = new JArray(); var meshes = new JArray(); var nodes = new JArray(); var skins = new JArray(); var sceneNodes = new JArray();
             var materials = new JArray(); var images = new JArray(); var textures = new JArray();
             var materialRegistry = new MaterialRegistry(binary, views, materials, images, textures);
+            if (IsSkinned(profile))
+            {
+                Checks.Require(skinnedObjects != null && skinnedObjects.Length == objects.Length, "GLB_SKIN_OBJECT_COUNT", "Each skinned mesh must have a matching binding.");
+                Checks.Require(skinnedObjects.Length > 0, "NO_EXPORTABLE_OBJECT", "No skinned graph objects were provided.");
+            }
+            int sharedSkinIndex = -1;
             for (int i = 0; i < objects.Length; i++)
             {
                 var item = objects[i]; var meshObject = item; var mesh = item.Mesh; var primitiveTemplates = new JArray();
+                var currentSkinned = skinnedObjects == null ? null : skinnedObjects[i];
                 int position = AddVec3(binary, views, accessors, mesh.Positions, ArrayBuffer, true);
                 int normal = mesh.Normals.Count == 0 ? -1 : AddVec3(binary, views, accessors, mesh.Normals, ArrayBuffer, false);
                 int tangent = mesh.Tangents.Count == 0 ? -1 : AddVec4(binary, views, accessors, mesh.Tangents, ArrayBuffer);
@@ -277,10 +298,12 @@ namespace NyaForge.Authoring
                 int joints = -1, weights = -1, skinIndex = -1; int[] jointSets = null, weightSets = null;
                 if (IsSkinned(profile))
                 {
-                    jointSets = AddJointSets(binary, views, accessors, mesh.VertexCount, skinned.Binding, skinned.Skeleton, profile == GlbExportProfile.SkinnedGeometryExtended);
-                    weightSets = AddWeightSets(binary, views, accessors, mesh.VertexCount, skinned.Binding, profile == GlbExportProfile.SkinnedGeometryExtended);
+                    Checks.Require(currentSkinned != null, "GLB_SKIN_OBJECT_COUNT", "Skinned mesh binding is missing.");
+                    jointSets = AddJointSets(binary, views, accessors, mesh.VertexCount, currentSkinned.Binding, currentSkinned.Skeleton, profile == GlbExportProfile.SkinnedGeometryExtended);
+                    weightSets = AddWeightSets(binary, views, accessors, mesh.VertexCount, currentSkinned.Binding, profile == GlbExportProfile.SkinnedGeometryExtended);
                     joints = jointSets[0]; weights = weightSets[0];
-                    skinIndex = AddSkeleton(binary, views, accessors, nodes, skins, sceneNodes, skinned);
+                    if (sharedSkinIndex < 0) sharedSkinIndex = AddSkeleton(binary, views, accessors, nodes, skins, sceneNodes, currentSkinned);
+                    skinIndex = sharedSkinIndex;
                 }
                 var morphTargets = new JArray();
                 if (meshObject.Morphs != null)
@@ -326,7 +349,7 @@ namespace NyaForge.Authoring
                         // vertices repeatedly and can exceed the authoring cap.
                         meshObject.SlotMaterials.TryGetValue(slot, out var binding);
                         primitiveTemplates.Add(BuildSlotPrimitive(binary, views, accessors, mesh, mesh.Submeshes[slot],
-                            binding?.Material, materialRegistry, skinned, profile, meshObject.Morphs));
+                            binding?.Material, materialRegistry, currentSkinned, profile, meshObject.Morphs));
                     }
                 }
                 else
