@@ -4,6 +4,8 @@
 
 ### 直近の実装カード（2026-09-13）
 
+- **T05 / Windows UI可読性**: 制作対象の長いGUIDは先頭8文字をボタンへ表示し、完全なobject identityはツールチップへ残して横方向の文字欠けを避けた。Player `Builds/UiReadabilityV5/NyaForge.exe` の1600x1000 Authoring suite（report `Artifacts/Authoring-20260913-050718-3dcde3ca7ffd43f68d6b7b718bf2ea1c/report.json`）合格。800x600は未スクロール対象を使う自動ポインタ検証が残るため、最小画面の実操作受入は未完了。
+
 - **I04-E / 必須拡張ガード**: 完全なadapterがない `extensionsRequired` はGLB/VRM取込前に `UNSUPPORTED_EXTENSION` で拒否し、`extensionsUsed` は従来どおり partial 診断として保持する。Core 446件、Windows Authoring suite（Player `Builds/RequiredExtensionGuardV1/NyaForge.exe`、report `Artifacts/Authoring-20260913-045811-6f323347842b4d548e95a60aebd4700b/report.json`）合格。
 
 - **I04-E / 実モデル材質診断と複数slot GLB往復**: 埋め込みbase-color画像は1024x1024以内だけnative Paintへ保持し、超過/不正形式は明示warningで省略する。sRGB係数は0〜1へクランプし、skinned GLBの複数material slotはスロットごとの局所頂点アクセサへ分割して再取込時の重複計上を防ぐ。Core 446件、RadDollV3 Windows Player smoke（取込→編集→保存/Open→標準skinned GLB→再取込）合格。

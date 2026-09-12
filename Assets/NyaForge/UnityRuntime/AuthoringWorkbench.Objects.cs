@@ -40,9 +40,10 @@ namespace NyaForge.UnityRuntime
                 string kind = item.IsStaticProfile ? "static" : "graph";
                 var button = new Button(() => Execute(AuthoringOperation.SelectObject(id)))
                 {
-                    text = (id == workspace.Document.ActiveObjectId ? "● " : "　") + kind + " · " + id,
+                    text = (id == workspace.Document.ActiveObjectId ? "● " : "　") + kind + " · " + (id.Length > 8 ? id.Substring(0, 8) : id),
                     name = "object-select-" + id
                 };
+                button.tooltip = kind + " · " + id;
                 button.SetEnabled(id != workspace.Document.ActiveObjectId);
                 objectSelectionPanel.Add(button);
             }
