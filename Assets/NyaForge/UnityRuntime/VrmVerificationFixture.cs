@@ -38,6 +38,8 @@ namespace NyaForge.UnityRuntime
 
         static void AddVrm(JObject root, bool legacy)
         {
+            // Source origin intentionally differs from the inverse-bind head (0.1).
+            root["nodes"][1]["translation"] = new JArray(0, .3, 0);
             ((JArray)root["nodes"]).Add(new JObject { ["mesh"] = 0, ["skin"] = 0 });
             root["meshes"][0]["primitives"][0]["targets"] = new JArray(new JObject { ["POSITION"] = 0 });
             var vrm = new JObject { ["specVersion"] = legacy ? "0.0" : "1.0" };

@@ -18,14 +18,18 @@ namespace NyaForge.Authoring.Import
         public SkeletonDefinition Skeleton { get; }
         public SkinBinding Binding { get; }
         public ImportedBoneMap BoneMap { get; }
+        public IReadOnlyDictionary<int, Vec3> SourceNodeOrigins { get; }
         public IReadOnlyList<string> Warnings { get; }
 
-        internal ImportedSkinnedMeshSource(string sourceHash, MeshData mesh, MorphSet morphs, SkeletonDefinition skeleton, SkinBinding binding, IEnumerable<string> warnings, IDictionary<int, string> nodeToBone)
+        internal ImportedSkinnedMeshSource(string sourceHash, MeshData mesh, MorphSet morphs, SkeletonDefinition skeleton, SkinBinding binding, IEnumerable<string> warnings, IDictionary<int, string> nodeToBone, IDictionary<int, Vec3> nodeOrigins)
         {
             Checks.HashText(sourceHash); Checks.Require(mesh != null && skeleton != null && binding != null, "INVALID_IMPORT", "Skinned GLB result is incomplete.");
             Checks.Require(binding.MeshTopologyHash == mesh.TopologyHash && binding.SkeletonHash == skeleton.ContentHash, "INVALID_IMPORT", "Skinned GLB identities are inconsistent.");
             SourceHash = sourceHash; Format = "glb.v2.skin.v1"; Mesh = mesh; Morphs = morphs; Skeleton = skeleton; Binding = binding;
             BoneMap = new ImportedBoneMap(sourceHash, skeleton, nodeToBone);
+            Checks.Require(nodeOrigins != null && nodeOrigins.Count == nodeToBone.Count && nodeToBone.Keys.All(nodeOrigins.ContainsKey), "INVALID_IMPORT", "Source node origins must cover imported joints.");
+            foreach (var origin in nodeOrigins.Values) Checks.Finite(origin);
+            SourceNodeOrigins = new System.Collections.ObjectModel.ReadOnlyDictionary<int, Vec3>(new Dictionary<int, Vec3>(nodeOrigins));
             Warnings = Array.AsReadOnly((warnings ?? Array.Empty<string>()).ToArray());
         }
     }
@@ -96,7 +100,7 @@ namespace NyaForge.Authoring.Import
             Checks.Require(vertexOffset == baseSource.Mesh.VertexCount, "INVALID_IMPORT", "Skin vertex count differs from imported mesh.");
             var binding = SkinBinding.Create(baseSource.Mesh, jointToBone.Skeleton, rawWeights);
             var warnings = new List<string>(baseSource.Warnings) { "GLB skin weights were imported into a translation-only rest skeleton; inverse-bind rotation and scale are outside this adapter." };
-            return new ImportedSkinnedMeshSource(document.SourceHash, baseSource.Mesh, baseSource.Morphs, jointToBone.Skeleton, binding, warnings, jointToBone.NodeToBone);
+            return new ImportedSkinnedMeshSource(document.SourceHash, baseSource.Mesh, baseSource.Morphs, jointToBone.Skeleton, binding, warnings, jointToBone.NodeToBone, jointNodes.ToDictionary(node => node, node => world[node]));
         }
 
         sealed class SkeletonResult

@@ -37,6 +37,10 @@ namespace NyaForge.UnityRuntime
                 var humanoid = importedRigSession.ResolveHumanoid(graph);
                 Check(humanoid["hips"] == importedRigSession.NodeToBone[0], "Humanoid mapping changed on Open");
                 var skeletonNode = graph.Nodes[importedRigSession.SkeletonNodeId];
+                Check(importedRigSession.SourceNodeOrigins != null && importedRigSession.SourceNodeOrigins[1].Y == .3f, "Source node origin was lost on Open");
+                var restPose = PoseSet.Create(skeletonNode.Skeleton, skeletonNode.Skeleton.Bones.Select(b => new BonePose(b.BoneId, PoseTransform.FromTranslation(b.Head))));
+                var nodeSpace = new NyaForge.Authoring.Import.ImportedNodeSpace(importedRigSession, graph, restPose);
+                SpringCheckNear(new Vec3(0, .5f, 0), nodeSpace.TransformPoint(1, new Vec3(0, .2f, 0)));
                 var moved = SkeletonEditing.MoveBone(skeletonNode.Skeleton, humanoid["hips"], new Vec3(.01f, 0, 0), new Vec3(.01f, 0, 0));
                 Execute(AuthoringOperation.ReplaceGraph(graph.ReplaceNode(GraphNode.SkeletonNode(skeletonNode.NodeId, moved))));
                 Check(importedRigStatus.text.Contains("IMPORT_SKELETON_CHANGED"), "Edited skeleton did not report stale mapping");

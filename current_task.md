@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01〜R10は下記のCore/Windows自動検証範囲で完了。実素材・実操作受入は独立して未完了。最新のCoreは333件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
+更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01〜R10は下記のCore/Windows自動検証範囲で完了。実素材・実操作受入は独立して未完了。最新のCoreは334件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
 
 ## 開発の入口
 
@@ -38,6 +38,15 @@
 状況照合時点では未修正だったR01/R02/R09を、下記の実装と自動検証で更新した。チェック済みは自動検証範囲であり、実素材と実マウスによる受入は別タスクのまま維持する。
 
 修正後は、未保持のgravityDir・collider shape値と保存移行を含むVRM入力契約を整え、node→stable BoneId、preview接続へ進む。一般node transform、skin/morph出力、実アバター受入、C1〜C5の全体目標は維持する。
+
+### I03座標基盤: 元node原点の保存と変換（2026-09-12）
+
+- GLB skin取込で親translationを合成したSourceNodeOriginsを保持する。inverse-bind由来のbone Headと同一視しない。ImportedRigSession v2へ保存し、v1読込はorigin不明として保持する。旧mapping自体は引き続き利用可能。
+- `ImportedNodeSpace`へsource-local→source-rest→bone-local→posed avatarの変換を分離。source/skeleton/graphの検査と、origin不足・未対応nodeの拒否を含む。旧作品のGUIには元node座標不足を表示する。
+- Core **334 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a40c1a16d57e487083686e63ee83d0bb`。元node原点とinverse-bind Headが異なるfixtureをnative保存/Openし、移動/90度回転後の解析値と比較。v1移行で不明を維持、欠落node原点・未対応nodeを拒否した。
+- 契約は [元node空間](docs/Imported-Node-Space.md)。次はVRM0/1の座標表現をsource-localへ変換するcollider adapter、半径scale、center空間と重力/時間設定を接続する。非joint nodeや一般node回転/scale、再生GUIは未完了。
+
+- Windows-NodeSpace build **PASS**: `Logs/build-player-20260912-143434-782.log`。Authoring suite **PASS**: `Artifacts/Authoring-20260912-143546-e00b3bf1383140b0a3d863c045a4e98d/report.json`。VRM0/1のnode原点を保持してSave/Openし、local offsetからの変換結果を確認。実素材preview・実マウス受入は未実施。
 
 ### I03前段: capsule衝突コア（2026-09-12）
 

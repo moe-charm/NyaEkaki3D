@@ -14,8 +14,9 @@ namespace NyaForge.Authoring.Import
         public static byte[] Write(ImportedRigSession session)
         {
             Checks.Require(session != null, "INVALID_IMPORT", "Imported rig session is required.");
-            var root = new JObject { ["version"] = 1, ["sourceHash"] = session.SourceHash, ["skeletonHash"] = session.SkeletonHash,
+            var root = new JObject { ["version"] = 2, ["sourceHash"] = session.SourceHash, ["skeletonHash"] = session.SkeletonHash,
                 ["graphId"] = session.GraphId, ["skeletonNodeId"] = session.SkeletonNodeId,
+                ["origins"] = ImportedNodeOriginsJson.Write(session.SourceNodeOrigins),
                 ["nodes"] = new JArray(session.NodeToBone.OrderBy(p => p.Key).Select(p => new JObject { ["node"] = p.Key, ["boneId"] = p.Value })),
                 ["humanoid"] = new JArray(session.HumanoidNodes.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => new JObject { ["name"] = p.Key, ["node"] = p.Value })) };
             return new UTF8Encoding(false).GetBytes(root.ToString(Formatting.Indented) + "\n");
@@ -33,8 +34,9 @@ namespace NyaForge.Authoring.Import
                     root = JObject.Load(reader, new JsonLoadSettings { DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error });
                     Checks.Require(!reader.Read(), "INVALID_IMPORT", "Trailing imported rig data is not allowed.");
                 }
-                Fields(root, "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid");
-                Checks.Require(Integer(root, "version") == 1, "UNSUPPORTED_FORMAT", "Imported rig session version is unsupported.");
+                int version = Integer(root, "version");
+                Fields(root, version == 1 ? new[] { "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid" } : new[] { "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid", "origins" });
+                Checks.Require(version == 1 || version == 2, "UNSUPPORTED_FORMAT", "Imported rig session version is unsupported.");
                 var nodes = new Dictionary<int, string>(); var humanoid = new Dictionary<string, int>(StringComparer.Ordinal);
                 foreach (var token in Array(root, "nodes"))
                 {
@@ -46,7 +48,7 @@ namespace NyaForge.Authoring.Import
                     var value = token as JObject; Fields(value, "name", "node");
                     Checks.Require(humanoid.TryAdd(Text(value, "name"), Integer(value, "node")), "INVALID_IMPORT", "Imported humanoid name repeats.");
                 }
-                return new ImportedRigSession(Text(root, "sourceHash"), Text(root, "skeletonHash"), Text(root, "graphId"), Text(root, "skeletonNodeId"), nodes, humanoid);
+                return new ImportedRigSession(Text(root, "sourceHash"), Text(root, "skeletonHash"), Text(root, "graphId"), Text(root, "skeletonNodeId"), nodes, humanoid, version == 1 ? null : ImportedNodeOriginsJson.Read(root["origins"]));
             }
             catch (JsonException error) { throw new AuthoringException("INVALID_IMPORT", error.Message); }
             catch (DecoderFallbackException error) { throw new AuthoringException("INVALID_IMPORT", error.Message); }

@@ -12,6 +12,7 @@ internal static partial class Program
 {
     static void RunImportedRigSessionTests()
     {
+        RunImportedNodeSpaceTests();
         Test("Imported rig identity survives snapshot Open and detects changed skeleton", () =>
         {
             var bytes = BuildMappedVrm(false); var source = GlbSkinImporter.Read(bytes); var metadata = VrmMetadataReader.Read(bytes);

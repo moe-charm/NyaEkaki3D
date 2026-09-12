@@ -2,9 +2,11 @@
 
 更新: 2026-09-12。I02。`ImportedRigSession`は元ファイルのsource hash、取込時skeleton hash、対象GraphId/SkeletonNodeId、node→BoneId、humanoid semantic→nodeを保持する。元モデルのbytesは含まない。
 
+現在のwriterはversion 2で、元node原点も保持する。version 1/2 readerと座標変換の詳細は [元node空間](Imported-Node-Space.md) を参照。
+
 ## 保存形式と境界
 
-`ImportedRigSessionCodec`のversion 1 JSONは上記identityと対応列を持つ。node列はnode番号、humanoid列はordinal name順で決定的に書く。最大256骨・256semantic、UUID/hash形式、重複node/boneId/semantic、未知field、UTF-8、JSON深さ・末尾データを検査する。
+version 1で導入した`ImportedRigSessionCodec`の基本JSONは上記identityと対応列を持つ。node列はnode番号、humanoid列はordinal name順で決定的に書く。最大256骨・256semantic、UUID/hash形式、重複node/boneId/semantic、未知field、UTF-8、JSON深さ・末尾データを検査する。
 
 `ProjectAttachments.Rig`（`imported-rig-session.nyaforge.json`）を3つ目の許可されたattachmentとして追加する。schema 4 envelopeは維持し、expression/Spring/rigの最大3件を同じmanifestで一括公開する。writer lock、保存version、失敗時の旧snapshot保持を共用する。旧schemaの外部sidecar探索対象は従来のexpression/Springだけで、rig名の任意ファイルは取り込まない。
 
