@@ -110,7 +110,7 @@ namespace NyaForge.UnityRuntime
         void ExportGlbSkinned() => Try(() =>
         {
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            var result = GlbExportService.ExportSkinned(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory);
+            var result = GlbExportService.ExportSkinned(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, importedRigSession?.MeshInstanceTransform);
             SetStatus("標準GLB（skin/morph保持）を書き出しました: " + result.Path);
         });
 

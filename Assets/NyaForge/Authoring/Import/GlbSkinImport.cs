@@ -23,8 +23,10 @@ namespace NyaForge.Authoring.Import
         public IReadOnlyDictionary<int, Vec3> SourceNodeOrigins { get; }
         public IReadOnlyList<string> Warnings { get; }
         public ImportedSourceHierarchy Hierarchy { get; }
+        /// <summary>World affine of the selected skinned node instance, when an instance was selected.</summary>
+        public SourceAffine InstanceWorldTransform { get; }
 
-        internal ImportedSkinnedMeshSource(string sourceHash, int meshIndex, int skinIndex, MeshData mesh, MorphSet morphs, SkeletonDefinition skeleton, SkinBinding binding, IEnumerable<string> warnings, IDictionary<int, string> nodeToBone, IDictionary<int, Vec3> nodeOrigins, ImportedSourceHierarchy hierarchy)
+        internal ImportedSkinnedMeshSource(string sourceHash, int meshIndex, int skinIndex, MeshData mesh, MorphSet morphs, SkeletonDefinition skeleton, SkinBinding binding, IEnumerable<string> warnings, IDictionary<int, string> nodeToBone, IDictionary<int, Vec3> nodeOrigins, ImportedSourceHierarchy hierarchy, SourceAffine instanceWorldTransform = null)
         {
             Checks.HashText(sourceHash); Checks.Require(meshIndex >= 0 && skinIndex >= 0 && mesh != null && skeleton != null && binding != null, "INVALID_IMPORT", "Skinned GLB result is incomplete.");
             Checks.Require(binding.MeshTopologyHash == mesh.TopologyHash && binding.SkeletonHash == skeleton.ContentHash, "INVALID_IMPORT", "Skinned GLB identities are inconsistent.");
@@ -34,6 +36,7 @@ namespace NyaForge.Authoring.Import
             foreach (var origin in nodeOrigins.Values) Checks.Finite(origin);
             SourceNodeOrigins = new System.Collections.ObjectModel.ReadOnlyDictionary<int, Vec3>(new Dictionary<int, Vec3>(nodeOrigins));
             hierarchy.ValidateJointOrigins(SourceNodeOrigins); Hierarchy = hierarchy;
+            InstanceWorldTransform = instanceWorldTransform;
             Warnings = Array.AsReadOnly((warnings ?? Array.Empty<string>()).ToArray());
         }
     }
@@ -66,7 +69,14 @@ namespace NyaForge.Authoring.Import
             return Parse(GlbDocumentReader.Read(bytes), meshIndex, skinIndex);
         }
 
-        static ImportedSkinnedMeshSource Parse(GlbDocument document, int meshIndex, int skinIndex)
+        /// <summary>Reads one mesh/skin and retains the explicitly selected node instance affine.</summary>
+        public static ImportedSkinnedMeshSource Read(byte[] bytes, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform)
+        {
+            Checks.Require(instanceWorldTransform != null, "INVALID_IMPORT", "Selected skinned node instance transform is required.");
+            return Parse(GlbDocumentReader.Read(bytes), meshIndex, skinIndex, instanceWorldTransform);
+        }
+
+        static ImportedSkinnedMeshSource Parse(GlbDocument document, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null)
         {
             var root = document.Root;
             var meshes = Array(root, "meshes"); Checks.Require(meshIndex >= 0 && meshIndex < meshes.Count, "INVALID_IMPORT", "Selected GLB mesh index is out of range.");
@@ -116,7 +126,8 @@ namespace NyaForge.Authoring.Import
             Checks.Require(vertexOffset == baseSource.Mesh.VertexCount, "INVALID_IMPORT", "Skin vertex count differs from imported mesh.");
             var binding = SkinBinding.Create(baseSource.Mesh, jointToBone.Skeleton, rawWeights);
             var warnings = new List<string>(baseSource.Warnings) { "GLB source node TRS/matrix and inverse-bind affine frames are retained in the source-skin package; the authored skeleton publishes portable head/tail data." };
-            return new ImportedSkinnedMeshSource(document.SourceHash, meshIndex, skinIndex, baseSource.Mesh, baseSource.Morphs, jointToBone.Skeleton, binding, warnings, jointToBone.NodeToBone, jointNodes.ToDictionary(node => node, node => world[node]), hierarchy);
+            if (instanceWorldTransform != null) warnings.Add("Selected skinned node instance world transform is retained for display and standard GLB output.");
+            return new ImportedSkinnedMeshSource(document.SourceHash, meshIndex, skinIndex, baseSource.Mesh, baseSource.Morphs, jointToBone.Skeleton, binding, warnings, jointToBone.NodeToBone, jointNodes.ToDictionary(node => node, node => world[node]), hierarchy, instanceWorldTransform);
         }
 
         sealed class SkeletonResult

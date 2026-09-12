@@ -54,8 +54,13 @@ namespace NyaForge.Authoring.Graph
         {
             Checks.Require(session != null && session.SourceSkin != null && session.SourceSkinBinding != null,
                 "IMPORT_SOURCE_SKIN_MISSING", "A complete source skin session is required.");
-            return Apply(input, session.SourceSkin, session.SourceSkinBinding,
+            var result = Apply(input, session.SourceSkin, session.SourceSkinBinding,
                 SourceSkinPosePalette.Build(session, graph, authoredPose));
+            if (session.MeshInstanceTransform == null) return result;
+            // A selected node instance is outside the skin palette. Apply its
+            // affine after skinning so authored edits stay in source-local space
+            // and the displayed/exported result matches the original scene.
+            return result.WithMesh(SourceMeshTransform.Apply(result.Mesh, session.MeshInstanceTransform).Mesh);
         }
 
         static GraphMeshValue Apply(GraphMeshValue input, ImportedRigSession session,

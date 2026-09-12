@@ -89,3 +89,9 @@ node最大4096、childrenの順序保持、範囲/重複/複数親/循環を検�
 GLB geometry/skin importerへの接続は未実施。このreader単体が成功しても、mesh/skin/morph/材質を制作projectへ取り込めるという意味ではない。保存payloadもまだ変更していない。次は一般inverse-bindを含むsource skin候補と、完全な変換情報の保存/移行。
 
 追加Core回帰: 実GLB containerからのmatrix/TRSと配列後方の親、元children順、非jointを含むworld合成、4096段の木、translation-profileとの原点一致、明示null/型/配列長/範囲/重複/循環/特異scaleの拒否。入力JSON変更からの独立性も確認する。
+
+## skinned node instance（v6, 2026-09-13）
+
+`GlbSkinImporter.Read(bytes, meshIndex, skinIndex, instanceWorldTransform)` は、選択したskinned nodeのworld affineをsource skin paletteへ混ぜず、`ImportedSkinnedMeshSource.InstanceWorldTransform` として保持する。`ImportedRigSession` はこの値を `meshInstanceTransform` としてv6へ保存し、旧v1〜v5のsessionを変更しない。
+
+表示では `SourceSkinGraphAdapter` が最終graph outputへskinを適用した後にinstance affineを一度だけ適用する。編集はsource-local空間に残る。標準SkinnedGeometry GLBは同じaffineをmesh nodeのcolumn-major `matrix` として出力するため、骨のinverse-bindとmesh node配置を二重に変換しない。実SDK/実VRChatでのmatrix受入は別途必要である。

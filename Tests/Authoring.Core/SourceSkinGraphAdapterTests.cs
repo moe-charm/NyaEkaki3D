@@ -50,7 +50,11 @@ internal static partial class Program
 
         Test("source skin graph adapter projects the skin input instead of authored SkinDeform output", () =>
         {
-            var bytes = BuildMappedVrm(false); var imported = GlbSkinImporter.Read(bytes); var source = GlbSourceSkinImporter.Read(bytes);
+            var bytes = BuildMappedVrm(false); var root = Newtonsoft.Json.Linq.JObject.Parse(ReadJsonChunk(bytes));
+            ((Newtonsoft.Json.Linq.JObject)root["nodes"]![0]!)!["translation"] = new Newtonsoft.Json.Linq.JArray(1, 2, 3);
+            bytes = ReplaceJsonChunk(bytes, root.ToString());
+            var instance = GlbSceneInventoryReader.Read(bytes).Instances.Single();
+            var imported = GlbSkinImporter.Read(bytes, 0, 0, instance.WorldTransform); var source = GlbSourceSkinImporter.Read(bytes);
             string meshId = Guid.NewGuid().ToString("D"), skeletonId = Guid.NewGuid().ToString("D"), bindId = Guid.NewGuid().ToString("D"), poseId = Guid.NewGuid().ToString("D"), deformId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
             var pose = PoseSet.Create(imported.Skeleton, imported.Skeleton.Bones.Select(b => new BonePose(b.BoneId, PoseTransform.FromTranslation(b.Head))));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), new[] {
@@ -63,7 +67,7 @@ internal static partial class Program
             var session = ImportedRigSession.Create(imported, null, graph.GraphId, skeletonId).WithSourceSkin(source.Skin, source.Binding);
             var evaluation = GraphEvaluator.Evaluate(graph); True(evaluation.IsComplete);
             var projected = SourceSkinGraphAdapter.ApplyToEvaluation(evaluation, graph, session);
-            for (int i = 0; i < imported.Mesh.VertexCount; i++) SpringPointNear(imported.Mesh.Positions[i], projected.Mesh.Positions[i]);
+            for (int i = 0; i < imported.Mesh.VertexCount; i++) SpringPointNear(instance.WorldTransform.TransformPoint(imported.Mesh.Positions[i]), projected.Mesh.Positions[i]);
             Equal(evaluation.Output.DomainId, projected.DomainId); Equal(evaluation.Output.Transform.Scale, projected.Transform.Scale);
             var moved = PoseSet.Create(imported.Skeleton, imported.Skeleton.Bones.Select((b, i) => new BonePose(b.BoneId, i == 0 ? PoseTransform.RotationZ(25, b.Head) : PoseTransform.FromTranslation(b.Head))));
             var movedGraph = graph.ReplaceNode(GraphNode.PoseNode(poseId, moved)); var movedEvaluation = GraphEvaluator.Evaluate(movedGraph);

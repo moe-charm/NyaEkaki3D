@@ -14,12 +14,15 @@ namespace NyaForge.Authoring.Import
         public static byte[] Write(ImportedRigSession session)
         {
             Checks.Require(session != null, "INVALID_IMPORT", "Imported rig session is required.");
-            var root = new JObject { ["version"] = session.SourceSkinBinding != null ? 5 : session.SourceSkin == null ? 3 : 4, ["sourceHash"] = session.SourceHash, ["skeletonHash"] = session.SkeletonHash,
+            if (session.MeshInstanceTransform != null)
+                Checks.Require(session.SourceSkin != null && session.SourceSkinBinding != null, "INVALID_IMPORT", "A skinned node instance transform requires a complete source skin package.");
+            var root = new JObject { ["version"] = session.MeshInstanceTransform != null ? 6 : session.SourceSkinBinding != null ? 5 : session.SourceSkin == null ? 3 : 4, ["sourceHash"] = session.SourceHash, ["skeletonHash"] = session.SkeletonHash,
                 ["graphId"] = session.GraphId, ["skeletonNodeId"] = session.SkeletonNodeId,
                 ["origins"] = ImportedNodeOriginsJson.Write(session.SourceNodeOrigins),
                 ["hierarchy"] = ImportedSourceHierarchyJson.Write(session.Hierarchy),
                 ["nodes"] = new JArray(session.NodeToBone.OrderBy(p => p.Key).Select(p => new JObject { ["node"] = p.Key, ["boneId"] = p.Value })),
                 ["humanoid"] = new JArray(session.HumanoidNodes.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => new JObject { ["name"] = p.Key, ["node"] = p.Value })) };
+            if (session.MeshInstanceTransform != null) root["meshInstanceTransform"] = new JArray(session.MeshInstanceTransform.ToColumnMajor());
             if (session.SourceSkin != null) root["sourceSkin"] = Convert.ToBase64String(SourceSkinCodec.Write(session.SourceSkin));
             if (session.SourceSkinBinding != null)
             {
@@ -43,8 +46,8 @@ namespace NyaForge.Authoring.Import
                     Checks.Require(!reader.Read(), "INVALID_IMPORT", "Trailing imported rig data is not allowed.");
                 }
                 int version = Integer(root, "version");
-                Checks.Require(version >= 1 && version <= 5, "UNSUPPORTED_FORMAT", "Imported rig session version is unsupported.");
-                Fields(root, version == 5 ? new[] { "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid", "origins", "hierarchy", "sourceSkinPackage" } : version == 4 ? new[] { "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid", "origins", "hierarchy", "sourceSkin" } : version == 3 ? new[] { "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid", "origins", "hierarchy" } : version == 1 ? new[] { "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid" } : new[] { "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid", "origins" });
+                Checks.Require(version >= 1 && version <= 6, "UNSUPPORTED_FORMAT", "Imported rig session version is unsupported.");
+                Fields(root, version == 6 ? new[] { "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid", "origins", "hierarchy", "sourceSkinPackage", "meshInstanceTransform" } : version == 5 ? new[] { "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid", "origins", "hierarchy", "sourceSkinPackage" } : version == 4 ? new[] { "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid", "origins", "hierarchy", "sourceSkin" } : version == 3 ? new[] { "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid", "origins", "hierarchy" } : version == 1 ? new[] { "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid" } : new[] { "version", "sourceHash", "skeletonHash", "graphId", "skeletonNodeId", "nodes", "humanoid", "origins" });
                 var nodes = new Dictionary<int, string>(); var humanoid = new Dictionary<string, int>(StringComparer.Ordinal);
                 foreach (var token in Array(root, "nodes"))
                 {
@@ -68,7 +71,16 @@ namespace NyaForge.Authoring.Import
                     Checks.Require(root["sourceSkinPackage"]?.Type == JTokenType.String, "INVALID_IMPORT", "Complete source skin package is required in v5.");
                     var package = SourceSkinPackageCodec.Read(Convert.FromBase64String((string)root["sourceSkinPackage"])); sourceSkin = package.Skin; sourceSkinBinding = package.Binding;
                 }
-                return new ImportedRigSession(Text(root, "sourceHash"), Text(root, "skeletonHash"), Text(root, "graphId"), Text(root, "skeletonNodeId"), nodes, humanoid, version == 1 ? null : ImportedNodeOriginsJson.Read(root["origins"]), version < 3 ? null : ImportedSourceHierarchyJson.Read(root["hierarchy"]), sourceSkin, sourceSkinBinding);
+                SourceAffine meshInstanceTransform = version == 6 ? ReadAffine(root["meshInstanceTransform"]) : null;
+                if (version == 6)
+                {
+                    Checks.Require(root["sourceSkinPackage"]?.Type == JTokenType.String, "INVALID_IMPORT", "Complete source skin package is required in v6.");
+                    if (sourceSkin == null)
+                    {
+                        var package = SourceSkinPackageCodec.Read(Convert.FromBase64String((string)root["sourceSkinPackage"])); sourceSkin = package.Skin; sourceSkinBinding = package.Binding;
+                    }
+                }
+                return new ImportedRigSession(Text(root, "sourceHash"), Text(root, "skeletonHash"), Text(root, "graphId"), Text(root, "skeletonNodeId"), nodes, humanoid, version == 1 ? null : ImportedNodeOriginsJson.Read(root["origins"]), version < 3 ? null : ImportedSourceHierarchyJson.Read(root["hierarchy"]), sourceSkin, sourceSkinBinding, meshInstanceTransform);
             }
             catch (JsonException error) { throw new AuthoringException("INVALID_IMPORT", error.Message); }
             catch (DecoderFallbackException error) { throw new AuthoringException("INVALID_IMPORT", error.Message); }
@@ -93,6 +105,18 @@ namespace NyaForge.Authoring.Import
         {
             Checks.Require(value[name]?.Type == JTokenType.Integer, "INVALID_IMPORT", "Imported rig integer is invalid.");
             var number = (long)value[name]; Checks.Require(number >= 0 && number <= int.MaxValue, "INVALID_IMPORT", "Imported rig integer is out of range."); return (int)number;
+        }
+
+        static SourceAffine ReadAffine(JToken token)
+        {
+            var array = token as JArray; Checks.Require(array != null && array.Count == 16, "INVALID_IMPORT", "Mesh instance transform must contain 16 numbers.");
+            var values = new double[16];
+            for (int i = 0; i < values.Length; i++)
+            {
+                Checks.Require(array[i].Type == JTokenType.Float || array[i].Type == JTokenType.Integer, "INVALID_IMPORT", "Mesh instance transform contains a non-number.");
+                values[i] = (double)array[i];
+            }
+            return new SourceAffine(values);
         }
     }
 }

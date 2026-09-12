@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json.Linq;
+using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Rig;
 
@@ -36,12 +37,16 @@ namespace NyaForge.Authoring
         }
 
         public static GlbExportResult ExportSkinned(AuthoringWorkspace workspace, string instance, string document, long revision, string directory)
+            => ExportSkinned(workspace, instance, document, revision, directory, null);
+
+        /// <summary>Writes a skinned GLB while retaining a selected source node instance affine on the mesh node.</summary>
+        public static GlbExportResult ExportSkinned(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, SourceAffine instanceWorldTransform)
         {
             ValidateRequest(workspace, instance, document, revision, directory);
             lock (workspace.Gate)
             {
                 Checks.Require(workspace.Document.Objects.Count == 1, "GLB_SKIN_OBJECT_COUNT", "Skinned GLB export supports exactly one graph object.");
-                var skinned = BuildSkinnedObject(workspace.Document.Objects[0]);
+                var skinned = BuildSkinnedObject(workspace.Document.Objects[0], instanceWorldTransform);
                 string path = Write(directory, new[] { skinned.Mesh }, skinned, GlbExportProfile.SkinnedGeometry);
                 return new GlbExportResult(path, GlbExportProfile.SkinnedGeometry, 1);
             }
@@ -69,6 +74,7 @@ namespace NyaForge.Authoring
             public MorphSet Morphs;
             public IReadOnlyDictionary<string, float> MorphWeights;
             public string Name;
+            public SourceAffine Affine;
         }
 
         internal sealed class SkinnedObject
@@ -87,7 +93,7 @@ namespace NyaForge.Authoring
             return new MeshObject { Mesh = evaluation.Output.Mesh, Transform = evaluation.Output.Transform, Name = item.ObjectId };
         }
 
-        static SkinnedObject BuildSkinnedObject(AuthoringObject item)
+        static SkinnedObject BuildSkinnedObject(AuthoringObject item, SourceAffine instanceWorldTransform = null)
         {
             Checks.Require(!item.IsStaticProfile, "GLB_SKIN_PROFILE", "Skinned GLB export requires a graph object.");
             var graph = item.Graph; var evaluation = item.EvaluateGraph();
@@ -128,7 +134,7 @@ namespace NyaForge.Authoring
             if (morphs != null) foreach (var pair in weights) Checks.Require(morphs.ById.ContainsKey(pair.Key), "GLB_MORPH_UNRESOLVED", "Morph weight references an unknown target.");
             return new SkinnedObject
             {
-                Mesh = new MeshObject { Mesh = authoredOutput, Transform = evaluation.Output.Transform, Morphs = morphs, MorphWeights = weights, Name = item.ObjectId },
+                Mesh = new MeshObject { Mesh = authoredOutput, Transform = evaluation.Output.Transform, Morphs = morphs, MorphWeights = weights, Name = item.ObjectId, Affine = instanceWorldTransform },
                 Skeleton = skeleton, Binding = binding, Pose = pose
             };
         }
@@ -218,7 +224,11 @@ namespace NyaForge.Authoring
                 }
                 meshes.Add(meshJson);
                 int meshNode = nodes.Count; var node = new JObject { ["name"] = "NyaForgeObject-" + i, ["mesh"] = i };
-                if (profile == GlbExportProfile.SkinnedGeometry) node["skin"] = skinIndex;
+                if (profile == GlbExportProfile.SkinnedGeometry)
+                {
+                    node["skin"] = skinIndex;
+                    if (item.Affine != null) node["matrix"] = new JArray(item.Affine.ToColumnMajor());
+                }
                 else ApplyTransform(node, item.Transform);
                 nodes.Add(node); sceneNodes.Add(meshNode);
             }

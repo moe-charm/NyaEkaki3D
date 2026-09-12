@@ -17,3 +17,5 @@ The adapter rejects skin bindings, mixed attribute or morph layouts, sparse acce
 `VrmSpringSession`／`VrmSpringSessionCodec` persist that inventory as `vrm-spring-session.nyaforge.json`. The workbench shows the restored chain/joint/collider counts after reopening a project. The sidecar is source-pinned and contains no VRM bytes or runtime simulation state.
 
 The Windows workbench uses these adapters only from an empty project and creates a native Source → optional MorphDeform → Output graph. A skin import additionally creates Skeleton, SkinBind, an initial rest pose and SkinDeform nodes. The original file is read locally and is not copied into the public repository. VRM metadata/humanoid, general node transforms, normal/tangent morph deltas and export are separate adapters.
+
+Skinned node instance selection uses `GlbSkinImporter.Read(bytes, meshIndex, skinIndex, instanceWorld)`. The selected affine is retained in `ImportedSkinnedMeshSource.InstanceWorldTransform` and then persisted by `ImportedRigSession` v6; it is applied after source skin for display and emitted as a GLB mesh-node matrix. The source skin package itself remains in source-local coordinates.

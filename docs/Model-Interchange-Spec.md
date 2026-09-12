@@ -165,3 +165,7 @@ GLB/VRMの入出力にはnative blobと分離した128 MiBファイル予算と�
 | `SkinnedGeometry` | 単一graphのsource mesh、4 influence weight、骨階層、inverse bind、POSITION morph | rest pose・identity source/output transformに限定。EditMeshによるトポロジー不変の頂点編集を保持する。任意pose、非ゼロmorph変形、未対応nodeは拒否しnative/static exportを案内 |
 
 GUIには「標準GLB（表示形状）」と「標準GLB（skin/morph保持）」を分けて表示する。出力先は`<project>/exports/glb-*`の新規ディレクトリに限定し、失敗時はstagingを削除して既存制作状態を変更しない。標準GLBの読込確認はCore importerで行い、Unity・VRChat実機での外観／挙動受入とは分離して記録する。
+
+### 8.1 skinned node instance affine（2026-09-13）
+
+node instanceを選択したskinned importでは、mesh resourceのsource-local geometryとskin paletteを変更せず、選択nodeのworld affineを `ImportedRigSession` v6 の `meshInstanceTransform` へ保存する。表示はsource skin後の最終graph outputへ一度だけ適用し、標準SkinnedGeometry GLBではmesh nodeのcolumn-major `matrix` として出力する。旧session v1〜v5は従来どおり読める。複数instanceの同時結合、共有skin参照、実VRChatでの出力受入は未完了である。

@@ -83,5 +83,24 @@ internal static partial class Program
             var altered = (JObject)json.DeepClone(); altered["sourceHash"] = new string('0',64);
             Expect("IMPORT_SOURCE_CHANGED",()=>ImportedRigSessionCodec.Read(Encoding.UTF8.GetBytes(altered.ToString())));
         });
+
+        Test("Imported rig v6 preserves selected skinned node instance affine", () =>
+        {
+            var bytes = BuildMappedVrm(false); var root = JObject.Parse(ReadJsonChunk(bytes));
+            ((JObject)root["nodes"]![0]!)!["translation"] = new JArray(1.25, -2.5, 3.75);
+            ((JObject)root["nodes"]![0]!)!["rotation"] = new JArray(0, 0, Math.Sqrt(.5), Math.Sqrt(.5));
+            ((JObject)root["nodes"]![0]!)!["scale"] = new JArray(2, 3, 4);
+            bytes = ReplaceJsonChunk(bytes, root.ToString());
+            var instance = GlbSceneInventoryReader.Read(bytes).Instances.Single();
+            var imported = GlbSkinImporter.Read(bytes, 0, 0, instance.WorldTransform);
+            var candidate = GlbSourceSkinImporter.Read(bytes, 0, 0);
+            var session = ImportedRigSession.Create(imported, null, GraphId(), GraphId()).WithSourceSkin(candidate.Skin, candidate.Binding);
+            var payload = ImportedRigSessionCodec.Write(session); var json = JObject.Parse(Encoding.UTF8.GetString(payload));
+            Equal(6, (int)json["version"]); Equal(16, ((JArray)json["meshInstanceTransform"]!).Count);
+            var restored = ImportedRigSessionCodec.Read(payload);
+            True(restored.MeshInstanceTransform != null);
+            var a = instance.WorldTransform.ToColumnMajor(); var b = restored.MeshInstanceTransform.ToColumnMajor();
+            for (int i = 0; i < 16; i++) Near((float)a[i], (float)b[i]);
+        });
     }
 }

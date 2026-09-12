@@ -72,7 +72,8 @@ namespace NyaForge.UnityRuntime
                     var linkedSkins = inventory.Instances.Where(item => item.MeshIndex == meshIndex && item.SkinIndex.HasValue).Select(item => item.SkinIndex.Value).Distinct().ToArray();
                     if (linkedSkins.Length > 1 && !linkedSkins.Contains(skinIndex)) throw new InvalidOperationException("選択meshに対応しないskin indexです。node instanceを指定してください。");
                 }
-                ImportSkinnedModel(bytes, vrm, meshIndex, skinIndex); return;
+                var skinnedInstanceWorld = instanceIndex >= 0 ? inventory.Instances[instanceIndex].WorldTransform : null;
+                ImportSkinnedModel(bytes, vrm, meshIndex, skinIndex, skinnedInstanceWorld); return;
             }
             var instanceWorld = instanceIndex >= 0 ? inventory.Instances[instanceIndex].WorldTransform : null;
             var imported = instanceWorld == null ? GlbImporter.Read(bytes, meshIndex) : GlbImporter.Read(bytes, meshIndex, instanceWorld);
@@ -92,9 +93,9 @@ namespace NyaForge.UnityRuntime
             Refresh(); SetStatus("GLBを取り込みました。mesh " + meshIndex + " · " + (imported.Morphs == null ? " morphなし" : " morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12));
         }
 
-        void ImportSkinnedModel(byte[] bytes, VrmMetadata vrm, int meshIndex, int skinIndex)
+        void ImportSkinnedModel(byte[] bytes, VrmMetadata vrm, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null)
         {
-            var imported = GlbSkinImporter.Read(bytes, meshIndex, skinIndex); string sourceId = Guid.NewGuid().ToString("D"), editId = Guid.NewGuid().ToString("D"), skeletonId = Guid.NewGuid().ToString("D"), bindId = Guid.NewGuid().ToString("D"), poseId = Guid.NewGuid().ToString("D"), deformId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
+            var imported = instanceWorldTransform == null ? GlbSkinImporter.Read(bytes, meshIndex, skinIndex) : GlbSkinImporter.Read(bytes, meshIndex, skinIndex, instanceWorldTransform); string sourceId = Guid.NewGuid().ToString("D"), editId = Guid.NewGuid().ToString("D"), skeletonId = Guid.NewGuid().ToString("D"), bindId = Guid.NewGuid().ToString("D"), poseId = Guid.NewGuid().ToString("D"), deformId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
             // Keep an explicit rest-space EditMesh before binding/deformation so a newly
             // imported avatar is immediately editable from the same vertex workflow as a
             // hand-authored graph. The binding topology remains valid for offset-only edits.
