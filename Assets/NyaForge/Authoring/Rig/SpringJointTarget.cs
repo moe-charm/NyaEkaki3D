@@ -3,6 +3,18 @@ namespace NyaForge.Authoring.Rig
     /// <summary>Resolves a simulation endpoint independently of the skeleton's display tail.</summary>
     internal static class SpringJointTarget
     {
+        internal static void ValidateFor(BoneDefinition bone, SpringBoneJointSettings joint)
+        {
+            Validate((joint.RestTailOffset ?? (bone.Tail - bone.Head)) - (joint.RestHeadOffset ?? new Vec3()));
+        }
+
+        internal static Vec3 HeadPosition(SpringBoneJointSettings joint, PoseTransform pose)
+        {
+            var result = pose.TransformPoint(joint.RestHeadOffset ?? new Vec3());
+            Checks.Finite(result);
+            return result;
+        }
+
         internal static void Validate(Vec3 offset)
         {
             Checks.Finite(offset);

@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。最新チェック対象 `023d1cf`。Coreを再実行し334件合格。追加レビューでR11（骨階層の欠落）を再現し、R12（失敗した取込の表示先行更新）をコード上で確認した。R11は中間nodeを通る骨階層保持を修正し、Core338件合格。R12は取込候補と公開を分離し、Windows自動検証まで完了。I03-Aのcollider座標adapterを追加し、center履歴追従を追加し、明示先端の計算を追加し、VRM1 chain解決を追加し、最新Coreは346件合格。過去のR01〜R10は各記録の自動検証範囲で完了、実素材・実操作の受入は未完了。
+更新: 2026-09-12。最新チェック対象 `023d1cf`。Coreを再実行し334件合格。追加レビューでR11（骨階層の欠落）を再現し、R12（失敗した取込の表示先行更新）をコード上で確認した。R11は中間nodeを通る骨階層保持を修正し、Core338件合格。R12は取込候補と公開を分離し、Windows自動検証まで完了。I03-Aのcollider座標adapterを追加し、center履歴追従を追加し、明示先端の計算を追加し、VRM1 chain解決を追加し、明示回転中心を追加し、最新Coreは347件合格。過去のR01〜R10は各記録の自動検証範囲で完了、実素材・実操作の受入は未完了。
 
 ## 開発の入口
 
@@ -21,6 +21,13 @@
 - [ ] **A01 — Windows実素材・実操作受入**。利用可能なローカルモデルで取込・保存/Open・姿勢・揺れ・文字サイズと欠け・保存して終了を確認する。外部MCP transportのmetadata保存も別項目で検証する。完了条件: build名、入力、確認手順、結果、未対応事項の記録。素材はprivate/追跡除外を維持。
 
 現在の証拠: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
+
+### I03-B前段: 元node原点を回転中心に保持（2026-09-12）
+
+- `RestHeadOffset`でCoreの回転中心を明示可能にし、`SpringJointTarget`でhead/tailと長さの検査を共用する。回転後のtranslationを補正してhead位置を維持し、bone Headとsource原点を同一視しない。未指定は従来どおりゼロ。
+- Core **347 passed / 0 failed**: `Logs/core-spring-pivot.txt`、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-d2c8fd00c7c44524a0a84a8677d4e38a`。2倍scale、ずれた原点、12stepのhead固定・tailと子joint一致・長さ、head変更時のstale state、明示/暗黙先端との一致拒否を検証。
+- Windows-SpringPivot build **PASS**: `Logs/build-player-20260912-150727-272.log`。Core計算変更のためPlayer GUI suiteは今回再実行していない。実モデル受入は未実施。
+- [明示先端契約の回転中心拡張](docs/SpringBone-Endpoints.md)参照。計算hash version3へheadを含めたが保存schemaは変更しない。次はVRMの元設定からhead/tailと力を持つ実行用chainを構成する接続。I03-B/C、VRM0展開、runtime所有、再生GUI、実素材受入は未完了。
 
 ### I03-B: VRM1 chainのtopology解決（2026-09-12）
 

@@ -40,6 +40,7 @@ namespace NyaForge.Authoring.Rig
                 foreach (var joint in chain.Joints)
                 {
                     Checks.Require(skeleton.ById.ContainsKey(joint.BoneId), "SPRING_BONE_UNKNOWN", "Spring joint bone does not exist in the skeleton.");
+                    SpringJointTarget.ValidateFor(skeleton.ById[joint.BoneId], joint);
                     Checks.Require(seen.Add(joint.BoneId), "DUPLICATE_SPRING_JOINT", "A spring joint bone may only appear once."); joints.Add(joint); scopes.Add(joint.BoneId, scope);
                 }
             }

@@ -17,8 +17,9 @@ namespace NyaForge.Authoring.Rig
         public Vec3 GravityDirection { get; }
         public float DragForce { get; }
         public Vec3? RestTailOffset { get; }
+        public Vec3? RestHeadOffset { get; }
 
-        public SpringBoneJointSettings(string boneId, float hitRadius, float stiffness, float gravityPower, Vec3 gravityDirection, float dragForce, Vec3? restTailOffset = null)
+        public SpringBoneJointSettings(string boneId, float hitRadius, float stiffness, float gravityPower, Vec3 gravityDirection, float dragForce, Vec3? restTailOffset = null, Vec3? restHeadOffset = null)
         {
             Checks.Id(boneId); Checks.Finite(hitRadius); Checks.Finite(stiffness); Checks.Finite(gravityPower); Checks.Finite(gravityDirection); Checks.Finite(dragForce);
             Checks.Require(hitRadius >= 0f && hitRadius <= 10f, "INVALID_SPRING", "Spring hit radius must be between 0 and 10.");
@@ -26,8 +27,9 @@ namespace NyaForge.Authoring.Rig
             Checks.Require(gravityPower >= 0f && gravityPower <= 1000f, "INVALID_SPRING", "Spring gravity power must be between 0 and 1000.");
             Checks.Require(dragForce >= 0f && dragForce <= 1f, "INVALID_SPRING", "Spring drag force must be between 0 and 1.");
             Checks.Require(LengthSquared(gravityDirection) > 1e-12f || gravityPower == 0f, "INVALID_SPRING", "A nonzero gravity direction is required when gravity is enabled.");
-            if (restTailOffset.HasValue) SpringJointTarget.Validate(restTailOffset.Value);
-            RestTailOffset = restTailOffset;
+            if (restHeadOffset.HasValue) Checks.Finite(restHeadOffset.Value);
+            if (restTailOffset.HasValue) SpringJointTarget.Validate(restTailOffset.Value - (restHeadOffset ?? new Vec3()));
+            RestTailOffset = restTailOffset; RestHeadOffset = restHeadOffset;
             BoneId = boneId; HitRadius = hitRadius; Stiffness = stiffness; GravityPower = gravityPower; GravityDirection = NormalizeOrZero(gravityDirection); DragForce = dragForce;
         }
 
@@ -35,6 +37,8 @@ namespace NyaForge.Authoring.Rig
         {
             writer.Write(BoneId); writer.Write(Checks.Canonical(HitRadius)); writer.Write(Checks.Canonical(Stiffness)); writer.Write(Checks.Canonical(GravityPower));
             writer.Write(Checks.Canonical(GravityDirection.X)); writer.Write(Checks.Canonical(GravityDirection.Y)); writer.Write(Checks.Canonical(GravityDirection.Z)); writer.Write(Checks.Canonical(DragForce));
+            writer.Write(RestHeadOffset.HasValue);
+            if (RestHeadOffset.HasValue) { var head = RestHeadOffset.Value; writer.Write(Checks.Canonical(head.X)); writer.Write(Checks.Canonical(head.Y)); writer.Write(Checks.Canonical(head.Z)); }
             writer.Write(RestTailOffset.HasValue);
             if (RestTailOffset.HasValue) { var tail = RestTailOffset.Value; writer.Write(Checks.Canonical(tail.X)); writer.Write(Checks.Canonical(tail.Y)); writer.Write(Checks.Canonical(tail.Z)); }
 
@@ -98,7 +102,7 @@ namespace NyaForge.Authoring.Rig
             Name = name; Joints = Array.AsReadOnly(jointValues); ColliderGroupIndices = Array.AsReadOnly(groupValues);
             using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream, Encoding.UTF8))
             {
-                writer.Write(2); writer.Write(Name); writer.Write(Joints.Count); foreach (var joint in Joints) joint.Write(writer);
+                writer.Write(3); writer.Write(Name); writer.Write(Joints.Count); foreach (var joint in Joints) joint.Write(writer);
                 writer.Write(ColliderGroupIndices.Count); foreach (var index in ColliderGroupIndices) writer.Write(index);
                 ContentHash = Checks.Hash(stream.ToArray());
             }
@@ -167,7 +171,7 @@ namespace NyaForge.Authoring.Rig
             {
                 var bonePose = SpringPoseHierarchy.Inherit(bone, pose, replacements);
                 if (!jointsById.TryGetValue(bone.BoneId, out var joint)) { replacements.Add(bone.BoneId, bonePose); continue; }
-                Vec3 head = PosedHead(bonePose.Transform), targetTail = SpringJointTarget.Position(bone, joint, bonePose.Transform);
+                Vec3 head = SpringJointTarget.HeadPosition(joint, bonePose.Transform), targetTail = SpringJointTarget.Position(bone, joint, bonePose.Transform);
                 Vec3 oldTail = previous.CurrentTails[joint.BoneId], olderTail = previous.PreviousTails[joint.BoneId];
                 float length = Distance(targetTail, head);
                 Vec3 candidate = deltaTime == 0 ? oldTail : SpringTimeIntegration.Predict(joint, oldTail, olderTail, targetTail, deltaTime, previous.PreviousDeltaTime);
@@ -175,7 +179,7 @@ namespace NyaForge.Authoring.Rig
                 nextTails.Add(joint.BoneId, candidate);
                 Vec3 currentDirection = targetTail - head, desiredDirection = candidate - head;
                 Mat3 rotation = RotationBetween(currentDirection, desiredDirection);
-                PoseTransform transformed = Multiply(rotation, bonePose.Transform);
+                PoseTransform transformed = Multiply(rotation, bonePose.Transform, joint.RestHeadOffset ?? new Vec3());
                 replacements.Add(joint.BoneId, new BonePose(joint.BoneId, transformed));
             }
             var outputPoses = pose.Poses.Select(item => replacements.TryGetValue(item.BoneId, out var replacement) ? replacement : item);
@@ -183,7 +187,6 @@ namespace NyaForge.Authoring.Rig
             return new SpringBoneSimulationResult(output, deltaTime == 0 ? previous : SpringBoneState.Create(skeleton.ContentHash, valid.ChainHash, previous.CurrentTails.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal), nextTails, deltaTime));
         }
 
-        private static Vec3 PosedHead(PoseTransform transform) { return transform.TransformPoint(new Vec3()); }
         private static float Distance(Vec3 a, Vec3 b) { return Length(a - b); }
         private static float Length(Vec3 value) { return (float)Math.Sqrt(value.X * value.X + value.Y * value.Y + value.Z * value.Z); }
         private static Vec3 Normalize(Vec3 value, Vec3 fallback) { float length = Length(value); return length <= 1e-6f ? fallback : value * (1f / length); }
@@ -214,7 +217,12 @@ namespace NyaForge.Authoring.Rig
 
         private static Mat3 IdentityMatrix() { return new Mat3(new Vec3(1, 0, 0), new Vec3(0, 1, 0), new Vec3(0, 0, 1)); }
         private static Mat3 ComposeBasis(Mat3 left, PoseTransform right) { return new Mat3(left.Apply(right.XAxis), left.Apply(right.YAxis), left.Apply(right.ZAxis)); }
-        private static PoseTransform Multiply(Mat3 left, PoseTransform right) { var matrix = ComposeBasis(left, right); return new PoseTransform(matrix.X, matrix.Y, matrix.Z, right.Translation); }
+        private static PoseTransform Multiply(Mat3 left, PoseTransform right, Vec3 localPivot)
+        {
+            var matrix = ComposeBasis(left, right);
+            var translation = right.TransformPoint(localPivot) - matrix.Apply(localPivot);
+            return new PoseTransform(matrix.X, matrix.Y, matrix.Z, translation);
+        }
         private static float Dot(Vec3 a, Vec3 b) { return a.X * b.X + a.Y * b.Y + a.Z * b.Z; }
         private static Vec3 Cross(Vec3 a, Vec3 b) { return new Vec3(a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X); }
     }
