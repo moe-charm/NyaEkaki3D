@@ -22,7 +22,7 @@ namespace NyaForge.UnityRuntime
         {
             modelImportPanel = new Foldout { text = "GLBモデルを取り込む", value = false, name = "model-import" };
             modelImportStatus = new Label { name = "model-import-status" }; modelImportStatus.style.whiteSpace = WhiteSpace.Normal; modelImportPanel.Add(modelImportStatus);
-            var importHelp = new Label("GLB / VRMを取り込みます。候補を確認してmesh / skin indexを選べます。対応するVRM0・VRM1では揺れをプレビューできます。現在は選択した1メッシュ・平行移動だけの骨格に対応し、FBXの直接読込や回転・拡縮を含む骨格は未対応です。");
+            var importHelp = new Label("GLB / VRMを取り込みます。候補を確認してnode instance（-1ならmesh / skin resource）を選べます。nodeを選ぶと、そのmeshとskinの対応を使います。対応するVRM0・VRM1では揺れをプレビューできます。現在は選択した1メッシュ・平行移動だけの骨格に対応し、FBXの直接読込や回転・拡縮を含む骨格は未対応です。");
             importHelp.style.whiteSpace = WhiteSpace.Normal; modelImportPanel.Add(importHelp);
             BuildVrmSpringStatus(modelImportPanel);
             BuildPhysBonesStatus(modelImportPanel);
@@ -50,11 +50,28 @@ namespace NyaForge.UnityRuntime
             var bytes = File.ReadAllBytes(Path.GetFullPath(path));
             VrmMetadata vrm = VrmMetadataReader.ContainsVrm(bytes) ? VrmMetadataReader.Read(bytes) : null;
             var inventory = GlbSceneInventoryReader.Read(bytes);
-            int meshIndex = SelectedModelMeshIndex, skinIndex = SelectedModelSkinIndex;
+            int instanceIndex = SelectedModelInstanceIndex;
+            if (instanceIndex >= 0 && instanceIndex >= inventory.Instances.Count) throw new InvalidOperationException("node instance index が範囲外です。候補を確認してください。");
+            int meshIndex = instanceIndex >= 0 ? inventory.Instances[instanceIndex].MeshIndex : SelectedModelMeshIndex;
+            int? instanceSkinIndex = instanceIndex >= 0 ? inventory.Instances[instanceIndex].SkinIndex : (int?)null;
+            int skinIndex = instanceSkinIndex ?? SelectedModelSkinIndex;
             if (meshIndex < 0 || meshIndex >= inventory.Meshes.Count) throw new InvalidOperationException("mesh index が範囲外です。候補を確認してください。");
-            if (inventory.Skins.Count > 0)
+            bool useSkin = instanceSkinIndex.HasValue;
+            if (instanceIndex < 0)
+            {
+                var linkedSkins = inventory.Instances.Where(item => item.MeshIndex == meshIndex && item.SkinIndex.HasValue).Select(item => item.SkinIndex.Value).Distinct().ToArray();
+                if (linkedSkins.Length == 1) { skinIndex = linkedSkins[0]; useSkin = true; }
+                else if (linkedSkins.Length > 1) useSkin = true;
+                else if (inventory.Instances.Count == 0 && inventory.Skins.Count > 0) useSkin = true;
+            }
+            if (useSkin)
             {
                 if (skinIndex < 0 || skinIndex >= inventory.Skins.Count) throw new InvalidOperationException("skin index が範囲外です。候補を確認してください。");
+                if (instanceIndex < 0)
+                {
+                    var linkedSkins = inventory.Instances.Where(item => item.MeshIndex == meshIndex && item.SkinIndex.HasValue).Select(item => item.SkinIndex.Value).Distinct().ToArray();
+                    if (linkedSkins.Length > 1 && !linkedSkins.Contains(skinIndex)) throw new InvalidOperationException("選択meshに対応しないskin indexです。node instanceを指定してください。");
+                }
                 ImportSkinnedModel(bytes, vrm, meshIndex, skinIndex); return;
             }
             var imported = GlbImporter.Read(bytes, meshIndex);

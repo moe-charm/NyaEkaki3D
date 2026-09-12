@@ -134,7 +134,7 @@ flowchart LR
 
 ## 8. 現在地点と実装順
 
-コード照合対象は `4abd9d9` と取込説明の修正。GLB importは1mesh/1skin、translation-only、4weight、256骨/256morph。取込source nodeは最大4096、一時実行骨は最大256。nativeの材質/rig機能が進んでいても、任意の外部モデルを完全に取り込める段階ではない。
+コード照合対象は現行main。GLB importは一回の制作操作で一つの明示候補を公開し、translation-only、4weight、256骨/256morphの範囲で扱う。`GlbSceneInventoryReader`は複数mesh/instance/skinを元indexで保持し、Workbenchはnode instance indexを指定した場合にそのnodeのmesh／skin対応を採用する。skinを持たないnode instanceは静的meshとして扱い、GLB全体に別skinがあることだけを理由にskinned importへ回さない。取込source nodeは最大4096、一時実行骨は最大256。nativeの材質/rig機能が進んでいても、任意の外部モデルを完全に取り込める段階ではない。
 
 現行readerには本仕様をまだ満たさない箇所もある。`GlbImport`は材質・静的scene構造・NORMAL/TANGENT morphを保持せず警告し、追加UV等も全属性を取り込まない。`GlbSceneInventoryReader`は複数mesh/instance/skinの参照とnode world transformを候補化し、`GlbImporter.Read(bytes, meshIndex)` / `GlbSkinImporter.Read(bytes, meshIndex, skinIndex)` / `GlbSourceSkinImporter.Read(bytes, meshIndex, skinIndex)` とWorkbenchの選択GUIは選択した一候補を読み取るが、geometry/skinを複数制作対象へ公開する機構ではない。未知の `extensionsRequired` を網羅して拒否する処理、任意のVRM meta/利用条件/未知拡張を依存込みで保管する機構も未実装。これらはI04-B/Eの解消対象で、現在の取込成功を本仕様の完全保持成功と称しない。容量監査には16MiB/blob・100,000頂点・32submesh等の予算も含める。
 
