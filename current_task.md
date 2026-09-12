@@ -1,3 +1,11 @@
+## 2026-09-13 consistency feedback final recheck (`5826247`)
+
+提示されたレビュー（基準 `1c76e4a`）を現行 `main` の `5826247` へ再照合した。4件のP1と列挙されたP2は後続実装で閉じており、重複修正は行わず受入証拠を更新した。16bit `JOINTS_n` は2バイト幅で復号し、8bit/16bit同値・負weight拒否を回帰。source skin表示はgraph評価後の編集結果を保持し、PhysBones target packageはprofileが参照するsource assetを同梱してhash検証する。静的GLBのskin判定は選択meshに限定し、同居する小物を取り込める。
+
+Core **459 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f3e6edffd8e847178fe7b97c4dd740e7`）。同一skeleton hashの複数skinned mesh、objectごとのinstance affineを含むGLB出力も回帰済み。実RadDollV3はprivate一時素材で取込→編集→native Save/Open→GLB出力を再確認し、public repositoryへ追加していない（Authoring report `Artifacts/Authoring-20260913-071034-98196e26e7af47cfa3df95cd3eab7bbd/report.json`、Bridge report `Artifacts/BridgeReceiver-20260913-071148-485-e6720b8b0f8d49858a5198eafa261b7/bridge-report.json`）。
+
+残る受入境界は、異なるskeletonの結合、共有mesh/skin/morph参照、完全な材質・animation保持、実VRChat SDK/実アバター/VRChat内のPhysBones動作、実マウス/DPI差。次のタスクはこの境界を混ぜず、共有参照の仕様化または実SDK版固定の受け取り検証へ進める。
+
 ## 2026-09-13 GLB候補選択Dropdown
 
 GLB/VRM取込パネルの数値index入力を通常画面では折りたたみ、候補確認後にmesh resource・skin resource・node instanceを名前付きDropdownから選べるようにした。既存のIntegerFieldは自動検証と互換操作のため内部保持し、Dropdown選択を同じindex契約へ同期する。node instanceを選んだ場合は、従来どおりそのmesh／skin／配置を優先する。候補確認前の未確定状態は明示し、推測選択はしない。

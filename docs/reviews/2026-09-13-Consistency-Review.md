@@ -1,5 +1,11 @@
 # 2026-09-13 consistency review receipt
 
+## 最新HEAD（`5826247`）再照合
+
+提示レビュー（基準 `1c76e4a`）のP1/P2を現行HEADへ再照合した。16bit `JOINTS_n` の2バイト復号、source skin後の下流編集保持、PhysBones source asset同梱、選択mesh単位のskin判定はいずれも実装済みで、Core **459 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f3e6edffd8e847178fe7b97c4dd740e7`）を確認した。P2のreset cache無効化、stable marker再利用、curve削除初期化、再bind Undo、capture camera metadata、負weight事前拒否も既存回帰を維持している。
+
+同一skeleton hashの複数skinned meshとobjectごとのinstance affineを一つのGLBへ出力する追加実装も含む。実RadDollV3のprivate smokeはWindows PlayerとUnity BridgeでPASSしたが、実VRChat SDK/実アバター/VRChat内動作の受入とは分ける。残件は異なるskeleton結合、共有mesh/skin/morph参照、完全な材質・animation保持、実SDK受け取りである。
+
 ## 最新実装追記（同一skeletonの複数mesh GLB出力）
 
 `ExportSkinned`／`ExportSkinnedExtended`は、同一skeleton hashを共有する複数graph objectを一つのGLBへ出力できるようになった。meshごとのprimitiveとnodeを保持しつつskinは共有し、異なるskeletonや複数objectへのinstance affine指定は明示的に拒否する。Core 459件、Windows Player、Unity Bridgeで合成2mesh往復を確認した。異なるskeletonの結合、共有mesh／morph参照、実VRChat SDK受入は引き続き未完了。
