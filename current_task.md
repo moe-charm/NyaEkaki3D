@@ -1,3 +1,9 @@
+## 2026-09-13 GLB候補選択Dropdown
+
+GLB/VRM取込パネルの数値index入力を通常画面では折りたたみ、候補確認後にmesh resource・skin resource・node instanceを名前付きDropdownから選べるようにした。既存のIntegerFieldは自動検証と互換操作のため内部保持し、Dropdown選択を同じindex契約へ同期する。node instanceを選んだ場合は、従来どおりそのmesh／skin／配置を優先する。候補確認前の未確定状態は明示し、推測選択はしない。
+
+Windows Player `Builds/ImportChoiceV2/NyaForge.exe` の800x600 Authoring suite **PASS**（report `Artifacts/Authoring-20260913-065009-b9aa3210c8cc4c30a05bb0c4c142e5b7/report.json`）。合成multi-mesh fixtureでmesh／skin／node候補名の表示、skinned graph取込、頂点編集、複数rig session切替を回帰した。Unity Bridge **PASS**（Unity 2022.3.22f1、`Artifacts/BridgeReceiver-20260913-065043-006-c42930cffe984517a674d26c96f817c2/bridge-report.json`）。Coreは前カードの **458 passed / 0 failed** を正とする。実マウス/DPI差、任意実モデルの全候補目視、実VRChat受入は別境界として残る。
+
 ## 2026-09-13 NativeLocatorV1 実RadDollV3再回帰
 
 native manifest locatorを含む最新Windows Playerで、private一時素材 `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`（45,341,584 bytes）を再取込した。候補確認、rest-space頂点編集、native Save/Open、標準SkinnedGeometry GLB出力までのAuthoring suiteが **PASS**（800x600、report `Artifacts/Authoring-20260913-064533-45e34c13d02f42b3b7691b7dbbb0288f/report.json`）。同じPlayer出力をUnity **2022.3.22f1** Bridgeへ渡した検証も **PASS**（`Artifacts/BridgeReceiver-20260913-064639-406-78812740b9e34d00bccdc1869d314fe8/bridge-report.json`）。private素材はpublic repositoryへ追加していない。

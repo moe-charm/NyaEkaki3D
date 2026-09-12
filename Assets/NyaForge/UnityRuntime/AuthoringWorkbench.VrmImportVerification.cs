@@ -20,6 +20,9 @@ namespace NyaForge.UnityRuntime
             modelImportMeshIndex.SetValueWithoutNotify(1); modelImportSkinIndex.SetValueWithoutNotify(0);
             InspectModelSelection(selectionPath);
             Check(modelImportSelectionStatus.text.Contains("mesh 1") && modelImportSelectionStatus.text.Contains("skins 1"), "Mesh selection inventory was not shown in the import GUI");
+            Check(modelImportMeshChoice != null && modelImportMeshChoice.choices.Count == 2 && modelImportMeshChoice.choices[1].Contains("mesh 1"), "Mesh candidates were not exposed by name");
+            Check(modelImportSkinChoice != null && modelImportSkinChoice.choices.Count == 1 && modelImportSkinChoice.choices[0].Contains("skin 0"), "Skin candidates were not exposed by name");
+            Check(modelImportInstanceChoice != null && modelImportInstanceChoice.choices.Count >= 3 && modelImportInstanceChoice.choices.Any(choice => choice.Contains("Accessory")), "Node instance candidates were not exposed by name");
             ImportModel(selectionPath);
             Check(importedRigSession != null && importedRigSession.SourceSkin != null && importedRigSession.SourceSkinBinding != null, "Selected multi-mesh skin import did not retain source payload");
             Check(workspace.Document.Objects[0].Graph.Nodes.Values.Any(node => node.SourceMesh != null && node.SourceMesh.TopologyHash == importedRigSession.SourceSkinBinding.MeshTopologyHash), "Selected mesh graph was not created");
