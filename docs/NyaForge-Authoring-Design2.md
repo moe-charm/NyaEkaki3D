@@ -433,6 +433,8 @@ UV・paint・材質の後、骨対応とweightを設定し、肩上げ・肘曲�
 
 ## 11. 入力：既存パックと空projectを両立する
 
+> 具体化仕様（2026-09-12）: [モデル取込・情報保持・保存・出力](Model-Interchange-Spec.md)。native正本/交換形式/入力原本の区別、情報別能力、座標/identity/容量の検証を定める。ここで定めるBlenderなしの制作完結と標準Bridge経路は維持する。
+
 現在のNyaForgeは準備済みAssetBundleパックを開き、公開repoにアバターやprivate pack builderは含まれない。この入力経路は維持するが、v2の制作開始条件にはしない。 [README](https://github.com/moe-charm/NyaForge/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/README.md)
 
 起動時に「新しく作る」「制作projectを開く」「モデルを取り込む」「確認用パックを開く」を持つ。新規sceneはrig、animation、packがゼロでも正常な状態。現在のManifest validationを緩めて混在させず、source種別のadapterを分ける。

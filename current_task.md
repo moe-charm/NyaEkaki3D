@@ -1,35 +1,48 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。VRM0/VRM1の再生GUIを接続し、両形式のWindows Player handler検証が合格。Coreの直近検証は360件合格。R01〜R12、T01とT02の対応profileは自動検証済み。一般node変換・実素材/実操作・負荷・可動world root等の受入は未完了。
+更新: 2026-09-12。T03の実素材調査と取込・情報保持・保存・出力の仕様整理が完了。次はI04-A（一般source affine変換）。VRM0/1の対応profileはGUI接続とPlayer handler検証済み。直近Core360件合格、任意の実モデル取込・実操作・性能の受入は未完了。
 
 ## 開発の入口
 
 作業先: `Z:/TextureVoice_local/git/NyaForge`。Windows先行、macOSは将来。
-読む順: このファイル → [開発計画](docs/Development-Plan.md) → [設計v2](docs/NyaForge-Authoring-Design2.md)の対象節 → コード。[文書一覧](docs/README.md)参照。
+読む順: このファイル → [モデル交換仕様](docs/Model-Interchange-Spec.md) → [実素材調査](docs/Real-Asset-Import-Plan.md) → 対象コード。製品全体の範囲は [開発計画](docs/Development-Plan.md) と [設計v2](docs/NyaForge-Authoring-Design2.md) を参照。[文書一覧](docs/README.md)参照。
 製品目標は小物の制作・出力を一周し、低ポリ全身キャラ、品質向上へ進むこと。設計v2は製品方針、v1は背景資料。設計中の外部依存・機能は採用済みや実装済みを意味しない。
 
-## 次に実行するタスク（最新チェック）
+## 次に実行するタスク
 
-最新チェック対象は `4c9ced1`。[再生接続後のレビューと完了条件](docs/reviews/2026-09-12-Playback-Checkpoint.md)。今回Coreを再実行し **353 passed / 0 failed** (`Logs/core-checkpoint-taskification.txt`)。既存Player PASSを再確認したが、今回はbuild/Player・実操作・実素材の検証は行っていない。
+採用した方針: **nativeを制作の正本、GLB/VRMを交換形式、FBX/BLEND/Unityを原本として区別する。** 未対応データを黙って削らず、情報ごとの能力と保持結果を報告する。Blender調査は任意の開発ツールで、標準制作の必須依存へ変更しない。詳細・完了条件は [モデル交換仕様](docs/Model-Interchange-Spec.md)。
 
-- [x] **T01 / P1 — 全source node階層の保持・保存（自動検証完了）**。不変型ImportedSourceHierarchyへ親/原点/元children順を保持し、rig session v3へ保存する。v1/v2は階層不明を維持。Core354件とWindows Player取込Save/Openが合格。VRM0展開はT02。
-- [x] **T02 / P1 — VRM0展開とpreview接続（対応profileの自動検証完了）**。source subtree→一時骨格→実行chain/center/collider→skin pose→GUIへ接続。Windows両形式の再生/停止/Reset/Save/Openを確認。一般transform・実素材・可動world root・参照runtimeとの全挙動比較は残件。
-- [ ] **T03 / P1 — 実素材の取込条件調査**。独立して着手可能。一般node変換や複数mesh等の必要範囲を確定し、必要なI04を先行させる。
-- [ ] **T04 / P2 — 時間超過・性能受入**。現行はframe時間0.25秒超で停止する。実測し、継続/停止方針と回帰を決める。
-- [ ] **T05 / P1 — Windows実操作受入**。T03と必要なI04後に取込・再生・保存/Open・終了・文字の欠けを確認。
-- [ ] **T06 / P2 — 外部MCP metadata保存受入**。内部handler検証とは別にtransport経由の失敗保護と再試行を確認。
+| 状態 / ID | 実行する作業 | 完了条件・依存 |
+|---|---|---|
+| [ ] I04-A / P1 **次に実装** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 回転/scale/鏡映/階層/元原点とbindの差の数値回帰、旧translation/native移行契約。まずCoreの独立数値モジュールから |
+| [ ] I04-B / P1 | 複数mesh/instance/skin、source→制作ID対応 | Objects[0]前提も監査。全対象・同名morph・共有参照を編集/保存/Openで保持。Aの変換契約に依存 |
+| [ ] I04-C / P1 | rig/weight/morph容量とcodec/hash/表示/出力 | 257骨・18weight・単一mesh262morph以上の入力を削減なしで往復。byte/メモリ予算と超過時の拒否を同時に決める |
+| [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
+| [ ] I04-E / P1 | 機能report、材質/animation/VRM意味情報/未知拡張の保持とGUI/MCP | 必須未知拡張の拒否、既知VRM内の未保持field、opaque依存資源と参照失効、未対応を完全成功にしない。report設計はAと並行可 |
+| [ ] T04 / P2 | 時間超過・性能受入 | 0.25秒超frameで停止する現行動作の扱い、frame時間/GC/メモリを実測し方針と回帰を定める |
+| [ ] T05 / P1 | Windows実素材・実操作と受取側 | 必要なI04後に取込・pose/揺れ・保存/Open・終了・DPI/文字欠け・出力を実確認。build/input hash/手順/結果を記録 |
+| [ ] T06 / P2 | 外部MCP metadata保存受入 | 内部handlerと区別し、transport経由で保存/Open・失敗保護・再試行を確認 |
 
-次はT03の実素材取込条件調査。T01/T02は対応profileの自動検証まで完了。T03でI04の必要範囲を確定してからT05へ進み、T04の時間超過/性能も確認する。各完了条件は上記レビュー参照。以下I03/I04/A01は親タスクで、T01〜T06はその実行単位。R11/R12の元の再現条件は [追加レビュー](docs/reviews/2026-09-12-Current-Checkpoint.md) に保持する。
+## 完了した前提と残る境界
 
-- [x] **R11 / P1 — 中間nodeによる骨階層欠落を修正（Core検証完了）**。ImportedJointHierarchyが検証済みsource木から最近傍祖先jointを解決する。合成済みtranslationとinverse-bind由来Headの契約を維持し、tailも中間node越しの子jointから決定する。中間node1/3個・骨登録順違い・親の移動/回転への追従・native保存/Openの4回帰が合格。一般回転/scaleや実モデル受入は別タスク。
-- [x] **R12 / P2 — 取込の候補生成と公開を分離（Windows自動検証完了）**。mesh検査より前のSpring session/Label更新をやめる。完了条件: 不正skin・command失敗時に文書、metadata、表示、dirty/Undoが変わらず、再試行で成功するPlayer検証。Windows Playerで不正skin・command拒否・再試行を検証済み。
-- [x] **I03-A — collider座標adapter（対応profileのCore検証完了）**。VRM0/1の元座標表現を確認し、保存済みnode原点と現在poseからsphere/capsuleを変換する。半径scale・非一様scale/shearの対応方針と診断を定める。完了条件: offset/tail、移動・回転・scale、旧sessionの詳細不足、未対応node、source不一致の回帰合格。元node原点保存とcapsule solverは実装済み。
-- [ ] **I03-B — chain・center・重力・時間の契約**。VRM0 rootからの展開とVRM1 joint列を明示的に変換する。Coreのstiffness上限・時間式と元設定の差を解決し、無言のclampをしない。完了条件: center移動、固定/可変dt、停止/再開、上限外設定の数値検証と契約文書。
-- [ ] **I03-C — Workbench再生・停止・リセット（VRM1のGUI/handler接続済み、受入残）**。計算状態を保存する作品やUndoから分離し、作品切替・骨格変更時の再初期化と失敗表示を実装する。完了条件: Windows Playerで取込→再生→停止→リセット→保存/Openを通し、停止中に履歴が進まず、未対応データを成功表示しない。
-- [ ] **I04 — 実モデル取込profileの拡張**。一般nodeの回転/scale、非joint node、複数mesh等を現行のtranslation-only/1mesh制約と区別する。完了条件: 対象モデルに必要な範囲を先に記録し、対応した変換・属性・skin/morphの数値と保存往復を確認。未対応は具体的に表示する。
-- [ ] **A01 — Windows実素材・実操作受入**。利用可能なローカルモデルで取込・保存/Open・姿勢・揺れ・文字サイズと欠け・保存して終了を確認する。外部MCP transportのmetadata保存も別項目で検証する。完了条件: build名、入力、確認手順、結果、未対応事項の記録。素材はprivate/追跡除外を維持。
+- [x] **T01**: 全source node階層と元children順をrig session v3へ保存。v1/v2は階層不明を維持。
+- [x] **T02**: VRM0 subtree/一時骨格/実行所有者/共通再生GUIを対応profileで接続。両形式のPlayer handler往復合格。
+- [x] **T03**: ローカルFBX3件を読取調査。アバター20mesh、全3件257骨、アバター最大18deform bone影響/頂点・単一mesh262morphを確認。生データはprivate。変換・実importの成功はまだ確認していない。
+- [x] **R01〜R12 / I03-A**: 記録した自動検証範囲で修正・adapter接続済み。[Rig/VRMレビュー](docs/reviews/2026-09-12-Rig-Vrm-Review.md)、[R11/R12](docs/reviews/2026-09-12-Current-Checkpoint.md)、[再生checkpoint](docs/reviews/2026-09-12-Playback-Checkpoint.md)。
+- [ ] **I03-B/C / A01**: 可動world root、揺れるnodeのcollider更新順と参照runtime比較、実素材/実操作/性能の受入は残る。I03-CはVRM0/1両方のGUI/handler接続済みだが、受入全体は未完了。
+- [ ] **I04 / C0〜C5**: 任意モデル取込と制作/出力の製品全体は未完了。skin/morph出力・受取側確認などを [開発計画](docs/Development-Plan.md) から省かない。
 
-初回レビュー時点の証拠（現状は下段参照）: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
+## 直近の証拠
+
+- 実装基準 `4abd9d9`。Core **360 passed / 0 failed**: `Logs/core-vrm0-preview.txt`（前段の実行結果）。Windows-Vrm0Playback Player **PASS**: `Artifacts/Authoring-20260912-160736-8e0e5bae1c24440082b9c84dd1b27fc4/report.json`。今回の仕様整理ではCore/Playerを再実行していない。
+- T03: `Tools/Inspect-BlenderImport.py`をBlender 4.4.0で実行。詳細 `private/import-inspection/20260912-inventory.json`、3入力の存在/SHA256一致を再確認。素材・派生モデルの保存/出力はしていない。
+- 取込パネルに残っていた「VRM0揺れ未対応」の古い説明を訂正し、説明を折り返すよう修正済み。Windows-ImportHelp build **PASS**: `Logs/build-player-20260912-161814-007.log`。説明修正のbuild結果であり、新しいimport機能や文字の目視受入を意味しない。
+
+- 仕様整理: 設計v2/現行コードとの独立レビューを実施し、Blender任意依存と既知VRM内の未対応フィールドの保持条件を反映。関連6文書のローカルリンク112件が有効、調査スクリプトの構文検査が成功。private報告のignoreを確認。
+
+## 実装と検証の履歴
+
+以下は記録当時の状況。「次」「未完了」は当時の記述を含む。最新の状態・着手順は冒頭の表を使用する。
 
 ### T02: VRM0実行所有者と共通再生GUI（2026-09-12）
 

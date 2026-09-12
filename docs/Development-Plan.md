@@ -5,6 +5,10 @@
 
 2026-09-12レビュー追記: Rig / VRMの読込・保存・SpringBone計算で再現不具合が見つかった。次のVRM adapter / GUI接続の前に [current_task.mdの修正タスク](../current_task.md) を実施する。[レビュー記録](reviews/2026-09-12-Rig-Vrm-Review.md)に再現条件と完了条件をまとめた。以下の過去のCore / Player合格記録は、この追加検査での不具合解消を意味しない。製品目標とC0〜C5の範囲は変更しない。
 
+## 2026-09-12 取込仕様の具体化
+
+取込・情報保持・保存・出力の契約を [モデル交換仕様](Model-Interchange-Spec.md) に集約した。[実素材調査](Real-Asset-Import-Plan.md)で1mesh/256骨/4weight/256morphの現行制限を超える要求を確認したため、次はI04-A（source affine）から進む。複数mesh、容量、標準FBX Bridge、情報保持reportの順序と完了条件は同仕様の第8節、状態はcurrent_taskを参照する。Blenderは任意の開発検査/互換adapterで、標準制作の必須依存へ変更しない。C0〜C5の終了条件は維持する。
+
 ## C1-A開始時の比較表（進捗はcurrent_taskへ集約）
 
 HEADは `6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36` だが、制作Core・GUI・Bridge等は未コミットの作業ツリーに存在する。設計v2の第2節は同じコミットを調査した記録であり、次表はC1-A開始時点の比較で、現在はgraph文書・保存・command・canvas・Bakeまで進んでいる。既存変更を上書き・破棄しない。

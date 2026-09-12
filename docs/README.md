@@ -1,10 +1,12 @@
 # NyaForge 文書の入口
 
-更新: 2026-09-11。まずWindowsで開発する。macOSは将来対応。
+更新: 2026-09-12。まずWindowsで開発する。macOSは将来対応。
 
 | 文書 | 役割 |
 |---|---|
 | [current_task.md](../current_task.md) | 現在の作業、直近の完了事項、次に着手する範囲 |
+| [モデル交換仕様](Model-Interchange-Spec.md) | 取込・情報保持・native正本・出力・モジュール分割とI04完了条件 |
+| [実素材の取込調査](Real-Asset-Import-Plan.md) | T03の観測条件、現在の容量/変換対応との差、private証拠の場所 |
 | [Rig / VRM修正後の検証範囲](reviews/2026-09-12-Repair-Coverage.md) | 正式回帰とPlayer検査の対応、未確認経路と手動受入の区別 |
 | [元node空間](Imported-Node-Space.md) | 元node原点とinverse-bind Headの区別、rig session v2、座標変換 |
 | [VRM0再生接続](VRM0-Spring-Playback.md) | 実行設定・center/collider・状態所有・共通GUIと対応範囲 |
