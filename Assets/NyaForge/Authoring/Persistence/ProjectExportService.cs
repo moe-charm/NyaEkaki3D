@@ -1,7 +1,8 @@
 using System;
+using System.Linq;
 namespace NyaForge.Authoring
 {
-    public enum ProjectExportKind { Mesh, Surface, Material, MultiMaterial }
+    public enum ProjectExportKind { Mesh, Surface, Material, MultiMaterial, AuthoringProject }
     public sealed class ProjectExportResult
     {
         public string ManifestPath { get; }
@@ -26,6 +27,11 @@ namespace NyaForge.Authoring
                 Checks.Require(workspace.Document.DocumentRevision==revision,"REVISION_CONFLICT","Document changed before export.");
                 Checks.Require(!workspace.Document.IsEmpty,"NO_EXPORTABLE_OBJECT","Add a mesh before exporting.");
                 Checks.Require(workspace.Preview.IsComplete && !workspace.Preview.IsStale,"GRAPH_INCOMPLETE","Export requires complete current evaluation.");
+                if (RequiresNativeProjectExport(workspace.Document))
+                {
+                    string nativePath = AuthoringProjectExportService.Export(workspace, instance, document, revision, directory);
+                    return new ProjectExportResult(nativePath, ProjectExportKind.AuthoringProject, workspace.Document);
+                }
                 var value=workspace.Preview.Output;
                 var kind=value.SlotMaterials!=null ? ProjectExportKind.MultiMaterial : value.Material!=null ? ProjectExportKind.Material : value.BaseColor!=null ? ProjectExportKind.Surface : ProjectExportKind.Mesh;
                 string path;
@@ -38,6 +44,14 @@ namespace NyaForge.Authoring
                 }
                 return new ProjectExportResult(path,kind,workspace.Document);
             }
+        }
+
+        static bool RequiresNativeProjectExport(AuthoringDocument document)
+        {
+            return document.Objects.Any(item => !item.IsStaticProfile && item.Graph.Nodes.Values.Any(node =>
+                node.TypeId == Graph.BuiltinNodes.Skeleton || node.TypeId == Graph.BuiltinNodes.SkinBind ||
+                node.TypeId == Graph.BuiltinNodes.Pose || node.TypeId == Graph.BuiltinNodes.SkinDeform ||
+                node.TypeId == Graph.BuiltinNodes.MorphSet || node.TypeId == Graph.BuiltinNodes.MorphDeform));
         }
     }
 }

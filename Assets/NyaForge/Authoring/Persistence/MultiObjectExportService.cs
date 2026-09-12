@@ -143,7 +143,13 @@ namespace NyaForge.Authoring
                 if (kind == ProjectExportKind.Mesh) BakeStore.Read(child);
                 else if (kind == ProjectExportKind.Surface) SurfaceBakeStore.Read(child);
                 else if (kind == ProjectExportKind.Material) MaterialBakeStore.Read(child);
-                else MultiMaterialBakeStore.Read(child);
+                else if (kind == ProjectExportKind.MultiMaterial) MultiMaterialBakeStore.Read(child);
+                else
+                {
+                    var opened = ProjectStore.Open(Path.GetDirectoryName(child));
+                    Checks.Require(opened.Document.Objects.Count == 1 && opened.Document.Objects[0].ObjectId == item.ObjectId,
+                        "INVALID_MANIFEST", "Native object export identity differs from its package entry.");
+                }
                 result.Add(new MultiObjectExportEntry(item.ObjectId, item.Name, kind, child));
             }
             return new MultiObjectExportDocument(manifest, result);
