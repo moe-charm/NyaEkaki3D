@@ -10,6 +10,7 @@ internal static partial class Program
     {
         RunVrmColliderAdapterTests();
         RunVrmSpringChainTests();
+        RunVrmPreviewTests();
         Test("Spring old session geometry remains unknown after version 3 migration", () =>
         {
             foreach (int version in new[] { 1, 2 })

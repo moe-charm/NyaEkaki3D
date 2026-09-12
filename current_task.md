@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。最新チェック対象 `023d1cf`。Coreを再実行し334件合格。追加レビューでR11（骨階層の欠落）を再現し、R12（失敗した取込の表示先行更新）をコード上で確認した。R11は中間nodeを通る骨階層保持を修正し、Core338件合格。R12は取込候補と公開を分離し、Windows自動検証まで完了。I03-Aのcollider座標adapterを追加し、center履歴追従を追加し、明示先端の計算を追加し、VRM1 chain解決を追加し、明示回転中心を追加し、VRM1実行用chainを追加し、固定step再生controllerを追加し、最新Coreは351件合格。過去のR01〜R10は各記録の自動検証範囲で完了、実素材・実操作の受入は未完了。
+更新: 2026-09-12。R01〜R12は記録した自動検証範囲で修正済み。VRM1のchain・力・center・collider・固定stepを一時preview所有者まで接続し、最新Coreは353件合格。Workbenchの再生GUI、VRM0展開、一般node変換、実素材・実操作受入は未完了。直近の証拠と残件は下段の最新実装記録を参照する。
 
 ## 開発の入口
 
@@ -10,7 +10,7 @@
 
 ## 次に実行するタスク（最新チェック）
 
-詳細・再現条件・検証範囲: [追加レビュー](docs/reviews/2026-09-12-Current-Checkpoint.md)。**I03-B → I03-C → A01** の順で進める。I04は実素材の事前確認で必要な対応範囲を決め、必要ならI03/A01に先行する。R11の実装・検証を追記。
+詳細・再現条件・検証範囲: [追加レビュー](docs/reviews/2026-09-12-Current-Checkpoint.md)。**I03-B → I03-C → A01** の順で進める。I04は実素材の事前確認で必要な対応範囲を決め、必要ならI03/A01に先行する。最新の実装・証拠は以下へ追記する。
 
 - [x] **R11 / P1 — 中間nodeによる骨階層欠落を修正（Core検証完了）**。ImportedJointHierarchyが検証済みsource木から最近傍祖先jointを解決する。合成済みtranslationとinverse-bind由来Headの契約を維持し、tailも中間node越しの子jointから決定する。中間node1/3個・骨登録順違い・親の移動/回転への追従・native保存/Openの4回帰が合格。一般回転/scaleや実モデル受入は別タスク。
 - [x] **R12 / P2 — 取込の候補生成と公開を分離（Windows自動検証完了）**。mesh検査より前のSpring session/Label更新をやめる。完了条件: 不正skin・command失敗時に文書、metadata、表示、dirty/Undoが変わらず、再試行で成功するPlayer検証。Windows Playerで不正skin・command拒否・再試行を検証済み。
@@ -20,7 +20,14 @@
 - [ ] **I04 — 実モデル取込profileの拡張**。一般nodeの回転/scale、非joint node、複数mesh等を現行のtranslation-only/1mesh制約と区別する。完了条件: 対象モデルに必要な範囲を先に記録し、対応した変換・属性・skin/morphの数値と保存往復を確認。未対応は具体的に表示する。
 - [ ] **A01 — Windows実素材・実操作受入**。利用可能なローカルモデルで取込・保存/Open・姿勢・揺れ・文字サイズと欠け・保存して終了を確認する。外部MCP transportのmetadata保存も別項目で検証する。完了条件: build名、入力、確認手順、結果、未対応事項の記録。素材はprivate/追跡除外を維持。
 
-現在の証拠: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
+初回レビュー時点の証拠（現状は下段参照）: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
+
+### I03-B/C: VRM1 preview所有者への統合（2026-09-12）
+
+- `Vrm1SpringPreview`がsourceを固定して実行chainとcontrollerを所有する。`VrmSpringCenterAdapter`へ元node原点からのcenter変換を分離。Advanceごとに現在poseのcollider/centerを解決し、scale変更は明示Resetを要求する。候補の生成に失敗したResetでは旧previewを保持する。
+- Core **353 passed / 0 failed**: `Logs/core-vrm-preview.txt`、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ea39c6e0c6d84f37800dd1d92f5dba23`。自作VRMファイル→reader→session codec→owner→再生、停止中center移動と再開、collider pose更新、scale変更拒否/Reset、stale骨格での旧状態保護を確認。
+- Windows-VrmPreviewOwner build **PASS**: `Logs/build-player-20260912-151924-482.log`。Core所有者の追加のためPlayer GUI suiteは今回再実行していない。実モデル受入は未実施。
+- [VRM1 preview所有者](docs/VRM1-Preview-Owner.md)。次はWorkbenchでbase poseを取得し出力Poseを一時表示する接続と再生/停止/リセットGUI。作品・session変更時の破棄、VRM0展開、一般node transform、実素材受入も未完了。I03-B/C全体の完了にはしない。
 
 ### I03-B/C前段: 固定step再生controller（2026-09-12）
 
