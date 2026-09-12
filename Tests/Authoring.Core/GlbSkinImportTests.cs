@@ -11,6 +11,7 @@ internal static partial class Program
 {
     static void RunGlbSkinImportTests()
     {
+        RunImportedBoneMapTests();
         Test("GLB skin importer maps joints and normalized weights into the rig core", () =>
         {
             var result = GlbSkinImporter.Read(BuildSkinnedGlb());

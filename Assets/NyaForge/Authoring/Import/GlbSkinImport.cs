@@ -17,13 +17,15 @@ namespace NyaForge.Authoring.Import
         public MorphSet Morphs { get; }
         public SkeletonDefinition Skeleton { get; }
         public SkinBinding Binding { get; }
+        public ImportedBoneMap BoneMap { get; }
         public IReadOnlyList<string> Warnings { get; }
 
-        internal ImportedSkinnedMeshSource(string sourceHash, MeshData mesh, MorphSet morphs, SkeletonDefinition skeleton, SkinBinding binding, IEnumerable<string> warnings)
+        internal ImportedSkinnedMeshSource(string sourceHash, MeshData mesh, MorphSet morphs, SkeletonDefinition skeleton, SkinBinding binding, IEnumerable<string> warnings, IDictionary<int, string> nodeToBone)
         {
             Checks.HashText(sourceHash); Checks.Require(mesh != null && skeleton != null && binding != null, "INVALID_IMPORT", "Skinned GLB result is incomplete.");
             Checks.Require(binding.MeshTopologyHash == mesh.TopologyHash && binding.SkeletonHash == skeleton.ContentHash, "INVALID_IMPORT", "Skinned GLB identities are inconsistent.");
             SourceHash = sourceHash; Format = "glb.v2.skin.v1"; Mesh = mesh; Morphs = morphs; Skeleton = skeleton; Binding = binding;
+            BoneMap = new ImportedBoneMap(sourceHash, skeleton, nodeToBone);
             Warnings = Array.AsReadOnly((warnings ?? Array.Empty<string>()).ToArray());
         }
     }
@@ -94,12 +96,12 @@ namespace NyaForge.Authoring.Import
             Checks.Require(vertexOffset == baseSource.Mesh.VertexCount, "INVALID_IMPORT", "Skin vertex count differs from imported mesh.");
             var binding = SkinBinding.Create(baseSource.Mesh, jointToBone.Skeleton, rawWeights);
             var warnings = new List<string>(baseSource.Warnings) { "GLB skin weights were imported into a translation-only rest skeleton; inverse-bind rotation and scale are outside this adapter." };
-            return new ImportedSkinnedMeshSource(document.SourceHash, baseSource.Mesh, baseSource.Morphs, jointToBone.Skeleton, binding, warnings);
+            return new ImportedSkinnedMeshSource(document.SourceHash, baseSource.Mesh, baseSource.Morphs, jointToBone.Skeleton, binding, warnings, jointToBone.NodeToBone);
         }
 
         sealed class SkeletonResult
         {
-            public SkeletonDefinition Skeleton; public string[] BoneIds;
+            public SkeletonDefinition Skeleton; public string[] BoneIds; public Dictionary<int, string> NodeToBone;
         }
 
         static SkeletonResult BuildSkeleton(string sourceHash, JObject skin, JArray nodes, JArray joints, int[] jointNodes, Dictionary<int, int> parentByNode, Vec3[] world, byte[] bin, JObject root)
@@ -121,7 +123,7 @@ namespace NyaForge.Authoring.Import
                 if (children != null) foreach (var childToken in children) { int child = IntToken(childToken, 0, nodes.Count - 1, "node child"); if (ids.ContainsKey(child)) { var candidate = heads[System.Array.IndexOf(jointNodes, child)]; if (DistanceSquared(heads[i], candidate) > 1e-12) { tail = candidate; break; } } }
                 bones.Add(new BoneDefinition(ids[node], NodeName(nodeToken, i), parent, heads[i], tail));
             }
-            return new SkeletonResult { Skeleton = new SkeletonDefinition(bones), BoneIds = jointNodes.Select(node => ids[node]).ToArray() };
+            return new SkeletonResult { Skeleton = new SkeletonDefinition(bones), BoneIds = jointNodes.Select(node => ids[node]).ToArray(), NodeToBone = ids };
         }
 
         static string NodeName(JObject node, int index) { var name = node["name"]; return name != null && name.Type == JTokenType.String && !string.IsNullOrWhiteSpace((string)name) ? (string)name : "Joint " + index.ToString(System.Globalization.CultureInfo.InvariantCulture); }

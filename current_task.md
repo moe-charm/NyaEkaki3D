@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01〜R09はCore自動検証まで完了。R10の検証範囲の最終照合と実素材受入は未完了。最新のCoreは323件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
+更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01〜R09はCore自動検証まで完了。R10の検証範囲の最終照合と実素材受入は未完了。最新のCoreは326件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
 
 ## 開発の入口
 
@@ -25,7 +25,7 @@
 
 検証済み: このレビューでCore **297 passed / 0 failed**を再実行。別fixtureで作者情報拒否、session往復失敗、保存失敗後dirty=False、step2姿勢ずれ、親子gap、chain間衝突混入、貫通、dt=0の進行、null参照例外、省略値の相違を確認した。Player/Bridgeは今回再実行していない。実VRM全体・手動見た目受入も未確認。
 
-再開順: **R10の最終照合 → VRM入力契約とnode→BoneId adapter**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
+再開順: **R10のVRM取込→Workbench往復 → VRM入力契約・mapping永続化 → runtime接続**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
 
 ### 実行単位と完了判定
 
@@ -38,6 +38,16 @@
 状況照合時点では未修正だったR01/R02/R09を、下記の実装と自動検証で更新した。チェック済みは自動検証範囲であり、実素材と実マウスによる受入は別タスクのまま維持する。
 
 修正後は、未保持のgravityDir・collider shape値と保存移行を含むVRM入力契約を整え、node→stable BoneId、preview接続へ進む。一般node transform、skin/morph出力、実アバター受入、C1〜C5の全体目標は維持する。
+
+### VRM骨対応adapterと修正範囲の照合（2026-09-12）
+
+- `ImportedBoneMap`はGLB skin取込時のnode→BoneId割当をsource/skeleton hashとともに不変保持する。`VrmHumanoidBinding`はVRM0/1のsemantic→nodeをstable BoneIdへ変換し、違うsource・変更された骨格・skin外nodeを拒否する。骨名やskin slotから推測しない。
+- Core **326 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-bc76ad1859954e019babddfabf03ca08`。同名2骨、node番号とskin slotのずれ、VRM0/1、weight参照、再取込、骨格codec往復、誤った対応の拒否を確認した。
+- BoneMapのnative保存/Open復元とGUIへの接続は未実装。保持中のmapを骨格codec往復後に再利用できる検証と、map自身の永続化を混同しない。詳細は [取込骨対応](docs/Imported-Bone-Mapping.md)。
+- [修正後の検証範囲](docs/reviews/2026-09-12-Repair-Coverage.md)へR01〜R10の正式回帰と未確認境界を照合した。R10の残件として、VRM0/1それぞれの同一fixtureをファイル取込からWorkbench保存・Openまで通す専用検証を追加する。既存のCore import検査とPlayer session往復は別fixtureである。
+- `AuthoringWorkbench.SpringVerification`を追加し、Player環境で連続12stepのPose/State、親子追従、sphere距離、交互dtと停止state保持を数値検査する。Springの表示GUIや実素材受入は未実装/未確認のまま。
+
+- Windows-BoneMap build **PASS**: `Logs/build-player-20260912-140337-843.log`。Authoring suite **PASS**: `Artifacts/Authoring-20260912-140446-45def4a5183349bbbc3e4158e4f8498d/report.json`。専用Spring Core in Player checkも成功。実アバター見た目受入は未実施。
 
 ### R08: 停止と可変時間積分（2026-09-12）
 
