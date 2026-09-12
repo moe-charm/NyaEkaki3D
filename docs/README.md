@@ -6,6 +6,7 @@
 |---|---|
 | [current_task.md](../current_task.md) | 現在の作業、直近の完了事項、次に着手する範囲 |
 | [2026-09-12 Rig / VRMレビュー](reviews/2026-09-12-Rig-Vrm-Review.md) | bb1d89cの再現不具合、修正タスクR01〜R10の完了条件と検証の限界 |
+| [SpringBone時間契約](SpringBone-Time.md) | 停止・再開、可変時間の積分、物理履歴と表示の違い |
 | [SpringBone制約](SpringBone-Constraints.md) | 長さとsphere衝突の同時制約、計算上限、解なしと未収束の診断 |
 | [SpringBone姿勢契約](SpringBone-Pose-Contract.md) | base poseとState、親子の相対変換継承、連続stepの検証と残件 |
 | [作品とVRM設定の一括保存](Project-Metadata-Snapshots.md) | schema 4のmetadata参照、旧sidecar移行、単一manifest公開と保存失敗保護 |

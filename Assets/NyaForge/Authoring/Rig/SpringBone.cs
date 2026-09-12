@@ -102,19 +102,20 @@ namespace NyaForge.Authoring.Rig
     {
         public string SkeletonHash { get; }
         public string ChainHash { get; }
+        public float PreviousDeltaTime { get; }
         public IReadOnlyDictionary<string, Vec3> PreviousTails { get; }
         public IReadOnlyDictionary<string, Vec3> CurrentTails { get; }
 
-        private SpringBoneState(string skeletonHash, string chainHash, IDictionary<string, Vec3> previous, IDictionary<string, Vec3> current)
+        private SpringBoneState(string skeletonHash, string chainHash, IDictionary<string, Vec3> previous, IDictionary<string, Vec3> current, float previousDeltaTime = 0)
         {
-            Checks.HashText(skeletonHash); Checks.HashText(chainHash); SkeletonHash = skeletonHash; ChainHash = chainHash;
+            Checks.HashText(skeletonHash); Checks.HashText(chainHash); SkeletonHash = skeletonHash; ChainHash = chainHash; Checks.Finite(previousDeltaTime); Checks.Require(previousDeltaTime >= 0 && previousDeltaTime <= SpringBoneSimulator.MaxDeltaTime, "INVALID_DELTA_TIME", "Spring state time interval is invalid."); PreviousDeltaTime = previousDeltaTime;
             PreviousTails = new ReadOnlyDictionary<string, Vec3>(new Dictionary<string, Vec3>(previous, StringComparer.Ordinal));
             CurrentTails = new ReadOnlyDictionary<string, Vec3>(new Dictionary<string, Vec3>(current, StringComparer.Ordinal));
         }
 
-        internal static SpringBoneState Create(string skeletonHash, string chainHash, IDictionary<string, Vec3> previous, IDictionary<string, Vec3> current)
+        internal static SpringBoneState Create(string skeletonHash, string chainHash, IDictionary<string, Vec3> previous, IDictionary<string, Vec3> current, float previousDeltaTime = 0)
         {
-            return new SpringBoneState(skeletonHash, chainHash, previous, current);
+            return new SpringBoneState(skeletonHash, chainHash, previous, current, previousDeltaTime);
         }
     }
 
@@ -161,11 +162,7 @@ namespace NyaForge.Authoring.Rig
                 Vec3 head = PosedHead(bonePose.Transform), targetTail = PosedTail(bone, bonePose.Transform);
                 Vec3 oldTail = previous.CurrentTails[joint.BoneId], olderTail = previous.PreviousTails[joint.BoneId];
                 float length = Distance(targetTail, head);
-                Vec3 velocity = (oldTail - olderTail) * (1f - joint.DragForce);
-                Vec3 candidate = oldTail + velocity;
-                float stiffness = Math.Min(1f, joint.Stiffness * deltaTime);
-                candidate = candidate + (targetTail - candidate) * stiffness;
-                candidate = candidate + joint.GravityDirection * (joint.GravityPower * deltaTime * deltaTime);
+                Vec3 candidate = deltaTime == 0 ? oldTail : SpringTimeIntegration.Predict(joint, oldTail, olderTail, targetTail, deltaTime, previous.PreviousDeltaTime);
                 candidate = SpringConstraintSolver.Solve(head, candidate, length, targetTail - head, joint.HitRadius, valid.CollidersByBone[joint.BoneId]);
                 nextTails.Add(joint.BoneId, candidate);
                 Vec3 currentDirection = targetTail - head, desiredDirection = candidate - head;
@@ -175,7 +172,7 @@ namespace NyaForge.Authoring.Rig
             }
             var outputPoses = pose.Poses.Select(item => replacements.TryGetValue(item.BoneId, out var replacement) ? replacement : item);
             var output = PoseSet.Create(skeleton, outputPoses);
-            return new SpringBoneSimulationResult(output, SpringBoneState.Create(skeleton.ContentHash, valid.ChainHash, previous.CurrentTails.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal), nextTails));
+            return new SpringBoneSimulationResult(output, deltaTime == 0 ? previous : SpringBoneState.Create(skeleton.ContentHash, valid.ChainHash, previous.CurrentTails.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal), nextTails, deltaTime));
         }
 
         private static Vec3 PosedHead(PoseTransform transform) { return transform.TransformPoint(new Vec3()); }

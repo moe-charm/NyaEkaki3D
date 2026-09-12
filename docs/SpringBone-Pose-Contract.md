@@ -16,13 +16,13 @@
 
 子の入力transformをC、親の入力をP、評価済みの親をP'とすると、子の評価開始transformは`P' * inverse(P) * C`である。これにより元のhead offset・basisを保持する。子headを親tailへ強制的に移動しない。親が変更されていない場合は元のBonePoseを保持する。
 
-親の評価後に子のtarget tailとheadを求め、子自身の物理を評価する。非simulated子孫は親の変更だけを継承する。返却するposeは全骨を含み、各simulated boneの出力tailとstate tailが一致する。
+親の評価後に子のtarget tailとheadを求め、子自身の物理を評価する。非simulated子孫は親の変更だけを継承する。返却するposeは全骨を含み、正の時間で積分した各simulated boneの出力tailとstate tailが一致する。dt=0の編集時表示は [時間契約](SpringBone-Time.md) の例外を参照する。
 
 ## 検証と残件
 
 `SpringPoseTests`は前stateを25stepまで引き継ぎ、固定/変化するbase poseでtail一致を検査する。2jointの接続・offsetあり・未登録子孫・逆登録順、3jointの移動/回転/非一様scaleを含む入力を確認する。座標は有限値であることも明示検査する。最初の4ケースは修正前に失敗した。
 
-R06のchain別コライダー分離とnull group診断は下記の入力モジュールで修正済み。R07の衝突と長さの同時制約は [制約solver](SpringBone-Constraints.md) を参照。R08のdt=0と可変時間刻みは未完了事項である。特に姿勢修正を、衝突解決や時間積分の正しさの証拠として扱わない。
+R06のchain別コライダー分離とnull group診断は下記の入力モジュールで修正済み。R07の衝突と長さの同時制約は [制約solver](SpringBone-Constraints.md) を参照。R08のdt=0と可変時間刻みは [時間契約](SpringBone-Time.md) を参照する。特に姿勢修正を、衝突解決や時間積分の正しさの証拠として扱わない。
 
 ## Chain別の衝突参照（R06）
 
