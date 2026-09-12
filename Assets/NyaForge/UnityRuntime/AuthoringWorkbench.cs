@@ -269,7 +269,9 @@ namespace NyaForge.UnityRuntime
         {
             if (faceMode.value && faceMode.enabledSelf) { PickFace(panelPosition, add); return; }
             int closest = -1; float best = 18;
-            var points = projection.Points;
+            // Projection.Points are local to the preview root. Hit testing must use
+            // the world coordinates after a rigid accessory attachment is applied.
+            var points = projection.WorldPoints;
             for (int i = 0; i < points.Length; i++)
             {
                 var projected = camera.WorldToViewportPoint(points[i]);

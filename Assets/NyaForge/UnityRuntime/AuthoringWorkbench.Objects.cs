@@ -28,6 +28,7 @@ namespace NyaForge.UnityRuntime
                 importedRigSession = importedRigSessions.TryGetValue(activeGraphId, out var active) ? active
                     : importedRigSession?.GraphId == activeGraphId ? importedRigSession : null;
             }
+            RefreshImportedVrmSessionsForActiveGraph();
             while (objectSelectionPanel.childCount > 2) objectSelectionPanel.RemoveAt(2);
             if (workspace == null || workspace.Document.IsEmpty)
             {

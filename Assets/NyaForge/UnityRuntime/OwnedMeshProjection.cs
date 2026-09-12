@@ -23,13 +23,16 @@ namespace NyaForge.UnityRuntime
         public int PointBatchCount=>current?.PointMarkers?.BatchCount ?? 0;
         public int SelectedPointCount=>current?.PointMarkers?.SelectedCount ?? 0;
         public Vector3[] Points => current?.Points ?? Array.Empty<Vector3>();
+        /// <summary>Points in the preview world's coordinates, including rigid attachment pose.</summary>
+        public Vector3[] WorldPoints => current?.Points == null || current.Root == null
+            ? Array.Empty<Vector3>() : current.Points.Select(point => current.Root.transform.TransformPoint(point)).ToArray();
         public string PreviewNodeId { get; set; } = "";
         public int HighlightedTriangleCount => current?.FaceHighlight?.TriangleCount ?? 0;
         public bool ShowFinalResult { get; set; } = true;
         /// <summary>Optional rigid accessory root pose resolved from an explicit attachment node.</summary>
         public PoseTransform? AttachmentPose { get; set; }
         public Mesh FinalMesh => current?.FinalResult?.Mesh;
-        public IEnumerable<Vector3> FramingPoints => Points.Concat(current?.FinalResult?.Points ?? Array.Empty<Vector3>());
+        public IEnumerable<Vector3> FramingPoints => WorldPoints.Concat(current?.FinalResult?.WorldPoints ?? Array.Empty<Vector3>());
 
         public OwnedMeshProjection(Transform parent)
         {

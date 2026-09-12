@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NyaForge.Authoring;
@@ -69,6 +70,14 @@ internal static partial class Program
             Equal(16, ((JArray)node["matrix"]!).Count); Near(1f, (float)node["matrix"]![12]!); Near(2f, (float)node["matrix"]![13]!); Near(3f, (float)node["matrix"]![14]!);
             var inventory = GlbSceneInventoryReader.Read(File.ReadAllBytes(transformed.Path)); var restored = GlbSkinImporter.Read(File.ReadAllBytes(transformed.Path), 0, 0, inventory.Instances.Single().WorldTransform);
             True(restored.InstanceWorldTransform != null); Near(1f, restored.InstanceWorldTransform.TransformPoint(new Vec3()).X); Near(2f, restored.InstanceWorldTransform.TransformPoint(new Vec3()).Y); Near(3f, restored.InstanceWorldTransform.TransformPoint(new Vec3()).Z);
+            string retainedDirectory = Path.Combine(Root, "glb-skinned-retained-bind-" + Guid.NewGuid().ToString("N"));
+            var retained = SourceAffine.FromTrs(new Vec3(), new Vec4(0, 0, 0, 1), new Vec3(2, 2, 2));
+            var objectId = workspace.Document.ActiveObject.ObjectId;
+            var retainedResult = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision,
+                retainedDirectory, new Dictionary<string, SourceAffine>(), new Dictionary<string, IReadOnlyList<SourceAffine>>
+                { [objectId] = new[] { retained } });
+            var retainedSkin = GlbSourceSkinImporter.Read(File.ReadAllBytes(retainedResult.Path)).Skin;
+            Near(2f, retainedSkin.InverseBindMatrices[0].TransformVector(new Vec3(1, 0, 0)).X);
         });
 
         Test("multi-mesh skinned GLB export shares one skeleton", () =>

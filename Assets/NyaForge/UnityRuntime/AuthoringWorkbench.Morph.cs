@@ -20,7 +20,6 @@ namespace NyaForge.UnityRuntime
         DropdownField vrmExpressionChoice;
         Button applyVrmExpression;
         readonly List<string> morphTargetIds = new List<string>();
-        VrmExpressionSession importedVrmSession;
         IReadOnlyList<MappedVrmExpression> importedVrmExpressions { get { return importedVrmSession == null ? Array.Empty<MappedVrmExpression>() : importedVrmSession.Expressions; } }
 
         void BuildMorph(VisualElement parent)
@@ -118,7 +117,7 @@ namespace NyaForge.UnityRuntime
             catch (AuthoringException error) { Debug.LogWarning("[NyaForge VRM] expression mapping unavailable: " + error.Code + ": " + error.Message); return null; }
         }
 
-        void ClearImportedVrmExpressions() { importedVrmSession = null; }
+        void ClearImportedVrmExpressions() { ClearImportedVrmExpressionTable(); }
         static void ChecksMappedTargets(MappedVrmExpression expression, MorphSet morphs)
         {
             foreach (var targetId in expression.Weights.Keys) if (!morphs.ById.ContainsKey(targetId)) throw new InvalidOperationException("VRM表情が現在のMorphSetと一致しません。再取り込みしてください。");

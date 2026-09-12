@@ -178,6 +178,8 @@ GUIには「標準GLB（表示形状）」「標準GLB（skin/morph保持）」�
 
 node instanceを選択したskinned importでは、mesh resourceのsource-local geometryとskin paletteを変更せず、選択nodeのworld affineを `ImportedRigSession` v6 の `meshInstanceTransform` へ保存する。表示はsource skin後の最終graph outputへ一度だけ適用し、標準SkinnedGeometry GLBではmesh nodeのcolumn-major `matrix` として出力する。旧session v1〜v5は従来どおり読める。複数objectの同時出力でもgraph objectごとのaffineを保持できるが、共有mesh参照、異なるskeletonの結合、実VRChatでの出力受入は未完了である。
 
+`Expressions` と `Springs` のnative attachmentはGraphId keyed table (`NVXE` / `NVXS`) を正本とする。旧単一blobはrigまたは単独graphへ移行して読める。複数graphを再Openする際はrig/sessionを同じGraphIdで突き合わせ、source hashが一致しない組合せを `IMPORT_SOURCE_CHANGED` で拒否する。Workbenchからのskinned GLB出力では、利用可能なimported source skinのinverse-bind行列をobjectごとに保持し、未提供の制作graphは従来のrest-derived identity fallbackを使う。頂点編集のhit testは装着root適用後のworld座標で行い、表示位置と選択位置を一致させる。
+
 ### 実モデル材質・複数slot往復（2026-09-13）
 
 RadDollV3 VRM（private temp、mesh 1 / skin 1、129,348 vertices、171 bones、35 morphs）で、埋め込みbase-color画像6件が1024px上限を超える場合はnative Paintへ無理に保持せず、材質係数と診断を残して省略することを確認した。sRGB変換の端点丸めを0〜1へクランプし、標準SkinnedGeometry出力では複数material slotごとに使用頂点を局所リマップして、再読込時の頂点重複計上を防いだ。Windows Player `Builds/RealModelMaterialClampV4/NyaForge.exe` と `Artifacts/Authoring-20260913-045250-aab62f6896e0479b93da4a562d8573eb/report.json` で、取込→EditMesh→Save/Open→標準skinned GLB→再取込を一周合格。Core 446件合格。実VRChatの見た目・挙動、1024px超画像の完全保持、追加texture mapは未完了。

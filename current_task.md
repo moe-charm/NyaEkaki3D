@@ -1364,3 +1364,10 @@ Core **459 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/N
 `Builds/PerObjectAffineV1/NyaForge.exe`でprivate一時素材 `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm` を読み取り専用に使い、GLB/VRM候補確認、skin取込、rest-space頂点編集、native Save/Open、標準skin GLB出力を再回帰した。最新Player Authoring suite **PASS**（800x600、`Artifacts/Authoring-20260913-071034-98196e26e7af47cfa3df95cd3eab7bbd/report.json`）。同じ出力のUnity **2022.3.22f1 BridgeもPASS**（`Artifacts/BridgeReceiver-20260913-071148-485-e6720b8b0f8d49858a5198eafa261b7b/bridge-report.json`）。private素材はpublic repositoryへ追加していない。
 
 これは実素材の取込・編集・保存・GLB出力smokeであり、実マウス/DPI差、実VRChat内の見た目・挙動、標準VRM出力、異なるskeleton結合と完全材質保持の証拠ではない。
+# 2026-09-13 graph-keyed VRM sessions / display-hit consistency follow-up
+
+レビュー指摘のうち、複数graphをまたぐ保存再開で表情・Springが別素材へ混ざる経路を閉じた。`Expressions` と `Springs` はGraphIdをキーにした bounded table (`NVXE`/`NVXS`) として保存し、旧単一blobはrigまたは単独graphへ移行して読める。Open時は全rig/sessionのsource hashを照合し、active object切替では対応graphのsessionだけを表示する。
+
+source skin表示はSkinDeform位置のoverride後にgraphを再評価し、後段EditMeshを保持する。標準GLB出力にはWorkBenchのimported source skinからinverse-bind行列をgraph object単位で渡せる経路を追加した（従来APIのidentity fallbackと明示instance affine互換は維持）。装着小物の頂点hit testはpreview rootのworld座標を使い、描画位置とクリック判定を一致させた。
+
+Core **460 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-57272bc5a1d74d37aed5a0f21cfab31f`）。Windows Player `Builds/ConsistencyFollowupV1/NyaForge.exe` のAuthoring suite（private一時RadDollV3 import指定、report `Artifacts/Authoring-20260913-074524-bcf817fd606e477eae95415f5f1d7032/report.json`）とUnity 2022.3.22f1 Bridge（`Artifacts/BridgeReceiver-20260913-074633-351-fcfd3de0c8c146328d42e82de7541f1b/bridge-report.json`）はPASS。実VRChat SDK、実マウス/DPI差、任意モデルの完全なnode transform互換は別受入境界として残す。

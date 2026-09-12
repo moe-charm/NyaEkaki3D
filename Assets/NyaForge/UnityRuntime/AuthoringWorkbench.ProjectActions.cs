@@ -67,18 +67,67 @@ namespace NyaForge.UnityRuntime
             var springBytes = next.Attachments.Read(ProjectAttachments.Springs);
             var physBonesBytes = next.Attachments.Read(ProjectAttachments.PhysBones);
             var secondaryMotionBytes = next.Attachments.Read(ProjectAttachments.SecondaryMotion);
-            var expressionSession = expressionBytes == null ? null : VrmExpressionSessionCodec.Read(expressionBytes);
-            var springSession = springBytes == null ? null : VrmSpringSessionCodec.Read(springBytes);
+            var expressionSessions = new Dictionary<string, VrmExpressionSession>(StringComparer.Ordinal);
+            var springSessions = new Dictionary<string, VrmSpringSession>(StringComparer.Ordinal);
+            if (expressionBytes != null)
+            {
+                if (VrmExpressionSessionsCodec.IsTable(expressionBytes))
+                    foreach (var item in VrmExpressionSessionsCodec.Read(expressionBytes)) expressionSessions.Add(item.Key, item.Value);
+                else
+                {
+                    var legacy = VrmExpressionSessionCodec.Read(expressionBytes); var graphId = LegacyVrmSessionGraphId(next, rigSession);
+                    if (graphId != null) expressionSessions.Add(graphId, legacy);
+                }
+            }
+            if (springBytes != null)
+            {
+                if (VrmSpringSessionsCodec.IsTable(springBytes))
+                    foreach (var item in VrmSpringSessionsCodec.Read(springBytes)) springSessions.Add(item.Key, item.Value);
+                else
+                {
+                    var legacy = VrmSpringSessionCodec.Read(springBytes); var graphId = LegacyVrmSessionGraphId(next, rigSession);
+                    if (graphId != null) springSessions.Add(graphId, legacy);
+                }
+            }
+            var expressionSession = rigSession == null ? null : expressionSessions.TryGetValue(rigSession.GraphId, out var activeExpression) ? activeExpression : null;
+            var springSession = rigSession == null ? null : springSessions.TryGetValue(rigSession.GraphId, out var activeSpring) ? activeSpring : null;
+            if (expressionSession == null && next.Document.ActiveObject?.Graph != null) expressionSessions.TryGetValue(next.Document.ActiveObject.Graph.GraphId, out expressionSession);
+            if (springSession == null && next.Document.ActiveObject?.Graph != null) springSessions.TryGetValue(next.Document.ActiveObject.Graph.GraphId, out springSession);
+            // A legacy project can have a single metadata blob and no graph id at all
+            // (the save-failure guard intentionally exercises this shape). Keep that
+            // payload available to the Workbench instead of dropping it on refresh.
+            if (expressionSession == null && expressionBytes != null && !VrmExpressionSessionsCodec.IsTable(expressionBytes))
+                expressionSession = VrmExpressionSessionCodec.Read(expressionBytes);
+            if (springSession == null && springBytes != null && !VrmSpringSessionsCodec.IsTable(springBytes))
+                springSession = VrmSpringSessionCodec.Read(springBytes);
             var physBonesDocument = physBonesBytes == null ? null : PhysBonesTargetCodec.ReadDocument(physBonesBytes);
             var secondaryMotionDocument = secondaryMotionBytes == null ? null : SecondaryMotionCodec.ReadDocument(secondaryMotionBytes);
             if (rigSession != null && expressionSession != null) rigSession.ValidateSource(expressionSession.SourceHash);
             if (rigSession != null && springSession != null) rigSession.ValidateSource(springSession.SourceHash);
+            // Validate every graph-keyed metadata pair before replacing the live
+            // workspace. This catches a stale A/B combination even when the
+            // currently active object is not the rig attachment stored in the
+            // legacy single-session field.
+            if (rigSessions != null)
+                foreach (var pair in rigSessions)
+                {
+                    if (expressionSessions.TryGetValue(pair.Key, out var expression)) pair.Value.ValidateSource(expression.SourceHash);
+                    if (springSessions.TryGetValue(pair.Key, out var spring)) pair.Value.ValidateSource(spring.SourceHash);
+                }
             ReplaceWorkspace(next, directory);
             if (rigSessions != null)
                 foreach (var item in rigSessions) importedRigSessions.Add(item.Key, item.Value);
+            foreach (var item in expressionSessions) importedVrmSessions.Add(item.Key, item.Value);
+            foreach (var item in springSessions) importedVrmSpringSessions.Add(item.Key, item.Value);
             importedRigSession = rigSession;
             importedVrmSession = expressionSession; Refresh();
-            importedVrmSpringSession = springSession; RefreshVrmSpringStatus();
+            importedVrmSpringSession = springSession;
+            // Refresh can clear graph-keyed fields when opening a legacy static
+            // document that has no active graph. Preserve the decoded single
+            // session as the compatibility fallback in that case.
+            if (importedVrmSession == null && expressionSession != null) importedVrmSession = expressionSession;
+            if (importedVrmSpringSession == null && springSession != null) importedVrmSpringSession = springSession;
+            RefreshVrmSpringStatus();
             SetImportedPhysBones(physBonesDocument);
             importedSecondaryMotionDocument = secondaryMotionDocument;
             importedSecondaryMotionAsset = secondaryMotionDocument?.Asset;
@@ -110,14 +159,14 @@ namespace NyaForge.UnityRuntime
         void ExportGlbSkinned() => Try(() =>
         {
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            var result = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedInstanceTransforms());
+            var result = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedInstanceTransforms(), SkinnedInverseBindMatrices());
             SetStatus("標準GLB（skin/morph保持）を書き出しました: " + result.Path);
         });
 
         void ExportGlbSkinnedExtended() => Try(() =>
         {
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-extended-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            var result = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedInstanceTransforms());
+            var result = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedInstanceTransforms(), SkinnedInverseBindMatrices());
             SetStatus("拡張GLB（全weight保持）を書き出しました: " + result.Path);
         });
 
@@ -133,6 +182,21 @@ namespace NyaForge.UnityRuntime
             }
             if (importedRigSession?.MeshInstanceTransform != null && workspace.Document.ActiveObject?.Graph != null)
                 result[workspace.Document.ActiveObject.ObjectId] = importedRigSession.MeshInstanceTransform;
+            return result;
+        }
+
+        IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> SkinnedInverseBindMatrices()
+        {
+            var result = new Dictionary<string, IReadOnlyList<SourceAffine>>(StringComparer.Ordinal);
+            if (workspace?.Document?.Objects == null) return result;
+            foreach (var item in workspace.Document.Objects)
+            {
+                if (item.Graph == null) continue;
+                if (importedRigSessions.TryGetValue(item.Graph.GraphId, out var session) && session?.SourceSkin?.InverseBindMatrices != null)
+                    result[item.ObjectId] = session.SourceSkin.InverseBindMatrices;
+            }
+            if (importedRigSession?.SourceSkin?.InverseBindMatrices != null && workspace.Document.ActiveObject?.Graph != null)
+                result[workspace.Document.ActiveObject.ObjectId] = importedRigSession.SourceSkin.InverseBindMatrices;
             return result;
         }
 

@@ -11,7 +11,6 @@ namespace NyaForge.UnityRuntime
 {
     public sealed partial class AuthoringWorkbench
     {
-        VrmSpringSession importedVrmSpringSession;
         Label vrmSpringStatus;
         SecondaryMotionDocument importedSecondaryMotionDocument;
         SecondaryMotionAsset importedSecondaryMotionAsset;
@@ -116,7 +115,7 @@ namespace NyaForge.UnityRuntime
 
         void ClearImportedVrmSpring()
         {
-            importedVrmSpringSession = null;
+            ClearImportedVrmSpringTable();
             RefreshVrmSpringStatus();
         }
 

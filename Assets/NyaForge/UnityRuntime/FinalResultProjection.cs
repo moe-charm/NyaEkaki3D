@@ -11,13 +11,15 @@ namespace NyaForge.UnityRuntime
     {
         public Mesh Mesh { get; }
         public Vector3[] Points { get; }
+        public Vector3[] WorldPoints => root == null ? Array.Empty<Vector3>() : Points.Select(point => root.transform.TransformPoint(point)).ToArray();
+        readonly GameObject root;
 
         public FinalResultProjection(Transform parent, GraphMeshValue value, Material material, PoseTransform? attachmentPose = null)
         {
             Mesh = OwnedMeshProjection.CreateMesh(value.Mesh);
             try
             {
-                var root = new GameObject("Final result (read only)") { layer = OwnedMeshProjection.PreviewLayer };
+                root = new GameObject("Final result (read only)") { layer = OwnedMeshProjection.PreviewLayer };
                 root.transform.SetParent(parent, false);
                 root.transform.localScale = Vector3.one * value.Transform.Scale;
                 root.transform.localPosition = OwnedMeshProjection.ToUnity(value.Transform.Translation);

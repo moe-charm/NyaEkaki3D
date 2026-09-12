@@ -59,11 +59,20 @@ namespace NyaForge.UnityRuntime
                 importedRigSessions[graph.GraphId] = candidate.Rig;
                 owned[ProjectAttachments.RigSessions] = ImportedRigSessionsCodec.Write(importedRigSessions);
             }
+            if (candidate.Expressions != null)
+            {
+                importedVrmSessions[graph.GraphId] = candidate.Expressions;
+                owned[ProjectAttachments.Expressions] = VrmExpressionSessionsCodec.Write(importedVrmSessions);
+            }
+            if (candidate.Springs != null)
+            {
+                importedVrmSpringSessions[graph.GraphId] = candidate.Springs;
+                owned[ProjectAttachments.Springs] = VrmSpringSessionsCodec.Write(importedVrmSpringSessions);
+            }
             attachments = new ProjectAttachments(owned);
             workspace.SetAttachments(attachments);
             if (candidate.Rig != null) importedRigSession = candidate.Rig;
-            if (candidate.Expressions != null) importedVrmSession = candidate.Expressions;
-            if (candidate.Springs != null) importedVrmSpringSession = candidate.Springs;
+            RefreshImportedVrmSessionsForActiveGraph();
             if (secondary != null)
             {
                 importedSecondaryMotionDocument = SecondaryMotionCodec.ReadDocument(SecondaryMotionCodec.Write(secondary));
