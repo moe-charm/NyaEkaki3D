@@ -7,7 +7,7 @@
 
 ## 2026-09-12 取込仕様の具体化
 
-ボーンの追加フィードバックは [揺れ・布adapter計画](Secondary-Motion-Plan.md) にタスク化した。C2では共通保存/実行契約とPhysBones出力を優先し、MagicaCloth2は髪束1本の任意評価、MeshClothはC3でmorph制約・負荷を確認する。SIM-01/02のCore契約・PhysBones target保存・Workbench状態表示、target package、UnityBridgeの合成writer検証まで実装済みで、実SDK受け取り側とSIM-03〜07は継続中。既存I04の直近順序とC0〜C5の終了条件を維持する。
+ボーンの追加フィードバックは [揺れ・布adapter計画](Secondary-Motion-Plan.md) にタスク化した。C2では共通保存/実行契約とPhysBones出力を優先し、MagicaCloth2は髪束1本の任意評価、MeshClothはC3でmorph制約・負荷を確認する。SIM-01A/02AのCore契約・PhysBones target保存・Workbench状態表示、target package、UnityBridgeの合成writer検証まで実装済みで、次はSIM-02B（実SDK受け取り）→SIM-03A/B（共通GUI・証拠）→SIM-07A（PhysBones受入）の順に進める。既存I04の直近順序とC0〜C5の終了条件を維持する。
 
 取込・情報保持・保存・出力の契約を [モデル交換仕様](Model-Interchange-Spec.md) に集約した。[実素材調査](Real-Asset-Import-Plan.md)で1mesh/256骨/4weight/256morphの現行制限を超える要求を確認したため、次はI04-A（source affine）から進む。複数mesh、容量、標準FBX Bridge、情報保持reportの順序と完了条件は同仕様の第8節、状態はcurrent_taskを参照する。Blenderは任意の開発検査/互換adapterで、標準制作の必須依存へ変更しない。C0〜C5の終了条件は維持する。
 

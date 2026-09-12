@@ -10,7 +10,7 @@
 
 ## 次に実行するタスク
 
-採用した方針: **nativeを制作の正本、GLB/VRMを交換形式、FBX/BLEND/Unityを原本として区別する。** 未対応データを黙って削らず、情報ごとの能力と保持結果を報告する。Blender調査は任意の開発ツールで、標準制作の必須依存へ変更しない。詳細・完了条件は [モデル交換仕様](docs/Model-Interchange-Spec.md)。
+採用した方針: **nativeを制作の正本、GLB/VRMを交換形式、FBX/BLEND/Unityを原本として区別する。** 未対応データを黙って削らず、情報ごとの能力と保持結果を報告する。Blender調査は任意の開発ツールで、標準制作の必須依存へ変更しない。詳細・完了条件は [モデル交換仕様](docs/Model-Interchange-Spec.md)。ボーンのフィードバックは下記のSIM-02B→SIM-03A/B→SIM-07Aを主経路にし、SIM-04〜06は主経路を遅らせない任意評価へ分離する。
 
 | 状態 / ID | 実行する作業 | 完了条件・依存 |
 |---|---|---|
@@ -25,17 +25,24 @@
 
 ## 完了した前提と残る境界
 
-### ボーンの追加フィードバック: SIMタスク（2026-09-12）
+### ボーンの追加フィードバック: 実行タスク（2026-09-12）
 
-[揺れ・布adapter計画](docs/Secondary-Motion-Plan.md)へ採用方針・依存・完了条件を整理した。**PhysBones優先、MagicaCloth2は任意adapter**。SIM-01のUnity非依存契約とcodec、SIM-02のPhysBones target DTO／loss report境界、schema 4 attachment保存、Workbench状態表示、target package、UnityBridgeの管理対象限定writerとreflection backendを実装した。実VRChat SDK／アバター動作は未確認で、直近は実SDK受け取り側と設定・動作確認を継続する。
+[揺れ・布adapter計画](docs/Secondary-Motion-Plan.md)へ採用方針・依存・完了条件を整理した。**PhysBones優先、MagicaCloth2は任意adapter**。SIM-01のUnity非依存契約とcodec、SIM-02AのPhysBones target DTO／loss report境界、schema 4 attachment保存、Workbench状態表示、target package、UnityBridgeの管理対象限定writerとreflection backendを実装した。実VRChat SDK／アバター動作は未確認で、直近はSIM-02Bの実SDK受け取り側を先に進める。
 
-- [ ] SIM-01 / P1 **継続**: `Authoring/Simulation`に共通データ（stable bone chain、fixed vertex、collider group、output kind）、adapter capability/evaluation contract、unknown versionを保持する`NYSM` v1 codecを追加。VRM1のresolved springを共通topologyへ移すmigrationも追加した。次はnative attachmentへの保存/Open・未知版GUI表示・stale再bindをI04-Aへ接続。
-- [ ] SIM-02 / P1 **継続**: `PhysBonesTargetProfile`／`PhysBonesChain`でSDK版付きのstable root・endpoint・exclusion・branch・collider・limits・curves・interactionを保持し、`NYPP` v1 codec、schema 4の`physbones-target.nyaforge.bin` attachment、`PhysBonesLossReport`で未知版保持・対応/未対応/SDK差異を明示するCore境界と、Workbenchの対応版/stale/未知版表示を追加した。`physbones.nyaforge-target.json`＋profile/skeleton payloadのtarget package、UnityBridgeのreflection writer、`UpdateManagedOnly`の管理対象限定更新、GUI書き出し入口まで追加済み。残りは実SDK型でのmapping、受け取り側設定・動作、実アバター／VRChat内確認。
-- [ ] SIM-03 / P1: GUI/MCPの設定・再構築・reset・一定時間再生・連続撮影とbackend証拠。
-- [ ] SIM-04 / P2: C2でMagicaCloth2 BoneClothの髪束1本を任意評価。未導入buildも維持。
-- [ ] SIM-05 / P2: C3でMeshClothの固定領域・morph重複拒否と性能を評価。
-- [ ] SIM-06 / P2: BoneSpringとMagica対応Unityアプリ用出力。
-- [ ] SIM-07 / P1: C2〜C5でtarget別受入。VRChat内確認と他simulatorのプレビューを区別。I03-B/T04/T05と接続。
+| 状態 / ID | 作業 | 完了条件・依存 |
+|---|---|---|
+| [x] SIM-01A / P1 | 共通secondary-motion契約 | `SecondaryMotionAsset`、stable chain、fixed vertex、collider group、bone/mesh output、adapter capability、`NYSM` v1 codec、VRM1 resolved spring migrationを実装し、unknown versionとstale skeleton/topologyを安全に扱う |
+| [ ] SIM-01B / P1 | native attachmentとVRM0移行 | native Save/Open、未知版のGUI表示、stale再bind、旧VRM0 source-nodeからの移行をI04-Aへ接続。SIM-03Aの前提 |
+| [x] SIM-02A / P1 | PhysBones target packageと合成Bridge | `PhysBonesTargetProfile`／`PhysBonesChain`、`NYPP` v1、schema 4 attachment、loss report、target package、reflection writer、managed-only、branch preflight、receiver Windowを追加し合成fixtureで検証済み |
+| [ ] SIM-02B / P1 **次に実行** | 実SDK受け取り側 | 対象SDKの版・型を固定し、package読込→stable BoneId／collider group手動割当→実component生成・更新を実SDKで確認。未対応項目は書込み前にloss reportで停止し、未管理componentを変更しない。SDK未導入時のpublic buildは維持 |
+| [ ] SIM-03A / P1 | GUI/MCPの設定と再生所有者 | 設定Undo、保存/Open、rebuild待ち・失敗・取消、reset、一定時間再生を同じowner／generationで扱い、project切替時に一時結果を破棄する。SIM-02Bとは独立した合成backendで先に検証 |
+| [ ] SIM-03B / P1 | 連続撮影とbackend証拠 | input/config hash、adapter／package版、target、Unity/build、step/warmup、pose/root/collider条件を記録し、連続画像と失敗時ログを同じrunへ束ねる。実VRChat受入の証拠とは分ける |
+| [ ] SIM-04 / P2・任意 | MagicaCloth2 BoneCloth最小評価 | vendor packageをpublic repoへ入れず任意assemblyへ隔離。自作髪束1本でruntime生成・構築完了待ち・固定根・sphere衝突・rebuild/reset/破棄・写真列を確認し、未導入buildも成功させる。SIM-02B/03Aを置換しない |
+| [ ] SIM-05 / P2 | MeshClothとmorph境界 | 小さい布で固定／可動領域を指定し、BlendShape変形頂点との重複を拒否または分離案内する。法線更新と時間／GC／メモリをSIM-04と比較 |
+| [ ] SIM-06 / P2 | BoneSpringとUnityアプリ向け出力 | BoneSpring fixtureの保存・再構築と、Magica用profileの依存不足診断・版照合・再出力を確認 |
+| [ ] SIM-07A / P1 | PhysBones target受入 | SIM-02B＋SIM-03A/B後。同じ髪束でroot移動・停止・旋回・pose・colliderを受入し、対応SDK／受取Unity／VRChat内の結果を別々に記録 |
+
+実行順は **SIM-02B → SIM-03A → SIM-03B → SIM-07A**。SIM-01BはI04-Aと並行し、SIM-04〜06は主経路の受入を置換しない。C2の必須は選んだ出力先で髪束1本が動くこと。Magica導入時の購入・vendorソース取得／配布はこのタスク化では実行せず、public repoには自作adapter・fixture・設定schemaだけを置く。
 
 ### 既存工程
 
