@@ -119,9 +119,16 @@ namespace NyaForge.UnityBridge.Editor
                 var profile = new PhysBonesTargetProfile(VrcPhysBonesReflectionBackend.Target, "verification-sdk", "", skeleton.ContentHash, "", new[] { Chain(rootId, childId, PhysBonesParameters.Default) });
                 var context = new PhysBonesBridgeContext(avatar.transform, new Dictionary<string, Transform> { [rootId] = avatar.transform, [childId] = child.transform });
                 VrcPhysBonesReflectionBackend backend;
-                Require(VrcPhysBonesReflectionBackend.TryCreate(out backend, "verification-sdk", typeof(PhysBonesReflectionFixtureComponent).AssemblyQualifiedName), "Reflection PhysBones backend did not find the shape-compatible fixture type.");
-                string packageDirectory = Path.Combine("Temp", "NyaForgePhysBonesBridgePackage-" + Guid.NewGuid().ToString("N"));
                 string fixtureType = typeof(PhysBonesReflectionFixtureComponent).AssemblyQualifiedName;
+                var resolution = VrcPhysBonesReflectionResolver.Resolve(fixtureType);
+                Require(resolution.IsResolved && resolution.AssemblyQualifiedTypeName == fixtureType && resolution.Members.Contains("stiffness"),
+                    "Reflection resolver did not retain the exact fixture type and member catalog.");
+                var missing = VrcPhysBonesReflectionResolver.Resolve("NyaForge.MissingPhysBonesComponent, MissingPhysBonesAssembly");
+                Require(!missing.IsResolved && missing.Diagnostic.Contains("No loaded assembly"), "Reflection resolver did not diagnose an unavailable SDK type.");
+                var nonComponent = VrcPhysBonesReflectionResolver.Resolve(typeof(string).AssemblyQualifiedName);
+                Require(!nonComponent.IsResolved && nonComponent.Diagnostic.Contains("not a Unity Component"), "Reflection resolver accepted a non-Component type.");
+                Require(VrcPhysBonesReflectionBackend.TryCreate(out backend, "verification-sdk", fixtureType), "Reflection PhysBones backend did not find the shape-compatible fixture type.");
+                string packageDirectory = Path.Combine("Temp", "NyaForgePhysBonesBridgePackage-" + Guid.NewGuid().ToString("N"));
                 string manifest = PhysBonesTargetPackage.Export(packageDirectory, profile, skeleton, fixtureType);
                 var package = PhysBonesTargetPackage.Read(manifest);
                 Require(package.ComponentTypeName == fixtureType, "PhysBones target package did not retain the explicit component type name.");

@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+using NyaForge.Authoring;
 using NyaForge.Authoring.Simulation;
 using UnityEditor;
 using UnityEngine;
@@ -15,7 +15,7 @@ namespace NyaForge.UnityBridge.Editor
     public sealed class VrcPhysBonesReflectionBackend : IPhysBonesComponentBackend, IPhysBonesComponentPreflight
     {
         public const string Target = "vrchat.physbones";
-        public const string DefaultComponentType = "VRC.SDK3.Dynamics.PhysBone.Components.VRCPhysBone";
+        public const string DefaultComponentType = PhysBonesTargetPackage.DefaultComponentTypeName;
 
         sealed class Snapshot
         {
@@ -39,10 +39,18 @@ namespace NyaForge.UnityBridge.Editor
         public static bool TryCreate(out VrcPhysBonesReflectionBackend backend, string sdkVersion = "unknown",
             string componentTypeName = DefaultComponentType)
         {
+            string diagnostic;
+            return TryCreate(out backend, sdkVersion, componentTypeName, out diagnostic);
+        }
+
+        public static bool TryCreate(out VrcPhysBonesReflectionBackend backend, string sdkVersion,
+            string componentTypeName, out string diagnostic)
+        {
             backend = null;
-            var type = FindType(componentTypeName);
-            if (type == null || !typeof(Component).IsAssignableFrom(type)) return false;
-            backend = new VrcPhysBonesReflectionBackend(type, sdkVersion);
+            var resolution = VrcPhysBonesReflectionResolver.Resolve(componentTypeName);
+            diagnostic = resolution.Diagnostic;
+            if (!resolution.IsResolved) return false;
+            backend = new VrcPhysBonesReflectionBackend(resolution.ComponentType, sdkVersion);
             return true;
         }
 
@@ -264,16 +272,6 @@ namespace NyaForge.UnityBridge.Editor
                 if (members.TryGetValue("m_" + name, out value)) return value;
             }
             return null;
-        }
-
-        static Type FindType(string name)
-        {
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                try { var type = assembly.GetType(name, false); if (type != null) return type; }
-                catch (ReflectionTypeLoadException) { }
-            }
-            return Type.GetType(name, false);
         }
 
         static object CopyValue(object value)

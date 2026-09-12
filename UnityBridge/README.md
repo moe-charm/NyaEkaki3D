@@ -34,6 +34,8 @@ Editor側の`PhysBonesBridge`は、実行時に見つかったSDK component type
 
 reflection member catalogはcomponent型から`Component`までを走査し、継承元のprivate serialized field/propertyも候補に含めます。同名memberは具体型を優先し、static・readonly・indexer・書込み不可propertyは除外します。SDKの型形状が異なる場合は能力不足として停止し、値を別名へ推測変換しません。
 
+型解決は`VrcPhysBonesReflectionResolver`へ分離しています。assembly-qualified nameはその型を厳密に解決し、未導入・`Component`以外・複数assemblyでの曖昧一致は診断文字列を返してsceneを変更せず停止します。
+
 receiver検証はSDK形状fixtureによる合成確認です。実際のVRChat SDK、アバターprefab、VRChat内の動作確認を完了したことを意味しません。`UnityBridge/Runtime/PhysBonesReflectionFixtureComponent.cs`はreflection検証専用の非表示fixtureで、production PhysBones componentではありません。
 
 受け取り側では **Tools > NyaForge > Import PhysBones Target...** を開き、manifestを選択します。表示されたstable BoneIdごとにavatarのTransformを手動で割り当て、必要なcollider groupへComponentを指定します。「現在の割当を保存」でavatar rootへ`NyaForgePhysBonesBinding`を追加し、manifest hash・target／SDK・profile／skeleton hashとともにscene／prefabへ保存できます。次回は同じavatar rootとpackageを選び、「保存済み割当を読み込む」で復元します。identityが一致しないpackageは読み込まず、再対応を促します。その後「作成／更新」または「管理対象だけを更新」を実行します。windowは名前自動検索や暗黙のbone index変換を行いません。

@@ -267,8 +267,9 @@ namespace NyaForge.UnityBridge.Editor
                     RequiredBones().Select(bone => bone.BoneId), RequiredColliderGroups());
                 var bones = new Dictionary<string, Transform>(boneBindings, StringComparer.Ordinal);
                 VrcPhysBonesReflectionBackend backend;
-                if (!VrcPhysBonesReflectionBackend.TryCreate(out backend, package.Target.SdkVersion, package.ComponentTypeName))
-                    throw new InvalidOperationException("VRChat PhysBones SDK component typeが見つかりません。SDKを導入したUnity projectで実行してください。");
+                string resolverDiagnostic;
+                if (!VrcPhysBonesReflectionBackend.TryCreate(out backend, package.Target.SdkVersion, package.ComponentTypeName, out resolverDiagnostic))
+                    throw new InvalidOperationException("VRChat PhysBones SDK component typeを解決できません: " + resolverDiagnostic);
                 var colliderGroups = new Dictionary<int, IReadOnlyList<Component>>();
                 foreach (var pair in colliderBindings) colliderGroups[pair.Key] = pair.Value.Where(component => component != null).ToArray();
                 var result = PhysBonesBridge.ApplyPackage(manifestPath,
