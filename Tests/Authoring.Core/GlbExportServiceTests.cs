@@ -74,14 +74,15 @@ internal static partial class Program
         Test("multi-mesh skinned GLB export shares one skeleton", () =>
         {
             var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(GraphId(), "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
-            AuthoringGraph BuildGraph(MeshData mesh)
+            AuthoringGraph BuildGraph(MeshData mesh, SkeletonDefinition selectedSkeleton = null)
             {
-                string rootId = skeleton.Bones[0].BoneId;
+                var rig = selectedSkeleton ?? skeleton;
+                string rootId = rig.Bones[0].BoneId;
                 string sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), outputId = GraphId();
-                var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, rootId, 1f)));
-                var pose = PoseSet.Create(skeleton, new[] { new BonePose(rootId, PoseTransform.FromTranslation(new Vec3())) });
+                var binding = SkinBinding.Create(mesh, rig, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, rootId, 1f)));
+                var pose = PoseSet.Create(rig, new[] { new BonePose(rootId, PoseTransform.FromTranslation(new Vec3())) });
                 return new AuthoringGraph(GraphId(),
-                    new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                    new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, rig), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
                     new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
             }
             var first = AuthoringFixtures.Panel(1);
@@ -106,6 +107,14 @@ internal static partial class Program
             True(new[] { first.VertexCount, second.VertexCount }.Contains(secondImported.Mesh.VertexCount));
             Equal(1, firstImported.Skeleton.Bones.Count);
             Equal(1, secondImported.Skeleton.Bones.Count);
+
+            var foreign = new SkeletonDefinition(new[] { new BoneDefinition(GraphId(), "ForeignRoot", "", new Vec3(), new Vec3(0, .1f, 0)) });
+            var mixedWorkspace = AuthoringWorkspace.CreateEmpty();
+            Ok(Execute(mixedWorkspace, AuthoringOperation.AddGraph(BuildGraph(first, skeleton))));
+            Ok(Execute(mixedWorkspace, AuthoringOperation.AddGraph(BuildGraph(second, foreign))));
+            string rejectedDirectory = Path.Combine(Root, "glb-skinned-mixed-" + Guid.NewGuid().ToString("N"));
+            Expect("GLB_SKIN_SHARED_SKELETON", () => GlbExportService.ExportSkinned(mixedWorkspace, mixedWorkspace.InstanceId, mixedWorkspace.Document.DocumentId, mixedWorkspace.Document.DocumentRevision, rejectedDirectory));
+            True(!Directory.Exists(rejectedDirectory));
         });
 
         Test("extended skinned GLB export roundtrips every authored influence set", () =>
