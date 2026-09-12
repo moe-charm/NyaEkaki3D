@@ -95,7 +95,7 @@ namespace NyaForge.UnityRuntime
             var rebound = SecondaryMotionRebind.Apply(importedSecondaryMotionAsset, skeleton, mesh, map);
             var owned = new Dictionary<string, byte[]>(); foreach (var name in workspace.Attachments.Hashes.Keys) owned[name] = workspace.Attachments.Read(name);
             owned[ProjectAttachments.SecondaryMotion] = SecondaryMotionCodec.Write(rebound);
-            ClearSpringPlayback(true); workspace.SetAttachments(new ProjectAttachments(owned));
+            ClearSpringPlayback(true); workspace.SetAttachmentsWithHistory(new ProjectAttachments(owned));
             importedSecondaryMotionAsset = rebound; importedSecondaryMotionDocument = SecondaryMotionCodec.ReadDocument(owned[ProjectAttachments.SecondaryMotion]);
             Refresh(); SetStatus("共通揺れ設定を同じBoneIdで再bindしました。保存すると新しいskeleton/topology identityを記録します。");
         }

@@ -43,7 +43,7 @@ namespace NyaForge.Authoring
                     Checks.Require(command.ExpectedBaselineHash == workspace.Document.EditSourceHash, "BASE_MESH_CHANGED", "The command targets different source content.");
                     workspace.Executing = true;
                     timings?.Validated();
-                    var before = workspace.Document; long revision = checked(before.DocumentRevision + 1);
+                    var before = workspace.Document; var beforeAttachments = workspace.Attachments; long revision = checked(before.DocumentRevision + 1);
                     bool undo = command.Operations[0].Kind == "history.undo", redo = command.Operations[0].Kind == "history.redo";
                     AuthoringDocument candidate;
                     if (undo || redo)
@@ -51,6 +51,8 @@ namespace NyaForge.Authoring
                         Checks.Require(command.Operations.Length == 1, "INVALID_COMMAND", "History commands cannot be batched.");
                         var stack = undo ? workspace.UndoStack : workspace.RedoStack;
                         Checks.Require(stack.Count > 0, "HISTORY_EMPTY", "There is no history in that direction.");
+                        var attachmentStack = undo ? workspace.UndoAttachmentStack : workspace.RedoAttachmentStack;
+                        Checks.Require(attachmentStack.Count == stack.Count, "HISTORY_CORRUPT", "Document and metadata history are out of sync.");
                         candidate = stack[stack.Count - 1].AtRevision(revision);
                     }
                     else
@@ -75,9 +77,19 @@ namespace NyaForge.Authoring
                     }
                     timings?.Projected();
                     workspace.Document = candidate; workspace.Preview = preview; committed = true;
-                    if (undo) { workspace.UndoStack.RemoveAt(workspace.UndoStack.Count - 1); Push(workspace.RedoStack,before); }
-                    else if (redo) { workspace.RedoStack.RemoveAt(workspace.RedoStack.Count - 1); Push(workspace.UndoStack,before); }
-                    else { Push(workspace.UndoStack,before); workspace.RedoStack.Clear(); }
+                    if (undo)
+                    {
+                        var restored = workspace.UndoAttachmentStack[workspace.UndoAttachmentStack.Count - 1];
+                        workspace.UndoStack.RemoveAt(workspace.UndoStack.Count - 1); workspace.UndoAttachmentStack.RemoveAt(workspace.UndoAttachmentStack.Count - 1);
+                        Push(workspace.RedoStack,before); Push(workspace.RedoAttachmentStack,beforeAttachments); workspace.RestoreAttachments(restored);
+                    }
+                    else if (redo)
+                    {
+                        var restored = workspace.RedoAttachmentStack[workspace.RedoAttachmentStack.Count - 1];
+                        workspace.RedoStack.RemoveAt(workspace.RedoStack.Count - 1); workspace.RedoAttachmentStack.RemoveAt(workspace.RedoAttachmentStack.Count - 1);
+                        Push(workspace.UndoStack,before); Push(workspace.UndoAttachmentStack,beforeAttachments); workspace.RestoreAttachments(restored);
+                    }
+                    else { Push(workspace.UndoStack,before); Push(workspace.UndoAttachmentStack,beforeAttachments); workspace.RedoStack.Clear(); workspace.RedoAttachmentStack.Clear(); }
                     var result = new CommandResult { Success = true, Code = preview.IsComplete ? "OK" : "COMMITTED_INCOMPLETE", Message = preview.IsComplete ? "Committed." : "Committed; evaluation is incomplete.", DocumentRevision = revision, MeshContentHash = evaluated?.ContentHash, EvaluationComplete = preview.IsComplete, PreviewRevision = preview.OutputRevision };
                     workspace.Commands.Add(command.CommandId,new CachedCommand { Fingerprint = fingerprint, Result = result });
                     timings?.Committed();
@@ -109,6 +121,7 @@ namespace NyaForge.Authoring
             return result;
         }
         private static void Push(List<AuthoringDocument> stack, AuthoringDocument doc) { if (stack.Count >= AuthoringLimits.MaxHistory) stack.RemoveAt(0); stack.Add(doc); }
+        private static void Push(List<ProjectAttachments> stack, ProjectAttachments attachments) { if (stack.Count >= AuthoringLimits.MaxHistory) stack.RemoveAt(0); stack.Add(attachments); }
         private static string Fingerprint(CommandEnvelope command)
         {
             Checks.Require(command.Operations != null && command.Operations.Length > 0 && command.Operations.Length <= AuthoringLimits.MaxOperations,"INVALID_COMMAND","Operation count is invalid.");

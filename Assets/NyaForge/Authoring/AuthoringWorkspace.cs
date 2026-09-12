@@ -11,6 +11,8 @@ namespace NyaForge.Authoring
         internal readonly object Gate = new object();
         internal readonly List<AuthoringDocument> UndoStack = new List<AuthoringDocument>();
         internal readonly List<AuthoringDocument> RedoStack = new List<AuthoringDocument>();
+        internal readonly List<ProjectAttachments> UndoAttachmentStack = new List<ProjectAttachments>();
+        internal readonly List<ProjectAttachments> RedoAttachmentStack = new List<ProjectAttachments>();
         internal readonly Dictionary<string, CachedCommand> Commands = new Dictionary<string, CachedCommand>();
         internal string SavedStateHash;
         internal string SavedAttachmentsHash = ProjectAttachments.Empty.ContentHash;
@@ -33,6 +35,31 @@ namespace NyaForge.Authoring
                 Checks.Require(attachments != null, "INVALID_ATTACHMENT", "Project metadata is required.");
                 Attachments = attachments;
             }
+        }
+
+        /// <summary>Publishes metadata as one undoable authoring step without changing mesh geometry.</summary>
+        internal void SetAttachmentsWithHistory(ProjectAttachments attachments)
+        {
+            lock (Gate)
+            {
+                Checks.Require(!Executing, "REENTRANT_SAVE", "Cannot replace metadata during a command transaction.");
+                Checks.Require(attachments != null, "INVALID_ATTACHMENT", "Project metadata is required.");
+                Push(UndoStack, Document); Push(UndoAttachmentStack, Attachments);
+                RedoStack.Clear(); RedoAttachmentStack.Clear();
+                Attachments = attachments;
+            }
+        }
+
+        internal void RestoreAttachments(ProjectAttachments attachments)
+        {
+            Checks.Require(attachments != null, "INVALID_ATTACHMENT", "Project metadata is required.");
+            Attachments = attachments;
+        }
+
+        static void Push<T>(List<T> stack, T value)
+        {
+            if (stack.Count >= AuthoringLimits.MaxHistory) stack.RemoveAt(0);
+            stack.Add(value);
         }
         internal AuthoringWorkspace(AuthoringDocument document) { InstanceId = Guid.NewGuid().ToString("D"); Document = document; Preview = AuthoringPreview.Create(document, null); }
         public static AuthoringWorkspace Create(MeshData mesh, RestTransform transform, string name)

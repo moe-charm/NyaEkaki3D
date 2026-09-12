@@ -19,6 +19,16 @@ internal static partial class Program
 
     static void RunProjectSnapshotTests()
     {
+        Test("metadata rebind participates in Undo and Redo", () =>
+        {
+            var w = Fresh(); var original = SnapshotMetadata("before"); var rebound = SnapshotMetadata("after");
+            w.SetAttachments(original); string geometry = w.Document.StateHash;
+            w.SetAttachmentsWithHistory(rebound);
+            Equal(rebound.ContentHash, w.Attachments.ContentHash); Equal(geometry, w.Document.StateHash);
+            Ok(Execute(w, AuthoringOperation.Undo())); Equal(original.ContentHash, w.Attachments.ContentHash); Equal(geometry, w.Document.StateHash);
+            Ok(Execute(w, AuthoringOperation.Redo())); Equal(rebound.ContentHash, w.Attachments.ContentHash); Equal(geometry, w.Document.StateHash);
+        });
+
         Test("observed save service preserves graph snapshot metadata and stale writer protection", () =>
         {
             var w = AuthoringWorkspace.CreateEmpty();
