@@ -1,0 +1,6 @@
+{
+  "name": "NyaForge.Editor",
+  "references": ["Viewer.Contracts", "Viewer.Runtime"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": true
+}

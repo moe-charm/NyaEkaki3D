@@ -59,8 +59,8 @@ namespace Viewer.Runtime
         }
         void BuildSetsUi()
         {
-            var row = new VisualElement { name = "sets-toolbar" }; row.AddToClassList("file-row"); uiRoot.Add(row);
-            setPicker = new DropdownField("確認セット") { name = "set-picker" }; setPicker.style.width = 460; setPicker.style.flexShrink = 0; row.Add(setPicker);
+            var row = new VisualElement { name = "sets-toolbar" }; row.AddToClassList("file-row"); setsPanel.Add(row);
+            setPicker = new DropdownField("確認セット") { name = "set-picker" }; setPicker.style.width = 340; setPicker.style.flexShrink = 1; row.Add(setPicker);
             setPicker.RegisterValueChangedCallback(e => { if (setPaths.TryGetValue(e.newValue, out var path)) ConfirmSetChange(() => OpenSet(path)); });
             currentSetLabel = new Label { name = "current-set-status" }; currentSetLabel.style.flexGrow = 1; row.Add(currentSetLabel);
             row.Add(MakeButton("上書き保存", SaveCurrentSet, "set-save"));
@@ -76,7 +76,7 @@ namespace Viewer.Runtime
             discardRow.Add(MakeButton("破棄して切替", () => { var action = pendingSetAction; pendingSetAction = null; discardRow.style.display = DisplayStyle.None; action?.Invoke(); }, "set-discard"));
             discardRow.Add(MakeButton("キャンセル", () => { pendingSetAction = null; discardRow.style.display = DisplayStyle.None; }, "set-discard-cancel"));
             discardRow.style.display = DisplayStyle.None;
-            var startup = new Foldout { text = "起動時の表示", value = false, name = "startup-settings" }; uiRoot.Add(startup);
+            var startup = new Foldout { text = "起動時の表示", value = false, name = "startup-settings" }; settingsPanel.Add(startup);
             var startupRow = new VisualElement(); startupRow.AddToClassList("file-row"); startup.Add(startupRow);
             startupModePicker = new DropdownField("起動時", new List<string> { "pack", "set", "previous" }, 0) { name = "startup-mode" };
             string ModeName(string v) => v == "set" ? "指定した確認セット" : v == "previous" ? "前回終了時の状態" : DefaultSet;

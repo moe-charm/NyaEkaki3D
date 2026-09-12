@@ -1,5 +1,5 @@
 {
   "name": "Viewer.Runtime",
-  "references": ["Viewer.Contracts", "Unity.Newtonsoft.Json"],
+  "references": ["Viewer.Contracts", "Unity.Newtonsoft.Json", "NyaForge.UnityRuntime"],
   "autoReferenced": true
 }

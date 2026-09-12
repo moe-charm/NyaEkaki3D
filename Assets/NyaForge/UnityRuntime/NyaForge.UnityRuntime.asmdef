@@ -1,0 +1,5 @@
+{
+  "name": "NyaForge.UnityRuntime",
+  "references": ["NyaForge.Authoring", "NyaForge.Rendering"],
+  "autoReferenced": true
+}

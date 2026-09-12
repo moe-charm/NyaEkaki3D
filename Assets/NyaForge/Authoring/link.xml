@@ -1,0 +1,11 @@
+<linker>
+  <assembly fullname="NyaForge.Authoring">
+    <type fullname="NyaForge.Authoring.GraphProjectManifest" preserve="all" />
+    <type fullname="NyaForge.Authoring.GraphObjectManifest" preserve="all" />
+    <type fullname="NyaForge.Authoring.ProjectManifest" preserve="all" />
+    <type fullname="NyaForge.Authoring.ProjectManifestV2" preserve="all" />
+    <type fullname="NyaForge.Authoring.StaticObjectManifest" preserve="all" />
+    <type fullname="NyaForge.Authoring.BakeManifest" preserve="all" />
+    <type fullname="NyaForge.Authoring.TransformDto" preserve="all" />
+  </assembly>
+</linker>

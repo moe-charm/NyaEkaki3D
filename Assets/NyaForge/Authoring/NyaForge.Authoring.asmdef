@@ -1,0 +1,6 @@
+{
+  "name": "NyaForge.Authoring",
+  "references": ["Unity.Newtonsoft.Json"],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}

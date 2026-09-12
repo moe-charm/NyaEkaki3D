@@ -1,0 +1,8 @@
+{
+  "name": "com.nyaforge.rendering",
+  "version": "0.1.0",
+  "displayName": "NyaForge Material Rendering",
+  "description": "Shared standard-material adapter and shaders for authoring preview and Unity imports.",
+  "unity": "2022.3",
+  "dependencies": { "com.nyaforge.authoring": "0.1.0" }
+}

@@ -1,0 +1,70 @@
+# 3Dペイントの開発契約
+
+2026-09-11。2D画像・layer・maskと共通commandを正本にし、3D入力をその上へ追加する。Windows先行。
+
+## 実装した探索基盤
+
+`SurfacePaintMesh` はimmutableな描画meshと正の一様scale/translationを受け取り、三角形単位のBVHを構築する。`SurfaceRayGeometry` に倍精度のベクトルとAABB交差を分離。三角形IDはsubmesh順の連続indexを保持する。
+
+Raycastはavatar空間のorigin/directionを受ける。方向を正規化してからlocalへ変換し、距離はavatar空間の値で返す。UVは実際の描画三角形の頂点から重心座標で補間する。分裂頂点のUVを位置だけで統合しない。
+
+最も近い面を先に確定し、そのUVが0〜1外でもhitを返す。`IsUvInRange=false` を理由に奥の面へ探索を進めてはいけない。背景はnull。距離上限は非負、方向0は拒否。境界上で距離が同じなら三角形indexの小さい方を使う。
+
+現在のAuthoringSurfaceはCull Offなので、探索も既定では両面。片面cullは明示引数として用意する。裏側の外向き法線面でも画面に見えていれば対象にできるが、手前の別面を透過して塗る機能ではない。
+
+画像やmaskの変更だけでBVHを毎回作り直さない。GUI接続時にはmesh hash・transform・表示対象を探索cacheに使い、描画commandのcontextにはgraph/UV/domain/layer stackも固定する。上流の編集ケージと最終出力が違う状態で、見えていない別meshへ当てない。
+
+## 次に接続すること
+
+`SurfaceUvContinuity` と `SurfaceStrokeSampler` を追加した。描画用に分裂した頂点も、同じ論理頂点IDのedgeと両端UVが一致すれば連続と判断する。同じ位置にあるだけの別頂点はつながない。既定2px間隔で画面入力を補間し、背景・範囲外UV・UV edge不連続で区間を分ける。ray sampleは4096、raw UVは4096点、簡略化後の筆跡は1024点まで。resolver例外やbudget超過後のgestureはinvalidにして部分確定を禁止する。
+
+`AuthoringWorkbench.SurfacePaint` に3D GUI入力を分離した。最終出力へ直接つながるlayered Paintを対象にし、モード有効化時は最終出力へ表示を切り替える。色/maskの仮合成は `BaseColorSurface` が一時textureとして所有し、元の材質textureへ戻せる。pointer upで全区間を1commandにする。画面への接続状況と最新検証結果はcurrent_task.mdを優先する。
+
+カメラ更新（全体表示を含む）とmask筆の隠す/表示切替でもgestureを取り消す。`SurfaceLifetimeVerification` はpointerを押したままnative/PNG/SurfaceのAPIを呼び、仮表示の画素が保存・出力されないことを検査する。画像/mask・layer・mask筆・全体表示の変更後に遅れてpointer upが来ても確定されないこと、Alt回転と右移動が文書を変えないことも対象。
+
+`PaintStrokePath` と画像/maskの `ApplyPaths` は実装済み。複数polylineをimmutableに保持し、全体で1024点・16M pixel visitsを共有する。全線分のcoverageを一度だけ合成するため、区間ごとに不透明度を積み重ねない。線をつなぐ/切る境界もcommand fingerprintに含める。`PaintLayerChange.PathStroke` / `MaskPathStroke` は既存共通commandのUndo・再送・native保存へ接続した。以下は段階的な要件であり、最新の完了/残件は末尾とcurrent_taskを参照する。
+
+1. 複数の切れたUV線分を1gestureとして保持する入力値。画像/mask共通で全線分のcoverageをまとめ、線分ごとに不透明度を重ねない。点数・pixel work budgetを全gestureで共有する。
+2. 3Dの入力位置間を画面上で補間してhitを集める。背景・遮蔽物・UV範囲外・UV seamで線を切り、別の島の間に線を引かない。UV距離だけでseamを推測せず、三角形とedgeの対応を利用する。重なったUVは共有texelを編集する仕様を明示する。
+3. 左ドラッグ描画とカメラ操作を明確に分けるGUI。半径の単位、描画先layer/画像/maskを表示する。対象切替・文書変更・capture喪失・Escape・workspace破棄で仮表示を捨てる。
+4. 仮表示は作品と切り離す。pointer upで1command、Undo/Redo・native保存・PNG/Surfaceは確定画像だけを使用する。描きかけを出力しない。
+5. Playerで表裏・UV seam・複数面・途中の背景・取消・1gesture Undo・保存再読込を検証し、描画画像を確認する。Core ray試験だけを3DペイントGUIの完成と呼ばない。
+
+## 現在の確認範囲
+
+Core試験は重心UV、source scale 1/100/1e-6、極小三角形、距離上限、表裏と片面cull、外れたray、UV欠落、BVHの最前面/submesh、範囲外UVによる遮り、seamの分裂頂点を確認する。
+Coreでは画面入力補間、背景/seamによる区間分割、共有論理edge、snapshot所有、foreign hit拒否、sample/UV budget超過後の確定禁止も確認する。
+
+Playerにはray APIと3D brush GUI試験を用意した。`SurfacePaintFixtures` は共有edgeでUVだけが切れた2面、背景の隙間、範囲外UVを持つ手前の遮蔽物を生成する。`SurfaceBoundaryVerification` は実際のカメラからpointer入力を送り、2区間への分離、両側の描画と中央texelの保持、1command、Undo/Redo、native保存とSurface出力を確認する。遮蔽物の中央クリックは奥へ塗れずrevisionも変わらない。幅のある合成fixtureの試験であり、微細な遮蔽物や高密度モデルの品質は別途必要。
+
+画像確認で不透明profileのshaderが画像alphaをviewportへ返していたことを発見した。UIの画像合成時に透明部分へ背後の色が見えるため、shaderの出力alphaを1に固定する。元画像・保存・Surfaceのalphaは保持する。遮蔽物中央の透明な黒texelをcamera targetから読み、RGB黒・alpha255を検査する。最新結果はcurrent_task.mdに記録する。Alt回転/右移動はLifetime試験で確認済み。高密度meshの負荷とOS手動操作は追加確認が残る。
+
+`SurfaceBoundaryRefinement` は粗いsampleの三角形IDまたはUV有効性が変わった区間を二分する。背景への出入りも対象。1/64画面pxまたは深さ12で終了し、左から右の順に中間hitを既存strokeへ渡す。検出した境界の両側へ筆跡を近づけ、途中の細かな三角形をたどる。追加rayも4096回、追加raw UV点も4096点の同じgesture budgetへ算入し、出力時は簡略化後1024点以内とする。再帰中にresolver/所有権/budgetで失敗した場合もgesture全体をinvalidにする。
+
+Coreでは検出された隙間の両側へ0.02画面px以内まで近づくこと、16px幅に32帯/64三角形を配置した面で1本の筆跡を保つこと、補間で初めて見つかったforeign hitの拒否を確認する。これは境界を検出した後の精密化であり、完全な可視性判定ではない。
+
+## 投影した面による区間内部の検出
+
+### 探索点と保存筆跡の分離
+
+`SurfaceStrokeSampler.PointCount` は探索で得たraw UVの数。raw UVは最大4096点でray予算と同じ範囲に収める。`Snapshot()` は `PaintPathSimplifier` で各区間を独立に簡略化し、従来の `PaintStrokePath`（最大1024点）へ渡す。簡略化は倍精度の点と線分の距離を使い、UV誤差 `1/(8*PaintImage.MaxDimension)`、比較作業8,388,608回の上限を持つ。端点と区間境界は保持する。sourceが変わらないsnapshotは再利用する。
+
+画像最大寸法1024に対し誤差は最大1/8 texture px。単純な直線では大量の探索点を2点にできるが、多数の折返し/区間を無理に潰さない。出力点数や簡略化予算を超えるとsampler全体をinvalid化し、仮表示も取消する。既存の手動2D path APIや保存済み画像を自動簡略化する変更ではない。
+
+`SurfaceScreenProjection` はcamera depthのnear/farでworld三角形を切ってからscreenへ投影する。透視除算前に切るため、背後の頂点をそのままscreen上へ折り返さない。Unity側はdepth計算とWorldToViewportPointからpanel座標への変換を渡す。rayの最長距離もfar平面までの距離に合わせる。
+
+2026-09-12: Unity側の `SurfaceCameraCapture` がclip X/Y/W行、depth行、viewportとnear/farを主threadでコピーし、Coreのimmutable `SurfaceCameraSnapshot` を作る方式へ変更した。coverage構築中にlive cameraやUnity APIを呼ばない。Coreは倍精度で透視除算とpanel座標への変換を行い、深度clipping後にのみProjectする。平行投影もclip W=1として扱える。snapshotの値比較でcamera/viewport変更を検出する。
+
+Coreでは透視座標、無効な投影条件の拒否、worker threadでのcoverage構築と主threadの結果一致を検査。Playerは透視/平行投影、投影中心のずれ、移動/回転したcameraでWorldToViewportPointと比較し、capture後のcamera移動が保存した値に影響しないことを検査する。
+
+これはバックグラウンド準備の前提を整える変更で、現在のGUIがすでに非同期準備へ移ったことは意味しない。次はjobの所有、古いcamera/mesh結果の破棄、workspace交換/終了時の取消と、準備状態の表示を接続する。
+
+`SurfaceScreenCoverage` は投影三角形の2D BVHを保持する。ドラッグ線と面の半平面を交差させ、出入りのparameterを集める。その境界と各区間の中点を粗い等間隔sampleへ追加する。背後の面も候補になるが、最前面の確定は既存raycastに任せる。端点のhitが同じでも、区間内の細い遮蔽物を拾える。coverageはpointer down時のcamera snapshotで、カメラ/viewportの変更はgestureを取消する。
+
+ray/UVの共通gesture予算は維持し、境界が多すぎる場合は部分確定せずエラーにする。投影入力には300万頂点の内部上限を設け、縮退した投影三角形は除く。Coreでは0.02画面pxの範囲外UV遮蔽物を粗いsample間へ置き、coverageなしでは1区間、ありでは2区間になることを比較。near/far clippingと予算超過時のinvalid化も対象。Playerには幅0.00002mの手前の面を追加し、単独クリックの塗り抜け禁止と横切るstrokeの2区間化を確認する。
+
+`AuthoringWorkbench.SurfacePreparation` は形状/配置/UV/論理ID/camera snapshotが同じならReady結果を再利用する。変化時はworkerへ要求し、最新世代がReadyになるまで描画を開始しない。[準備ジョブ](Surface-Preparation.md)参照。`SurfaceViewportVerification` で実layoutの縮小による取消、古いpointer upの無効化、新しいviewportからの期待UVとUndo、cache交換を確認する。[負荷計測](Surface-Paint-Performance.md)では8,192三角形以上の格子planeで800px strokeがUV点上限に達したため、探索sampleと保存筆跡の点数を分離した。直線800pxの比較は負荷計測資料を参照する。
+
+線分接続は同一三角形またはUV連続の共有edgeを持つ隣接三角形に限定する。精密化の限界でも非隣接面へ飛んだsampleは保守的に区間を切る。float screen座標で表現できない細さ、点やedge上の退化ケース、密な実モデルの負荷、1gestureの長さは追加確認が必要。coverage BVHは同じcameraと形状なら再利用する。brushの半径はtexture pxであり、細い遮蔽物を検出してpathを切っても両側の筆の太さが同じtexelへ届くことはある。これはrayの塗り抜けとは分ける。重なったUVは同じtexelを編集する。
+
+

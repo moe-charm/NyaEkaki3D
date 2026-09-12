@@ -26,21 +26,27 @@ namespace Viewer.Runtime
             uiRoot.RegisterCallback<KeyDownEvent>(_ => WakeRendering(), TrickleDown.TrickleDown);
 
             var toolbar = new VisualElement { name = "toolbar" }; toolbar.AddToClassList("toolbar"); uiRoot.Add(toolbar);
-            var brand = new Label("衣装スタジオ"); brand.AddToClassList("brand"); toolbar.Add(brand);
-            toolbar.Add(MakeButton("更新を確認", CheckUpdate, "check-update"));
-            toolbar.Add(MakeButton("再読込", () => { if (Active != null) RequestReload(Active.Verified.Path); }, "reload"));
-            toolbar.Add(MakeButton("セットを保存", SaveCurrentSet, "save"));
-            toolbar.Add(MakeButton("全体", () => CameraPreset("all"), "frame-all"));
-            toolbar.Add(MakeButton("首・肩", () => CameraPreset("neck"), "frame-neck"));
-            foreach (var pair in new[] { ("正面", "front"), ("背面", "back"), ("左", "left"), ("右", "right") })
-                toolbar.Add(MakeButton(pair.Item1, () => CameraPreset(pair.Item2), "view-" + pair.Item2));
+            var brand = new Label("NyaForge"); brand.AddToClassList("brand"); toolbar.Add(brand);
+            toolbar.Add(MakeButton("パックを開く…", BrowsePack, "browse-pack"));
+            toolbar.Add(MakeButton("最近", () => ToggleNavigationPanel(recentPanel), "show-recent"));
+            toolbar.Add(MakeButton("確認セット", () => ToggleNavigationPanel(setsPanel), "show-sets"));
+            toolbar.Add(MakeButton("設定", () => ToggleNavigationPanel(settingsPanel), "show-settings"));
+            activePackLabel = new Label("パックを開いて始める") { name = "active-pack-label" }; toolbar.Add(activePackLabel);
+            toolbar.Add(MakeButton("制作へ", OpenAuthoring, "open-authoring"));
+
+            recentPanel = MakeNavigationPanel("recent-panel"); BuildPackPicker(recentPanel);
+            settingsPanel = MakeNavigationPanel("settings-panel");
+            setsPanel = MakeNavigationPanel("sets-panel");
 
             BuildSetsUi();
-            var advanced = new Foldout { text = "詳細：ファイルを直接開く・保存する", value = false, name = "advanced-files" }; uiRoot.Add(advanced);
+            var maintenance = new VisualElement(); maintenance.AddToClassList("file-row"); settingsPanel.Add(maintenance);
+            maintenance.Add(MakeButton("更新を確認", CheckUpdate, "check-update"));
+            maintenance.Add(MakeButton("再読込", () => { if (Active != null) RequestReload(Active.Verified.Path); }, "reload"));
+            var advanced = new Foldout { text = "詳細：パスを指定する", value = false, name = "advanced-files" }; settingsPanel.Add(advanced);
             var files = new VisualElement(); files.AddToClassList("file-row"); advanced.Add(files);
             pathField = new TextField { name = "open-path", value = System.IO.Path.Combine(LibraryPath, "current.StandaloneWindows64.json") };
             pathField.style.flexGrow = 1; files.Add(pathField);
-            files.Add(MakeButton("パスを開く", () => ConfirmSetChange(() => OpenPath(pathField.value)), "open"));
+            files.Add(MakeButton("パスを開く", () => AcceptPickedPath(pathField.value), "open"));
             savePathField = new TextField { name = "save-path", value = sessionPath };
             savePathField.style.flexGrow = 1; files.Add(savePathField);
             files.Add(MakeButton("別名保存", () => Save(savePathField.value), "save-as"));
@@ -49,6 +55,13 @@ namespace Viewer.Runtime
             var body = new VisualElement(); body.AddToClassList("body"); uiRoot.Add(body);
             partsPanel = new ScrollView { name = "parts" }; partsPanel.AddToClassList("sidebar"); body.Add(partsPanel);
             viewport = new VisualElement { name = "viewport" }; viewport.style.flexGrow = 1; body.Add(viewport);
+            var views = new VisualElement { name = "view-controls" }; viewport.Add(views);
+            views.RegisterCallback<PointerDownEvent>(e => e.StopPropagation());
+            views.RegisterCallback<WheelEvent>(e => e.StopPropagation());
+            views.Add(MakeButton("全体", () => CameraPreset("all"), "frame-all"));
+            views.Add(MakeButton("首・肩", () => CameraPreset("neck"), "frame-neck"));
+            foreach (var pair in new[] { ("正面", "front"), ("背面", "back"), ("左", "left"), ("右", "right") })
+                views.Add(MakeButton(pair.Item1, () => CameraPreset(pair.Item2), "view-" + pair.Item2));
             var hint = new Label("ドラッグ: 回転  ·  右ドラッグ: 移動  ·  ホイール: 拡大"); hint.AddToClassList("hint"); viewport.Add(hint);
             var right = new VisualElement(); right.AddToClassList("sidebar"); right.style.width = 320; body.Add(right);
             right.Add(new Label("シェイプキー調整"));
@@ -65,7 +78,7 @@ namespace Viewer.Runtime
             light.RegisterValueChangedCallback(e => Edit(s => s.preview.lightPresetId = e.newValue)); right.Add(light);
 
             var transport = new VisualElement(); transport.AddToClassList("transport"); uiRoot.Add(transport);
-            clipDropdown = new DropdownField { name = "clip", label = "ポーズ" }; clipDropdown.style.width = 260; clipDropdown.style.flexShrink = 0;
+            clipDropdown = new DropdownField { name = "clip", label = "ポーズ" }; clipDropdown.style.width = 230; clipDropdown.style.flexShrink = 0;
             clipDropdown.RegisterValueChangedCallback(e =>
             {
                 if (reflecting || Active == null) return;
@@ -74,11 +87,13 @@ namespace Viewer.Runtime
             });
             transport.Add(clipDropdown);
             transport.Add(MakeButton("再生／停止", () => { if (Active != null && !IsBusy) { if (IsPlaying) Pause(); else IsPlaying = true; } }, "play"));
-            transport.Add(MakeButton("◀ 1", () => StepFrame(-1), "step-back"));
-            transport.Add(MakeButton("1 ▶", () => StepFrame(1), "step-forward"));
+            var playbackDetails = new Foldout { text = "再生の詳細", value = false }; settingsPanel.Add(playbackDetails);
+            var playbackRow = new VisualElement(); playbackRow.AddToClassList("file-row"); playbackDetails.Add(playbackRow);
+            playbackRow.Add(MakeButton("◀ 1", () => StepFrame(-1), "step-back"));
+            playbackRow.Add(MakeButton("1 ▶", () => StepFrame(1), "step-forward"));
             var speed = speedSlider = new Slider("速度", .1f, 2f) { value = 1, showInputField = true }; speed.style.width = 190;
-            speed.RegisterValueChangedCallback(e => Edit(s => s.motion.speed = e.newValue)); transport.Add(speed);
-            var loop = loopToggle = new Toggle("ループ") { value = true }; loop.RegisterValueChangedCallback(e => Edit(s => s.motion.loop = e.newValue)); transport.Add(loop);
+            speed.RegisterValueChangedCallback(e => Edit(s => s.motion.speed = e.newValue)); playbackRow.Add(speed);
+            var loop = loopToggle = new Toggle("ループ") { value = true }; loop.RegisterValueChangedCallback(e => Edit(s => s.motion.loop = e.newValue)); playbackRow.Add(loop);
             timeSlider = new Slider { name = "time", lowValue = 0, highValue = 2, showInputField = true }; timeSlider.style.flexGrow = 1;
             timeSlider.RegisterValueChangedCallback(e => { if (!reflecting) Seek(e.newValue); }); transport.Add(timeSlider);
             timingLabel = new Label("0.000 s"); timingLabel.style.width = 105; transport.Add(timingLabel);
@@ -201,6 +216,7 @@ namespace Viewer.Runtime
         }
         void ReflectAvailability()
         {
+            ReflectNavigation();
             ReflectSetsUi();
             bool ready = !IsBusy && Active?.Avatar != null;
             partsPanel?.SetEnabled(ready); morphPanel?.SetEnabled(ready);

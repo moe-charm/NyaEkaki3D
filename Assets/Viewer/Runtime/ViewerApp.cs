@@ -53,13 +53,14 @@ namespace Viewer.Runtime
             if (string.IsNullOrEmpty(CompatibilityToken)) throw new InvalidOperationException("Build compatibility metadata missing");
             LibraryPath = Arg("--library") ?? Path.Combine(Application.persistentDataPath, "Packs");
             InitializeSets();
+            InitializePackHistory();
             SetupScene(); SetupUi();
         }
         IEnumerator Start()
         {
             yield return null;
             var startup = Arg("--session") ?? Arg("--manifest");
-            if (Arg("--startup-empty") != "true")
+            if (Arg("--startup-empty") != "true" && Arg("--authoring") != "true" && Arg("--authoring-check-output") == null)
             {
                 if (startup != null) OpenPath(startup);
                 else OpenStartupState();
@@ -71,7 +72,14 @@ namespace Viewer.Runtime
             if (Arg("--visual-output") != null) StartCoroutine(RunVisualChecks(Arg("--visual-output")));
             if (Arg("--update-output") != null) StartCoroutine(RunUpdateNoticeCheck(Arg("--update-output")));
             if (Arg("--startup-output") != null) StartCoroutine(RunStartupProbe(Arg("--startup-output")));
+            if (Arg("--navigation-check-output") != null) StartCoroutine(RunNavigationCheck(Arg("--navigation-check-output")));
             if (Arg("--sets-output") != null) StartCoroutine(RunSetsCheck(Arg("--sets-output")));
+            if (Arg("--authoring") == "true" || Arg("--authoring-check-output") != null)
+            {
+                OpenAuthoring();
+                if (Arg("--authoring-check-output") != null && authoringWorkbench != null)
+                    authoringWorkbench.RunVerification(Arg("--authoring-check-output"));
+            }
         }
         public static string Arg(string key)
         {
@@ -230,15 +238,16 @@ namespace Viewer.Runtime
             }
             catch (Exception e) { Error(e); }
         }
-        public void OpenPath(string path)
+        public void OpenPath(string path, bool usePackDefaults = false)
         {
             CancelPendingUpdateCheck(); // Even a failed newer open cancels a stale pointer result.
             try
             {
                 path = Path.GetFullPath(path.Trim().Trim('"'));
+                if (Directory.Exists(path)) path = Path.Combine(path, "current.StandaloneWindows64.json");
                 if (Path.GetFileName(path).StartsWith("current.", StringComparison.Ordinal))
                 {
-                    OpenCurrentPointer(path);
+                    OpenCurrentPointer(path, usePackDefaults);
                 }
                 else if (path.EndsWith(".viewer.json", StringComparison.OrdinalIgnoreCase))
                 {
@@ -246,7 +255,7 @@ namespace Viewer.Runtime
                     string manifest = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path), session.pack.manifestPath));
                     RequestReload(manifest, session, session.pack.manifestSha256, path, loadedHash);
                 }
-                else RequestReload(path);
+                else RequestReload(path, usePackDefaults: usePackDefaults, openedPath: path);
                 pathField?.SetValueWithoutNotify(path);
             }
             catch (Exception e) { Error(e); }

@@ -57,18 +57,18 @@ namespace Viewer.Runtime
 
         public void BeginUpdateCheck() => BeginPointerCheck(Path.Combine(LibraryPath, "current.StandaloneWindows64.json"), false);
 
-        void OpenCurrentPointer(string pointerPath) => BeginPointerCheck(pointerPath, true);
+        void OpenCurrentPointer(string pointerPath, bool usePackDefaults = false) => BeginPointerCheck(pointerPath, true, usePackDefaults);
 
-        void BeginPointerCheck(string pointerPath, bool applyImmediately)
+        void BeginPointerCheck(string pointerPath, bool applyImmediately, bool usePackDefaults = false)
         {
             int generation = ++updateGeneration;
             HideUpdateOffer();
             updateChecking = true;
             SetStatus(applyImmediately ? "選択したパックを確認しています…" : "新しい版を確認しています…");
-            StartCoroutine(CheckUpdateCandidate(pointerPath, generation, applyImmediately));
+            StartCoroutine(CheckUpdateCandidate(pointerPath, generation, applyImmediately, usePackDefaults));
         }
 
-        IEnumerator CheckUpdateCandidate(string pointerPath, int generation, bool applyImmediately)
+        IEnumerator CheckUpdateCandidate(string pointerPath, int generation, bool applyImmediately, bool usePackDefaults)
         {
             string token = CompatibilityToken;
             var operation = Task.Run(() => VerifyUpdatePointer(pointerPath, token));
@@ -97,8 +97,8 @@ namespace Viewer.Runtime
                     // Opening a pointer is an explicit load action. It shares
                     // identity/file verification with update checks, then uses
                     // the normal reload queue instead of showing an offer.
-                    CheckUpdateCompatibility(candidate);
-                    RequestReload(candidate.Path, null, candidate.Hash);
+                    if (!usePackDefaults) CheckUpdateCompatibility(candidate);
+                    RequestReload(candidate.Path, null, candidate.Hash, usePackDefaults: usePackDefaults, openedPath: pointerPath);
                     yield break;
                 }
                 // The active revision may have changed while the worker verified
@@ -110,7 +110,7 @@ namespace Viewer.Runtime
                 }
                 if (Active == null && Document == null)
                 {
-                    RequestReload(candidate.Path, null, candidate.Hash);
+                    RequestReload(candidate.Path, null, candidate.Hash, openedPath: pointerPath);
                     yield break;
                 }
                 if (SameActiveUpdate(candidate)) { SetStatus("現在の表示は最新の版です。"); yield break; }

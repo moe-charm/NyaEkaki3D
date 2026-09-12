@@ -1,0 +1,5 @@
+{
+  "name": "NyaForge.Rendering",
+  "references": ["NyaForge.Authoring"],
+  "autoReferenced": true
+}

@@ -13,14 +13,16 @@ namespace Viewer.Runtime
         {
             public string path, hash, sessionPath, sessionHash;
             public SessionDocument session;
+            public bool usePackDefaults;
+            public string openedPath;
         }
         ReloadRequest pending;
         bool reloadLoop;
         public int CompletedReloads { get; private set; }
-        public void RequestReload(string path, SessionDocument session = null, string expectedHash = null, string loadedSessionPath = null, string loadedSessionHash = null)
+        public void RequestReload(string path, SessionDocument session = null, string expectedHash = null, string loadedSessionPath = null, string loadedSessionHash = null, bool usePackDefaults = false, string openedPath = null)
         {
             CancelPendingUpdateCheck(); // A later direct open supersedes older pointer verification too.
-            pending = new ReloadRequest { path = path, hash = expectedHash, session = session, sessionPath = loadedSessionPath, sessionHash = loadedSessionHash };
+            pending = new ReloadRequest { path = path, hash = expectedHash, session = session, sessionPath = loadedSessionPath, sessionHash = loadedSessionHash, usePackDefaults = usePackDefaults, openedPath = openedPath };
             if (!reloadLoop) StartCoroutine(ReloadLoop());
         }
         IEnumerator ReloadLoop()
@@ -44,11 +46,11 @@ namespace Viewer.Runtime
                 var reconciliationMessages = new System.Collections.Generic.List<string>();
                 try
                 {
-                    state = request.session != null ? JsonFiles.Clone(request.session) : Document == null ? PackStore.Defaults(candidate) : Snapshot();
+                    state = request.session != null ? JsonFiles.Clone(request.session) : request.usePackDefaults || Document == null ? PackStore.Defaults(candidate) : Snapshot();
                     Validation.Session(state);
                     if (request.session != null && state.pack.revision != candidate.Manifest.revision)
                         throw new ContractException("PACK_REVISION_MISMATCH", "保存した版とパックの版が一致しません。元のパックを選んでください。");
-                    reconciliationMessages = Validation.Reconcile(state, candidate.Manifest, request.session == null ? Active?.Verified.Manifest : null);
+                    reconciliationMessages = Validation.Reconcile(state, candidate.Manifest, request.session == null && !request.usePackDefaults ? Active?.Verified.Manifest : null);
                     state.pack = PackStore.Reference(candidate);
                 }
                 catch (Exception e) { failure = e; }
@@ -66,13 +68,16 @@ namespace Viewer.Runtime
                 yield return LoadPack(loaded, e => failure = e);
                 if (failure == null)
                 {
-                    try { loaded.Avatar.Apply(state, state.motion.timeSeconds); if ((oldState == null && request.session == null) || request.sessionPath == "") FrameAvatar(state, loaded.Avatar); }
+                    try { loaded.Avatar.Apply(state, state.motion.timeSeconds); if (request.usePackDefaults || (oldState == null && request.session == null) || request.sessionPath == "") FrameAvatar(state, loaded.Avatar); }
                     catch (Exception e) { failure = e; }
                 }
                 if (failure == null)
                 {
                     Active = loaded; Document = state; TimeSeconds = state.motion.timeSeconds; IsPlaying = false;
-                    Dirty = request.session == null && oldState != null;
+                    RememberPackPath(request.openedPath ?? request.path);
+                    if (request.openedPath != null && Path.GetFileName(request.openedPath).StartsWith("current.", StringComparison.Ordinal)) LibraryPath = Path.GetDirectoryName(request.openedPath);
+                    Dirty = !request.usePackDefaults && request.session == null && oldState != null;
+                    if (request.usePackDefaults) { sessionPath = ""; sessionHash = null; }
                     if (request.sessionPath != null) { sessionPath = request.sessionPath; sessionHash = request.sessionHash; }
                     CompletedReloads++;
                     ApplyCameraAndLight(); RebuildControls(); SetStatus("表示中 · " + candidate.Manifest.revision + (reconciliationMessages.Count > 0 ? " · " + string.Join(" / ", reconciliationMessages) : ""));

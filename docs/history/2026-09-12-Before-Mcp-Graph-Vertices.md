@@ -1,0 +1,456 @@
+# NyaForge 開発タスク
+
+更新: 2026-09-12。厚み・材質・テクスチャ付きモデルの五方向撮影と保存往復をWindows Playerで検証。
+
+## 開発の入口
+
+作業先: `Z:/TextureVoice_local/git/NyaForge`。Windows先行、macOSは将来。
+読む順: このファイル → [開発計画](docs/Development-Plan.md) → [設計v2](docs/NyaForge-Authoring-Design2.md)の対象節 → コード。[文書一覧](docs/README.md)参照。
+製品目標は小物の制作・出力を一周し、低ポリ全身キャラ、品質向上へ進むこと。設計v2は製品方針、v1は背景資料。設計中の外部依存・機能は採用済みや実装済みを意味しない。
+
+## 現在地
+
+| 範囲 | 現物と確認状況 |
+|---|---|
+| C0-R／C1-A | 空project、最大1object、typed graph、共通commandとUndo、native保存、node canvas、static Bake／Bridge |
+| C1-B | polygon/corner ID、面選択・押出し・削除・境界cap・厚み、Mirror、編集ケージと最終結果、UV投影と島の数値編集 |
+| C1-C Paint | 2D brush、Image port、UV binding、1stroke Undo、native画像保存、3D baseColor、PNG／Surface Bake |
+| Layer/mask GUI | 移行・追加・選択・並替・削除・表示・不透明度・名前、mask追加/削除と描画、取消、Undo、保存を検証 |
+| Image import | PNG検査・展開・縦横比保持サイズ調整・新layer追加・Undo・保存を検証。Windows pickerの実操作は手動未確認 |
+| 3D paint | BVH ray、論理edge/UV連続判定、screen補間、切れた区間の描画、GUI色/mask・仮表示・取消・Undo・保存/出力を実装 |
+| 今後 | 3D複数面/細かなseamの精度と操作、一般Material graph、UV再投影、出力identity更新、Evidence/MCP、rig/weight/morphと全身制作 |
+
+保存はstatic writer schema2、graph writer schema3、reader 1/2/3。Paintは共有画像と部位別の独立画像に対応。材質未割当は不透明preview、標準材質は3alpha modeを選択できる。UV変更時は旧payloadを未解決として保持し、明示rebindで対応を更新する。見た目を保つ再投影ではない。旧mesh-only Bakeは画像を拒否。画像付きmeshは別のSurface Bake profile、単一標準材質はMaterial Bakeを利用。複数材質BakeはGUI/Bridgeまで接続済み。
+
+## 外部MCPから空Playerへgraph生成
+
+- sidecarのGraphCommand/NodeCommand/NodeParameters/EdgeCommandを別ファイルへ追加し、ApplyOperationへgraph/node/newObjectIdを接続。capabilitiesに生成/node追加更新削除/output指定と対応node3種を掲載。node更新はpayload置換であることをtool説明に明示。
+- PlayerCreateVerificationを独立追加。実外部MCPで空→明示IDのplane/output graph生成→同command再送→Undoで空→Redo同hash→plane幅更新を確認。元workspaceはPlayer verifierのfinallyで復元。
+- Windows-McpCreateGraph buildとMcpProbe付きPlayer suite PASS: `Logs/build-player-20260912-072835-290.log`、`Artifacts/Authoring-20260912-072901-934ff339c4734ba6b5896f233bd17879/report.json`、mcp-create.log。既存static編集/replay/conflict/UndoとGUI suiteも成功。Coreは前回247件、今回は再実行なし。
+- 対応nodeはplane/edit/outputに限定。他のnode、graph頂点context、polygon/paint、native保存/export/captureのMCP公開は次。空projectはユーザーが開いたものを利用し、既存制作物を破棄するproject.create/openはまだ公開していない。全体計画継続。
+## Graph生成wireのCore拡張
+
+- AddGraph(graph,objectId) overloadを追加。既存GUI用AddGraph(graph)はGUID生成を維持し、transportは明示object IDを使用して再読込/再送時のfingerprintを安定化。
+- CommandWireGraphReaderを別partialファイルへ分離。object.add_graph、graph.node.add/update/remove、graph.outputを解釈。graphId/outputNodeId/nodes/edgesとnodeId/typeId/version/parametersを厳密に検査。初期node wire対応はprimitive.plane、mesh.edit、mesh.output。parameter payloadの編集履歴や他node種は未対応。
+- Core247 passed/0 failed（C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2af4495646d544ba815592de22bc63b7）。空workspaceへ明示IDでplane→outputを生成、再送でrevision不変、Undoで空に復帰、Redoで同object ID/mesh hash、version型拒否を確認。
+- Sidecar ApplyOperation DTOはまだgraph/node payload未対応。capabilitiesのremoteOperationsも前回5種のままで、新生成経路は未公開扱い。次はtyped DTO/schemaとcapabilitiesを接続し外部MCPから空→graph生成→編集をPlayerで検証する。Player再buildは今回は未実行。全体計画は継続。
+## MCP applyの実Player接続
+
+- AuthoringReadRequestをAuthoringIpcRequestへ改名。apply時のみcommand envelopeを受け、outer/inner instance一致を検査。上限64KiB。typed ApplyCommand/ApplyOperationをsidecarへ追加しforge_apply公開。任意コード実行や現在revision補完はしない。
+- Workbench.McpCommandsがmain-threadでcommands.Execute(envelope,projection)を呼び、選択/GUIをrefresh。個別CommandResultのsuccess/code/revision/hash/evaluationを返す。通信成功とcommand成功は別。再送はcommand IDを維持し、sidecar自動再試行なし。
+- capabilitiesへapplyと5種のremoteOperationsを掲載。static vertices.translate、graph.connect/disconnect、history.undo/redoのみ。グラフ頂点編集・node生成・polygon/paint/project作成等はまだ未公開。
+- Core246 passed/0 failed（C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b7e2322ec4314686abe0307de3cbc581）。MCP transport suite PASS。
+- Windows-McpApply buildと外部McpProbe付きPlayer suite PASS: `Logs/build-player-20260912-072334-663.log`、`Artifacts/Authoring-20260912-072359-59a2e8b6e5ed4c768fa38454fba4c92a/report.json` と mcp-external.log。実Playerを外部MCPから頂点移動→同ID再送→旧revision拒否→Undoし、stateHash復元を確認。既存GUI suiteも成功。編集中画面の目視は別途。
+- 次はgraph edit context/typed node生成等を接続し、空から小物を作るMCP経路を実証する。schema正本の統合、タイムアウト/停止/不正入力回復の追加検証、Evidence画像返却、全体制作計画は継続。
+## 型付きcommand wire reader
+
+- Commands/CommandWireReaderを独立追加。expectedInstanceId/documentId/revision/commandId/objectId/baselineHashを必須指定し、現在値による補完やcommand ID再生成をしない。operationごとのfield/type検査を経て既存AuthoringOperation factoryへ変換。
+- 初期対応はhistory.undo/redo、static vertices.translate、graph.connect/disconnect。1..64 operation、頂点ID最大4096。未知operation、余剰field、文字列revision等を拒否。graph編集context・node生成・polygon/paint等は次の拡張対象で、MCPへはまだ公開していない。
+- Core246 passed / 0 failed。wire経由と通常編集のmesh hash一致、同command再送がrevisionを増やさない、古いrevision拒否、Undo、未知payload/type拒否を確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-260192484c734482abbe1685a73e6475`。
+- 次はwire envelopeをMCP/IPCへ接続し、projection付き既存command serviceをmain-threadで呼びGUIを同期する。成功/失敗はcommand結果を返し、timeout後の再送は同command IDを維持。remoteEditingは接続完了までfalseのまま。Playerビルドは今回は未実行。全体計画継続。
+## MCP graph inspection
+
+- AuthoringGraphReaderを独立追加。workspace.Gate内でdocument/revision/hashとgraph node/edge/port/diagnosticsを取得。instance依存portはBuiltinNodes.Findで解決。現在のevaluationのmesh input/output hash/domain/renderableだけを返し、stale previewを代入しない。空文書はgraph=null。
+- forge_graph_inspectをsidecarへ接続。現在の単一graph全体（最大128node/512edge）の概要を返す。形状payload/parameter値/parameter schema/対象filter/cursorはまだ未提供。
+- Core244 passed/0 failed（C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-5eae18a3a01c497a80b8c73558045c36）。切断後のdiagnostic/current nullと古い取得値の不変性、空/別instance拒否を確認。MCP transport suite PASS。
+- 外部probeは一時的な非空fixtureを読み、元workspaceをfinallyで復元。Windows-McpGraphInspect buildと外部McpProbe付きPlayer suite PASS。`Logs/build-player-20260912-071649-194.log`、`Artifacts/Authoring-20260912-071714-7fa60a36b0ab4b8a8ed2f536a68fd011/report.json`。実graphのnodes/edges/evaluationとdocument/hash、capabilities/stateも確認。
+- 次はtyped編集要求と既存command envelopeを接続し、revision/commandIdの契約を維持してGUIと同じ結果を実証する。対象filter/schema等のinspection残件、Evidence captureのMCP公開、通信回復/ACLの追加検証、全体制作計画も継続。
+## MCP capabilitiesとread protocol分離
+
+- Core Inspection/AuthoringReadRequestとAuthoringReadServiceを追加。requestはUTF8/4KiB/depth8/重複field/余剰field/必須型/GUID/versionを検査し、文字列version等の暗黙変換を拒否。listenerはrequest解析と業務処理を委譲し、methodをmain-threadへ渡す。
+- forge_capabilitiesを公開。アプリのBuiltinNodes.Definitionsからtype/version/portを生成し、instance依存portを明示。remoteMethods、remoteEditing=false、単位/空間、graph上限を返す。ローカルnode対応とMCP編集対応を混同しない。
+- Core 243 passed/0 failed（C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3a17ffb5303b4336abf6ee4db7b25964）。MCP transport/protocol suite PASS。Windows-McpCapabilities buildと外部McpProbe付きPlayer suiteもPASS: `Logs/build-player-20260912-071336-472.log`、`Artifacts/Authoring-20260912-071402-0d046bedc5fd4f338c7a86ff6bc66428/report.json`。実capabilities＋3回state取得を確認。
+- capabilitiesのparameter schema/出力profile属性契約はまだ未掲載。未知/破損request後の実Player回復、停止/切替/ACL検証も残件。次はgraph inspectionを同read serviceへ接続し、共通command/Evidence接続へ進む。全体goal継続。
+## 実外部MCPからPlayerへの状態取得成功
+
+- Tests/Mcp.Transport/PlayerStateVerificationとWorkbench.McpExternalVerificationを分離追加。明示McpProbe時のみ、Playerが外部.NET probeを起動→公式SDK client→stdio sidecar→named pipe→実Player main-thread readerへ接続する。3回連続でinstance/document/revision/stateHashを期待値と照合。
+- 初回Windows-McpEndToEndはstate call失敗。応答送信直後のDisconnectNamedPipeで未読outputが失われ得るため、応答後はclient closeまでread待機し接続deadlineで上限を設定。外部probeへserver stderrも記録。
+- 修正後Windows-McpResponseLifetimeのPlayer suite PASS。`Logs/build-player-20260912-070956-459.log`、`Artifacts/Authoring-20260912-071017-c76730a77cc5402cae7f3dd31e8f4759/report.json` と `mcp-external.log`。3連続get_state成功、既存GUI suiteも成功。
+- 再現: `dotnet build Tests/Mcp.Transport/Mcp.Transport.Tests.csproj` 後、`Tools/Test-NyaForgeAuthoring.ps1 -BuildName Windows-McpResponseLifetime -McpProbe Tests/Mcp.Transport/bin/Debug/net10.0/Mcp.Transport.Tests.dll -TimeoutSeconds 600`。
+- 接続の実証範囲は状態取得のみ。次はprotocol入力検査/切断・停止・切替の回復、capabilities/graph inspectionと共通command/Evidence接続を進める。MCP全体と制作全体は未完了。
+## Unity named pipe互換性修正・Player成功
+
+- 診断buildのstackでSystem.Security.Principal.WindowsIdentity.get_OwnerのNotImplementedを特定。`Artifacts/Authoring-20260912-070417-a2479b023c2f4da5999ffb0d78241392/player.log`。CurrentUserOnlyの内部処理で発生していた。
+- Platform/WindowsAuthoringPipeへnative作成を分離。process tokenのTokenUser SIDを取得し、そのSIDだけへのprotected DACLを指定。CreateNamedPipeWはduplex/overlapped/first-instance/remote拒否。SafePipeHandleをNamedPipeServerStreamへ渡して以後の通信を共用。SID/descriptor/tokenのnative資源をfinallyで解放。
+- listenerは1個のserverを保持し、各要求後Disconnectして次の接続を待つ。作り直しと旧client handleの競合を避ける。
+- Windows Player build/suite PASS: `Builds/Windows-McpNativePersistent/NyaForge.exe`、`Logs/build-player-20260912-070600-589.log`、`Artifacts/Authoring-20260912-070621-e5fea6101463414db4c2671103b51389/report.json`。Player内の別thread client→named pipe→main-thread state readerのinstance/document一致を確認。既存suiteも成功。
+- 実外部MCP client→sidecar→このPlayerの一気通貫は次。複数要求/停止再開/文書切替/不正入力回復/ACL読戻しと別user拒否はまだ追加検証が必要。MCP編集/画像など全体計画は未完了。
+## Unity受信処理の初回実装・互換性失敗
+
+- Platform/AuthoringPipeServerとAuthoringWorkbench.Mcpを分離追加。単一client/要求上限4096byte/8秒timeout/main-thread Pump/停止時dispose、明示開始/停止とinstance欄を実装。現在はget_stateのみ。
+- Windows-McpListenerVerifiedはビルド成功。しかしPlayer実通信は失敗。`Artifacts/Authoring-20260912-070222-204d7604dce743ae93f6c8145cd38132/report.json` は passed=false、IPC test canceled。player.logのAI接続停止理由は「The method or operation is not implemented.」。Unity Monoで使用したNamedPipeServerStream/CurrentUserOnly周辺の互換性問題が疑われるが、正確な呼出箇所のstackはまだ未取得。失敗を接続成功と扱わない。
+- 次はFailureにstackを残して箇所を確定し、Windows native named pipeと明示ACLのadapter等で互換性を解決する。CurrentUserOnlyを単に外す回避はしない。新GUIからのMCP接続はまだ利用不可。最後の機能確認済みPlayerはWindows-EvidenceCamera。
+- Core/MCP側既存試験の成功とは別のUnity runtime失敗。全体goalは継続、外部入力待ちのblockerではない。
+## MCP protocol往復と状態取得Core
+
+- Tests/Mcp.Transport/McpProtocolVerificationは公式SDK clientで実sidecar子processを起動。stdio接続、forge_get_stateの一覧、tool call→named pipe→結果JSON、IPCエラーがMCP IsErrorへ伝わることをPASS。受信側はテストpipeでありUnityではない。旧通信試験もPASS。
+- Authoring/Inspection/AuthoringStateReaderを独立追加。workspace.Gate内でinstance/document/revision/hash/dirty/saveVersion/Undo/Redo/評価状態/object概要を同時取得し、コピーJSONを返す。sourceEpochは未対応のnull。別instanceとcommand実行中の再入を拒否する。
+- Core 242 passed / 0 failed。空/編集前後/コピー隔離/別instance拒否を確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-be5cac2a60b8461ea4481b170e432a97`。Playerビルドは今回未実行。
+- 次はUnity側pipe listener、main-thread dispatch、instance表示/寿命管理へ接続し、実Player→MCPでstateを確認する。現時点では実アプリ接続/編集は未完成。全体計画は継続。
+## MCP sidecarの初期実装
+
+- Tools/NyaForge.Mcpを独立.NET10プロジェクトとして追加。公式SDK 2.2.0、lockfile、stdio host、forge_get_state入口、instance GUID必須のnamed pipe client。Unity listenerは未実装なので実アプリにはまだ接続できない。
+- build 0 warning/error。Tests/Mcp.Transportは実named pipeで正常応答/別instance拒否/接続不可時取消をPASS。実MCP clientとのprotocol往復は未検証。
+- [MCP実装メモ](docs/Mcp-Integration.md)へ依存の版/license、IPC上限/相関ID、残件を記録。次はMCP protocol往復とUnity側main-thread dispatch/listenerを実装する。既存全体計画は継続。
+## 保存済みカメラでの比較撮影
+
+- AuthoringWorkbench.EvidenceCameraを独立追加。比較toggle、比較元capture manifestのpath欄、最後の成功セットを比較元にするボタンを提供。再起動後も保存済みpackageのpathから同条件の撮影が可能。
+- 比較時はEvidenceCaptureReaderでpackage全体の整合を確認し、記録済みviewの位置/注視点/up/倍率/clip/解像度/順序を再使用する。自動fitしない。元packageが欠落/破損していれば失敗とし、新規自動fitに切り替えない。撮影開始時にviewを取得し入力欄をlockする。
+- Windows Player build/suite PASS: `Builds/Windows-EvidenceCamera/NyaForge.exe`、`Logs/build-player-20260912-065316-388.log`、`Artifacts/Authoring-20260912-065341-0956acac415343fc9f7b301e955862e9/report.json`。GUI開始実クリック、編集後の全camera値一致、PNGの変化、入力lockと欠落source拒否を検証。既存suite成功、Core変更なし。
+- 比較元はpath指定（ファイルpicker未接続）。元の画像/metadataを含むpackage一式が必要。新画像にcamera条件は保存されるが比較元capture IDの専用関連付け、並列画像比較UI、実際の再起動操作は未検証/未実装。形状変更ではみ出す場合は自動補正しない旨をGUIに表示。
+- 次はEvidence/MCP接続計画に従いMCPの依存/通信方式を確認してadapterへ進む。全身/rig/weight/morph等を含む全体計画は継続。
+## 撮影対象のノード入力・出力選択
+
+- AuthoringWorkbench.EvidenceTargetを独立追加。撮影対象dropdownに最終結果と各対応mesh portの入力/出力を表示。node IDで選択を維持し、対象削除/文書切替で最終結果へ戻す。未解決/面なし対象は撮影不可、撮影中は選択不可。
+- 撮影開始時に選択対象のEvaluatedSnapshotを取得し、以後の編集から独立して保存する。最終結果が未完了でも解決済みnodeを撮影できるCore契約を使用。
+- Windows buildとPlayer suite PASS: `Builds/Windows-EvidenceTarget/NyaForge.exe`、`Logs/build-player-20260912-065044-155.log`、`Artifacts/Authoring-20260912-065106-5351402f39444057b8df251c5c949b4e/report.json`。新GUI検証ではnode出力を選択→開始実クリック→選択ロック→保存metadataのnode ID一致と文書不変を確認。既存suiteも成功。
+- Core変更なし。入力port選択/未解決node/削除時fallbackのGUI実操作は未検証。次は固定cameraの比較撮影とMCPへ進む。全体計画の未実装範囲は継続。
+## 厚み・テクスチャ付き五方向撮影の検証
+
+- EvidenceTexturedVerificationを独立追加。自作planeへ厚みを付けた6面モデル、赤/青の8x8 texture、標準材質を使い、正面・背面・左・右・斜めの撮影を検証。
+- 全方向に着色pixelがあり、正面/背面に赤と青が残ること、材質数1・画像hash数1・polygon面数6、capture packageの保存読込とPNG hash一致を確認。斜め画像を目視し厚みと色分けを確認。
+- 最新確認済みPlayer: `Builds/Windows-EvidenceTextured/NyaForge.exe`。build log: `Logs/build-player-20260912-064446-034.log`。PASS: `Artifacts/Authoring-20260912-064510-2fd5d2b4c880499baff906746e8b2fb7/report.json`。既存Player suiteも成功。Core変更なし（直近241件、今回は再実行なし）。
+- 簡単な自作fixtureの検証であり、アバター全体や複雑な材質の品質保証ではない。次はnode対象指定・固定camera比較のGUI接続、MCP。全身制作・rig/weight/morphを含む全体計画は未完了。
+## 保存結果へのGUI導線
+
+- AuthoringWorkbench.EvidenceResultを独立追加。最後に成功したcapture manifestのreadonly欄、保存先フォルダを開く、パスコピーを提供。現在の試行のlastEvidencePathと成功済みsuccessfulEvidencePathを分離し、中止/保存失敗で成功結果を消さない。
+- ファイル存在時だけ結果ボタンを有効化。フォルダは成功結果の親directoryをUseShellExecuteで開き、パスを引数文字列へ連結しない。コピーはユーザーのボタンクリック時にのみ行う。
+- 最新確認済みPlayer: `Builds/Windows-EvidenceResult/NyaForge.exe`。log: `Logs/build-player-20260912-064221-184.log`。PASS: `Artifacts/Authoring-20260912-064246-b344be026d424d3ab6391368697fce3f/report.json`。保存結果path/ボタン有効性/親directory、中止・失敗後の成功結果保持と既存suite成功。Core変更なし（直近241件）。
+- OS Explorerの起動とclipboardは自動fixtureで実行していない。結果欄の長いパス表示、削除済みファイル時の操作、再起動後の履歴保持は追加対象。成功結果は現在の起動中だけ保持する。
+- 次は厚み付き・材質/texture付きモデルの五方向captureを検証し、node対象指定/固定camera比較をGUIへ接続する。MCP等の全体計画も継続。
+
+## Evidence中止/失敗/文書切替の検証
+
+- AuthoringWorkbench.EvidenceLifecycleVerificationを分離。開始/中止の実クリック→directory未作成/manifest未公開、既存fileを保存directory指定→失敗/既存保持/controls復帰、正しいdirectoryへ再試行を確認。
+- 撮影開始直後に表裏頂点を移動し、保存metadataが開始時stateHashを持ち、現在の編集が巻き戻されないことを確認。さらに撮影中に空workspaceへ切替え、保存は旧document ID、GUIは空のままを検証。
+- 別文書に切り替わった場合は完了欄へ「撮影開始時の文書の結果です。現在の文書とは異なります。」を表示。改行依存の初回置換が適用されなかったことをrgで検出し、finallyの実コードへ適用して再build。
+- 最新確認済みPlayer: `Builds/Windows-EvidenceLifecycleStatus/NyaForge.exe`。log: `Logs/build-player-20260912-064006-489.log`。PASS: `Artifacts/Authoring-20260912-064029-ea5e588ebf884eef82254a581ae4faee/report.json`。上記と既存suite成功。Core変更なし（直近241件）。
+- 次は材質/textureを持つ厚みのあるモデルの5方向capture検証、保存結果へアクセスするGUI、現view固定比較/対象node指定へ進む。現在中止は最初のframe待ちで試験、描画後/保存中断やOS終了時の中断復旧は未検証。全体計画/MCP/rig等も継続。
+
+## Evidence五方向プリセットとGUI
+
+- EvidenceViewPresets.FiveViewsはbounds中心と共通倍率で正面(+Z)/背面/左(-X)/右/斜めを生成。固定球半径に余白を付け、各viewで個別にfitしない。
+- AuthoringWorkbench.EvidenceCaptureを分離。「モデルの確認画像を保存」foldout、保存directory、開始/中止、進捗/保存先を提供。最終Ready meshのsnapshotを1回取得し、各frameに1枚撮影。二重起動禁止。途中で制作が変わっても取得済みsnapshotを使う。全画像が揃うまでset保存しない。
+- 最新確認済みPlayer: `Builds/Windows-EvidenceGuiVerified/NyaForge.exe`。log: `Logs/build-player-20260912-063701-611.log`。PASS: `Artifacts/Authoring-20260912-063727-6cc4eddfe67c4436a876e6866f4aba93/report.json`。開始ボタン実クリック、busy排他、5枚/異なるcamera位置/共通倍率、set読込と文書hash不変、既存suite成功。evidence-gui.pngを目視し説明/保存欄/開始ボタンを確認。
+- Core単独suiteは今回未再実行（直近241件、Player compileとsuite成功）。平面fixtureなので側面が線/背景になる場合は正常。厚みのある物体/材質付き5方向の画像品質は次。
+- 次は中止の実クリック、撮影中の編集/新規切替、保存失敗後の再試行、保存完了欄の表示/フォルダを開く導線を確認。Unity unload完了待ち/複数job queue、空/面なし撮影、GUIのnode対象指定、MCPは残件。全体計画も継続。
+
+## Capture readerと実画像保存往復
+
+- EvidenceCaptureReaderは専用schema/項目型、1..8枚、index順、profile/背景/照明識別、camera軸/clip/解像度を検証。metadataの固定filename/ID/hash/Ready状態、PNGのhash名/内容hash/構造/寸法を照合。結果はコピー隔離したrecordでありgeometryを再構築しない。
+- Core **241 passed / 0 failed**（既存テスト拡張）。保存読込のbytes/ID一致とコピー隔離、../file拒否、解像度不一致、PNG改変拒否を確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-5cef58a4b56e4c3c86dca91a6f7d68c2`。
+- 最新確認済みPlayer: `Builds/Windows-EvidencePackage/NyaForge.exe`。log: `Logs/build-player-20260912-063348-006.log`。PASS: `Artifacts/Authoring-20260912-063411-07ec79e130f746279ef605cfd1ee72fe/report.json`。実capture画像2枚（同じview再撮影）をevidence-packageへ保存/読込しsnapshot ID/枚数/PNG bytes一致。既存suiteも成功。
+- 実画像の異なる多方向view、材質/画像付きモデル、GUI入口/queue/取消、環境識別（graphics/color space）と各profile拡張は次工程。Readerはhash整合を検査するが署名認証ではない。同じview2枚のテストを多方向検証と扱わない。全体計画の残件も継続。
+
+## Evidence画像セットの保存Core
+
+- EvidenceCaptureSetは1..8枚、同じ取得snapshot参照のみを許容。入力配列はclone。EvidenceCaptureCodecは専用kind=nyaforge.evidence.captureとしてcamera/解像度/profile/背景/照明識別/PNG hashと元metadata file/hashを記録。単独metadataは撮影なしの取得記録として不変、撮影完了は別capture recordで示す。
+- EvidenceCaptureStoreはmetadata→hash名PNG→capture manifestの順で公開。既存ファイルは同内容のみ再利用し異内容を拒否。失敗時は公開済みblobが残り得るが、新capture manifestを先に公開しない。既存captureを置換しない。
+- Core **241 passed / 0 failed**。metadata hash/ID、PNG bytes/camera参照、同set再保存、配列隔離、異snapshot混在/9枚/PNG寸法不一致拒否、既存PNG不一致時の新manifest未公開と既存保持を確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-79ab586bc70446eb85afe093c85bb3b0`。
+- 今回は合成PNGによる保存契約テストで、実撮影画像のstore接続は次。Playerビルドなし。capture reader、camera/画像hashの再読込検証、実撮影→保存のUnity fixture、GUI複数view/queue/MCPは未実装。撮影内容がsnapshotと一致する保証はcapture実装/fixtureによるもので、公開constructorは画像の出所を認証しない。
+- 次はcapture readerで相対file名/metadata IDとhash/PNG hashと寸法を照合し、実画像capture fixtureの保存往復へ接続する。全体計画の残件も継続。
+
+## モデル専用Evidence capture
+
+- EvidenceViewに固定正投影camera/解像度/clip、EvidenceImageにsnapshot/view/PNGコピー/hash/render profileを保持。PNGはPaintPngInputで構造/寸法を検査。
+- EvidenceModelCaptureを独立追加。専用scene/camera/mesh/material/RenderTextureをsnapshotから作り、camera.sceneで分離。GUI/編集markerを生成しない。既存MaterialSurfaceSetを再利用。Unity main threadで同期描画、finallyで表示停止/資源破棄/scene unloadを要求。
+- 最新確認済みPlayer: `Builds/Windows-EvidenceCaptureSeam/NyaForge.exe`。log: `Logs/build-player-20260912-062838-457.log`。PASS: `Artifacts/Authoring-20260912-062902-b7c4a61ebc814c38a08cec91f80e322f/report.json`。専用512px画像のdecode、live編集後の旧snapshot画像一致、別scene同layer巨大cube非混入、固定cameraの新snapshot画像差、PNGcopy隔離と既存suite成功。
+- 初回は移動量.2で退化面を作り編集拒否。次は片面だけ移動し表裏seamの裏面が輪郭を埋め画像差なし。fixtureの対応頂点0/4を.03動かして修正。失敗記録はArtifacts/Authoring-20260912-062620-eafb8aa7732140aabe9345c8cda16cb4と062728-e98d5d49bcac49e1b1d38bdc7118e231。後者のevidence-model.pngを目視しUIなしのパネルを確認。
+- Core testは今回未再実行（Player全体compile/GUI suiteで検証、直近240件）。Ready meshだけ対応。空/faceless capture、複数view、材質/画像付きcapture検証、queue/取消、専用manifestとartifact公開、GUI入口、MCPは次工程。PNG構造検査はdecodeの代替ではない。
+
+## Evidence metadata reader
+
+- `EvidenceManifestReader` と外部変更から隔離した `EvidenceRecord` を追加。UTF8厳密/byte budget/depth12/重複property/末尾JSON、項目集合、型、ID/hash、非負数、bounds順序、target/state/final整合を検査。CopyMetadataはdeep cloneで返す。
+- metadata schema1だけを許容し、captureStatusやvalidationを撮影済み/passへ変えた入力を拒否。artifactsは空のみ。値なし状態にmesh/hash/metricsを付けた不整合を拒否する。これは形状payloadのhash照合や実際のfit検証ではなく、証跡JSONの構造/整合検証。
+- Core **240 passed / 0 failed**。Ready/Empty/Incomplete読込、copy隔離、不正capture/fit/schema型/未知項目/負数/bounds/mesh欠落/状態/final状態、末尾JSON/重複key/不正UTF8拒否を確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-9847ebbe9dc848e3b443de50d884a321`。
+- 初回編集スクリプトはPowerShellの引用符でparse失敗し、変更は未適用。修正後に実行しCore成功。今回Playerビルドなし。
+- 残る読込検証：Faceless/途中Ready/複数材質/最大予算/巨大整数の組合せ。次はモデル専用captureのcamera/profile/artifact契約を実装する。既存metadataを撮影成功扱いに変更せず、別capture resultから画像hashを結ぶ。全体計画/MCP/rig等も継続。
+
+## Evidence metadataの保存
+
+- `EvidenceManifestCodec` はschemaVersion1/kind=nyaforge.evidence.metadataの明示JSONを出力。snapshot/document/target/final状態/計測/診断/hashを記録し、Mesh等の全payloadを暗黙serializeしない。captureStatus=not_requested、validation各項目=not_run、artifacts=[]。未実装sourceEpoch/workspaceRevision/poseはnull。
+- `EvidenceStore.SaveMetadata` は指定directory内へsnapshotId.evidence.jsonを新規公開する。既存Storage.Lock/AtomicWriteを利用し、同内容の再保存はidempotent、異なる既存内容はEVIDENCE_CONFLICTで保持。既存証跡を置換しない。
+- Core **238 passed / 0 failed**。同snapshotの決定的bytes、ID/hash、未取得/未検証/null表現、atomic保存と再保存、編集後の別ID保存と旧証跡保持、異内容拒否/一時file残留なし、Empty/Incompleteのgeometry非捏造と診断保持を確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-cefcdb3c2e0c44118c58c7f9cc842e88`。
+- 今回Playerビルドなし。metadata writerのみで、reader/schema厳密検証/画像artifact付きpublicationは未実装。撮影済みと偽装する入力は受け付けないAPIにしている。電源断/SMB中断の実機注入は未検証。
+- 次はmanifest readerの型/ID/hash/状態整合と予算検査を追加し、モデル専用captureのcamera/profile/artifactを別契約で接続する。画像失敗とcommand commitは分離したまま。全体計画の残件も継続。
+
+## Evidenceの処理段指定
+
+- `EvidenceTarget` を独立追加。Final既定、NodeInput/NodeOutputはobject/graph/node/mesh portを明示する。対象object/graphの一致、node存在、対応mesh portを検査。値が未解決ならIncompleteでValueなし。
+- `EvaluatedSnapshot.Target` と `FinalEvaluationComplete` を追加。最終評価未完了でも取得できる途中のmeshはReady/Facelessとして返すが、最終評価未完了・graph診断・stale preview revisionを別に保持。OutputNodeIdはgraphの最終node、Target.NodeIdは選択段。混同しない。
+- Core **236 passed / 0 failed**。編集nodeのinput/output hash差、最終接続切断後の途中output保持、最終Incomplete、対象不一致/非対応port拒否、入力未解決、材質編集後の取得済みmaterial/画像bytes保持を確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-291c856b43a447298a5c168c55a0b83a`。
+- 今回Playerビルドなし。対応portは現行のmeshのみ。Image/Material単独、複数object、pose、generator version/source/workspaceの追加identity、manifest/画像capture/MCPは残件。
+- 次はEvidence manifestを独立codecとして作り、snapshot/対象/metrics/diagnosticsと未検証項目を保存できるようにする。その後同じsnapshot由来のモデル画像を紐づける。既存UI検証captureとは分ける。全体計画の残件も継続。
+
+## Evidence snapshotとmetricsのCore
+
+- `Evidence/EvaluatedSnapshot` と `EvidenceMetrics` を分離。workspace.Gate内でcommitted final outputを取得し、instance/document/revision/stateHash/object/graph/output nodeと一意snapshot IDを保持。内容比較はOutputContentHashで別管理。command実行中の再入取得は拒否。
+- Empty/Ready/Faceless/Incompleteを区別。IncompleteはValue/metricsを返さず、診断と古いpreview revisionだけを保持。古いmeshを現revisionとして扱わない。空projectにも架空のgeometryを作らない。
+- metricsはrender頂点/triangle/submeshと論理頂点/faceを区別。world boundsはrender positions、faceless時だけ全loose点から取得。論理topologyなしはnull、0とは区別。assigned material数と重複なし画像hashも収集。
+- Core **234 passed / 0 failed**。取得後の編集でsnapshot/metrics不変、再取得のID差/内容hash一致、Undoで内容同一かつ新revision、未完了時のstale preview隔離、空/0点/1点faceless、scale100+translationのboundsを確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b841a2ba05b542699eee0a56b0653232`。
+- 今回Playerビルドなし。finalのみを取得するCoreで、node input/output指定・manifest保存・画像/専用camera・pose・capture queue・MCPはまだ実装していない。SourceEpoch/workspaceRevision等は現行native Coreに正本がないため捏造していない。fit/pose validationも未取得。
+- 次は材質/画像付きsnapshotの保持と選択node outputのidentity/診断契約を検証し、Evidence manifestへ進む。Unity captureはこの不変snapshotを入力とする。全体計画の残件は維持。
+
+## 操作案内統一とC1次工程
+
+- `AuthoringWorkbench.ViewportHint` に案内の責務を集約。3Dpaint→切断指定→面/点選択の順で判定し、各mode更新とpanel閉じに追従。切断中の通常点選択案内を修正。
+- 最新確認済みPlayer: `Builds/Windows-ViewportHint/NyaForge.exe`。log: `Logs/build-player-20260912-061104-942.log`。PASS: `Artifacts/Authoring-20260912-061132-e773f2822af64a20921e365cb17601d4/report.json`。既存suite成功。cut-visibility-hover.pngで上部が切断位置追加/Escape終了へ変わり、文字が収まることを目視確認。Core変更なし（直近231件）。
+- Development-Planと設計v2 §8〜9を読み直し、C1の残るEvidence/MCPへ進む。手動受入やC1全体の完了を宣言しない。[Evidence接続計画](docs/Evidence-Integration-Plan.md) に現物のGate/Preview/WorkbenchCaptureの境界と検証順を記録。
+- 次のコード変更はCoreの不変EvaluatedSnapshot取得とmetrics。empty/faceless/incomplete/staleを区別し、取得後の編集で結果が変わらないことを確認。その後専用モデルcapture/画像対応、MCPへ進む。形状/UV/Paint残件と全身制作等は継続。
+
+## 重なった面の可視性GUI検証
+
+- `AuthoringWorkbench.CutVisibilityVerification` を分離。正投影で2枚の面を重ね、ON時の可視辺fallback、toggle実クリックでOFF→最短の隠れた辺、各viewportクリックとhoverの一致、登録済み説明を確認。
+- BVH同形状再利用、手前面の削除による再構築/奥辺選択、Undo後の遮蔽復帰を確認。候補・設定・draftでは文書hashを変更しない。
+- `UpdateCamera` にClearCutPathHoverが実際には未接続だったため追加。前段の記録の意図と現物の不一致を修正し、カメラ更新時の線/候補消去を検証。
+- 最新確認済みPlayer: `Builds/Windows-CutVisibilityVerified/NyaForge.exe`。log: `Logs/build-player-20260912-060856-515.log`。PASS: `Artifacts/Authoring-20260912-060922-6b79c76f3c2b496fb4a5c8013f496e7e/report.json`。既存suiteも成功。Core変更なし（直近231件）。
+- `cut-visibility-hover.png` を目視。手前底辺の黄色線、中央マーカー、候補5–6/50.0%/登録済み、可視性説明の折返しを確認。上部のselection-hintは通常の点選択案内が残り、切断指定modeへの追従は次に整える。
+- 残件：透視で斜め/部分遮蔽/近接面/透明材質、変換変更によるcache再構築、drag/paint競合、部分遮蔽辺の別区間探索、大規模性能。全体計画の複数object、rig/weight/morph、各形式入出力、Evidence/MCP等も継続。
+
+## 切断候補の可視性option
+
+- `PolygonEdgeScreenPicker` に候補world位置のpredicateを追加。拒否された候補では最短距離を更新しないため、次の可視候補を探索できる。旧呼出はpredicateなしで互換。
+- `Geometry/MeshVisibility` はray origin→候補点の両面geometry判定。候補そのものの面は許容（距離許容差max(1e-6, distance*1e-5)）。材質alphaを判定しない。
+- `AuthoringWorkbench.CutVisibility` に「隠れた位置を除外」（既定ON）と共通FindCutPathHitを分離。hover/clickとも同じ判定を使う。Unity viewport rayのnear-plane originから判定し正投影にも対応。MeshData参照/RestTransformが同じ間はBVHを再利用。
+- Core **231 passed / 0 failed**。UVなし2枚の重なりで、最短の奥辺を除外して手前の別辺へfallback、狭い半径では候補なし、自己面許容/奥の点拒否/距離0を確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-928c681d0ffe4112a7bdf08f43e607cb`。
+- 最新確認済みPlayer: `Builds/Windows-CutVisibility/NyaForge.exe`。log: `Logs/build-player-20260912-060615-356.log`。PASS: `Artifacts/Authoring-20260912-060639-3d571ed0e5de4f8fa385f41085841772/report.json`。可視性ONで既存の平面クリック/hover/確定/Undo/native/Bakeとpaint含むsuite成功。
+- GUI上で重なる2枚の切替比較、toggle実クリック、BVH cache更新、hover画像は次の検証。透明材質も面として扱う旨をGUI表示。判定対象は編集中Mesh。辺ごとの最近点だけを判定し、部分遮蔽辺の別区間探索は未対応。全体計画の残件も継続。
+
+## UVに依存しない面レイ判定
+
+- 遮蔽判定をペイントのUV必須条件へ依存させないため、`Geometry/MeshRaycast` を抽出。既存median BVH/両面/距離制限/triangle安定順を維持し、triangle/submesh/頂点indices/barycentric U,V/距離/向きを返す。UV不要。
+- `SurfacePaintMesh` はgeometryを所有し、UV補間・Owner・UV continuityの責務だけを保持。RayGeometry数値helperをGeometryへ移動（Unity metaも移動）。既存INVALID_PAINT_RAY診断コードは互換維持。
+- Core **230 passed / 0 failed**。新規UVなしmeshのscale1/100/微小scale、indices/barycentric/距離制限と、既存paint/BVH/seam/全suite成功。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3be311476b604d3c9b984a321617f61b`。
+- 最新確認済みPlayer: `Builds/Windows-GeometryRaycast/NyaForge.exe`。log: `Logs/build-player-20260912-060314-627.log`。PASS: `Artifacts/Authoring-20260912-060337-6a77231137b34751aee16184e213d6d1/report.json`。ペイントを含む既存GUI suite成功。
+- これは遮蔽判定の共通基盤で、辺pickerの可視性optionはまだ未接続。次は候補点へのrayを使うpredicateをpicker探索へ加え、遮蔽された最短候補を飛ばして次の見える辺を選べるようにする。表示polygon/transform単位でBVHを再利用し、透明材質の扱いを明示する。hover画像確認も残件。
+- 全体計画の複数object、rig/weight/morph、各形式入出力、Evidence/MCP等も継続。
+
+## 切断候補のhover表示
+
+- `AuthoringWorkbench.CutPathHover` を分離。切断指定modeのpointer moveで候補辺を黄色い線、透視補正後の指定位置を10px角の黄色いUIマーカーで表示。ラベルに辺ID/割合/登録済みを表示する。UIマーカーはPickingMode.Ignoreでクリックを遮らない。
+- hover時は文書や選択へ書き込まない。pointer leave/down、カメラ変更、draft refresh、mode終了で候補を消去。ドラッグ中は候補判定を行わない。色/割合表示と登録済み経路のピンク線は別owner。
+- 最新確認済みPlayer: `Builds/Windows-C1B-CutHover/NyaForge.exe`。log: `Logs/build-player-20260912-055938-366.log`。PASS: `Artifacts/Authoring-20260912-060001-e6b9ac7556dd4558a4261547715203df/report.json`。
+- viewportの3辺へPointerMoveを送り候補edge ID/2点line/marker表示/文書と選択不変を検査。実クリック後のhover消去と画面外move時の消去も確認。既存の経路確定/Undo/native/Bakeを含めsuite成功。Core変更なし（直近229件）。hoverの画像を残す専用captureは今回未追加。
+- 次はhover画像と登録済み表示/カメラ変更時消去を確認し、面による遮蔽のある辺を選ばない可視性optionへ進む。現状は全辺候補（GUI明記）、面遮蔽なし。全体計画の残件は継続。
+
+## 切断経路の画面クリック指定
+
+- `AuthoringWorkbench.CutPathPicking` を分離。連続切断パネルのtoggleで有効化し、viewportの短い左クリックをPolygonEdgeScreenPicker（半径12 panel px）へ送る。割合はクリック位置から計算して経路末尾へ追加。重複と上限拒否。通常の頂点/面選択を変更しない。
+- 左ドラッグ回転/右ドラッグ移動は既存経路を維持。クリック時にviewをfocusしEscapeで指定モード終了（draft保持）。パネル閉じ/文書変更/編集段変更でmode解除。3Dpaint有効化は最終段へ移るため解除、切断mode有効化時はpaintをoff。
+- 最新確認済みPlayer: `Builds/Windows-C1B-CutPathPickVerified/NyaForge.exe`。log: `Logs/build-player-20260912-055711-541.log`。PASS: `Artifacts/Authoring-20260912-055733-55c978e90d4a429f90ede7fca2e4af6d/report.json`。
+- `AuthoringWorkbench.CutPathPickingVerification` で3辺中点へのviewport実クリック、3地点の割合/preview、選択/文書不変、Escape送信後の通常点選択復帰、パネル閉じでmode終了/再開時draft保持を確認。その後の切断確定/Undo/Redo/native/Bakeと既存suiteも成功。Core変更なし（直近229件成功）。
+- 面遮蔽なしで裏側の辺も候補になることをGUIへ明記。現在hover候補線/可視面限定なし。次は候補hoverと可視性の扱いを改善し、奥行き重なり/端点/斜めの面/ドラッグ・paint競合を追加確認する。全体計画のrig/weight/morph等は未完了。
+
+## 画面上の辺判定Core
+
+- `PolygonEdgeScreenPicker` を独立追加。Polygonの論理辺を画面距離で検索し、EdgeCutLocation（元辺の割合）/距離/深度を返す。頂点はRestTransformで変換、near/farで線分をclipしてから投影する。
+- `SurfaceCameraSnapshot.ProjectionWeight` を追加し、投影の同次座標wを使って画面上の割合を元の3D辺の割合へ補正。正投影は一定w、透視投影は異なるwに対応。距離同点は手前の深度、さらに同点なら小さい辺ID順。点に潰れた投影辺は手前の端点を選ぶ。
+- Core **229 passed / 0 failed**。奥行きの違う辺の画面中点→3D割合1/3、scale100、正投影、半径外/負半径、near/farをまたぐ辺と元割合の再投影、カメラ後方の除外を確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-65c2f9c62d314ff594e4ce1f6df739d2`。
+- 今回Playerビルドなし。画面クリックGUIは未接続。次は深度同点/重なり/端点/平行投影の追加確認と、切断用クリックモードを通常の点/面選択やカメラ操作から分離して接続する。
+- 現在のpickerは面による遮蔽判定なし（X-ray相当）、画面距離優先で探索は全辺O(E)。可視面だけの選択/裏面/大規模性能/viewport clippingは今後。全体計画の残件も継続。
+
+## 連続切断の操作検証と入力復旧
+
+- `AuthoringWorkbench.CutPathControlsVerification` を分離。選択した3辺を順番に追加する実クリック、順序/preview確認、重複辺と非edge選択の拒否、不正行で確定/線を無効化、末尾取消/クリアの実クリック、編集段変更でdraft消去を確認。
+- 「最後の辺を取り消す」は経路全体の解析に依存していたため、不正な末尾行を取り消せなかった。生の非空行から末尾を取り除く処理へ変更。修復後のpreview復帰、2点→1点時の確定無効化を検証。
+- 最新確認済みPlayer: `Builds/Windows-C1B-CutPathControls/NyaForge.exe`。log: `Logs/build-player-20260912-055147-222.log`。PASS: `Artifacts/Authoring-20260912-055212-d61349e1fe7e4df7b8cb85bc3192ac5b/report.json`。上記の操作後、連続切断確定/Undo/Redo/native/Bakeと既存suiteも成功。Core変更なし（直近227件成功）。
+- 次は画面上の辺を直接指定して経路へ追加できるようにする。現状は両端頂点の選択→登録が必要。辺hit testを表示から分離し、画面距離・割合・変換と重なりを検証してからGUIモードを接続する。キーボード取消と通常の点/面選択・カメラ操作との競合を確認する。
+- 再訪/閉loop/曲線、複雑なseam/凹面/端点混在のGUIは引き続き残件。全体計画の複数object、rig/weight/morph、入出力、Evidence/MCP等も未完了。
+
+## 連続切断GUI
+
+- `AuthoringWorkbench.CutPath` を分離。選択した辺を割合指定で末尾追加、複数行の順序付き入力、末尾取消、クリア、経路全体確定を提供。文字欄は1行に「頂点ID 頂点ID 位置%」。辺の位置は小ID→大ID、端点0/100を許容。
+- 候補全体のPolygonCutPath検証に成功した場合のみピンクの折れ線と確定ボタンを有効にする。入力不正では文書を変更しない。foldout閉じで線消去、文書hash/編集段変更でdraft消去。確定は単一共通command、成功時のみ選択をクリア。
+- 最新確認済みPlayer: `Builds/Windows-C1B-CutPath/NyaForge.exe`。log: `Logs/build-player-20260912-054921-238.log`。PASS: `Artifacts/Authoring-20260912-054946-3df604f130c9497ca1c0343b6ad78ae7/report.json`。`AuthoringWorkbench.CutPathVerification` で3地点preview、開閉、後半無効経路、確定の実クリック、2面→4面/6点→9点、1回Undo/Redo、native/Bakeを確認。既存suiteも成功。
+- `cut-path.png` を目視し9点の配置と折返し説明、入力欄を確認。切断後の内側の辺は描画しないため、4面化の証拠はgeometry assertion。今回Core変更なし（直近227件成功）。
+- 次は選択からの末尾追加、重複拒否、末尾取消/クリアの実クリック、編集段変更時のdraft消去を追加検証する。現状テストは経路文字欄を直接設定して確定する。複雑なseam/凹面/端点混在のGUI、経路の画面クリック直接指定、同面再訪/閉loop/曲線などは残件。
+
+## 連続切断の共通command
+
+- `PolygonCutPathOperation` を独立モジュールとして追加。2〜256個の不変EdgeCutLocationを読み取り専用配列へ複製し、順序付き経路を共通commandからPolygonEditingへ渡す。
+- fingerprintには経路長・各辺の両端ID・正規化した割合を順番どおり格納する。既存operationのfingerprintは変更しない。同一command IDの同内容再送は再適用せず、位置や順序を変えた再送はCOMMAND_ID_REUSEDで拒否。
+- Core **227 passed / 0 failed**。呼出元配列変更からの隔離、null/上限拒否、2面を横断する切断、後半で既存辺と重なる失敗時の文書hash/revision/頂点数保持、1回Undo/Redo、native polygon binary一致、Bake一致を確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4b2dd4142810484d9717a0f3d8af1c38`。
+- 初回は検証コードがDocumentRevisionをRevisionと誤記してコンパイル失敗。検証コードを修正し、全件成功を確認。
+- 今回Playerビルドなし。最新確認済みPlayerは下記EdgeCutControlsで、連続切断はGUI未接続。次は順序付き辺位置の登録・削除・preview・確定/取消をGUIモジュールとして接続し、実操作と1回Undo/保存を確認する。
+- 現在の経路は各元面を1回横断する範囲。閉loop/同面再訪/曲線、一般的なナイフ操作、複雑な非平面形状などは残件。全体計画のrig/weight/morph、複数object、各形式入出力、Evidence/MCP等も継続。
+
+## 切断GUI追加検証と連続経路Core
+
+- `AuthoringWorkbench.EdgeCutControlsVerification` を分離。選択した両端から辺A/Bへ実登録、0/100端点のpreview/確定（新頂点なし）、Undo、クリアボタン、foldout開閉、編集段変更時draft消去を確認。
+- 最新確認済みPlayer: `Builds/Windows-C1B-EdgeCutControls/NyaForge.exe`。log: `Logs/build-player-20260912-053932-668.log`。PASS: `Artifacts/Authoring-20260912-053951-f9e3b76c329648c3be532b76e6f5bdc7/report.json`。既存suite成功。このbuildは下記CutPath Core追加前。
+- `EdgeCutLocation` と `PolygonCutPath` を追加。2〜256箇所の順序付き辺交差位置を受け取り、各元面を1回だけ横断する。全点を候補へ挿入して隣接地点をFaceSplitで順に結ぶ。辺再訪/共通面なし/同面再訪を拒否。共有辺は1回だけ挿入し、既存の面ごとのcorner補間を再利用。
+- Core **226 passed / 0 failed**。2quad横断→4quad/追加3頂点、共有点1個に両側UV seam保持、切断辺の共有、binary往復、辺再訪/飛び越し拒否、元mesh不変を確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4951aecb64064a529cd302572b298301`。
+- CutPathはまだ共通command/GUIへ未接続。次は経路payloadの複製/command fingerprint/replay/Undo/nativeを整える。複数回同面横断、閉じたloop、辺上再訪、非平面face、複雑な経路は未対応/未検証。単一面切断GUIは維持。
+## 辺上切断GUI（前段記録）
+
+- `AuthoringWorkbench.EdgeCut` を分離。2辺のID入力/選択2点から登録、百分率、候補検証、ピンク線、確定/クリアを提供。文書hash/編集段変更でdraftを破棄、foldout閉じで線を非表示。成功時だけ選択をクリアする。
+- `BoundaryHighlightProjection` は既定の閉loopを維持し、開いた2点線も扱えるように拡張。線は候補の頂点から算出し、文書へは確定時の共通commandで反映する。
+- 最新Player: `Builds/Windows-C1B-EdgeCut/NyaForge.exe`。log: `Logs/build-player-20260912-053717-140.log`。PASS: `Artifacts/Authoring-20260912-053736-0a15846425154bcf820bdb18132c55b4/report.json`。25%/75%線preview、2quad/6頂点、確定時線/選択消去、無効指定で文書/選択不変、Undo/Redo/native/Bakeと既存suite成功。`edge-cut.png`を目視し追加点と入力欄の折返しを確認。面内の線は保存後には表示しないため、切断の証拠は面数/頂点数のassertionによる。
+- Core変更なし（直近225件）。選択からの辺登録ボタン/クリアの実クリックと、端点0/100、凹面/共有UV seamのGUIは追加確認対象。複数面横断と連続切断は未対応。
+## 辺上の点を結ぶ切断Core（前段記録）
+
+- `PolygonEdgeCut` / `PolygonEdgeCutOperation` を追加。異なる2辺が共有する1面を、各辺の指定位置で切る。割合は小vertex ID→大IDの0〜1、0/1なら既存端点を使い、内部ならPolygonEdgeInsertionで点/cornerを追加してPolygonFaceSplitへ接続する。
+- 点追加と分割を不変の候補上で行い、1つの共通commandで確定する。途中の失敗は文書/ID履歴を変えない。既存のUV seam補間・planar/対角線検証を再利用。単一平面の切断であり、連続ナイフ/複数面横断はまだ実装していない。
+- Core **225 passed / 0 failed**。quadの対辺25%/75%→2quad/追加2点、外周corner参照保持、切断辺共有、端点使用、同一辺/範囲外拒否、点追加後の無効分割で文書不変、再送/1回Undo/Redo/native/Bakeを確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-1ac5696bf6c0441c977a6b6678adad1e`。
+- 今回Playerビルドなし。次はGUIで辺2つと位置を指定し、preview/確定/取消を扱う。shared seamや非平面/凹面の組合せ、大きいID/予算境界、複数面の連続切断は残件。
+## 複数面dissolve GUI
+
+- 既存FaceMerge GUIを「選択した面を1面にまとめる」に拡張し、DissolvePolygonFacesへ接続。2面以上で有効。既存2面の操作検証も継続。旧Merge core/commandは互換用に保持。
+- `AuthoringWorkbench.FaceDissolveVerification` を分離。非連結2面の拒否時に文書/選択が保持されること、4面fan→1quad/中央点除去/残存面選択、Undo/Redo/native/Bakeを検証。
+- 最新Player: `Builds/Windows-C1B-Dissolve/NyaForge.exe`。log: `Logs/build-player-20260912-053156-238.log`。PASS: `Artifacts/Authoring-20260912-053215-a665b305c67b4bc1b4cb882e86e4516a/report.json`。既存suiteも成功。`dissolved-faces.png`を目視し四角面/点4個と操作ボタンを確認。
+- Core変更なし（直近223件）。Paint付き非線形UV、大きな選択、凹外周のGUIは残件。
+## 複数面dissolveのCore（前段記録）
+
+- `PolygonFaceDissolve` / `PolygonDissolveOperation` を追加。連続する同一平面/向き/材質の2面以上から内部辺を除去する。内部辺のUV/normal/tangent一致とmanifold/向きを検査。選択領域が接続し、外周が3〜256角の単純な1loopになる場合のみ確定。穴/分岐/離れた領域を拒否する。
+- 最小face IDと残存cornerを保持し、内部で不要になった頂点を除去。別の面や元から独立している点は保持。ID履歴を維持し、候補の三角分割後に共通commandへ確定。既存2面Mergeは互換のため維持。
+- Core **223 passed / 0 failed**。4triangle fan→1quad/中央点除去/外周corner参照保持/入力順不変/UV seam拒否/非連結拒否/穴付きring拒否、command無効時状態保持/Undo/Redo/native/Bakeを確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-fbce87e4252544ec9813ff68b724ac21`。
+- GUI未接続、今回Playerビルドなし。非線形UVの内部補間は再三角分割で変わり得る。複雑な凹外周/大規模選択/全属性形式/Paint付き形状は未検証。
+## 面なし下流の診断と復旧案内
+
+- `AuthoringWorkbench.FacelessRecovery` に案内と「面がない編集段へ戻る」ボタンを分離。最終評価が未完了で、評価済みの面なしPolygonEditがある場合に表示。編集段リストの最初の該当段を選ぶ。文書は変更しない。面の作成またはUndoを案内する。面がない出力に材質を追加するボタンも無効化。
+- Core **220 passed / 0 failed**。Mirror/Paint/材質の3経路で全面削除後のNO_RENDERABLE_FACES、編集値保持、後続node参照保持、native保存再読込、未完了Bake拒否、Undoによる復旧/Redoを確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4ae9064b4f164e979491ceb15d932dfb`。
+- 最新Player: `Builds/Windows-C1B-FacelessRecoveryEdit/NyaForge.exe`。log: `Logs/build-player-20260912-052657-930.log`。PASS: `Artifacts/Authoring-20260912-052717-0b20fbda67bb4c1e9bc4cc6cb374cd15/report.json`。Mirrorの削除後に復旧ボタン実クリック/文書不変/編集可能/Undoで完了/Redo/native案内復帰と既存suiteを確認。
+- 初回テストはMirror作成後の最終出力表示のままDeleteを呼び、編集contextなしで失敗。検証側でSelectEditStage(1)を明示して修正。初回記録: `Artifacts/Authoring-20260912-052618-a14af27d1abf4a01bd5da94eac013737/report.json`。
+- 未確認: 保存済みPaint画像付きの新しい面へのrebind、複数の面なし編集段がある場合の選択導線、全UIの診断文言。今回Paint fixtureは既定画像生成nodeで、独自stroke画像の網羅試験ではない。
+## 全ての面の削除（前段記録）
+
+- PolygonDeletionは最後の面も削除可能。削除で不要になった頂点を除去し、元から独立していた点とID割当履歴を保持する。面なし時はrender生成を呼ばない。GUIの全選択時無効化を解除。
+- 属性はcornerに属するため全削除時に消える。再作成の最初の面は既定UV/normal/tangentを生成する仕様。以前の属性はUndoで復元する。空状態に旧属性形式を持ち越す機能は実装していない。Weldによる全collapseは引き続き拒否。
+- Core **217 passed / 0 failed**。独立点保持/ID履歴、再追加から面作成、最終面削除のgraph/native、面なしBake拒否、Undo/Redoを検証。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-5152d96c71ef445caa70f3445d259479`。
+- 最新Player: `Builds/Windows-C1B-DeleteAll/NyaForge.exe`。log: `Logs/build-player-20260912-052210-125.log`。PASS: `Artifacts/Authoring-20260912-052228-1b324910f8b845539f5b045b213cb375/report.json`。最後の面の削除ボタン/空表示/操作有効性/native再読込/Undo/Redo、既存suite成功。検証処理は `AuthoringWorkbench.DeleteAllVerification` に分離。
+- 未確認: Paint/材質付き作品の全削除後の下流診断、全属性形式での再作成、scale100/translation。次は面なし時の下流nodeとGUI操作の対応を確認し、ユーザーに回復方法を示せるようにする。
+## 空PolygonのGUI統合（前段記録）
+
+- 「空の形状から始める」を追加。面なしpreviewでもOwnedMeshProjectionは編集点を生成する。最終結果の重ね表示はMeshがある場合のみ。0点のFrameはdefaultへ戻す。GUIの未完了表示と面なし案内を分け、移動判定はPolygonの有無を使う。UV投影/厚み/Paint追加は面なし時に無効化。
+- 最新Player: `Builds/Windows-C1B-EmptyPolygon/NyaForge.exe`。log: `Logs/build-player-20260912-051859-316.log`。PASS: `Artifacts/Authoring-20260912-051918-36d0f04cd13e4640b52b537f5a9cc4a2/report.json`。空開始ボタン、1/2/3点追加と各native再読込、最初の面、Undoで点のみ/Redo、面の再読込/Bakeを確認。既存suiteも成功。`first-face.png`を目視し三角面と編集欄を確認。
+- Core変更なし（直近215件）。まだ全削除を許容していない。面なし状態で材質など全機能のボタン有効性/診断を網羅していない。scale100/translationや最初の面の別属性、面なしプロジェクトの旧版互換性説明は追加検証対象。
+## 面なしgraph/command/native統合（前段記録）
+
+- GraphMeshValueは面なしpolygonに限りMesh=nullを許容し、snapshotへ面なし識別とpolygon hashを含める。既存meshありのhashは維持。PolygonSource/PolygonEditで面なしを評価成功として流し、Outputでは画像接続なしの場合に通す。その他のnodeはNO_RENDERABLE_FACESで拒否する。
+- PolygonEditingは点追加/移動/最初の面作成に限り面なし入力を許可。面あり候補のrender検証は維持。preview.IsCompleteは評価完了を示し、Mesh非nullとは独立。workspace.Evaluate()はこの状態でnullを返す。
+- Bakeは面なし最終出力をNO_RENDERABLE_FACESで拒否。最初の面作成後は出力可能。空sourceの出力由来ハッシュはpolygon正本hashを使う（既存meshありsourceは従来通り）。初回試験でこのbaselineのnull参照を検出して修正。
+- Core **215 passed / 0 failed**。空graph/点の追加ごとのnative保存再読込/移動/UV拒否時状態不変/最初の面/Undoで面なし/Redo/再読込/Bakeを確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-219820f0bc8f48c7b3c45d7b510f5942`。
+- GUI/Playerはまだ面なし対応していない。今回は新規Playerビルドなし。次はOwnedMeshProjectionのmesh=null時の点生成とWorkbenchのrendering依存条件を修正し、空から始めるGUIを接続する。Mirror/材質/Paint等での診断、全削除、空初期属性の維持も残件。
+## 空PolygonのCore対応（前段記録）
+
+- PolygonMeshで0頂点/0面、1点/2点を許容し、空ID集合の上限を0にする。既存の面/参照/ID検査は保持。
+- PolygonBinaryCodecは面なしだけv3（ID上限付き80byte header、属性flags0）として保存。v1/v2の非空条件と通常のwriterは保持。PolygonNewFaceは最初の面にUV/normal/tangentを生成。PolygonEditPointsは面なしにも対応。renderはNO_RENDERABLE_FACESで明示拒否。
+- Core **214 passed / 0 failed**。空/履歴/1点/2点保存の往復、旧versionへの偽装拒否、truncated/flags拒否、最初の面とv1への移行を検証。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-5abea58ea32a4425ba14e022ca4db146`。
+- 今回Playerビルドなし。graph/command/GUIは面なしのまま編集を継続できる段階ではない。GraphMeshValueがmesh非nullを前提とするため、次の統合を [空Polygon統合設計](docs/Empty-Polygon-Integration.md) に記録。native project schema3とpolygon blob v3を混同しない。全削除/属性形式の維持は残件。
+## 点描画の集約と256点制限撤廃
+
+- `EditPointProjection` に点表示の所有・描画・選択・破棄を分離。1点1GameObject/sphereから、2,048点を1meshにまとめた八面体マーカーへ変更。各pointは6頂点/8三角形、未選択/選択の2submesh。materialはownerから借り、mesh/rootは自身で破棄。面モードではrendererを非表示。選択不変時はindices再生成を省く。
+- `OwnedMeshProjection` がこのモジュールを所有しtransactionの候補破棄/置換に追従。`PickVertex` は全編集点を探索し、最初の256点で打ち切らない。クリック探索はO(n)、選択変更は全バッチのindicesを更新するため、大規模性能の最終解ではない。
+- 最新Player: `Builds/Windows-C1B-PointBatches/NyaForge.exe`。log: `Logs/build-player-20260912-050918-492.log`。PASS: `Artifacts/Authoring-20260912-050938-b223ab6f9c074ab3adfb4fbce6ee15a8/report.json`。2,053編集点/2バッチ、末尾2052番の実クリック→stable ID2053、全選択/解除、最終出力4点/1バッチ→編集2,053点/2バッチを確認。既存suiteも成功。`many-points.png`を目視し選択点と密集点描画を確認。
+- Core変更なし（直近212件）。今回は通常scaleの2,053点。10万点等のCPU/GPU/メモリ計測、密集点の見やすさ、画面サイズ一定の点、近接/重なり選択、空polygonは残件。
+## 追加点から面へのGUI一周
+
+- `AuthoringWorkbench.LooseVertexWorkflowVerification` を分離。移動ボタンでX+10/Y-20mm、未接続点marker位置更新/三角形hash不変、Undo/Redoを確認。面作成GUIで4→1→5の三角面を追加し、編集対応表から未接続点が除かれることを確認。Undoで未接続点へ戻す、Redo/native再読込/Bakeまで検証。
+- 初回suiteは次のUV検証で `UV wheel did not zoom`。前のfoldout変更後にlayout未確定のままScrollToしていたため、`AuthoringWorkbench.UvEditingVerification`で2frame後にScrollTo、さらに2frame待ってから操作するよう変更。製品の入力処理は変更なし。
+- 最新Player: `Builds/Windows-C1B-LooseToFaceLayout/NyaForge.exe`。log: `Logs/build-player-20260912-050614-640.log`。PASS: `Artifacts/Authoring-20260912-050631-51fb3b907b66419980a9ec93b56e5c67/report.json`。`loose-to-face.png`を目視し追加点から伸びた三角面と操作欄を確認。初回失敗: `Artifacts/Authoring-20260912-050529-f3ca2f8a83024baea79d74bf975489d8/report.json`。
+- Core変更なし（直近212件）。今回はscale1の小型fixture。scale100/translation、複雑なseam、256点超の描画/クリックは残件。
+## 未接続頂点GUIと編集点対応
+
+- `PolygonEditPoints` はrender頂点列をprefixとして保持し、未接続頂点をstable ID順で追加。正本/三角形mesh/UV/Bakeは変更しない。`OwnedMeshProjection` は編集段でこの点列を表示・framingし、`SelectedPolygonVertices`と移動commandは同じ対応表でstable IDへ変換。
+- `AuthoringWorkbench.VertexCreation` に座標GUIを分離。モデル原点からのmm座標をscaleでmesh-localへ換算して共通commandへ渡し、成功時に追加点を選択する。
+- 最初のPlayer検証でmesh hashが不変な際のColorUpdate再利用が新頂点表示を省く問題を検出。編集polygon参照も再利用条件に含め、未接続点追加/位置変更と最終出力への切替時には表示を再構築するよう修正。
+- Core **212 passed / 0 failed**。既存試験へ編集点prefix不変/末尾stable ID検査を追加。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-c5f8c6a33ddc4810be616bb011b900d3`。
+- 最新Player: `Builds/Windows-C1B-LooseVertexCache/NyaForge.exe`。log: `Logs/build-player-20260912-050245-504.log`。PASS: `Artifacts/Authoring-20260912-050302-191afb1243194c0d8bfbe5ff9b90cc40/report.json`。追加ボタン/編集5点/描画4頂点/クリックstable ID選択/Undo/Redo/native再読込/Bake、既存suite成功。`loose-vertex.png`を目視し独立点と座標欄を確認。初回失敗: `Artifacts/Authoring-20260912-050145-db3f6efe59ff4419bbf8c8dbd32fffbe/report.json`。
+- 次の検証: 未接続点の移動→面登録→面生成のGUI一周、scale100/translation、seamを持つmeshでの対応表、final切替とcache再構築。既存の256点marker/クリック上限は残っており、大規模meshでは後方の追加点をクリックできない。点描画の集約と選択範囲拡張が必要。空polygon対応も残件。
+## 面作成操作検証と新規頂点Core（前段記録）
+
+- `AuthoringWorkbench.FaceDraftVerification` を分離。1点ずつ4→1→5の順で登録、重複追加拒否、反転2回、末尾削除、クリアを実クリックで確認。文書hash不変、foldout開閉の輪郭消去/再表示、編集段を離れた際のdraft破棄も確認。
+- Player PASS: `Artifacts/Authoring-20260912-045703-f54c1311a1684d9f95da02c6a86fb97e/report.json`。build: `Builds/Windows-C1B-FaceDraftControls/NyaForge.exe`、log: `Logs/build-player-20260912-045639-794.log`。既存suiteも成功。このビルドは次項の新頂点Core追加より前。
+- `PolygonVertexCreation.Add` / `PolygonAddVertexOperation` を分離。mesh-local位置に未接続頂点を追加し、割当履歴より大きいIDを使用。面と属性は保持。有限値/頂点予算/ID枯渇を検査し、共通commandのUndo/nativeへ接続。
+- Core **212 passed / 0 failed**。面保持/render hash不変、追加頂点での面作成、面削除後のID再使用防止、非有限値拒否、command replay/Undo/Redo/nativeの未接続頂点保持、Bakeを確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2c8be12fb01141c9be5ab61cf71de358`。
+- 現状 `PolygonRenderAdapter` は面corner由来の頂点のみ出力するため、未接続頂点はBake/preview meshに出ない。正本には保存される。次はこれを表示/選択する編集ケージ側の機能と追加GUIを実装する。製品で使える頂点追加GUIが完成したとは扱わない。空polygonの初期面作成は引き続き残件。
+## 順序付き面作成: Core/command/GUI実装済み
+
+- `PolygonFaceCreation.Create` / `PolygonCreateFaceOperation` を追加。既存頂点3〜256個の指定順を周囲と面の向きとして保持。共有辺の向き/過剰共有、重複面、未知/重複頂点を検査する。新face/cornerは割当履歴より上、既存面/頂点は保持。材質slot指定、`PolygonNewFace`による新面UV/normal/tangent生成、候補三角分割を経て共通commandから確定。
+- Core **210 passed / 0 failed**。既存辺への三角面追加、指定順/材質/ID/既存面保持、凹五角形、逆向き、自己交差拒否、command拒否時の文書保持/replay/Undo/Redo/native/Bakeを検証。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4708b8e90e2540d4b974589e104439fa`。
+- GUI: `AuthoringWorkbench.FaceCreation`。1頂点ずつ末尾登録、カンマ区切り順序入力、反転/末尾削除/クリア、材質slot、妥当性メッセージ、緑の輪郭。文書確定は共通command。文書hash/graph/node変更時に登録クリア。輪郭資源はownerが破棄。輪郭は閉じた線のみで、塗りつぶし/向き矢印なし。
+- Player: `Builds/Windows-C1B-FaceCreation/NyaForge.exe`。log: `Logs/build-player-20260912-045426-748.log`。PASS: `Artifacts/Authoring-20260912-045451-9fe3ba5208d94587912fb26dfdc4a96d/report.json`。入力順に対応した輪郭3点/文書不変、向き不一致の無効化、面追加/登録クリア、Undo/Redo/native/Bakeと既存suiteを確認。`created-face.png`を目視しUIの文字/折返しを確認。正面画像は追加面が側面のため面数の証拠はassertionによる。Core変更なし（直近210件）。
+- 次の確認: 1頂点ずつの追加/重複拒否/反転/末尾削除/クリアを実クリックで確認、編集中の文書/段変更によるdraft破棄、複数行/長い入力のGUI、複雑な面でのpreview負荷。新規頂点の配置と空polygonへの最初の面は未実装。
+- 制約: 頂点接触だけの非manifoldや全体交差を網羅検査しない。新面UVの重なり解消/Paint再投影なし。面積が相殺される自己交差輪郭は共有法線計算で `INVALID_EXTRUSION` となる場合があり、拒否はできるがエラー説明の改善が必要。初回テストはこのコード差で1件失敗し、非ゼロ面積の交差fixtureで三角分割の交差検出を別途確認した。
+- 以下のWeld/BoundaryBridgeの確認済み機能を保持。
+## 頂点weld: CoreとGUI実装済み
+
+- `PolygonWeld.AtCenter` と `PolygonWeldOperation` を追加。選択頂点の平均位置へまとめ、最小vertex IDを残す。計算順序はID順に固定。連続して潰れるcornerは最小corner IDの属性を採用し、面ごとのUV/normal/tangentを保持。3角未満になった面は除去する。ID割当履歴と無関係な未使用頂点は保持。
+- 非連続の同一頂点再訪、重複面、辺の過剰共有、分岐境界、切れたface fan、接続方向不整合を拒否。候補全体の三角分割後に共通commandから確定する。全削除は現行polygon制約により拒否。
+- Core **207 passed / 0 failed**。quad→triangle/中心位置/入力順序/ID、潰れたtriangle除去、閉じたboxとcorner属性、未使用頂点保持、不正入力時の文書保持、command replay、Undo/Redo/native/Bakeを確認。証拠: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b5c8786a24e0475fa3428e7aab3eb725`。
+- GUI: `AuthoringWorkbench.Weld` に操作ボタンと残存IDのrender alias再選択を分離。点モード2頂点以上で有効。拒否時は文書/選択を保持し、成功時は残存頂点を選択（除去された場合は空選択）。Core変更なし、直近207件を引き継ぐ。
+- 最新Player: `Builds/Windows-C1B-Weld/NyaForge.exe`。build log: `Logs/build-player-20260912-044825-652.log`。PASS: `Artifacts/Authoring-20260912-044849-91040a2fd3224764909e3d7a4d37cb55/report.json`。quad→triangle、残存頂点選択、不正weldの文書/選択保持、Undo/Redo/native/Bakeと既存suiteを確認。`weld.png`を目視し三角形とボタン文字を確認。保存再読込後の画像なので、選択保持の証拠は直後のGUI assertionによる。
+- 未実装/未検証: 距離による自動weld、最後に選択した位置への統合、全体自己交差、Paint再投影、複雑なseamのGUI選択/大規模選択/OS/DPI手動受入。以下は前段BoundaryBridgeの検証記録。
+## 今回の変更と証拠
+
+- `PolygonBridge`（形状）/`PolygonBridgeOperation`（command）/`AuthoringWorkbench.Bridge`（GUI）を分離。等頂点数3〜256の独立した2境界を四角面で接続する。自動接続位置は距離最小の循環対応。境界方向、ID割当履歴、重複面、辺入射数、三角分割を検査する。
+- `PolygonNewFace` にcap/bridge共通の新面属性生成を分離。既存面を保持し、新面は最初の境界の隣接材質を継承。UVは新面ごとの投影で、島の重複を解消しない。
+- GUIは最初の境界を黄色、相手を水色で表示。接続ずれを指定可能。同じ境界の選択や閉じた形ではボタンを無効化。表示資源は所有者が破棄する。
+- Core **203 passed / 0 failed**。閉じた形の向き、既存属性/ID、無効指定、command replay、Undo/Redo/native/Bakeを確認。結果: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-76672dba180a4549b71287523a0f04d3`。
+- 最新Player: `Builds/Windows-C1B-BoundaryBridge/NyaForge.exe`。build log: `Logs/build-player-20260912-044039-672.log`。PASS: `Artifacts/Authoring-20260912-044102-fea66ef0ba674544ab758a7b102616d3/report.json`。GUI2境界表示/同境界拒否/6面12三角形/境界消去/Undo/Redo/native/Bakeと既存suite成功。
+- `bridged-boundaries.png` を目視して操作欄の文字と閉じた結果の表示を確認。正面画像なので奥行きはこの画像単独の証拠ではない。閉じた形は境界数0/面数/三角形数/Core方向検査で確認。ビルド後に検証コードのエラー文と試験用出力フォルダ名のみを修正（製品コード変更なし）。
+- 未対応/未検証: 不等頂点数bridge、全体自己交差、UV packing、複雑な非平面境界、Paint付き作品、OS/DPI実操作。全体の完成ではない。
+- 以前の詳細は [前段履歴](docs/history/2026-09-12-C1B-Before-Boundary-Bridge.md)。頂点追加・面分割/結合・境界cap・UV・Paint・材質・出力復旧の成果と各残件を保持。Unity receiverの最新証拠は同履歴参照（今回再実行なし）。
+## 次の作業
+
+1. 次はPolygonCutPathを共通commandへ接続し、経路payload/fingerprint/失敗時原子性/Undo/replay/nativeを検証する。その後GUIの経路登録へ進む。連続した複数面の切断も引き続き目標として保持する。保存済みPaint画像の全削除後rebindと面なし複数編集段の導線も残件として保持する。点描画の大規模性能/密集時の選択も残件。render indexとstable IDの境界、既存Paint/UV/出力の意味を保護する。選択順/向き/既存辺の共有/UVとIDの扱いを明確にしてCoreから共通command/GUIへ接続する。既存stable ID/属性/共通command/Undo/native/GUIの境界を維持する。不等頂点数bridgeも残件。自由面作成・vertex weld/多面merge・連続knifeも維持。複数島/拡縮後のドラッグ、Paint付き作品の動作とUV回転/拡縮ハンドルも維持する。merge/bridge/cut、空polygonと削除後のID割当は残件。scene override、GUI実操作、staging登録前中断/未確認新規GUIDなども保持。復旧だけの類似テストを増やし続けない。複数材質の同UUID共有receiver fixture、部位別GPU定量/alpha、mask/重なり遮蔽は検証残件として保持。
+2. ネイティブpicker、ICC変換/他形式/1024超と、大きなlayer stackの性能は残件として保持。
+3. UV再投影/再ベイク、Surface異常入力とreceiver rollback・URP確認、出力identityを保持する更新を進める。3D長曲線・多数区間・ray上限・退化交差・OS/DPIの残件も保持。
+4. C1 Evidence/MCP、造形残件、C2 rig/weight/morphと全身制作を維持する。小物バリエーションだけを増やし続けない。
+
+再検証:
+
+```powershell
+dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthoring.ps1 -BuildName Windows-C1B-EdgeCutControls -Width 1280 -Height 800 -TimeoutSeconds 600
+```
+
+## モジュールと作業境界
+
+- `Assets/NyaForge/Authoring/`: Unity非依存の文書・graph・command・geometry・paint・保存。
+- `Assets/NyaForge/UnityRuntime/`: GUI、pointer入力、一時preview、Unity資源所有、Player検証。確定変更は共通commandを通す。
+- `Assets/NyaForge/Rendering/`: Playerとreceiverが共有する材質adapter/shader。
+- `UnityBridge/`: 受け取り先Editor処理。Viewerの表示状態と制作正本を混ぜない。
+- privateモデル・画像・packは `Z:/TextureVoice_local/git/RadDollV3-clothing` 側に保持し、公開repoへコピーしない。
+- 既存の大量の未コミット変更を保持。今回commit/pushなし。既存Playerを終了・上書きしない。
+
+保持する残件: Mirror中心切断・結合、厚み品質と自己交差、cut/merge/bridge/create/curves、全削除・空polygon、UV回転/拡縮handle・seam・unwrap、複数object、skin/morph・rig・target出力。UV表示2048面・画像1024角・layer16枚/保持payload32MiBを最終製品要件と読み替えない。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

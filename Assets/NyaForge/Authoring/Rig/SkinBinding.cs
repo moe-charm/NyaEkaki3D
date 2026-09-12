@@ -1,0 +1,101 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using NyaForge.Authoring.Graph;
+
+namespace NyaForge.Authoring.Rig
+{
+    public sealed class VertexWeight
+    {
+        public int VertexIndex { get; }
+        public string BoneId { get; }
+        public float Weight { get; }
+        internal VertexWeight(int vertexIndex, string boneId, float weight) { VertexIndex = vertexIndex; BoneId = boneId; Weight = weight; }
+    }
+
+    /// <summary>Rest-mesh binding with deterministic, normalized influences. Pose evaluation is a later module.</summary>
+    public sealed class SkinBinding
+    {
+        public const int MaxInfluencesPerVertex = 4;
+        public string MeshTopologyHash { get; }
+        public string SkeletonHash { get; }
+        public IReadOnlyDictionary<int, IReadOnlyList<VertexWeight>> Weights { get; }
+
+        private SkinBinding(string meshTopologyHash, string skeletonHash, IDictionary<int, IReadOnlyList<VertexWeight>> weights)
+        {
+            Checks.HashText(meshTopologyHash); Checks.HashText(skeletonHash);
+            MeshTopologyHash = meshTopologyHash; SkeletonHash = skeletonHash;
+            Weights = new ReadOnlyDictionary<int, IReadOnlyList<VertexWeight>>(new Dictionary<int, IReadOnlyList<VertexWeight>>(weights));
+        }
+
+        public static SkinBinding Create(MeshData mesh, SkeletonDefinition skeleton, IEnumerable<VertexWeightInput> raw)
+        {
+            Checks.Require(mesh != null && skeleton != null && raw != null, "INVALID_SKIN", "Mesh, skeleton and weights are required.");
+            var grouped = new Dictionary<int, List<VertexWeightInput>>();
+            foreach (var item in raw)
+            {
+                Checks.Require(item != null, "INVALID_SKIN", "Null vertex weight.");
+                Checks.Require(item.VertexIndex >= 0 && item.VertexIndex < mesh.VertexCount, "INVALID_VERTEX", "Weight vertex is outside the mesh domain.");
+                Checks.Require(skeleton.ById.ContainsKey(item.BoneId), "BONE_NOT_FOUND", "Weight references an unknown bone.");
+                Checks.Finite(item.Weight); Checks.Require(item.Weight > 0 && item.Weight <= 1, "INVALID_WEIGHT", "Weight must be greater than 0 and at most 1.");
+                if (!grouped.TryGetValue(item.VertexIndex, out var list)) grouped[item.VertexIndex] = list = new List<VertexWeightInput>();
+                Checks.Require(list.All(existing => existing.BoneId != item.BoneId), "DUPLICATE_WEIGHT", "A vertex cannot list the same bone twice.");
+                Checks.Require(list.Count < MaxInfluencesPerVertex, "INFLUENCE_LIMIT", "A vertex may use at most four bones.");
+                list.Add(item);
+            }
+            Checks.Require(grouped.Count == mesh.VertexCount, "UNWEIGHTED_VERTEX", "Every mesh vertex needs at least one positive weight.");
+            var normalized = new Dictionary<int, IReadOnlyList<VertexWeight>>();
+            foreach (var pair in grouped)
+            {
+                float total = pair.Value.Sum(v => v.Weight);
+                Checks.Require(total > 0 && float.IsFinite(total), "INVALID_WEIGHT", "Vertex weight sum must be finite and positive.");
+                normalized[pair.Key] = Array.AsReadOnly(pair.Value.OrderByDescending(v => v.Weight).ThenBy(v => v.BoneId, StringComparer.Ordinal)
+                    .Select(v => new VertexWeight(v.VertexIndex, v.BoneId, v.Weight / total)).ToArray());
+            }
+            return new SkinBinding(mesh.TopologyHash, skeleton.ContentHash, normalized);
+        }
+
+        internal static SkinBinding FromSerialized(string meshTopologyHash, string skeletonHash, IEnumerable<VertexWeightInput> raw)
+        {
+            Checks.HashText(meshTopologyHash); Checks.HashText(skeletonHash); Checks.Require(raw != null, "INVALID_SKIN", "Serialized weights are required.");
+            var grouped = new Dictionary<int, List<VertexWeightInput>>();
+            foreach (var item in raw)
+            {
+                Checks.Require(item != null && item.VertexIndex >= 0, "INVALID_SKIN", "Invalid serialized vertex weight.");
+                Checks.Require(item.BoneId != null, "INVALID_SKIN", "Serialized weight bone is missing.");
+                Checks.Finite(item.Weight); Checks.Require(item.Weight > 0 && item.Weight <= 1, "INVALID_WEIGHT", "Weight must be greater than 0 and at most 1.");
+                if (!grouped.TryGetValue(item.VertexIndex, out var list)) grouped[item.VertexIndex] = list = new List<VertexWeightInput>();
+                Checks.Require(list.Count < MaxInfluencesPerVertex && list.All(existing => existing.BoneId != item.BoneId), "INVALID_SKIN", "Serialized influences are not canonical.");
+                list.Add(item);
+            }
+            var normalized = new Dictionary<int, IReadOnlyList<VertexWeight>>();
+            foreach (var pair in grouped)
+            {
+                float total = pair.Value.Sum(v => v.Weight);
+                Checks.Require(total > 0 && float.IsFinite(total), "INVALID_WEIGHT", "Serialized vertex weights must be finite and positive.");
+                normalized[pair.Key] = Array.AsReadOnly(pair.Value.OrderByDescending(v => v.Weight).ThenBy(v => v.BoneId, StringComparer.Ordinal)
+                    .Select(v => new VertexWeight(v.VertexIndex, v.BoneId, v.Weight / total)).ToArray());
+            }
+            return new SkinBinding(meshTopologyHash, skeletonHash, normalized);
+        }
+
+        public SkinBinding ValidateFor(MeshData mesh, SkeletonDefinition skeleton)
+        {
+            Checks.Require(mesh != null && skeleton != null, "INVALID_SKIN", "Mesh and skeleton are required.");
+            Checks.Require(MeshTopologyHash == mesh.TopologyHash, "SKIN_TOPOLOGY_CHANGED", "Binding belongs to another mesh topology.");
+            Checks.Require(SkeletonHash == skeleton.ContentHash, "SKIN_SKELETON_CHANGED", "Binding belongs to another skeleton.");
+            var raw = Weights.OrderBy(p => p.Key).SelectMany(pair => pair.Value.Select(v => new VertexWeightInput(pair.Key, v.BoneId, v.Weight)));
+            return Create(mesh, skeleton, raw);
+        }
+
+        public sealed class VertexWeightInput
+        {
+            public int VertexIndex { get; }
+            public string BoneId { get; }
+            public float Weight { get; }
+            public VertexWeightInput(int vertexIndex, string boneId, float weight)
+            { Checks.Id(boneId); VertexIndex = vertexIndex; BoneId = boneId; Weight = weight; }
+        }
+    }
+}

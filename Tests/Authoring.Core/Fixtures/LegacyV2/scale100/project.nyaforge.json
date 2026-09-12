@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 2,
+  "profile": "static-project-v2",
+  "units": "meters",
+  "coordinates": "unity-y-up-left-handed",
+  "documentId": "2439bbcf-b343-4e23-9df3-45ebb9be7109",
+  "name": "NF-0 reference panel",
+  "stateHash": "f8bd765ea56ba5ecf9bb63beda72c2e4785935dc8216014ad4d3f76e37670796",
+  "documentRevision": 1,
+  "saveVersion": 1,
+  "objects": [
+    {
+      "objectId": "67d106fe-448f-46f2-8505-8ea1a8996806",
+      "transform": {
+        "scale": 100.0,
+        "translationX": 0.0,
+        "translationY": 0.0,
+        "translationZ": 0.0
+      },
+      "baselineHash": "6ef38a953c1eb93b50d94893a9c6de2c4dc0eaad18c6b15c2b76a2bee66dd8a2",
+      "topologyHash": "04f5bfb5f6046f9c4ab7d0741b52e0d977b7ab43472feb702383b1f19976f954",
+      "deltaHash": "b9fe3447b4df535a1d9d0de1ccbd6f99bf14fd158972b856712f3bbaeb98cd53",
+      "normalPolicy": "preserve",
+      "layerEnabled": true
+    }
+  ]
+}

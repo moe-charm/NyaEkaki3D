@@ -1,14 +1,43 @@
 # NyaForge
 
-Windows-first avatar and clothing viewer foundation for Blender-based workflows.
+Windows-first authoring app for VR characters, clothing, and items. The product goal is to complete modeling through export without requiring Blender.
 
-This public repository contains only the generic Unity Viewer source, data contracts, runtime shaders, UI, sample scene, and project settings. Avatar files, textures, licenses, private packs, generated builds, and local verification outputs stay in their source projects.
+This public repository contains the generic Unity Viewer, authoring core and UI, Unity Bridge, public synthetic fixtures, tests, and documentation. Private avatar files, textures, licenses, and packs stay in their source projects; generated builds and local verification outputs are excluded from Git.
 
-The current viewer opens a prepared asset pack and supports visibility, morph values, pose playback, camera framing, named confirmation sets, reload, and visual checks. Vertex editing is the next major feature: edits will be stored as a non-destructive layer and exported back to a modeling workflow rather than silently replacing the source mesh.
+The viewer opens a prepared asset pack and supports visibility, morph values, pose playback, camera framing, named confirmation sets, reload, and visual checks. Authoring includes empty projects, typed graphs, a runtime node canvas, non-destructive vertex editing, polygon source/edit nodes, face selection and region extrusion, Undo/Redo, native saving, and static-mesh Unity Bridge export. Static projects write schema 2 and graph projects write schema 3; readers support schemas 1/2/3. Editing arbitrary avatar pack meshes is a later milestone. See the current task for evidence and remaining limits.
+
+## Start here
+
+- [Current development task and verification results](current_task.md)
+- [Documentation index and authority](docs/README.md)
+- [Authoring design v2](docs/NyaForge-Authoring-Design2.md)
+- [Implementation gaps and next development slices](docs/Development-Plan.md)
+- [Authoring quick start](docs/Authoring-Quickstart.md)
+- [Unity Bridge installation and import](UnityBridge/README.md)
 
 ## Build
 
 Open this folder with Unity 6000.4.3f1 on Windows and open `Assets/Viewer/Scenes/Viewer.unity`. A pack is supplied separately through the viewer's `--library` option; no avatar is bundled in this repository.
+
+With that Editor installed, build the public synthetic pack and Windows executable:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Build-NyaForge.ps1 -Target All
+```
+
+Output: `Builds/Windows/NyaForge.exe`. Select **制作へ**, or start directly with `NyaForge.exe --authoring true`. This mode needs no avatar or external pack. The product uses its own `%USERPROFILE%/AppData/LocalLow/NyaForge/NyaForge` settings directory.
+
+To build while a Player is running, use another output directory, for example `Tools/Build-NyaForge.ps1 -Target Player -BuildName Windows-C1B-Extrude`. The latest recorded verified binary and reports are listed in [current_task.md](current_task.md). Test scripts accept the same `-BuildName`. A build refuses to overwrite its running target.
+
+To view an existing pack, select **パックを開く…** and choose `current.StandaloneWindows64.json` in the Windows file picker. Pack manifests and `.viewer.json` sessions are also supported; raw FBX/BLEND imports are not implemented. **最近**, **確認セット**, and **設定** show their controls only when needed. See the [quickstart](docs/Authoring-Quickstart.md).
+
+To view the synthetic body/neck/collar pack, launch with `--library "<absolute repository path>/GeneratedPacks/NyaForgeFixture"`. This technical mannequin is not a Humanoid avatar.
+
+Core regression tests require .NET 10:
+
+```powershell
+dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj
+```
 
 ## Scope
 

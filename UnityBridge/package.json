@@ -1,0 +1,11 @@
+{
+  "name": "com.nyaforge.unity-bridge",
+  "version": "0.1.0",
+  "displayName": "NyaForge Unity Bridge",
+  "description": "Import versioned NyaForge static-mesh bake packages as ordinary Unity assets.",
+  "unity": "2022.3",
+  "dependencies": {
+    "com.nyaforge.authoring": "0.1.0",
+    "com.nyaforge.rendering": "0.1.0"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "profile": "static-triangles-uniform-v1",
+  "units": "meters",
+  "coordinates": "unity-y-up-left-handed",
+  "documentId": "2439bbcf-b343-4e23-9df3-45ebb9be7109",
+  "documentRevision": 1,
+  "objectId": "67d106fe-448f-46f2-8505-8ea1a8996806",
+  "name": "NF-0 reference panel",
+  "transform": {
+    "scale": 100.0,
+    "translationX": 0.0,
+    "translationY": 0.0,
+    "translationZ": 0.0
+  },
+  "meshContentHash": "0a73172d9aec4c7eaa8205f046b2f3e39e9d0fc9aebf4440bf1e02dae7ebe718",
+  "topologyHash": "04f5bfb5f6046f9c4ab7d0741b52e0d977b7ab43472feb702383b1f19976f954",
+  "baselineHash": "6ef38a953c1eb93b50d94893a9c6de2c4dc0eaad18c6b15c2b76a2bee66dd8a2",
+  "vertexCount": 8,
+  "triangleCount": 4,
+  "normalPolicy": "preserve",
+  "normalsPreservedAfterPositionEdit": true,
+  "hasSkin": false,
+  "hasBlendShapes": false
+}
