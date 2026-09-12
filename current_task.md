@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。Rigのweight/pose基盤、Morph graph/UI、GLB v2のbounded import境界をCoreとWindows Playerで検証。
+更新: 2026-09-12。Rigのweight/pose基盤、Morph graph/UI、GLB v2のmesh／skin import境界をCoreとWindows Playerで検証。
 
 ## 開発の入口
 
@@ -52,6 +52,14 @@
 - WorkbenchへWindows Explorer経由の「GLBモデルを取り込む」を追加。空の制作projectだけに新規graph（Source→MorphDeform任意→Output）を作り、既存作品を置き換えない。元GLBをprivateへコピーせず、取り込み済みmesh/blobのみnative graphへ保存する。
 - Core **286 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-8a99a1b52c014bda9edfe8a06a9ab595`。合成GLBの複数primitive結合・submesh分離・morph差分結合、skin拒否、破損header拒否を確認。
 - Windows-GlbMulti Player build / Authoring suite **PASS**: `Logs/build-player-20260912-113225-389.log`、`Artifacts/Authoring-20260912-113250-94a7a54f014948bf9904b11fcb901beb/report.json`。標準fixtureの起動・描画・既存GUI回帰を確認し、画像も目視した。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-113320-467-aecbf12069194bd49a2a6fe6a16ed16d/bridge-report.json`。GLB pickerの実マウス選択とRadDollV3/VRM実データ受け入れは未確認。
+
+### GLB skin importとGUI接続（2026-09-12）
+
+- `GlbDocumentReader` を共通化し、header／chunk／JSON／BINのbounded検査をmesh adapterとskin adapterで共有する。静的mesh側のsource hashと既存Morph保持を変えない。
+- `Authoring.Import.GlbSkinImport` を追加。1 mesh／1 skin、最大256 joints、JOINTS_0＋WEIGHTS_0の4 influence、translation-onlyのnode／inverse-bindを`SkeletonDefinition`／`SkinBinding`へ変換する。複数skin、回転・非unit scale、JOINTS_1、未weight、sparse／非対応accessorは理由付きで拒否する。
+- Windows WorkbenchのGLB取り込みは、skin配列の有無をboundedに判定し、skin付きならSource→MorphDeform任意→Skeleton／SkinBind／Pose→SkinDeform→Output graphを生成する。初期poseはimportしたbone headをtranslationへ置き、既存のRig UI／Undo／native保存経路を利用する。
+- Core **288 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-03d1dfa8995d4643b115d34d1e8910db`。合成skinのjoint階層・normalized weight・source hash保持、回転拒否を確認。
+- Windows-GlbSkin Player build / Authoring suite **PASS**: `Logs/build-player-20260912-114347-992.log`、`Artifacts/Authoring-20260912-114413-637c0868011d4e329b83a5a2ddb77d74/report.json`。標準fixtureの起動・描画・GUI回帰を目視した。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-114608-484-b8f097c1eee54d34a015286334605c27/bridge-report.json`。skin付きGLBの実ファイルpicker操作とRadDollV3／VRM実データは未確認。
 
 - `Authoring.Rig` を独立モジュールとして追加。`SkeletonDefinition` はcanonical UUIDのbone、親子階層、head/tailのrest座標を不変データとして保持し、循環・欠落親・重複IDを公開前に拒否する。
 - `SkinBinding` はmeshのtopology hashとskeleton hashを固定し、全頂点に1〜4本の明示boneを要求して、重みを降順・決定的順序で正規化する。同一boneの重複、未知bone、未weight、上限超過を拒否する。

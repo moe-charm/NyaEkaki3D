@@ -33,42 +33,12 @@ namespace NyaForge.Authoring.Import
     /// </summary>
     public static class GlbImporter
     {
-        const int Magic = 0x46546c67; // glTF
-        const int JsonChunk = 0x4e4f534a; // JSON
-        const int BinChunk = 0x004e4942; // BIN\0
-        const int MaxJsonBytes = 4 * 1024 * 1024;
-
         public static ImportedMeshSource Read(byte[] bytes)
         {
-            Checks.Require(bytes != null && bytes.Length >= 20 && bytes.Length <= AuthoringLimits.MaxBlobBytes, "INVALID_IMPORT", "GLB must fit the 16 MiB import budget.");
-            string sourceHash = Checks.Hash(bytes);
-            try
-            {
-                using (var stream = new MemoryStream(bytes, false)) using (var reader = new BinaryReader(stream))
-                {
-                    Checks.Require(reader.ReadInt32() == Magic, "INVALID_IMPORT", "Not a GLB file.");
-                    Checks.Require(reader.ReadInt32() == 2, "UNSUPPORTED_FORMAT", "Only GLB version 2 is supported.");
-                    int declaredLength = reader.ReadInt32(); Checks.Require(declaredLength == bytes.Length, "INVALID_IMPORT", "GLB length does not match the file.");
-                    byte[] jsonBytes = null, bin = null;
-                    while (stream.Position < stream.Length)
-                    {
-                        int length = reader.ReadInt32(); int kind = reader.ReadInt32();
-                        Checks.Require(length >= 0 && length <= stream.Length - stream.Position, "INVALID_IMPORT", "GLB chunk is truncated.");
-                        var chunk = reader.ReadBytes(length); Checks.Require(chunk.Length == length, "INVALID_IMPORT", "GLB chunk is truncated.");
-                        if (kind == JsonChunk) Checks.Require(jsonBytes == null && length <= MaxJsonBytes, "INVALID_IMPORT", "GLB must contain one bounded JSON chunk.");
-                        else if (kind == BinChunk) Checks.Require(bin == null, "INVALID_IMPORT", "GLB must contain at most one BIN chunk.");
-                        else throw new AuthoringException("UNSUPPORTED_FORMAT", "This GLB contains an unsupported chunk.");
-                        if (kind == JsonChunk) jsonBytes = chunk; else bin = chunk;
-                    }
-                    Checks.Require(jsonBytes != null && bin != null, "INVALID_IMPORT", "GLB requires JSON and BIN chunks.");
-                    var root = JObject.Parse(new UTF8Encoding(false, true).GetString(jsonBytes));
-                    return Parse(root, bin, sourceHash);
-                }
-            }
-            catch (EndOfStreamException e) { throw new AuthoringException("INVALID_IMPORT", e.Message); }
-            catch (DecoderFallbackException e) { throw new AuthoringException("INVALID_IMPORT", e.Message); }
-            catch (Newtonsoft.Json.JsonException e) { throw new AuthoringException("INVALID_IMPORT", e.Message); }
+            return ReadDocument(GlbDocumentReader.Read(bytes));
         }
+
+        internal static ImportedMeshSource ReadDocument(GlbDocument document) { Checks.Require(document != null, "INVALID_IMPORT", "GLB document is required."); return Parse(document.Root, document.Bin, document.SourceHash); }
 
         static ImportedMeshSource Parse(JObject root, byte[] bin, string sourceHash)
         {
