@@ -8,7 +8,7 @@
 
 version 1で導入した`ImportedRigSessionCodec`の基本JSONは上記identityと対応列を持つ。node列はnode番号、humanoid列はordinal name順で決定的に書く。最大256骨・256semantic、UUID/hash形式、重複node/boneId/semantic、未知field、UTF-8、JSON深さ・末尾データを検査する。
 
-`ProjectAttachments.Rig`（`imported-rig-session.nyaforge.json`）を許可されたattachmentとして追加した。schema 4 envelopeは維持し、expression/Spring/rig/PhysBones targetの最大4件を同じmanifestで一括公開する。writer lock、保存version、失敗時の旧snapshot保持を共用する。旧schemaの外部sidecar探索対象は従来のexpression/Springに加えて型付きのPhysBones targetだけで、rig名の任意ファイルは取り込まない。
+`ProjectAttachments.Rig`（`imported-rig-session.nyaforge.json`）を許可されたattachmentとして追加した。schema 4 envelopeは維持し、expression/Spring/rig/rig session table/PhysBones targetの最大6件を同じmanifestで一括公開する。複数graph objectでは`ProjectAttachments.RigSessions`（`imported-rig-sessions.nyaforge.bin`）にGraphId→session表を保存し、旧single attachmentはfallbackで移行する。writer lock、保存version、失敗時の旧snapshot保持を共用する。旧schemaの外部sidecar探索対象は許可済みのexpression/Spring/rig/rig session table/PhysBones/secondary-motionだけで、任意ファイルは取り込まない。
 
 このattachmentを持つ作品は、rig名を知らない旧NyaForgeでは開けない。既存作品に対応表がなければ、勝手に骨名から復元しない。必要なら元ファイルから再取込する。
 
@@ -28,4 +28,4 @@ Coreでsessionとnative snapshotの往復、対応骨ID・sourceの保持、別g
 
 Windows検証は同じVRM0/1を取込→Save→空workspace→Openし、復元したmapでhipsを解決する。骨格変更時のstale表示とUndo復帰を確認する。保存失敗試験はexpression/Spring/rigそれぞれを排他ロックし、新規/上書きとGUI/MCP handler再試行を通す。
 
-session自身の編集command/Undo、一般node transform、skin外Spring node、center/collider座標変換、collider座標adapter、再生UIは別段階。capsule衝突Coreは後続実装済み。metadataは従来どおりworkspace単位で保持し、graph Undoによる消去はせず、参照対象がない間はstaleとして扱う。
+session自身の編集command/Undo、一般node transform、skin外Spring node、center/collider座標変換、collider座標adapter、再生UIは別段階。capsule衝突Coreは後続実装済み。metadataは従来どおりworkspace単位で保持し、rig sessionだけはgraph ID単位の表として複数objectを区別する。graph Undoによる消去はせず、参照対象がない間はstaleとして扱う。

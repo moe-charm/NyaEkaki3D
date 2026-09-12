@@ -1,4 +1,6 @@
+using System;
 using System.Linq;
+using System.Collections.Generic;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Import;
 using UnityEngine.UIElements;
@@ -8,6 +10,7 @@ namespace NyaForge.UnityRuntime
     public sealed partial class AuthoringWorkbench
     {
         ImportedRigSession importedRigSession;
+        readonly Dictionary<string, ImportedRigSession> importedRigSessions = new Dictionary<string, ImportedRigSession>(StringComparer.Ordinal);
         Label importedRigStatus;
 
         void BuildImportedRigStatus(VisualElement parent)
@@ -20,6 +23,12 @@ namespace NyaForge.UnityRuntime
         void RefreshImportedRigStatus()
         {
             if (importedRigStatus == null) return;
+            if (workspace?.Document?.ActiveObject?.Graph != null)
+            {
+                var activeGraphId = workspace.Document.ActiveObject.Graph.GraphId;
+                importedRigSession = importedRigSessions.TryGetValue(activeGraphId, out var active) ? active
+                    : importedRigSession?.GraphId == activeGraphId ? importedRigSession : null;
+            }
             if (importedRigSession == null) { importedRigStatus.text = "取込骨対応: なし"; return; }
             var graph = workspace?.Document.Objects.Select(item => item.Graph).FirstOrDefault(value => value != null && value.GraphId == importedRigSession.GraphId);
             try

@@ -29,7 +29,7 @@ namespace NyaForge.UnityRuntime
         GraphMeshValue SourceSkinDisplayValue()
         {
             if (!IsGraph || workspace?.Preview?.Evaluation == null) return null;
-            return SourceSkinDisplayValue(workspace.Preview.Evaluation, workspace.Document.Objects[0].Graph);
+            return SourceSkinDisplayValue(workspace.Preview.Evaluation, workspace.Document.ActiveObject.Graph);
         }
 
         void RefreshSourceSkinDisplayProjection()
@@ -38,7 +38,7 @@ namespace NyaForge.UnityRuntime
             {
                 sourceSkinDisplayKey = sourceSkinProjectionKey = ""; sourceSkinDisplayValue = null; return;
             }
-            var graph = workspace.Document.Objects[0].Graph;
+            var graph = workspace.Document.ActiveObject.Graph;
             var final = SourceSkinDisplayValue();
             if (final == null)
             {

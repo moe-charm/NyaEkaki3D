@@ -49,7 +49,7 @@ namespace NyaForge.UnityRuntime
             if (springPlayback != null) { springPlayback.Play(); RefreshSpringPlayback(); return; }
             if (workspace == null || workspace.Document.IsEmpty || importedRigSession == null || importedVrmSpringSession == null)
                 throw new InvalidOperationException("対応するVRMモデルを取り込んでください。");
-            var graph = workspace.Document.Objects[0].Graph;
+            var graph = workspace.Document.ActiveObject.Graph;
             var poses = graph.Nodes.Values.Where(node => node.TypeId == BuiltinNodes.Pose).ToArray();
             if (poses.Length != 1 || !workspace.Preview.IsComplete || !workspace.Preview.Evaluation.PoseOutputs.TryGetValue(poses[0].NodeId, out var value))
                 throw new InvalidOperationException("プレビューは評価済みのPose nodeが1個あるgraphに対応します。");
@@ -87,7 +87,7 @@ namespace NyaForge.UnityRuntime
             if (!springPlayback.IsPlaying) return;
             try
             {
-                var graph = workspace.Document.Objects[0].Graph;
+                var graph = workspace.Document.ActiveObject.Graph;
                 var basePose = workspace.Preview.Evaluation.PoseOutputs[springPoseNode].Pose;
                 long previousStep = springPlayback.CompletedSteps;
                 var pose = springPlayback.Advance(graph, basePose, elapsed);

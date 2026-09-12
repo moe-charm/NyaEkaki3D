@@ -4,6 +4,7 @@ using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Rig;
+using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Simulation;
 
 namespace NyaForge.UnityRuntime
@@ -22,8 +23,18 @@ namespace NyaForge.UnityRuntime
             ImportModel(selectionPath);
             Check(importedRigSession != null && importedRigSession.SourceSkin != null && importedRigSession.SourceSkinBinding != null, "Selected multi-mesh skin import did not retain source payload");
             Check(workspace.Document.Objects[0].Graph.Nodes.Values.Any(node => node.SourceMesh != null && node.SourceMesh.TopologyHash == importedRigSession.SourceSkinBinding.MeshTopologyHash), "Selected mesh graph was not created");
+            string firstObjectId = workspace.Document.ActiveObjectId, firstGraphId = workspace.Document.ActiveObject.Graph.GraphId;
+            ImportModel(selectionPath);
+            string secondObjectId = workspace.Document.ActiveObjectId, secondGraphId = workspace.Document.ActiveObject.Graph.GraphId;
+            Check(workspace.Document.Objects.Count == 2 && firstGraphId != secondGraphId, "Second skinned graph object was not added");
+            var sessionTableBytes = workspace.Attachments.Read(ProjectAttachments.RigSessions);
+            Check(sessionTableBytes != null && ImportedRigSessionsCodec.Read(sessionTableBytes).Count == 2, "Multiple graph rig sessions were not published");
+            Execute(AuthoringOperation.SelectObject(firstObjectId));
+            Check(importedRigSession != null && importedRigSession.GraphId == firstGraphId, "Active object switch selected the wrong first rig session");
+            Execute(AuthoringOperation.SelectObject(secondObjectId));
+            Check(importedRigSession != null && importedRigSession.GraphId == secondGraphId, "Active object switch selected the wrong second rig session");
             modelImportMeshIndex.SetValueWithoutNotify(0); modelImportSkinIndex.SetValueWithoutNotify(0);
-            checks.Add("GLB import GUI: candidate inventory inspection and explicit mesh/skin selection for a multi-mesh fixture");
+            checks.Add("GLB import GUI: candidate inventory inspection, explicit mesh/skin selection, and graph-keyed multi-rig session switching");
             foreach (bool legacy in new[] { false, true })
             {
                 string directory = Path.Combine(output, legacy ? "vrm0-import" : "vrm1-import");

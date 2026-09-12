@@ -41,6 +41,14 @@ namespace NyaForge.UnityRuntime
             attachments = new ProjectAttachments(owned);
             var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph)), projection);
             if (!result.Success) throw new InvalidOperationException(result.Code + ": " + result.Message);
+            if (candidate.Rig != null)
+            {
+                // The graph identity is stable across object reordering and is the
+                // correct key for source data belonging to each skinned object.
+                importedRigSessions[graph.GraphId] = candidate.Rig;
+                owned[ProjectAttachments.RigSessions] = ImportedRigSessionsCodec.Write(importedRigSessions);
+            }
+            attachments = new ProjectAttachments(owned);
             workspace.SetAttachments(attachments);
             if (candidate.Rig != null) importedRigSession = candidate.Rig;
             if (candidate.Expressions != null) importedVrmSession = candidate.Expressions;

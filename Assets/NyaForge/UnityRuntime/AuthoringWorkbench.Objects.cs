@@ -22,6 +22,12 @@ namespace NyaForge.UnityRuntime
         void RefreshObjectSelection()
         {
             if (objectSelectionPanel == null) return;
+            if (workspace?.Document?.ActiveObject?.Graph != null)
+            {
+                var activeGraphId = workspace.Document.ActiveObject.Graph.GraphId;
+                importedRigSession = importedRigSessions.TryGetValue(activeGraphId, out var active) ? active
+                    : importedRigSession?.GraphId == activeGraphId ? importedRigSession : null;
+            }
             while (objectSelectionPanel.childCount > 2) objectSelectionPanel.RemoveAt(2);
             if (workspace == null || workspace.Document.IsEmpty)
             {

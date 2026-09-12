@@ -40,7 +40,7 @@ internal static partial class Program
             var chain = new PhysBonesChain("tail", rootId, new[] { rootId }, PhysBonesEndpointMode.Auto, "", null, PhysBonesMultiChildType.Ignore, null, null, null, PhysBonesParameters.Default, PhysBonesInteraction.Default, null);
             var profile = new PhysBonesTargetProfile("vrchat.physbones", "sdk", "package", skeleton.ContentHash, "", new[] { chain });
             var bytes = PhysBonesTargetCodec.Write(profile); var w = Fresh(); w.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]> { [ProjectAttachments.PhysBones] = bytes })); string directory = Dir("snapshot-physbones"); ProjectStore.Save(directory, w, 0);
-            var opened = ProjectStore.Open(directory); var restored = opened.Attachments.Read(ProjectAttachments.PhysBones); True(bytes.SequenceEqual(restored)); Equal(profile.ContentHash, PhysBonesTargetCodec.Read(restored).ContentHash); False(opened.IsDirty); Equal(5, ProjectAttachments.MaxCount);
+            var opened = ProjectStore.Open(directory); var restored = opened.Attachments.Read(ProjectAttachments.PhysBones); True(bytes.SequenceEqual(restored)); Equal(profile.ContentHash, PhysBonesTargetCodec.Read(restored).ContentHash); False(opened.IsDirty); Equal(6, ProjectAttachments.MaxCount);
         });
 
         Test("secondary motion attachment survives schema 4 snapshot Open", () =>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Import;
@@ -38,6 +39,7 @@ namespace NyaForge.UnityRuntime
             activeEditContext = null;
             selectedFaces.Clear(); faceMode.SetValueWithoutNotify(false);
             importedRigSession = null;
+            importedRigSessions.Clear();
             ClearImportedPhysBones();
             ClearImportedVrmExpressions();
             ClearImportedVrmSpring();
@@ -57,6 +59,10 @@ namespace NyaForge.UnityRuntime
             var next = ProjectStore.Open(directory);
             var rigBytes = next.Attachments.Read(ProjectAttachments.Rig);
             var rigSession = rigBytes == null ? null : ImportedRigSessionCodec.Read(rigBytes);
+            var rigSessionsBytes = next.Attachments.Read(ProjectAttachments.RigSessions);
+            var rigSessions = rigSessionsBytes == null ? null : ImportedRigSessionsCodec.Read(rigSessionsBytes);
+            if (rigSessions == null && rigSession != null)
+                rigSessions = new Dictionary<string, ImportedRigSession>(StringComparer.Ordinal) { [rigSession.GraphId] = rigSession };
             var expressionBytes = next.Attachments.Read(ProjectAttachments.Expressions);
             var springBytes = next.Attachments.Read(ProjectAttachments.Springs);
             var physBonesBytes = next.Attachments.Read(ProjectAttachments.PhysBones);
@@ -68,6 +74,8 @@ namespace NyaForge.UnityRuntime
             if (rigSession != null && expressionSession != null) rigSession.ValidateSource(expressionSession.SourceHash);
             if (rigSession != null && springSession != null) rigSession.ValidateSource(springSession.SourceHash);
             ReplaceWorkspace(next, directory);
+            if (rigSessions != null)
+                foreach (var item in rigSessions) importedRigSessions.Add(item.Key, item.Value);
             importedRigSession = rigSession;
             importedVrmSession = expressionSession; Refresh();
             importedVrmSpringSession = springSession; RefreshVrmSpringStatus();
