@@ -1,3 +1,9 @@
+## 2026-09-13 NativeLocatorV1 実RadDollV3再回帰
+
+native manifest locatorを含む最新Windows Playerで、private一時素材 `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`（45,341,584 bytes）を再取込した。候補確認、rest-space頂点編集、native Save/Open、標準SkinnedGeometry GLB出力までのAuthoring suiteが **PASS**（800x600、report `Artifacts/Authoring-20260913-064533-45e34c13d02f42b3b7691b7dbbb0288f/report.json`）。同じPlayer出力をUnity **2022.3.22f1** Bridgeへ渡した検証も **PASS**（`Artifacts/BridgeReceiver-20260913-064639-406-78812740b9e34d00bccdc1869d314fe8/bridge-report.json`）。private素材はpublic repositoryへ追加していない。
+
+これは実素材の取込・保存・出力smokeであり、実マウス操作、実VRChat内の見た目、PhysBones実SDK受入、自動fit・貫通修正の証拠ではない。
+
 ## 2026-09-13 native manifest locator contract
 
 native projectの再開パス検証を`NativeProjectLocator.RequireManifestDirectory`へAuthoring層として切り出した。`project.nyaforge.json`以外、存在しないmanifest、空パス、未対応パスを同じerror codeで拒否し、Explorer GUIは既存の未保存確認と`ProjectStore.Open`へ渡す親フォルダだけを受け取る。manifest内容の検証やworkspace置換はlocatorへ混ぜず、既存責務を維持した。
