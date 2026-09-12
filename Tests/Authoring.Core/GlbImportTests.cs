@@ -1,0 +1,83 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Text;
+using Newtonsoft.Json.Linq;
+using NyaForge.Authoring;
+using NyaForge.Authoring.Import;
+
+internal static partial class Program
+{
+    static void RunGlbImportTests()
+    {
+        Test("GLB importer retains static geometry and POSITION morphs", () =>
+        {
+            var result = GlbImporter.Read(BuildGlb());
+            Equal(4, result.Mesh.VertexCount); Equal(2, result.Mesh.TriangleCount); Equal(1, result.Mesh.Submeshes.Count);
+            Equal(1, result.Morphs.Targets.Count); Equal("Smile", result.Morphs.Targets[0].Name); Equal(1, result.Morphs.Targets[0].Deltas.Count);
+            var deformed = NyaForge.Authoring.Rig.MorphDeformer.Apply(result.Mesh, result.Morphs, result.Morphs.Targets.ToDictionary(t => t.TargetId, _ => .5f));
+            Near(result.Mesh.Positions[0].X + .05f, deformed.Positions[0].X); Near(result.Mesh.Positions[1].X, deformed.Positions[1].X);
+            True(result.Warnings.Any(w => w.Contains("static triangle", StringComparison.Ordinal)));
+        });
+
+        Test("GLB import boundary rejects unsupported structure before publishing", () =>
+        {
+            var bytes = BuildGlb(); var root = JObject.Parse(ReadJsonChunk(bytes));
+            ((JArray)root["meshes"]![0]!["primitives"]!).Add(((JArray)root["meshes"]![0]!["primitives"]!)[0]!.DeepClone());
+            var changed = ReplaceJsonChunk(bytes, root.ToString(Newtonsoft.Json.Formatting.None));
+            Expect("UNSUPPORTED_FORMAT", () => GlbImporter.Read(changed));
+            var bad = (byte[])bytes.Clone(); bad[0] = 0; Expect("INVALID_IMPORT", () => GlbImporter.Read(bad));
+        });
+    }
+
+    static byte[] BuildGlb()
+    {
+        using (var bin = new MemoryStream()) using (var b = new BinaryWriter(bin))
+        {
+            foreach (var p in new[] { new Vec3(-.1f, -.05f, 0), new Vec3(.1f, -.05f, 0), new Vec3(.1f, .05f, 0), new Vec3(-.1f, .05f, 0) }) { b.Write(p.X); b.Write(p.Y); b.Write(p.Z); }
+            foreach (ushort i in new ushort[] { 0, 2, 1, 0, 3, 2 }) b.Write(i);
+            foreach (var p in new[] { new Vec3(.1f, 0, 0), new Vec3(), new Vec3(), new Vec3() }) { b.Write(p.X); b.Write(p.Y); b.Write(p.Z); }
+            while (bin.Length % 4 != 0) b.Write((byte)0);
+            var json = new JObject
+            {
+                ["asset"] = new JObject { ["version"] = "2.0" },
+                ["buffers"] = new JArray(new JObject { ["byteLength"] = (int)bin.Length }),
+                ["bufferViews"] = new JArray(
+                    new JObject { ["buffer"] = 0, ["byteOffset"] = 0, ["byteLength"] = 48 },
+                    new JObject { ["buffer"] = 0, ["byteOffset"] = 48, ["byteLength"] = 12 },
+                    new JObject { ["buffer"] = 0, ["byteOffset"] = 60, ["byteLength"] = 48 }),
+                ["accessors"] = new JArray(
+                    new JObject { ["bufferView"] = 0, ["componentType"] = 5126, ["count"] = 4, ["type"] = "VEC3" },
+                    new JObject { ["bufferView"] = 1, ["componentType"] = 5123, ["count"] = 6, ["type"] = "SCALAR" },
+                    new JObject { ["bufferView"] = 2, ["componentType"] = 5126, ["count"] = 4, ["type"] = "VEC3" }),
+                ["meshes"] = new JArray(new JObject
+                {
+                    ["extras"] = new JObject { ["targetNames"] = new JArray("Smile") },
+                    ["primitives"] = new JArray(new JObject { ["attributes"] = new JObject { ["POSITION"] = 0 }, ["indices"] = 1, ["targets"] = new JArray(new JObject { ["POSITION"] = 2 }) })
+                })
+            };
+            return BuildGlbContainer(Encoding.UTF8.GetBytes(json.ToString(Newtonsoft.Json.Formatting.None)), bin.ToArray());
+        }
+    }
+
+    static byte[] BuildGlbContainer(byte[] json, byte[] bin)
+    {
+        while (json.Length % 4 != 0) json = json.Concat(new byte[] { 0x20 }).ToArray();
+        using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream))
+        {
+            writer.Write(0x46546c67); writer.Write(2); writer.Write(12 + 8 + json.Length + 8 + bin.Length);
+            writer.Write(json.Length); writer.Write(0x4e4f534a); writer.Write(json);
+            writer.Write(bin.Length); writer.Write(0x004e4942); writer.Write(bin); return stream.ToArray();
+        }
+    }
+
+    static string ReadJsonChunk(byte[] bytes)
+    {
+        int length = BitConverter.ToInt32(bytes, 12); return Encoding.UTF8.GetString(bytes, 20, length).TrimEnd(' ', '\0', '\n', '\r', '\t');
+    }
+
+    static byte[] ReplaceJsonChunk(byte[] bytes, string json)
+    {
+        var bin = bytes.Skip(20 + BitConverter.ToInt32(bytes, 12) + 8).ToArray(); return BuildGlbContainer(Encoding.UTF8.GetBytes(json), bin);
+    }
+}

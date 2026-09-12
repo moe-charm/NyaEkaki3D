@@ -117,6 +117,7 @@ namespace NyaForge.UnityRuntime
             side.Add(Button("メッシュ全体を表示", Frame, "authoring-frame"));
             side.Add(new Label("2  形状を編集"));
             BuildGraphEditing(side);
+            BuildModelImport(side);
             BuildFaceEditing(side);
             BuildSolidify(side);
             BuildUv(side);
@@ -295,6 +296,7 @@ namespace NyaForge.UnityRuntime
             RefreshUv();
             RefreshPaint();
             RefreshMaterials();RefreshRig();RefreshMorph();RefreshEvidenceCapture();
+            RefreshModelImport();
             RefreshValidation();
         }
 
