@@ -10,7 +10,16 @@
 
 ## 次に実行するタスク（最新チェック）
 
-詳細・再現条件・検証範囲: [追加レビュー](docs/reviews/2026-09-12-Current-Checkpoint.md)。**I03-B → I03-C → A01** の順で進める。I04は実素材の事前確認で必要な対応範囲を決め、必要ならI03/A01に先行する。最新の実装・証拠は以下へ追記する。
+最新チェック対象は `4c9ced1`。[再生接続後のレビューと完了条件](docs/reviews/2026-09-12-Playback-Checkpoint.md)。今回Coreを再実行し **353 passed / 0 failed** (`Logs/core-checkpoint-taskification.txt`)。既存Player PASSを再確認したが、今回はbuild/Player・実操作・実素材の検証は行っていない。
+
+- [ ] **T01 / P1 — 次に実装: 全source node階層の保持・保存**。親/原点と非joint末端を保持し、旧rig sessionは階層不明として移行する。骨の祖先解決だけでVRM0展開を代用しない。
+- [ ] **T02 / P1 — VRM0展開とpreview接続**。T01後にroot/分岐/末端/centerの契約と数値回帰を実装し、GUI保存往復を確認。
+- [ ] **T03 / P1 — 実素材の取込条件調査**。独立して着手可能。一般node変換や複数mesh等の必要範囲を確定し、必要なI04を先行させる。
+- [ ] **T04 / P2 — 時間超過・性能受入**。現行はframe時間0.25秒超で停止する。実測し、継続/停止方針と回帰を決める。
+- [ ] **T05 / P1 — Windows実操作受入**。T03と必要なI04後に取込・再生・保存/Open・終了・文字の欠けを確認。
+- [ ] **T06 / P2 — 外部MCP metadata保存受入**。内部handler検証とは別にtransport経由の失敗保護と再試行を確認。
+
+T01→T02を実装順の基本とし、T03の結果でI04を前倒しする。各完了条件は上記レビュー参照。以下I03/I04/A01は親タスクで、T01〜T06はその実行単位。R11/R12の元の再現条件は [追加レビュー](docs/reviews/2026-09-12-Current-Checkpoint.md) に保持する。
 
 - [x] **R11 / P1 — 中間nodeによる骨階層欠落を修正（Core検証完了）**。ImportedJointHierarchyが検証済みsource木から最近傍祖先jointを解決する。合成済みtranslationとinverse-bind由来Headの契約を維持し、tailも中間node越しの子jointから決定する。中間node1/3個・骨登録順違い・親の移動/回転への追従・native保存/Openの4回帰が合格。一般回転/scaleや実モデル受入は別タスク。
 - [x] **R12 / P2 — 取込の候補生成と公開を分離（Windows自動検証完了）**。mesh検査より前のSpring session/Label更新をやめる。完了条件: 不正skin・command失敗時に文書、metadata、表示、dirty/Undoが変わらず、再試行で成功するPlayer検証。Windows Playerで不正skin・command拒否・再試行を検証済み。
