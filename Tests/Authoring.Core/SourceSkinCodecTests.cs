@@ -47,5 +47,17 @@ internal static partial class Program
             var invalidBasis=(byte[])bytes.Clone(); Array.Clear(invalidBasis,80,128);
             Expect("INVALID_AFFINE",()=>SourceSkinCodec.Read(invalidBasis));
         });
+        Test("Source skin package codec preserves weights and rejects envelope corruption", () =>
+        {
+            var candidate=GlbSourceSkinImporter.Read(BuildSkinnedGlb());
+            var packageBytes=SourceSkinPackageCodec.Write(new SourceSkinPackage(candidate.Skin,candidate.Binding));
+            var restored=SourceSkinPackageCodec.Read(packageBytes);
+            True(packageBytes.SequenceEqual(SourceSkinPackageCodec.Write(new SourceSkinPackage(restored.Skin,restored.Binding))));
+            Equal(candidate.Binding.VertexCount,restored.Binding.VertexCount); Equal(candidate.Binding.Weights.Count,restored.Binding.Weights.Count);
+            foreach(int length in new[] {1,8,15,packageBytes.Length-1}) Expect("INVALID_IMPORT",()=>SourceSkinPackageCodec.Read(packageBytes.Take(length).ToArray()));
+            Expect("INVALID_IMPORT",()=>SourceSkinPackageCodec.Read(packageBytes.Concat(new byte[]{0}).ToArray()));
+            var wrong=(byte[])packageBytes.Clone(); wrong[4]=2; Expect("UNSUPPORTED_FORMAT",()=>SourceSkinPackageCodec.Read(wrong));
+            var section=(byte[])packageBytes.Clone(); Array.Copy(BitConverter.GetBytes(int.MaxValue),0,section,8,4); Expect("INVALID_IMPORT",()=>SourceSkinPackageCodec.Read(section));
+        });
     }
 }

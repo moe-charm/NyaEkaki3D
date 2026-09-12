@@ -22,6 +22,24 @@ namespace NyaForge.Authoring.Import
 
         public IReadOnlyList<double> ToColumnMajor() => Array.AsReadOnly((double[])m.Clone());
 
+        /// <summary>Linearly blends affine skin matrices while preserving the exact homogeneous last row.</summary>
+        public static SourceAffine Blend(IReadOnlyList<SourceAffine> matrices, IReadOnlyList<float> weights)
+        {
+            Require(matrices != null && weights != null && matrices.Count == weights.Count && matrices.Count > 0,
+                "A nonempty matrix/weight set with matching counts is required.");
+            var result = new double[16]; double total = 0;
+            for (int i = 0; i < matrices.Count; i++)
+            {
+                Require(matrices[i] != null && Finite(weights[i]) && weights[i] > 0, "Skin blend weights must be finite and positive.");
+                total += weights[i];
+                for (int j = 0; j < 16; j++) result[j] += matrices[i].m[j] * weights[i];
+            }
+            Require(Finite(total) && total > 0, "Skin blend weights must have a finite positive sum.");
+            for (int j = 0; j < 16; j++) result[j] /= total;
+            result[3] = result[7] = result[11] = 0; result[15] = 1;
+            return new SourceAffine(result);
+        }
+
         public static SourceAffine FromTrs(Vec3 translation, Vec4 rotation, Vec3 scale)
         {
             double x = rotation.X, y = rotation.Y, z = rotation.Z, w = rotation.W;

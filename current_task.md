@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。I04-Aの完全source保存/GUI接続に続き、mesh属性とPOSITION morphの一般座標変換モジュールを追加。次は一般bind/pose paletteとweight混合の接続。直近Core378件合格。Windows-SourceSkinImport Player PASSは前段。任意の実モデル取込・実操作・性能の受入は未完了。
+更新: 2026-09-12。I04-Aの完全source保存/GUI接続、mesh属性/POSITION morph変換、source slot weight/一般bind deformer、GLB全JOINTS_n/WEIGHTS_n候補読取に続き、native weight packageとrig session v5・GUI接続を追加。複数mesh/一般deform graph接続は未完了。直近Core385件合格。任意の実モデル取込・実操作・性能の受入は未完了。
 
 ## 開発の入口
 
@@ -14,7 +14,7 @@
 
 | 状態 / ID | 実行する作業 | 完了条件・依存 |
 |---|---|---|
-| [ ] I04-A / P1 **次に実装** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 数値/reader/codec/GUI生成/native原本なしOpenとmesh/POSITION morph座標変換を追加済み。次は一般bind/pose paletteとweight混合、複数pose数値検証。現在のSkinDeformerはbone.Head差分に基づくため、一般bindの保存成功だけで制限解除しない。sparse decodeも未対応 |
+| [ ] I04-A / P1 **次に実装** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 数値/reader/codec/GUI生成/native原本なしOpen、mesh/POSITION morph変換、SourceSkinBinding/SourceSkinDeformer、GLB全JOINTS_n/WEIGHTS_n候補、NYSPとrig v5/native/GUI接続を追加済み。次は一般bind paletteを既存graph deformerへ接続し複数poseを検証。現在のSkinDeformer/GUIはtranslation-only経路で、v5保存成功だけで表示制限を解除しない。sparse/normalized weightは未対応 |
 | [ ] I04-B / P1 | 複数mesh/instance/skin、source→制作ID対応 | Objects[0]前提も監査。全対象・同名morph・共有参照を編集/保存/Openで保持。Aの変換契約に依存 |
 | [ ] I04-C / P1 | rig/weight/morph容量とcodec/hash/表示/出力 | 257骨・18weight・単一mesh262morph以上の入力を削減なしで往復。byte/メモリ予算と超過時の拒否を同時に決める |
 | [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
@@ -50,6 +50,10 @@
 
 - SourceMeshTransform: Core **378 passed / 0 failed** (`Logs/core-source-mesh-transform.txt`)。非一様/shear/鏡映の位置・方向・面順/UV保持、morph ID維持とtopology再pin、morph適用との可換性、不正方向/stale入力を検証。一般skinのweight混合・GUI取込はまだ未接続。
 - Windows-SourceMeshTransform build **PASS** (`Logs/build-player-20260912-170453-386.log`)。独立Coreモジュール追加のためPlayer GUI suiteは今回再実行していない。
+- SourceSkinBinding/Deformer: Core **381 passed / 0 failed** (`Logs/core-source-skin-deformer.txt`)。slot順、32影響/vertex、rest inverse-bind相殺、pose paletteの位置/法線/接線/UV/topology保持、stale domain/未weight/不正paletteを確認。GLB weight decoder・native binding・GUI保存接続まで完了。既存graphの一般deform表示接続は未完了。
+- GLB source skin importer: Core **384 passed / 0 failed** (`Logs/core-glb-source-skin-importer.txt`)。一meshの全primitiveでdense JOINTS/WEIGHTS set、slot順・vertex offset・skin参照をSourceSkinBindingへ接続し、unpaired/noncontiguous/type/sparse/range/宣言buffer不整合を拒否。normalized/sparseは未対応。
+- Source skin package / rig v5: Core **385 passed / 0 failed** (`Logs/core-source-weight-native.txt`)。NYSPの行列＋全元weight往復、byte同一、切断/末尾/version/section破損、v5 Save/Openと旧v1〜v4情報境界を確認。GUI skinned取込とPlayer Save/Openは同じ変更で検証済み。
+- Windows-SourceWeightNative2 build **PASS** (`Logs/build-player-20260912-172508-037.log`)、Player **PASS** (`Artifacts/Authoring-20260912-172528-cca84b685fc84c1eb596e2dec4dc785a/report.json`)。VRM0/1でGLB由来source package保持、原本なしOpen、揺れ再生、編集時停止、import失敗保護を確認。実マウス操作・任意実素材・画像目視の受入ではない。
 
 - GUI完全source接続: Windows-SourceSkinImport build **PASS** (`Logs/build-player-20260912-170004-544.log`)、Player **PASS** (`Artifacts/Authoring-20260912-170036-ad7444ce32a14d94b4b57c23c2f86ff7/report.json`)。VRM0/1で元GLBとNYFS一致、再生中Save、生成fixtureの原本パスを移動後にOpen、完全payload維持と制作姿勢復元を確認。import失敗保護も合格。実マウス/任意実素材の受入ではない。今回はCore変更なしでCore suiteを再実行していない。
 

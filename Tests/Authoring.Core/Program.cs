@@ -23,6 +23,8 @@ internal static partial class Program
         RunGlbSourceSkinTests();
         RunSourceSkinCodecTests();
         RunSourceMeshTransformTests();
+        RunSourceSkinDeformerTests();
+        RunGlbSourceSkinImporterTests();
         RunGlbNodeTransformTests();
         RunFaceInspectionTests();
         RunPolygonWireTests();

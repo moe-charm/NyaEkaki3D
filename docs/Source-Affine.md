@@ -1,5 +1,21 @@
 # source affine数値基盤（I04-A）
 
+## GLB weight decode
+
+`GlbSourceSkinImporter`は一つのmeshと指定skinから、全primitiveの`JOINTS_0..n`/`WEIGHTS_0..n`をsource slotのまま読み、`SourceSkinBinding`へ渡す。setは0から連続し、各JOINTS/WEIGHTSが対応すること、POSITION数との一致、skin slot範囲、primitive間のvertex offsetを検査する。static mesh/morphは既存`GlbImporter`へcloneした属性を渡し、geometry decodeを二重実装しない。
+
+現段階のweight decoderはdense VEC4、JOINTSのUNSIGNED_BYTE/UNSIGNED_SHORT、WEIGHTSのFLOATに限定する。sparse、accessor/view拡張、外部buffer、normalized値、非4要素のattributeは未対応として拒否する。strideは4-byte alignedでbuffer宣言範囲内を検査し、JSON巨大整数を先にintへcastしない。全source値をnativeの4影響/256骨へ黙って切り詰めない。
+
+mesh nodeのlocal/world transformはこの候補でgeometryへ追加しない。skin paletteの`jointWorld × inverseBind`は`SourceSkinDeformer`が担当し、skin外のscene transformと出力先座標変換は後段で明示する。複数mesh/instance・異なるskin参照・normalized/sparse weightはI04-B/Cへ残る。
+
+## source skin palette と weight
+
+`SourceSkinBinding`はmesh topology hashとsource hashを持ち、各vertexの元joint slot番号とweightを保持する。制作BoneIdへ先に変換せず、元のslot順を失わない。最大32影響/vertexを受け付ける（実素材で確認した18影響を含む）。Create時に全vertexを要求し、正規化は新しい不変配列で行う。topology/sourceが変わった入力は`SKIN_SOURCE_CHANGED`で拒否する。
+
+`SourceSkinDeformer.Apply`は各slotの`jointWorld × inverseBind`を作り、weightで行列をブレンドする。positionsはpoint、normalsは合成行列の逆転置、tangentsは法線への直交化、UVとtriangle topologyは維持する。restのjointWorldを渡すとinverse-bindが相殺される。制作BoneIdやBoneDefinitionのHead差分を参照しないため、回転・非一様scaleを含むsourceへ接続できる基礎になる。
+
+これはsource mesh一枚の変形候補であり、複数mesh/instance、normal/tangent morph、native graphのdeform接続は未完了。GLBの追加JOINTS_nはdense FLOAT/UBYTE/USHORTの候補読取まで、normalized/sparseは未対応。行列ブレンドが特異になる入力や方向が退化する入力は部分結果を返さず拒否する。skin変形でtriangle windingを変更しないため、鏡映を含むsourceの表示規則は別の出力adapterで確定する。
+
 ## mesh座標変換とPOSITION morph
 
 `SourceMeshTransform.Apply(mesh, affine, morphs)`は1つの座標変換をmeshと対応するPOSITION morphへ原子的に適用する独立モジュール。positionsはPoint、normalsは逆転置と正規化、tangentsはベクトル変換と法線への直交化、UVは維持する。負determinantの場合、各submeshのtriangleの第2/第3indexを交換し、tangent Wも反転する。vertex順・submesh順・morph ID/名前は変更しない。
@@ -18,15 +34,15 @@ rootの-1は省略、bind数の-1はfresh sourceでの省略。他の負値や�
 
 総payloadは16MiB以下。writeは必要byte数を事前計算し、readは残りbyte数とnode/edge予算を検査してから配列を確保する。trailing/truncated data、不正version、特異matrixを拒否し、復元候補の全検証が成功してから返す。正規payloadはread→writeでbyte同一、local/world値とchildren順が維持されることをCoreで確認する。
 
-rig session v4の明示`sourceSkin` fieldへNYFSをbase64で格納する。既存Rig attachmentの型付き拡張であり、任意metadataを追加する入口にはしない。JSON/base64化後の全sessionも16MiB以下を要求するため、NYFS単体の上限いっぱいのデータはsessionとして保存できない場合がある。上限超過は拒否し、nativeへの公開前に診断する。
+rig session v4の明示`sourceSkin` fieldへNYFSをbase64で格納し、元weightまで揃う場合はv5の`sourceSkinPackage`へNYSP（NYFS＋source binding）をbase64で格納する。既存Rig attachmentの型付き拡張であり、任意metadataを追加する入口にはしない。JSON/base64化後の全sessionも16MiB以下を要求するため、NYFS/NYSP単体の上限いっぱいのデータはsessionとして保存できない場合がある。上限超過は拒否し、nativeへの公開前に診断する。
 
-`ImportedRigSession.WithSourceSkin`が不変な新sessionを返す。source hash、joint集合とnode→bone対応、全parent/children順/world原点が既存sessionと一致することを独立validationモジュールで検査する。元のjoint slot順と全基底/bindはNYFS側に保持する。任意の異素材データの付替えを許可しない。
+`ImportedRigSession.WithSourceSkin`と`WithSourceSkin(skin,binding)`が不変な新sessionを返す。source hash、joint集合とnode→bone対応、全parent/children順/world原点が既存sessionと一致することを独立validationモジュールで検査する。元のjoint slot順と全基底/bindはNYFS側、mesh topology hashと全元weightはNYSP側に保持する。任意の異素材データの付替えを許可しない。
 
-writerは完全sourceありの場合v4、なしの場合v3。readerはv1〜v4に対応。旧版に完全transform/bindを捏造せず、`SourceSkin == null`を維持する。v4はsourceSkin必須でnull/不正base64/不正NYFSを拒否する。既存native projectのRig attachment保存・hash検査を利用し、Save/Open後のNYFS byte一致をCoreで確認済み。
+writerは元weightなしの完全sourceでv4、weightありでv5、なしでv3。readerはv1〜v5に対応。旧版に完全transform/bind/weightを捏造せず、`SourceSkin == null`を維持する。v4はsourceSkin、v5はsourceSkinPackage必須でnull/不正base64/不正NYFS/NYSPを拒否する。既存native projectのRig attachment保存・hash検査を利用し、Save/Open後のNYFS/NYSP byte一致をCoreで確認済み。
 
-GUIのskinned取込は同じbytesからGlbSourceSkinReaderでsourceを読み、WithSourceSkinで検証してからCommitImportedGraphへ渡す。新規skinned取込はv4を保存する。source decode/対応検査が失敗した場合はgraph公開前に拒否し、完全情報を省いたv3へ黙ってfallbackしない。既存nativeのv1〜v3は引き続き情報不明のまま利用できる。
+GUIのskinned取込は同じbytesからGlbSourceSkinImporterでsourceと全dense weightを読み、WithSourceSkin(skin,binding)で検証してからCommitImportedGraphへ渡す。新規skinned取込はv5を保存する。source decode/対応検査が失敗した場合はgraph公開前に拒否し、完全情報を省いたv3/v4へ黙ってfallbackしない。既存nativeのv1〜v4はそれぞれの情報範囲で利用できる。
 
-Player検証はVRM0/1でsource payloadと元GLBの一致、再生中の保存、原本パスを利用できない状態でのOpen、完全payloadの維持、制作姿勢の復元を対象とする。結果はcurrent_task参照。一般geometry/skin座標対応はまだ未完了で、v4保存成功だけで一般mesh/skinを正しく描画できるとは扱わない。
+Player検証はVRM0/1でsource payloadと元GLBの一致、再生中の保存、原本パスを利用できない状態でのOpen、完全payloadの維持、制作姿勢の復元を対象とする。結果はcurrent_task参照。一般geometry/skin座標対応はまだ未完了で、v5 package保存成功だけで一般mesh/skinを正しく描画できるとは扱わない。
 
 ## source skin候補
 
@@ -40,7 +56,7 @@ Player検証はVRM0/1でsource payloadと元GLBの一致、再生中の保存、
 
 `GlbMatrixAccessorReader`はembedded BINのdense FLOAT/MAT4をdecodeする。buffer/view/accessorの宣言範囲をlong演算で検査し、4byte alignmentとBIN padding最大3byteを確認してからlittle-endian floatを読む。joint数以上のaccessor entryをすべて保持。正規化FLOAT、vertex stride/target付きview、不正参照・型・明示nullを拒否する。sparse、外部buffer、対象accessor/view/skinの拡張は現段階では未対応として拒否し、黙って解釈を省かない。JSON数値は範囲確認前にintへcastしない。
 
-実装範囲は候補型・dense accessor decodeと数値検証まで。native codec、一般skinのGUI取込はまだ接続していない。既存translation-only制限を解除する証拠ではない。readerはglTF全体のvalidatorではなく、材質や必須未知拡張等の文書全体の検証はI04-Eに残る。
+実装範囲は候補型・dense accessor decodeと数値検証、NYFS/NYSP native codec、rig session v4/v5、skinned GUIのsource payload接続まで。既存translation-only graph表示の制限を解除する証拠ではない。readerはglTF全体のvalidatorではなく、材質や必須未知拡張等の文書全体の検証はI04-Eに残る。
 
 `SourceAffine`はUnityに依存しない不変のcolumn-major 4×4行列。TRSの合成はT×R×S、`parent.Compose(local)`はparent×local。doubleで計算し、公開するVec3/Vec4はfinite float範囲を検査して返す。入力配列はコピーし、公開配列もコピーする。
 
@@ -55,12 +71,12 @@ Player検証はVRM0/1でsource payloadと元GLBの一致、再生中の保存、
 
 ## 接続・保存の次の変更単位
 
-この段階は数値基盤。GLB取込のtranslation-only制限、RestTransform、PoseTransform、既存native codecは変更していない。
+この段階はsource payloadを失わずに候補deformerへ渡す基盤。GLB取込のtranslation-only graph表示制限、RestTransform、PoseTransformは変更していない。native保存はNYFS/NYSPとrig session v4/v5へ拡張済みで、旧v1〜v4の情報境界は維持する。
 
 1. **実装済み**: `GlbNodeTransformReader`がnode JSONのTRS/matrixをdecodeし、混在・配列長・型を検査する。`SourceNodeTransforms`がsource木の親合成を反復処理で行い、local/worldの両方を保持する。詳細は下段。
-2. source scene候補へ完全なnode transformとskin slotごとのinverse-bindを持たせる。原点だけのImportedSourceHierarchyを、完全な基底を保持した型と呼び替えない。
-3. rig payloadの新versionを設計する。既存v1/v2/v3は既存経路で読めるようにし、元の一般transform/IBMがない旧作品へそれらを捏造しない。新情報が必要な操作は再取込を診断する。translation-onlyで保存済みの原点と骨対応は引き続き利用する。
-4. mesh/skin/morphの座標変換を新候補へ接続し、rest/複数pose/方向属性・保存/Openを確認してから一般取込の能力表示を有効にする。現在の表示制限を先に外さない。
+2. **実装済み**: `GlbSourceSkinImporter`が全dense JOINTS/WEIGHTS setをslot順の`SourceSkinBinding`へ渡し、`SourceSkinDeformer`がbind相殺とpose paletteを計算する。`SourceSkinPackageCodec`とrig session v5が行列・bind・元weightを保存する。
+3. **次に実装**: source mesh topology/hashと既存graphの表示meshを明示的に結び、一般bind paletteをgraph deformerへ接続する。rest/複数pose/normal・tangent、再利用mesh/object、失敗時原子性を検証してから表示制限を見直す。
+4. 複数mesh/instance/skin、normalized/sparse weight、未知拡張・材質・animationの保持はI04-B〜Eへ残す。既存translation-only作品を新source情報ありと捏造せず、能力表示は実装済み範囲だけを示す。
 
 Core回帰は非一様TRSと親子合成の解析値、joint global×inverse-bind、point/vectorの差、shear/鏡映の逆変換、normal/tangent直交性、入力独立性、不正matrix/quaternion/方向、小さいscaleの往復を含む。実行結果はcurrent_taskへ記録。一般GLBの取込・実素材受入の証拠とは区別する。
 

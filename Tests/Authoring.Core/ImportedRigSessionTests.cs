@@ -21,6 +21,12 @@ internal static partial class Program
             var legacySession = ImportedRigSession.Create(source, metadata, graph.GraphId, skeletonId);
             True(ImportedRigSessionCodec.Read(ImportedRigSessionCodec.Write(legacySession)).SourceSkin == null);
             var session = legacySession.WithSourceSkin(GlbSourceSkinReader.Read(bytes));
+            var candidate = GlbSourceSkinImporter.Read(bytes);
+            var weightedSession = legacySession.WithSourceSkin(candidate.Skin, candidate.Binding);
+            var weightedRoundTrip = ImportedRigSessionCodec.Read(ImportedRigSessionCodec.Write(weightedSession));
+            True(weightedRoundTrip.SourceSkin != null && weightedRoundTrip.SourceSkinBinding != null);
+            True(SourceSkinPackageCodec.Write(new SourceSkinPackage(candidate.Skin, candidate.Binding)).SequenceEqual(SourceSkinPackageCodec.Write(new SourceSkinPackage(weightedRoundTrip.SourceSkin, weightedRoundTrip.SourceSkinBinding))));
+            var weightedJson = JObject.Parse(Encoding.UTF8.GetString(ImportedRigSessionCodec.Write(weightedSession))); Equal(5,(int)weightedJson["version"]); True(weightedJson["sourceSkinPackage"] != null);
             var payload = ImportedRigSessionCodec.Write(session);
             var w = AuthoringWorkspace.CreateEmpty(); Ok(Execute(w, AuthoringOperation.AddGraph(graph)));
             w.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]> { [ProjectAttachments.Rig] = payload }));

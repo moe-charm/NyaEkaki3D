@@ -28,8 +28,10 @@ namespace NyaForge.UnityRuntime
                 File.WriteAllBytes(path, VrmVerificationFixture.Create(legacy, playback: true));
                 ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null); ImportModel(path);
                 Check(importedRigSession?.SourceSkin != null, "GUI import did not retain complete source skin");
-                var sourcePayload = SourceSkinCodec.Write(importedRigSession.SourceSkin);
-                Check(sourcePayload.SequenceEqual(SourceSkinCodec.Write(GlbSourceSkinReader.Read(File.ReadAllBytes(path)))), "GUI import changed source frames or binds");
+                var sourcePackage = new SourceSkinPackage(importedRigSession.SourceSkin, importedRigSession.SourceSkinBinding);
+                var sourcePayload = SourceSkinPackageCodec.Write(sourcePackage);
+                var fixturePackage = GlbSourceSkinImporter.Read(File.ReadAllBytes(path));
+                Check(sourcePayload.SequenceEqual(SourceSkinPackageCodec.Write(new SourceSkinPackage(fixturePackage.Skin, fixturePackage.Binding))), "GUI import changed source frames, binds or weights");
                 string authored = workspace.Document.StateHash, metadata = workspace.Attachments.ContentHash;
                 var baseline = projection.DisplayMesh.vertices;
                 Check(springPlay.enabledSelf, "Spring play button is disabled for VRM");
@@ -55,7 +57,7 @@ namespace NyaForge.UnityRuntime
                 // Only this generated fixture is moved; native reopening must not depend on the source path.
                 File.Move(path, path + ".source-unavailable");
                 OpenProject();
-                Check(importedRigSession?.SourceSkin != null && sourcePayload.SequenceEqual(SourceSkinCodec.Write(importedRigSession.SourceSkin)), "Save/Open lost complete source frames or binds");
+                Check(importedRigSession?.SourceSkin != null && importedRigSession.SourceSkinBinding != null && sourcePayload.SequenceEqual(SourceSkinPackageCodec.Write(new SourceSkinPackage(importedRigSession.SourceSkin, importedRigSession.SourceSkinBinding))), "Save/Open lost complete source frames, binds or weights");
                 Check(springPlayback == null && workspace.Document.StateHash == authored && !HasUnsaved, "Open persisted transient simulation");
                 var restored = projection.DisplayMesh.vertices;
                 Check(restored.Where((v, i) => (v - baseline[i]).sqrMagnitude > 1e-10f).Any() == false, "Open did not restore authored mesh");

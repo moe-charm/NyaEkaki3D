@@ -12,6 +12,7 @@ namespace NyaForge.Authoring.Import
         public string SourceHash { get; }
         public ImportedSourceHierarchy Hierarchy { get; }
         public SourceSkin SourceSkin { get; }
+        public SourceSkinBinding SourceSkinBinding { get; }
         public string SkeletonHash { get; }
         public string GraphId { get; }
         public string SkeletonNodeId { get; }
@@ -20,7 +21,7 @@ namespace NyaForge.Authoring.Import
         public IReadOnlyDictionary<string, int> HumanoidNodes { get; }
 
         internal ImportedRigSession(string sourceHash, string skeletonHash, string graphId, string skeletonNodeId,
-            IDictionary<int, string> nodes, IDictionary<string, int> humanoid, IDictionary<int, Vec3> nodeOrigins = null, ImportedSourceHierarchy hierarchy = null, SourceSkin sourceSkin = null)
+            IDictionary<int, string> nodes, IDictionary<string, int> humanoid, IDictionary<int, Vec3> nodeOrigins = null, ImportedSourceHierarchy hierarchy = null, SourceSkin sourceSkin = null, SourceSkinBinding sourceSkinBinding = null)
         {
             Checks.HashText(sourceHash); Checks.HashText(skeletonHash); Checks.Id(graphId); Checks.Id(skeletonNodeId);
             Checks.Require(nodes != null && nodes.Count > 0 && nodes.Count <= SkeletonDefinition.MaxBones && humanoid != null && humanoid.Count <= SkeletonDefinition.MaxBones, "INVALID_IMPORT", "Imported rig mapping exceeds capacity.");
@@ -42,7 +43,7 @@ namespace NyaForge.Authoring.Import
             SourceHash = sourceHash; SkeletonHash = skeletonHash; GraphId = graphId; SkeletonNodeId = skeletonNodeId;
             NodeToBone = new ReadOnlyDictionary<int, string>(new Dictionary<int, string>(nodes));
             HumanoidNodes = new ReadOnlyDictionary<string, int>(new Dictionary<string, int>(humanoid, StringComparer.Ordinal));
-            ImportedRigSourceValidation.Validate(this, sourceSkin); SourceSkin = sourceSkin;
+            ImportedRigSourceValidation.Validate(this, sourceSkin, sourceSkinBinding); SourceSkin = sourceSkin; SourceSkinBinding = sourceSkinBinding;
         }
 
         public ImportedRigSession WithSourceSkin(SourceSkin sourceSkin)
@@ -50,7 +51,15 @@ namespace NyaForge.Authoring.Import
             Checks.Require(sourceSkin != null, "INVALID_IMPORT", "Complete source skin is required.");
             return new ImportedRigSession(SourceHash, SkeletonHash, GraphId, SkeletonNodeId,
                 new Dictionary<int, string>(NodeToBone), new Dictionary<string, int>(HumanoidNodes),
-                SourceNodeOrigins == null ? null : new Dictionary<int, Vec3>(SourceNodeOrigins), Hierarchy, sourceSkin);
+                SourceNodeOrigins == null ? null : new Dictionary<int, Vec3>(SourceNodeOrigins), Hierarchy, sourceSkin, null);
+        }
+
+        public ImportedRigSession WithSourceSkin(SourceSkin sourceSkin, SourceSkinBinding sourceSkinBinding)
+        {
+            Checks.Require(sourceSkin != null && sourceSkinBinding != null, "INVALID_IMPORT", "Complete source skin and weights are required.");
+            return new ImportedRigSession(SourceHash, SkeletonHash, GraphId, SkeletonNodeId,
+                new Dictionary<int, string>(NodeToBone), new Dictionary<string, int>(HumanoidNodes),
+                SourceNodeOrigins == null ? null : new Dictionary<int, Vec3>(SourceNodeOrigins), Hierarchy, sourceSkin, sourceSkinBinding);
         }
 
         public static ImportedRigSession Create(ImportedSkinnedMeshSource source, VrmMetadata metadata, string graphId, string skeletonNodeId)
