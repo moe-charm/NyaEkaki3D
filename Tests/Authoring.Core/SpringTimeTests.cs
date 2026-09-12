@@ -6,6 +6,7 @@ internal static partial class Program
 {
     static void RunSpringTimeTests()
     {
+        RunSpringCenterTests();
         Test("Spring variable-step inertia and gravity match elapsed time", () =>
         {
             var joint = new SpringBoneJointSettings(ChildBone, 0, 0, 8, new Vec3(1, 0, 0), 0);

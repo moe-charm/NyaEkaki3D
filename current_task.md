@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。最新チェック対象 `023d1cf`。Coreを再実行し334件合格。追加レビューでR11（骨階層の欠落）を再現し、R12（失敗した取込の表示先行更新）をコード上で確認した。R11は中間nodeを通る骨階層保持を修正し、Core338件合格。R12は取込候補と公開を分離し、Windows自動検証まで完了。I03-Aのcollider座標adapterを追加し、最新Coreは340件合格。過去のR01〜R10は各記録の自動検証範囲で完了、実素材・実操作の受入は未完了。
+更新: 2026-09-12。最新チェック対象 `023d1cf`。Coreを再実行し334件合格。追加レビューでR11（骨階層の欠落）を再現し、R12（失敗した取込の表示先行更新）をコード上で確認した。R11は中間nodeを通る骨階層保持を修正し、Core338件合格。R12は取込候補と公開を分離し、Windows自動検証まで完了。I03-Aのcollider座標adapterを追加し、center履歴追従を追加し、最新Coreは343件合格。過去のR01〜R10は各記録の自動検証範囲で完了、実素材・実操作の受入は未完了。
 
 ## 開発の入口
 
@@ -21,6 +21,13 @@
 - [ ] **A01 — Windows実素材・実操作受入**。利用可能なローカルモデルで取込・保存/Open・姿勢・揺れ・文字サイズと欠け・保存して終了を確認する。外部MCP transportのmetadata保存も別項目で検証する。完了条件: build名、入力、確認手順、結果、未対応事項の記録。素材はprivate/追跡除外を維持。
 
 現在の証拠: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
+
+### I03-B前段: center履歴追従（2026-09-12）
+
+- `SpringCenterFrame`がsimulated boneごとのcenter変換を不変保持し、`SpringCenterMotion`が前回/current tailを両方現在centerへ移す。設定・skeletonの一致と可逆基底を検査し、state/timeは入力を変更せず保持する。異なるchainのcenterを混ぜない。
+- Core **343 passed / 0 failed**: `Logs/core-center-motion.txt`、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-92f48ebeaacf43d9ba2872458833b83d`。複数center、移動/回転/scale、履歴両点、逆変換、停止/再開後の実Step、入力独立性・不正frame拒否を確認。
+- Windows-SpringCenter build **PASS**: `Logs/build-player-20260912-145755-883.log`。Core計算追加のためPlayer GUI suiteは今回再実行していない。実マウス・実アバター受入は未実施。
+- [center契約](docs/SpringBone-Center-Motion.md)にruntime所有者のcommit順と重力との分担を記録。I03-Bは未完了。次はVRM1のhead/tail pair（末尾jointは回転対象にしない）とVRM0 root/末端展開、center参照の祖先検査、設定値/時間契約を統合する。runtime/GUIと実素材受入も未接続。
 
 ### I03-A: collider座標adapter（2026-09-12）
 
