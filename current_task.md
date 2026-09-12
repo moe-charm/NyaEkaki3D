@@ -1,3 +1,9 @@
+## 2026-09-13 native manifest locator contract
+
+native projectの再開パス検証を`NativeProjectLocator.RequireManifestDirectory`へAuthoring層として切り出した。`project.nyaforge.json`以外、存在しないmanifest、空パス、未対応パスを同じerror codeで拒否し、Explorer GUIは既存の未保存確認と`ProjectStore.Open`へ渡す親フォルダだけを受け取る。manifest内容の検証やworkspace置換はlocatorへ混ぜず、既存責務を維持した。
+
+Core **458 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-6a575829f424468d91cb8827b93aef37`）。Windows Player `Builds/NativeLocatorV1/NyaForge.exe` の800x600 Authoring suite **PASS**（report `Artifacts/Authoring-20260913-064253-149db09bb4a24715bc62d8a94ac93981/report.json`）。Unity Bridge **PASS**（report `Artifacts/BridgeReceiver-20260913-064327-846-0b11677610834177860b0cea90edfd4e/bridge-report.json`）。実Explorerクリック、DPI差、実VRChat SDK受入は別境界として残る。
+
 ## 2026-09-13 consistency feedback recheck (`13bc959`)
 
 提示されたconsistency review（基準 `1c76e4a`）を、最新main `13bc959`へ再照合した。P1の4件は現行実装とCore回帰で閉じている。16bit `JOINTS_n` は2バイト幅で復号し、8bit/16bit同値を確認済み。source skin表示は`SourceSkinGraphAdapter.ApplyToEvaluation`で最終graph outputへ適用するため、SkinDeform後のEditMeshを保持する。PhysBones target packageはprofileが参照するsource assetを同梱し、receiver側でhashを検証する。静的GLB取込のskin判定は選択meshのnode instanceに限定し、同じファイル内の静的小物を拒否しない。

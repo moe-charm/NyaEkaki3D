@@ -35,16 +35,11 @@ namespace NyaForge.UnityRuntime
                     yield break;
                 }
                 if (string.IsNullOrEmpty(picker.Result)) yield break;
-                string manifest = Path.GetFullPath(picker.Result);
-                if (!string.Equals(Path.GetFileName(manifest), ProjectStore.ManifestName, StringComparison.OrdinalIgnoreCase))
+                string directory;
+                try { directory = NativeProjectLocator.RequireManifestDirectory(picker.Result); }
+                catch (AuthoringException error)
                 {
-                    SetStatus("project.nyaforge.jsonを選択してください。");
-                    yield break;
-                }
-                string directory = Path.GetDirectoryName(manifest);
-                if (string.IsNullOrEmpty(directory) || !File.Exists(manifest))
-                {
-                    SetStatus("選択した制作projectが見つかりません。");
+                    SetStatus(error.Code == "PROJECT_MANIFEST_REQUIRED" ? "project.nyaforge.jsonを選択してください。" : "選択した制作projectが見つかりません。" );
                     yield break;
                 }
                 // The project can change while the Windows dialog is open. Do not
