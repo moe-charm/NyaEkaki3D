@@ -1,5 +1,15 @@
 # source affine数値基盤（I04-A）
 
+## mesh座標変換とPOSITION morph
+
+`SourceMeshTransform.Apply(mesh, affine, morphs)`は1つの座標変換をmeshと対応するPOSITION morphへ原子的に適用する独立モジュール。positionsはPoint、normalsは逆転置と正規化、tangentsはベクトル変換と法線への直交化、UVは維持する。負determinantの場合、各submeshのtriangleの第2/第3indexを交換し、tangent Wも反転する。vertex順・submesh順・morph ID/名前は変更しない。
+
+POSITION morph差分にはtranslationを加えない。鏡映でTopologyHashが変わるため、差分を同じvertex indexのまま新しいmeshへ正しくpinし直す。入力morphのtopology不一致は先に拒否する。入力のmesh・morphは不変で、結果に元ContentHashを記録する。
+
+属性なしは空のまま維持する。tangentあり/normalなしは正しい直交化を保証できないため未対応として拒否。平行normal/tangentなど変換後に方向が確定できない場合も拒否し、部分的な結果を返さない。normal/tangent morphは既存MorphSetで表現できず、本処理の対応範囲に含まない。
+
+これは全頂点共通の座標変換であり、jointごとのweight混合ではない。一般skinは別途bind/pose paletteとdeformerを接続する。既存translation-only importerをまだ解除しない。回帰は解析値、鏡映往復、UV/面順/ID保持、morph適用との可換性、stale入力と退化方向の拒否を確認する。
+
 ## 完全source skinの保存payload
 
 `SourceSkinCodec`は`NYFS` magicとversion 1を持つbounded binary。sourceHash（ASCII 64byte）、全nodeのparent/local matrix/元children順、skin index、任意skeleton root、joint slot列、明示inverse-bind全entryを保存する。matrixはcolumn-majorの16×IEEE754 double、整数はlittle-endian int32。計算済みworldは重複保存せず、読込時にlocalと親子関係から再合成する。SourceAffineの数値精度を保存時にfloatへ縮小しない。

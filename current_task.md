@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。I04-Aの完全source情報をGUI取込→rig session v4→nativeへ接続し、VRM0/1の原本なしOpenをPlayer handlerで確認。旧v1〜v3は完全source不明を維持。次は一般geometry/skin座標対応。直近Core375件合格（前段）、Windows-SourceSkinImport Player PASS。任意の実モデル取込・実操作・性能の受入は未完了。
+更新: 2026-09-12。I04-Aの完全source保存/GUI接続に続き、mesh属性とPOSITION morphの一般座標変換モジュールを追加。次は一般bind/pose paletteとweight混合の接続。直近Core378件合格。Windows-SourceSkinImport Player PASSは前段。任意の実モデル取込・実操作・性能の受入は未完了。
 
 ## 開発の入口
 
@@ -14,7 +14,7 @@
 
 | 状態 / ID | 実行する作業 | 完了条件・依存 |
 |---|---|---|
-| [ ] I04-A / P1 **次に実装** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 数値/reader/codec/GUI生成/native原本なしOpenは対応profileで検証済み。次は一般geometry/skinの変換と法線/接線/morph、複数pose数値検証。現在のSkinDeformerはbone.Head差分に基づくため、一般bindの保存成功だけで制限解除しない。sparse decodeも未対応 |
+| [ ] I04-A / P1 **次に実装** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 数値/reader/codec/GUI生成/native原本なしOpenとmesh/POSITION morph座標変換を追加済み。次は一般bind/pose paletteとweight混合、複数pose数値検証。現在のSkinDeformerはbone.Head差分に基づくため、一般bindの保存成功だけで制限解除しない。sparse decodeも未対応 |
 | [ ] I04-B / P1 | 複数mesh/instance/skin、source→制作ID対応 | Objects[0]前提も監査。全対象・同名morph・共有参照を編集/保存/Openで保持。Aの変換契約に依存 |
 | [ ] I04-C / P1 | rig/weight/morph容量とcodec/hash/表示/出力 | 257骨・18weight・単一mesh262morph以上の入力を削減なしで往復。byte/メモリ予算と超過時の拒否を同時に決める |
 | [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
@@ -47,6 +47,9 @@
 - [ ] **I04 / C0〜C5**: 任意モデル取込と制作/出力の製品全体は未完了。skin/morph出力・受取側確認などを [開発計画](docs/Development-Plan.md) から省かない。
 
 ## 直近の証拠
+
+- SourceMeshTransform: Core **378 passed / 0 failed** (`Logs/core-source-mesh-transform.txt`)。非一様/shear/鏡映の位置・方向・面順/UV保持、morph ID維持とtopology再pin、morph適用との可換性、不正方向/stale入力を検証。一般skinのweight混合・GUI取込はまだ未接続。
+- Windows-SourceMeshTransform build **PASS** (`Logs/build-player-20260912-170453-386.log`)。独立Coreモジュール追加のためPlayer GUI suiteは今回再実行していない。
 
 - GUI完全source接続: Windows-SourceSkinImport build **PASS** (`Logs/build-player-20260912-170004-544.log`)、Player **PASS** (`Artifacts/Authoring-20260912-170036-ad7444ce32a14d94b4b57c23c2f86ff7/report.json`)。VRM0/1で元GLBとNYFS一致、再生中Save、生成fixtureの原本パスを移動後にOpen、完全payload維持と制作姿勢復元を確認。import失敗保護も合格。実マウス/任意実素材の受入ではない。今回はCore変更なしでCore suiteを再実行していない。
 
