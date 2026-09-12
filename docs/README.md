@@ -6,6 +6,7 @@
 |---|---|
 | [current_task.md](../current_task.md) | 現在の作業、直近の完了事項、次に着手する範囲 |
 | [2026-09-12 Rig / VRMレビュー](reviews/2026-09-12-Rig-Vrm-Review.md) | bb1d89cの再現不具合、修正タスクR01〜R10の完了条件と検証の限界 |
+| [SpringBone姿勢契約](SpringBone-Pose-Contract.md) | base poseとState、親子の相対変換継承、連続stepの検証と残件 |
 | [作品とVRM設定の一括保存](Project-Metadata-Snapshots.md) | schema 4のmetadata参照、旧sidecar移行、単一manifest公開と保存失敗保護 |
 | [設計v2](NyaForge-Authoring-Design2.md) | 製品目標・全体設計の正本。Blenderなしの制作完結、ノードと直接編集の統合 |
 | [開発計画](Development-Plan.md) | ローカル実装との差分、C0〜C5への対応、直近の作業単位と終了条件 |

@@ -153,12 +153,14 @@ namespace NyaForge.Authoring.Rig
 
             var nextTails = new Dictionary<string, Vec3>(StringComparer.Ordinal);
             var replacements = new Dictionary<string, BonePose>(StringComparer.Ordinal);
-            foreach (var joint in valid.Joints)
+            var jointsById = valid.Joints.ToDictionary(joint => joint.BoneId, StringComparer.Ordinal);
+            foreach (var bone in SpringPoseHierarchy.ParentFirst(skeleton))
             {
-                var bone = skeleton.ById[joint.BoneId]; var bonePose = pose.ByBoneId[joint.BoneId];
+                var bonePose = SpringPoseHierarchy.Inherit(bone, pose, replacements);
+                if (!jointsById.TryGetValue(bone.BoneId, out var joint)) { replacements.Add(bone.BoneId, bonePose); continue; }
                 Vec3 head = PosedHead(bonePose.Transform), targetTail = PosedTail(bone, bonePose.Transform);
                 Vec3 oldTail = previous.CurrentTails[joint.BoneId], olderTail = previous.PreviousTails[joint.BoneId];
-                float length = Distance(bone.Tail, bone.Head);
+                float length = Distance(targetTail, head);
                 Vec3 velocity = (oldTail - olderTail) * (1f - joint.DragForce);
                 Vec3 candidate = oldTail + velocity;
                 float stiffness = Math.Min(1f, joint.Stiffness * deltaTime);
@@ -167,7 +169,7 @@ namespace NyaForge.Authoring.Rig
                 candidate = ResolveColliders(head, candidate, joint.HitRadius, valid.ColliderGroups, colliders);
                 candidate = Constrain(head, candidate, length, targetTail - head);
                 nextTails.Add(joint.BoneId, candidate);
-                Vec3 currentDirection = oldTail - head, desiredDirection = candidate - head;
+                Vec3 currentDirection = targetTail - head, desiredDirection = candidate - head;
                 Mat3 rotation = RotationBetween(currentDirection, desiredDirection);
                 PoseTransform transformed = Multiply(rotation, bonePose.Transform);
                 replacements.Add(joint.BoneId, new BonePose(joint.BoneId, transformed));
@@ -254,7 +256,7 @@ namespace NyaForge.Authoring.Rig
                 Vec3 reference = Math.Abs(a.X) < Math.Abs(a.Y) && Math.Abs(a.X) < Math.Abs(a.Z) ? new Vec3(1, 0, 0) : Math.Abs(a.Y) < Math.Abs(a.Z) ? new Vec3(0, 1, 0) : new Vec3(0, 0, 1);
                 axis = Normalize(Cross(a, reference), new Vec3(1, 0, 0)); return AxisAngle(axis, (float)Math.PI);
             }
-            axis = axis * (1f / axisLength); return AxisAngle(axis, (float)Math.Acos(dot));
+            axis = axis * (1f / axisLength); return AxisAngle(axis, (float)Math.Atan2(axisLength, dot));
         }
 
         private static Mat3 AxisAngle(Vec3 axis, float angle)
