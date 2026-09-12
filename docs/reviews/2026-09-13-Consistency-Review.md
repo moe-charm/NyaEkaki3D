@@ -1,3 +1,7 @@
+# 2026-09-13 embedded base-color GLB output recheck
+
+The real RadDollV3 smoke now re-imports the standard skinned GLB and verifies that its material inventory still contains embedded base-color images retained by native Paint. `Builds/MaterialResizeV3/NyaForge.exe` passed **80 Authoring checks** (`Artifacts/Authoring-20260913-082925-87045e69ee724ec791289be206d54dbe/report.json`); Unity **2022.3.22f1** Bridge passed (`Artifacts/BridgeReceiver-20260913-083342-809-9f1c2a45fffe418e81ce36a04541093f/bridge-report.json`). This covers image retention through import, native Save/Open, and standard skinned GLB output/re-import. It does not cover non-base-color maps, animation, VRM extensions, or real VRChat acceptance.
+
 # 2026-09-13 embedded base-color Save/Open hash recheck
 
 The real RadDollV3 smoke now compares hashes of all imported native Paint images before and after native Save/Open, in addition to the 1024px dimension check. `Builds/MaterialResizeV2/NyaForge.exe` passed **80 Authoring checks** (`Artifacts/Authoring-20260913-082108-0f81ed3a0c5d485f8cfb874f8b467fb4/report.json`) and the Unity **2022.3.22f1** Bridge passed (`Artifacts/BridgeReceiver-20260913-082532-936-f38ed0cdd41e46b4ba92be111f08e16c/bridge-report.json`). The source VRM remains private and temporary. This verifies native image ownership and roundtrip identity; non-base-color textures, animation, VRM extensions, and real VRChat acceptance remain outside the evidence.

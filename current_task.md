@@ -1,3 +1,7 @@
+# 2026-09-13 embedded base-color GLB output recheck
+
+実RadDollV3で、native Paintへ縮小保持した埋め込みbase-color画像が標準skinned GLB出力で失われないことを追加確認した。出力GLBをskin importerで再読込し、画像付きmaterialが存在することを検証している。Coreは直前の **461 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a7b92fd3fb184402a46aef4f4dfa676c`）を正とする。Windows Player `Builds/MaterialResizeV3/NyaForge.exe` のAuthoring **80 checks PASS**（`Artifacts/Authoring-20260913-082925-87045e69ee724ec791289be206d54dbe/report.json`）、Unity **2022.3.22f1** Bridge **PASS**（`Artifacts/BridgeReceiver-20260913-083342-809-9f1c2a45fffe418e81ce36a04541093f/bridge-report.json`）。
+
 # 2026-09-13 embedded base-color Save/Open hash recheck
 
 実RadDollV3の埋め込みbase-color画像をnative Paintへ縮小保持する経路について、取込直後だけでなくnative Save/Open後のPaint画像hash一致も検証条件へ追加した。private一時素材はリポジトリへ入れていない。Coreは直前の **461 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a7b92fd3fb184402a46aef4f4dfa676c`）を正とする。Windows Player `Builds/MaterialResizeV2/NyaForge.exe` のAuthoring **80 checks PASS**（`Artifacts/Authoring-20260913-082108-0f81ed3a0c5d485f8cfb874f8b467fb4/report.json`）、Unity **2022.3.22f1** Bridge **PASS**（`Artifacts/BridgeReceiver-20260913-082532-936-f38ed0cdd41e46b4ba92be111f08e16c/bridge-report.json`）。
