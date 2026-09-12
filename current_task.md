@@ -1239,3 +1239,9 @@ Coreの容量回帰で257骨・18 influence・262 morphのnative codec往復を�
 - `GlbImportDiagnostic` と `Diagnostics` を静的／skinned import結果へ追加。選択meshに材質・画像リソースがある場合は `MATERIALS_NOT_RETAINED`、animationは `ANIMATIONS_NOT_RETAINED`、`extensionsRequired` は `REQUIRED_EXTENSIONS_NOT_RETAINED`（blocking）、`extensionsUsed` は `EXTENSIONS_PARTIAL`（partial）として、path・理由とともに保持する。既存Warningsにも同じコードを出す。
 - Core **436 passed / 0 failed**。自作GLBへ4種類を同居させ、Diagnosticsのblocking/partial分類と警告表示を確認した。Windows Player **PASS** (`Logs/build-player-20260913-031410-506.log`, `Builds/GlbDiagnosticsV2/NyaForge.exe`)、Authoring suite **PASS** (`Artifacts/Authoring-20260913-031430-b65d18fdb5a54ace9f04e7d21a903284/report.json`)。
 - これは「完全取込成功」と表示しないための診断契約であり、材質・animation・未知拡張を依存資源ごとnativeへ保存する実装、GUI/MCPの詳細report、required拡張の網羅的拒否は未完了。
+
+## 複数object inspection（2026-09-13）
+
+- `AuthoringGraphReader`のgraph inspectionへ`activeObjectId`と`objects`一覧を追加。active objectは従来どおり詳細graphを返し、全objectについてgraphId、nodeCount、評価完了／stale、output要約、diagnosticsを返す。非active graphも純粋評価で確認するため、MCPから対象を選ぶ前に全体状態を読める。
+- Core **437 passed / 0 failed** (`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-6bff3098e94c4eb2a0560bd6617b678e`)、Windows Player **PASS** (`Logs/build-player-20260913-031801-663.log`, `Builds/GraphInspectV1/NyaForge.exe`)、Authoring suite **PASS** (`Artifacts/Authoring-20260913-031821-7095e42ce7554e4587deb67f44e0ba35/report.json`)。
+- objectごとの頂点ページ、編集context、材質／paint操作は引き続きactive objectを明示選択してから行う。

@@ -93,6 +93,7 @@ flowchart LR
 - 頂点の分割・並べ替え・結合には明示的な対応表が必要。元indexをUnityの表示頂点indexと同一視しない。
 - 再取込でsourceHashが変わった場合、既存IDへの対応は別途検証する。名前一致や新hashからのID再生成をそのまま既存assetの更新成功としない。
 - I04-Bはimporterだけでなく、単一objectを前提とする選択・評価・保存・pose・GUI/MCP・出力を監査する。native documentは複数objectとactive objectを保持し、既存1object作品のschema/hash互換を保つ。Workbenchはactive objectを編集対象、非active objectを読み取り専用の確認用backdropとして扱う。
+- `forge_graph_inspect` は `activeObjectId` と全objectの一覧（objectId、graphId、active、評価状態、output要約、diagnostics）を返し、active objectの従来の詳細graphも維持する。非active objectは純粋なgraph評価結果だけを返し、編集操作は明示的な `object.select` 後に行う。
 
 ### weight・morph・材質・animation
 

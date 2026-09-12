@@ -51,6 +51,16 @@ internal static partial class Program
             var node=after["graph"]["nodes"].Single(n=>(string)n["nodeId"]==edit);True(node["meshOutput"].Type==Newtonsoft.Json.Linq.JTokenType.Null);
             True((bool)before["graph"]["evaluationComplete"]);Expect("STALE_INSTANCE",()=>AuthoringGraphReader.Read(empty,"old"));
         });
+        Test("graph inspection lists every object while keeping active graph detail", () =>
+        {
+            var workspace = AuthoringWorkspace.CreateEmpty("inspect objects"); var commands = new AuthoringCommandService(workspace);
+            string firstSource, firstEdit; Ok(commands.Execute(workspace.NewCommand(AuthoringOperation.AddGraph(PlaneGraph(out firstSource, out firstEdit)))));
+            string firstId = workspace.Document.ObjectId; string secondSource, secondEdit; var secondGraph = PlaneGraph(out secondSource, out secondEdit); Ok(commands.Execute(workspace.NewCommand(AuthoringOperation.AddGraph(secondGraph, System.Guid.NewGuid().ToString("D")))));
+            var inspected = AuthoringGraphReader.Read(workspace, workspace.InstanceId);
+            Equal(2, inspected["objects"].Count()); Equal((string)workspace.Document.ActiveObjectId, (string)inspected["activeObjectId"]);
+            Equal(1, inspected["objects"].Count(item => (bool)item["active"])); True(inspected["objects"].All(item => item["graphId"].Type == Newtonsoft.Json.Linq.JTokenType.String));
+            Equal(workspace.Document.ActiveObject.Graph.GraphId, (string)inspected["graph"]["graphId"]); True(inspected["objects"].All(item => item["diagnostics"] != null));
+        });
         Test("read protocol rejects coercion and capabilities derive from registry",()=>
         {
             var w=AuthoringWorkspace.CreateEmpty();var cap=AuthoringReadService.Read(w,w.InstanceId,"capabilities");

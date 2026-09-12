@@ -11,8 +11,23 @@ namespace NyaForge.Authoring.Inspection
             lock(workspace.Gate)
             {
                 var state=AuthoringStateReader.Read(workspace,instance);var doc=workspace.Document;
-                var result=new JObject { ["instanceId"]=instance,["documentId"]=doc.DocumentId,["revision"]=doc.DocumentRevision,["stateHash"]=doc.StateHash,["graph"]=JValue.CreateNull() };
+                var result=new JObject { ["instanceId"]=instance,["documentId"]=doc.DocumentId,["revision"]=doc.DocumentRevision,["stateHash"]=doc.StateHash,["activeObjectId"]=doc.ActiveObjectId,["objects"]=new JArray(),["graph"]=JValue.CreateNull() };
                 if(doc.IsEmpty) return result;
+                result["objects"] = new JArray(doc.Objects.Select(item =>
+                {
+                    var itemEvaluation = item == doc.ActiveObject ? workspace.Preview.Evaluation : item.EvaluateGraph();
+                    return new JObject
+                    {
+                        ["objectId"] = item.ObjectId,
+                        ["graphId"] = item.Graph.GraphId,
+                        ["active"] = item.ObjectId == doc.ActiveObjectId,
+                        ["nodeCount"] = item.Graph.Nodes.Count,
+                        ["evaluationComplete"] = item == doc.ActiveObject ? workspace.Preview.IsComplete : itemEvaluation.IsComplete,
+                        ["stalePreview"] = item == doc.ActiveObject && workspace.Preview.IsStale,
+                        ["output"] = Mesh(itemEvaluation.Output),
+                        ["diagnostics"] = new JArray(itemEvaluation.Diagnostics.Select(d => new JObject { ["nodeId"] = d.NodeId, ["code"] = d.Code, ["message"] = d.Message }))
+                    };
+                }));
                 var graph=doc.Objects[0].Graph;var evaluation=workspace.Preview.Evaluation;
                 result["graph"]=new JObject
                 {
