@@ -1,8 +1,8 @@
 # 2026-09-13 consistency review receipt
 
-## 再照合（2026-09-13 / `eba2b36`）
+## 再照合（2026-09-13 / `dc31fa3`）
 
-現行mainで4件のP1修正を再確認し、Core **446 passed / 0 failed**（artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-9f228fff09904971b5264b15059fb465`）を取得した。合成Bridgeの合格は実VRChat SDKの受入とは分け、次の作業をSDKの版・完全修飾型を固定した実component生成／更新へ限定する。
+現行mainで4件のP1修正を再確認し、Core **448 passed / 0 failed**（artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4bbb7b6347fd456ead93289028b5571a`）を取得した。直近のチョーカー形状追加、既存graphへの小物object追加、頂点編集、Save/Open、複数対象BakeもPlayerで確認済み。合成Bridgeの合格は実VRChat SDKの受入とは分け、次の作業をSDKの版・完全修飾型を固定した実component生成／更新へ限定する。
 
 狭いWindows画面の追加確認では、ステータス欄を1行へ固定し全文をtooltipへ残す修正後に800x600／1600x1000のAuthoring suiteをともにPASSさせた。最新800x600 reportは `Artifacts/Authoring-20260913-052112-6c8f4cfef1e1407c9e807eaa5ba711eb/report.json`、最新1600x1000 reportは `Artifacts/Authoring-20260913-052214-0691af25c0ad410183470d1c5c8fb86e/report.json`。これはPlayer内自動操作の受入であり、DPI差・実マウス・実VRChat内の確認とは分ける。
 
@@ -17,8 +17,9 @@
 
 ## 検証
 
-- Core: **441 passed / 0 failed** (`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`)
-- 最新artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-95fd651be1094560b029f04b72aa1d7c`
+- Core: **448 passed / 0 failed** (`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`)
+- 最新artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4bbb7b6347fd456ead93289028b5571a`
+- MCP transport: **3 passed / 0 failed**（19 tool registry、instance付きnamed pipe、captureのcamera metadata保持とPNG bytes非重複）。
 - 実RadDollV3はprivate素材としてのみ取込 smoke に使用し、public repositoryへ同梱していない。
 
 このレビューで残る実装対象は、I04-A/Bの複数mesh・共有mesh/skin/morph参照、I04-Eの材質・未知拡張の完全保持、SIM-02B/SIM-07Aの実SDK/実VRChat受入である。I04-Eの入口として、GLB importerは材質・animation・extensionsRequired/Usedのコード付きdiagnosticsを返し、blocking/partialを区別する回帰を追加した。今回、選択primitiveのmaterial slotと基本PBR係数（baseColorFactorのlinear化、metallic/roughness、emissive、alpha）をnative `StandardMaterial`／`AssignMaterials`へ接続した。画像・sampler・追加拡張は引き続き未保持としてdiagnosticを返す。容量拡張としてnativeは512骨／32 influence／512 morph、GLB取込と拡張GLB出力は全JOINTS_n/WEIGHTS_n setへ対応した。標準SkinnedGeometry出力は受取先互換のため4 influenceを明示拒否する。Coreや合成Bridgeの合格を、実SDK・実VRChatでの受入完了とは扱わない。
