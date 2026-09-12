@@ -30,9 +30,11 @@ Workbenchの「PhysBones targetを書き出す」は、次の3ファイルから
 
 manifestとpayloadはhashとskeleton identityを検査して読み込みます。元のNyaForge projectやBlenderは受け取り側に不要です。collider groupを使うprofileでは、受け取り側が同じstable IDのcolliderを明示的に解決します。名前推測や暗黙のbone index変換は行いません。
 
-Editor側の`PhysBonesBridge`は、実行時に見つかったSDK component typeへreflectionで設定を書き込みます。初回は`CreateOrUpdateManaged`、再出力はNyaForgeの所有markerが付いたcomponentだけを対象にする`UpdateManagedOnly`を選べます。未管理componentや古いchainは削除せず、能力不足はloss reportで停止します。
+Editor側の`PhysBonesBridge`は、実行時に見つかったSDK component typeへreflectionで設定を書き込みます。初回は`CreateOrUpdateManaged`、再出力はNyaForgeの所有markerが付いたcomponentだけを対象にする`UpdateManagedOnly`を選べます。未管理componentや古いchainは削除せず、能力不足はloss reportで停止します。SDKに明示branch listがない場合は、`First`／`All`が実際の直下child構造で表現できるかを事前検査し、表現できないbranchを黙って省略しません。
 
 receiver検証はSDK形状fixtureによる合成確認です。実際のVRChat SDK、アバターprefab、VRChat内の動作確認を完了したことを意味しません。`UnityBridge/Runtime/PhysBonesReflectionFixtureComponent.cs`はreflection検証専用の非表示fixtureで、production PhysBones componentではありません。
+
+受け取り側では **Tools > NyaForge > Import PhysBones Target...** を開き、manifestを選択します。表示されたstable BoneIdごとにavatarのTransformを手動で割り当て、「作成／更新」または「管理対象だけを更新」を実行します。collider groupを参照するtargetは、`PhysBonesBridgeContext`へcollider bindingをコードから明示して適用してください。windowは名前自動検索や暗黙のbone index変換を行いません。
 
 Prefab の頂点は、Bake の正の均一スケールと平行移動を一度だけ適用したメートル座標です。Prefab の Transform は位置ゼロ・回転ゼロ・スケール 1 です。UV0、法線、接線、頂点順、サブメッシュと三角形順を保持します。法線の自動再計算・頂点結合・最適化は行いません。
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Rig;
@@ -119,11 +120,50 @@ namespace NyaForge.UnityBridge.Editor
                 var context = new PhysBonesBridgeContext(avatar.transform, new Dictionary<string, Transform> { [rootId] = avatar.transform, [childId] = child.transform });
                 VrcPhysBonesReflectionBackend backend;
                 Require(VrcPhysBonesReflectionBackend.TryCreate(out backend, "verification-sdk", typeof(PhysBonesReflectionFixtureComponent).AssemblyQualifiedName), "Reflection PhysBones backend did not find the shape-compatible fixture type.");
-                var result = PhysBonesBridge.Apply(profile, skeleton, context, backend);
+                string packageDirectory = Path.Combine("Temp", "NyaForgePhysBonesBridgePackage-" + Guid.NewGuid().ToString("N"));
+                string manifest = PhysBonesTargetPackage.Export(packageDirectory, profile, skeleton);
+                var result = PhysBonesBridge.ApplyPackage(manifest, context, backend);
                 var component = (PhysBonesReflectionFixtureComponent)result.Components.Single();
                 Require(component.rootTransform == avatar.transform && Mathf.Abs(component.stiffness - .5f) < .0001f && component.allowCollision, "Reflection PhysBones backend did not map the target fields.");
                 Require(backend.Capabilities.Supports(PhysBonesFeatures.Limits) && backend.Capabilities.Supports(PhysBonesFeatures.Interaction), "Reflection PhysBones capability scan missed required fields.");
-                checks.Add("PhysBones reflection backend: optional SDK type discovery and target field mapping pass against a shape-compatible fixture");
+                Require(result.ProfileHash == profile.ContentHash, "PhysBones package apply changed the target identity.");
+                if (Directory.Exists(packageDirectory)) Directory.Delete(packageDirectory, true);
+                checks.Add("PhysBones reflection backend: target package read, optional SDK type discovery and field mapping pass against a shape-compatible fixture");
+            }
+            finally { Object.DestroyImmediate(avatar); }
+            VerifyPhysBonesBranchPreflight(checks);
+        }
+
+        static void VerifyPhysBonesBranchPreflight(List<string> checks)
+        {
+            var avatar = new GameObject("NyaForge PhysBones branch fixture");
+            try
+            {
+                var first = new GameObject("tail-a"); first.transform.SetParent(avatar.transform, false);
+                var second = new GameObject("tail-b"); second.transform.SetParent(avatar.transform, false);
+                string rootId = Guid.NewGuid().ToString("D"), firstId = Guid.NewGuid().ToString("D"), secondId = Guid.NewGuid().ToString("D");
+                var skeleton = new SkeletonDefinition(new[]
+                {
+                    new BoneDefinition(rootId, "root", "", new Vec3(0, 0, 0), new Vec3(0, 1, 0)),
+                    new BoneDefinition(firstId, "tail-a", rootId, new Vec3(0, 1, 0), new Vec3(0, 2, 0)),
+                    new BoneDefinition(secondId, "tail-b", rootId, new Vec3(0, 1, 0), new Vec3(0, 2, 0))
+                });
+                var branch = new PhysBonesBranch(rootId, new[] { firstId });
+                var chain = new PhysBonesChain("branch", rootId, new[] { rootId }, PhysBonesEndpointMode.Auto, "", null,
+                    PhysBonesMultiChildType.All, null, new[] { branch }, null, PhysBonesParameters.Default, PhysBonesInteraction.Default, null);
+                var profile = new PhysBonesTargetProfile(VrcPhysBonesReflectionBackend.Target, "verification-sdk", "", skeleton.ContentHash, "", new[] { chain });
+                var context = new PhysBonesBridgeContext(avatar.transform, new Dictionary<string, Transform>
+                {
+                    [rootId] = avatar.transform, [firstId] = first.transform, [secondId] = second.transform
+                });
+                VrcPhysBonesReflectionBackend backend;
+                Require(VrcPhysBonesReflectionBackend.TryCreate(out backend, "verification-sdk", typeof(PhysBonesReflectionFixtureComponent).AssemblyQualifiedName), "Reflection branch backend was not found.");
+                bool rejected = false;
+                try { PhysBonesBridge.Apply(profile, skeleton, context, backend); }
+                catch (PhysBonesBridgeException error) { rejected = error.Code == "UNSUPPORTED_BRANCH_MAPPING"; }
+                Require(rejected && avatar.GetComponentsInChildren<PhysBonesReflectionFixtureComponent>(true).Length == 0,
+                    "Unrepresentable explicit branch mapping was not rejected before mutation.");
+                checks.Add("PhysBones reflection backend: explicit branch lists that cannot be represented by SDK multi-child mode are rejected before mutation");
             }
             finally { Object.DestroyImmediate(avatar); }
         }

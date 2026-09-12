@@ -12,7 +12,7 @@ namespace NyaForge.UnityBridge.Editor
     /// <summary>
     /// Reflection adapter for the optional VRChat SDK. The public package remains buildable without the SDK assembly.
     /// </summary>
-    public sealed class VrcPhysBonesReflectionBackend : IPhysBonesComponentBackend
+    public sealed class VrcPhysBonesReflectionBackend : IPhysBonesComponentBackend, IPhysBonesComponentPreflight
     {
         public const string Target = "vrchat.physbones";
         public const string DefaultComponentType = "VRC.SDK3.Dynamics.PhysBone.Components.VRCPhysBone";
@@ -77,6 +77,31 @@ namespace NyaForge.UnityBridge.Editor
             var snapshot = new Snapshot();
             foreach (var pair in members) snapshot.Values[pair.Key] = CopyValue(pair.Value.Get(component));
             return snapshot;
+        }
+
+        public void Validate(PhysBonesChain chain, PhysBonesBridgeContext context)
+        {
+            if (chain == null) throw new ArgumentNullException("chain");
+            if (context == null) throw new ArgumentNullException("context");
+            if (chain.Branches.Count == 0) return;
+            var member = Find(new[] { "multiChildType", "MultiChildType" });
+            if (member == null) throw new PhysBonesBridgeException("SDK_MEMBER_MISSING", "PhysBones branch mode is unavailable.");
+            if (chain.MultiChildType == PhysBonesMultiChildType.Ignore)
+                throw new PhysBonesBridgeException("UNSUPPORTED_BRANCH_MAPPING", "A target branch list cannot be represented with Ignore multi-child mode.");
+            foreach (var branch in chain.Branches)
+            {
+                var parent = context.Bone(branch.ParentBoneId);
+                var selected = branch.ChildBoneIds.Select(context.Bone).ToArray();
+                if (selected.Any(child => child.parent != parent))
+                    throw new PhysBonesBridgeException("UNSUPPORTED_BRANCH_MAPPING", "A target branch contains a non-direct child: " + branch.ParentBoneId + ".");
+                if (chain.MultiChildType == PhysBonesMultiChildType.First)
+                {
+                    if (parent.childCount == 0 || selected.Length != 1 || selected[0] != parent.GetChild(0))
+                        throw new PhysBonesBridgeException("UNSUPPORTED_BRANCH_MAPPING", "PhysBones First mode can represent only the first direct child.");
+                }
+                else if (selected.Length != parent.childCount || !selected.SequenceEqual(Enumerable.Range(0, parent.childCount).Select(parent.GetChild)))
+                    throw new PhysBonesBridgeException("UNSUPPORTED_BRANCH_MAPPING", "PhysBones All mode requires every direct child in scene order.");
+            }
         }
 
         public void Restore(Component component, object value)

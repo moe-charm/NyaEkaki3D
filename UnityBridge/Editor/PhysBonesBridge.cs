@@ -75,6 +75,12 @@ namespace NyaForge.UnityBridge.Editor
         void Restore(Component component, object snapshot);
     }
 
+    /// <summary>Optional backend-specific checks that must complete before any component is mutated.</summary>
+    public interface IPhysBonesComponentPreflight
+    {
+        void Validate(PhysBonesChain chain, PhysBonesBridgeContext context);
+    }
+
     /// <summary>Failure raised before or during a target write. A loss report is available for capability failures.</summary>
     public sealed class PhysBonesBridgeException : InvalidOperationException
     {
@@ -210,6 +216,16 @@ namespace NyaForge.UnityBridge.Editor
                 applied.Select(item => item.Component));
         }
 
+        /// <summary>Reads a self-contained target package and applies it after the same stable-ID preflight.</summary>
+        public static PhysBonesBridgeResult ApplyPackage(string manifestPath, PhysBonesBridgeContext context,
+            IPhysBonesComponentBackend backend, PhysBonesApplyMode mode = PhysBonesApplyMode.CreateOrUpdateManaged,
+            SecondaryMotionAsset source = null)
+        {
+            if (string.IsNullOrWhiteSpace(manifestPath)) throw new ArgumentException("PhysBones package manifest is required.", "manifestPath");
+            var package = PhysBonesTargetPackage.Read(manifestPath);
+            return Apply(package.Target, package.Skeleton, context, backend, mode, source);
+        }
+
         static List<Plan> Preflight(PhysBonesTargetProfile profile, SkeletonDefinition skeleton,
             PhysBonesBridgeContext context, IPhysBonesComponentBackend backend, PhysBonesApplyMode mode)
         {
@@ -241,6 +257,8 @@ namespace NyaForge.UnityBridge.Editor
                     if (value == null) throw new PhysBonesBridgeException("COLLIDER_BINDING_MISSING", "Collider binding contains a null component.");
                     RequireDescendant(context.AvatarRoot, value.transform);
                 }
+                var preflight = backend as IPhysBonesComponentPreflight;
+                if (preflight != null) preflight.Validate(chain, context);
                 var matching = markers.Where(marker => marker.Matches(profile.TargetId, index, chain.RootBoneId)).ToArray();
                 if (matching.Length > 1) throw new PhysBonesBridgeException("MANAGED_COMPONENT_DUPLICATE", "More than one managed PhysBones marker matches chain " + index + ".");
                 var marker = matching.SingleOrDefault();
