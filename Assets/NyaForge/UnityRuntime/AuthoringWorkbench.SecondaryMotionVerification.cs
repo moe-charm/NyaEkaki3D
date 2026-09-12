@@ -21,10 +21,16 @@ namespace NyaForge.UnityRuntime
             // before the evaluated graph can be used again. Keep this separate from
             // the secondary-motion action so both explicit boundaries are exercised.
             RebindRig();
+            string beforeRebind = importedSecondaryMotionDocument.RawHash;
             RebindSecondaryMotionIdentity();
             Check(importedSecondaryMotionAsset.SkeletonHash == moved.ContentHash && secondaryMotionStatus.text.Contains("保存済み"), "Identity rebind did not repin the secondary-motion skeleton");
+            string afterRebind = importedSecondaryMotionDocument.RawHash;
+            Execute(AuthoringOperation.Undo());
+            Check(importedSecondaryMotionDocument != null && importedSecondaryMotionDocument.RawHash == beforeRebind, "Secondary-motion rebind Undo did not restore the imported attachment");
+            Execute(AuthoringOperation.Redo());
+            Check(importedSecondaryMotionDocument != null && importedSecondaryMotionDocument.RawHash == afterRebind, "Secondary-motion rebind Redo did not restore the rebound attachment");
             Check(workspace.IsDirty, "Identity rebind should require a project save");
-            checks.Add("Secondary-motion GUI rebind: stale skeleton exposes same-BoneId rebind, repins hash and marks the project dirty");
+            checks.Add("Secondary-motion GUI rebind: stale skeleton exposes same-BoneId rebind, repins hash, and Undo/Redo restores attachment bytes");
         }
     }
 }

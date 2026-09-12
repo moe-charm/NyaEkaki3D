@@ -126,5 +126,14 @@ namespace NyaForge.UnityRuntime
             importedSecondaryMotionAsset = null;
             RefreshSecondaryMotionStatus();
         }
+
+        void RefreshSecondaryMotionAttachmentFromWorkspace()
+        {
+            if (workspace == null) { ClearImportedSecondaryMotion(); return; }
+            var bytes = workspace.Attachments.Read(ProjectAttachments.SecondaryMotion);
+            var document = bytes == null ? null : SecondaryMotionCodec.ReadDocument(bytes);
+            importedSecondaryMotionDocument = document;
+            importedSecondaryMotionAsset = document?.Asset;
+        }
     }
 }

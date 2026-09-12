@@ -1154,3 +1154,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthori
 - MCP sidecarはPNGの`data`だけをstructured/textから除去し、画像ごとのcamera・解像度・hash・撮影条件を保持する。`Tests/Mcp.Transport/CaptureResultVerification.cs`でbytes非重複とcamera保持を検証し、transport suite 3項目PASS。
 - PhysBonesは削除curve初期化とstable target/root/name marker再利用を実装済み。Unity Bridge 2022.3.22f1の最新検証はPASS。
 - 実VRChat SDK内の受入と揺れリセットキャッシュは未完了。secondary-motion再bindのUndoはCore回帰で確認済み。
+
+## secondary-motion再bind Undo 実素材検証 2026-09-13
+
+- Core **426 passed / 0 failed**。metadata rebindをUndo/Redoすると、Document geometryを変えずにattachment bytesと再読込可能なmetadataを元へ戻し、Redoでrebound bytesへ戻す。
+- Windows Player **PASS / 74 checks**（`Builds/RebindUndo/NyaForge.exe`, `Logs/build-all-20260913-014245-743.log`, `Artifacts/Authoring-20260913-014317-08b047e74a554ba88b3f760ba11a05e1/report.json`）。実RadDollV3 VRMでstale skeleton→same-BoneId rebind→Undo/Redoのattachment復元を確認した。
+- Unity Bridge **PASS**（Unity 2022.3.22f1, `Artifacts/BridgeReceiver-20260913-014429-987-190b810cf80a499cba2ed3c8ca51a256/bridge-report.json`）。実VRChat SDK内の動作受入と揺れリセットcacheは未完了。

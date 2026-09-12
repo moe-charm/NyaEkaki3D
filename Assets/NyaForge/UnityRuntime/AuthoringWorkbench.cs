@@ -239,6 +239,8 @@ namespace NyaForge.UnityRuntime
                 ClearSpringPlayback(true);
                 var result = ExecuteMeasured(operations);
                 if (!result.Success) { Refresh(); throw new InvalidOperationException(result.Code + ": " + result.Message); }
+                if (operations.Length == 1 && (operations[0].Kind == "history.undo" || operations[0].Kind == "history.redo"))
+                    RefreshSecondaryMotionAttachmentFromWorkspace();
                 var guiWatch=measureCommands ? System.Diagnostics.Stopwatch.StartNew() : null;
                 selection.RemoveWhere(i => i < 0 || i >= projection.Points.Length);
                 projection.Select(selection); Refresh();
