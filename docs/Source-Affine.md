@@ -14,7 +14,7 @@ mesh nodeのlocal/world transformはこの候補でgeometryへ追加しない。
 
 `SourceSkinDeformer.Apply`は各slotの`jointWorld × inverseBind`を作り、weightで行列をブレンドする。positionsはpoint、normalsは合成行列の逆転置、tangentsは法線への直交化、UVとtriangle topologyは維持する。restのjointWorldを渡すとinverse-bindが相殺される。制作BoneIdやBoneDefinitionのHead差分を参照しないため、回転・非一様scaleを含むsourceへ接続できる基礎になる。
 
-これはsource mesh一枚の変形候補であり、複数mesh/instance、normal/tangent morph、native graphのdeform接続は未完了。GLBの追加JOINTS_nはdense FLOAT/UBYTE/USHORTの候補読取まで、normalized/sparseは未対応。行列ブレンドが特異になる入力や方向が退化する入力は部分結果を返さず拒否する。skin変形でtriangle windingを変更しないため、鏡映を含むsourceの表示規則は別の出力adapterで確定する。
+これはsource mesh一枚の変形候補であり、複数mesh/instance、normal/tangent morphは未完了。`SourceSkinGraphAdapter`とWorkbench表示経路は、現時点では一つのSkinDeformのsource入力を対象に接続済みで、複数deform/共有instance/別skinの一般化は残る。GLBの追加JOINTS_nはdense FLOAT/UBYTE/USHORTの候補読取まで、normalized/sparseは未対応。行列ブレンドが特異になる入力や方向が退化する入力は部分結果を返さず拒否する。skin変形でtriangle windingを変更しないため、鏡映を含むsourceの表示規則は別の出力adapterで確定する。
 
 ## mesh座標変換とPOSITION morph
 
@@ -71,11 +71,11 @@ Player検証はVRM0/1でsource payloadと元GLBの一致、再生中の保存、
 
 ## 接続・保存の次の変更単位
 
-この段階はsource payloadを失わずに候補deformerへ渡す基盤。GLB取込のtranslation-only graph表示制限、RestTransform、PoseTransformは変更していない。native保存はNYFS/NYSPとrig session v4/v5へ拡張済みで、旧v1〜v4の情報境界は維持する。
+この段階はsource payloadを失わずに候補deformerへ渡し、Workbenchの取込直後・揺れ再生中表示へ接続する基盤。RestTransform、PoseTransformは変更していない。native保存はNYFS/NYSPとrig session v4/v5へ拡張済みで、旧v1〜v4の情報境界は維持する。
 
 1. **実装済み**: `GlbNodeTransformReader`がnode JSONのTRS/matrixをdecodeし、混在・配列長・型を検査する。`SourceNodeTransforms`がsource木の親合成を反復処理で行い、local/worldの両方を保持する。詳細は下段。
 2. **実装済み**: `GlbSourceSkinImporter`が全dense JOINTS/WEIGHTS setをslot順の`SourceSkinBinding`へ渡し、`SourceSkinDeformer`がbind相殺とpose paletteを計算する。`SourceSkinPackageCodec`とrig session v5が行列・bind・元weightを保存する。
-3. **一部接続済み / 次に実装**: `SourceSkinGraphAdapter`が評価済み`GraphMeshValue`へsource paletteを明示適用し、`SourceSkinPosePalette`がsessionのauthored poseからsource joint worldを生成する。domain・RestTransform・属性・topologyを保ったmesh差し替えまで確認済み。次はsource mesh topology/hashとWorkbenchのimport graph表示・再利用mesh/object経路を自動接続し、rest/複数pose/normal・tangent・失敗時原子性を検証してから表示制限を見直す。
+3. **一部接続済み / 次に実装**: `SourceSkinGraphAdapter`が評価済み`GraphMeshValue`のSkinDeform前入力へsource paletteを適用し、`SourceSkinPosePalette`がsessionのauthored poseからsource joint worldを生成する。Workbenchは取込直後とspring playbackでこの表示値を使い、edit stageの値・domain・RestTransform・属性・topologyを保持する。Core/Playerでrest・動的pose・Save/Open・再利用mesh/object・失敗保護を確認済み。次は複数mesh/instance/skin、複数SkinDeform/一般deform graph、normal・tangentと失敗時原子性を検証する。
 4. 複数mesh/instance/skin、normalized/sparse weight、未知拡張・材質・animationの保持はI04-B〜Eへ残す。既存translation-only作品を新source情報ありと捏造せず、能力表示は実装済み範囲だけを示す。
 
 Core回帰は非一様TRSと親子合成の解析値、joint global×inverse-bind、point/vectorの差、shear/鏡映の逆変換、normal/tangent直交性、入力独立性、不正matrix/quaternion/方向、小さいscaleの往復を含む。実行結果はcurrent_taskへ記録。一般GLBの取込・実素材受入の証拠とは区別する。

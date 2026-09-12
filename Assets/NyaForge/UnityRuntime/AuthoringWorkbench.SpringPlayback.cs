@@ -74,7 +74,7 @@ namespace NyaForge.UnityRuntime
                 {
                     var evaluated = GraphEvaluator.Evaluate(graph.ReplaceNode(GraphNode.PoseNode(springPoseNode, pose)));
                     if (!evaluated.IsComplete) throw new InvalidOperationException("揺れ姿勢のgraph評価に失敗しました。");
-                    projection.ShowSpringPreview(evaluated.Output);
+                    projection.ShowSpringPreview(SourceSkinPlaybackValue(evaluated, graph));
                 }
                 RefreshSpringPlayback();
             }
@@ -93,6 +93,7 @@ namespace NyaForge.UnityRuntime
             projection?.EndSpringPreview();
             if (restore && hadPreview && workspace != null)
                 using (var prepared = projection.PrepareGraph(workspace.Document, workspace.Preview)) prepared.Commit();
+            if (restore && workspace != null) RefreshSourceSkinDisplayProjection();
             RefreshSpringPlayback();
         }
     }

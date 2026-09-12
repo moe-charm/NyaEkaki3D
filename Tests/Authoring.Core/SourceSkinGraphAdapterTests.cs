@@ -3,6 +3,7 @@ using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Import;
+using NyaForge.Authoring.Rig;
 
 internal static partial class Program
 {
@@ -45,6 +46,30 @@ internal static partial class Program
                 new[] { GraphNode.Source(staleId, changed, new RestTransform(1, new Vec3())) }, Array.Empty<GraphEdge>(), "");
             var staleValue = GraphEvaluator.Evaluate(staleGraph).MeshOutputs[staleId];
             Expect("SKIN_SOURCE_CHANGED", () => SourceSkinGraphAdapter.Apply(staleValue, value.skin, value.binding, new[] { value.skin.Nodes.World[0], value.skin.Nodes.World[1] }));
+        });
+
+        Test("source skin graph adapter projects the skin input instead of authored SkinDeform output", () =>
+        {
+            var bytes = BuildMappedVrm(false); var imported = GlbSkinImporter.Read(bytes); var source = GlbSourceSkinImporter.Read(bytes);
+            string meshId = Guid.NewGuid().ToString("D"), skeletonId = Guid.NewGuid().ToString("D"), bindId = Guid.NewGuid().ToString("D"), poseId = Guid.NewGuid().ToString("D"), deformId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
+            var pose = PoseSet.Create(imported.Skeleton, imported.Skeleton.Bones.Select(b => new BonePose(b.BoneId, PoseTransform.FromTranslation(b.Head))));
+            var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), new[] {
+                GraphNode.Source(meshId, imported.Mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, imported.Skeleton),
+                GraphNode.SkinBindNode(bindId, imported.Binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                new[] { new GraphEdge(meshId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"),
+                    new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(meshId, "mesh", deformId, "mesh"),
+                    new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"),
+                    new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
+            var session = ImportedRigSession.Create(imported, null, graph.GraphId, skeletonId).WithSourceSkin(source.Skin, source.Binding);
+            var evaluation = GraphEvaluator.Evaluate(graph); True(evaluation.IsComplete);
+            var projected = SourceSkinGraphAdapter.ApplyToEvaluation(evaluation, graph, session);
+            for (int i = 0; i < imported.Mesh.VertexCount; i++) SpringPointNear(imported.Mesh.Positions[i], projected.Mesh.Positions[i]);
+            Equal(evaluation.Output.DomainId, projected.DomainId); Equal(evaluation.Output.Transform.Scale, projected.Transform.Scale);
+            var moved = PoseSet.Create(imported.Skeleton, imported.Skeleton.Bones.Select((b, i) => new BonePose(b.BoneId, i == 0 ? PoseTransform.RotationZ(25, b.Head) : PoseTransform.FromTranslation(b.Head))));
+            var movedGraph = graph.ReplaceNode(GraphNode.PoseNode(poseId, moved)); var movedEvaluation = GraphEvaluator.Evaluate(movedGraph);
+            var movedSession = ImportedRigSession.Create(imported, null, movedGraph.GraphId, skeletonId).WithSourceSkin(source.Skin, source.Binding);
+            var movedProjected = SourceSkinGraphAdapter.ApplyToEvaluation(movedEvaluation, movedGraph, movedSession);
+            True(movedProjected.Mesh.ContentHash != projected.Mesh.ContentHash);
         });
     }
 }

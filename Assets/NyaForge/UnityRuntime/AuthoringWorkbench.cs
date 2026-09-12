@@ -277,6 +277,7 @@ namespace NyaForge.UnityRuntime
             if (workspace == null) return;
             if (springPlayback != null && (workspace != springWorkspace || workspace.Document.StateHash != springDocumentHash || workspace.Attachments.ContentHash != springMetadataHash)) ClearSpringPlayback(true);
             RefreshGraphEditing();
+            RefreshSourceSkinDisplayProjection();
             graphCanvas.Bind(workspace, operations => Execute(operations), node => Try(() => SelectEditStage(editStageIds.IndexOf(node))));
             var displayed = DisplayedGraphValue();
             var data = displayed?.Mesh;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring;
+using NyaForge.Authoring.Graph;
 using NyaForge.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -63,6 +64,14 @@ namespace NyaForge.UnityRuntime
                 return PrepareMesh(stage?.Mesh, stage?.Transform ?? new RestTransform(1, new Vec3()), final, stage?.BaseColor,stage?.Material?.Parameters,stage);
             }
             return PrepareMesh(preview.Output?.Mesh, preview.Output?.Transform ?? new RestTransform(1, new Vec3()), null, preview.Output?.BaseColor,preview.Output?.Material?.Parameters,preview.Output);
+        }
+
+        /// <summary>Prepares a graph stage with an optional source-skin final result.</summary>
+        public IPreparedProjection PrepareGraphValue(AuthoringDocument document, GraphMeshValue stage, GraphMeshValue final = null)
+        {
+            var shown = stage ?? final;
+            return PrepareMesh(shown?.Mesh, shown?.Transform ?? new RestTransform(1, new Vec3()), stage == null ? null : final,
+                shown?.BaseColor, shown?.Material?.Parameters, shown);
         }
 
         IPreparedProjection PrepareMesh(MeshData evaluated, RestTransform transform, NyaForge.Authoring.Graph.GraphMeshValue final = null, NyaForge.Authoring.Graph.GraphImageValue baseColor = null,NyaForge.Authoring.Graph.MaterialParameters material=null,NyaForge.Authoring.Graph.GraphMeshValue appearance=null)

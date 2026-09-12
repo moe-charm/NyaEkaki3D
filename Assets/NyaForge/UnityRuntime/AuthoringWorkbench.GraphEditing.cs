@@ -69,7 +69,7 @@ namespace NyaForge.UnityRuntime
             {
                 workspace.Preview.Evaluation.MeshOutputs.TryGetValue(projection.PreviewNodeId, out var value); return value;
             }
-            return workspace.Preview.Output;
+            return SourceSkinDisplayValue() ?? workspace.Preview.Output;
         }
 
         void RefreshGraphEditing()

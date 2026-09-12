@@ -32,12 +32,23 @@ namespace NyaForge.UnityRuntime
                 var sourcePayload = SourceSkinPackageCodec.Write(sourcePackage);
                 var fixturePackage = GlbSourceSkinImporter.Read(File.ReadAllBytes(path));
                 Check(sourcePayload.SequenceEqual(SourceSkinPackageCodec.Write(new SourceSkinPackage(fixturePackage.Skin, fixturePackage.Binding))), "GUI import changed source frames, binds or weights");
+                var importedGraph = workspace.Document.Objects[0].Graph;
+                var expectedRestDisplay = SourceSkinGraphAdapter.ApplyToEvaluation(workspace.Preview.Evaluation, importedGraph, importedRigSession);
+                Check(expectedRestDisplay != null && projection.DisplayMesh != null && projection.DisplayMesh.vertexCount == expectedRestDisplay.Mesh.VertexCount, "Workbench did not publish a source-skin display value");
+                for (int i = 0; i < expectedRestDisplay.Mesh.VertexCount; i++)
+                    Check((projection.DisplayMesh.vertices[i] - OwnedMeshProjection.ToUnity(expectedRestDisplay.Mesh.Positions[i])).sqrMagnitude < 1e-10f, "Workbench display differs from source rest deformation");
                 string authored = workspace.Document.StateHash, metadata = workspace.Attachments.ContentHash;
                 var baseline = projection.DisplayMesh.vertices;
                 Check(springPlay.enabledSelf, "Spring play button is disabled for VRM");
                 StartSpringPlayback();
                 TickSpringPlayback(1f / 60);
                 var reusedMesh = projection.DisplayMesh; var reusedObject = projection.DisplayObject;
+                var dynamicGraph = workspace.Document.Objects[0].Graph;
+                var dynamicEvaluation = GraphEvaluator.Evaluate(dynamicGraph.ReplaceNode(GraphNode.PoseNode(springPoseNode, springPlayback.Pose)));
+                var expectedDynamicDisplay = SourceSkinGraphAdapter.ApplyToEvaluation(dynamicEvaluation, dynamicGraph, importedRigSession);
+                Check(expectedDynamicDisplay != null && projection.DisplayMesh.vertexCount == expectedDynamicDisplay.Mesh.VertexCount, "Spring did not publish a source-skin display value");
+                for (int i = 0; i < expectedDynamicDisplay.Mesh.VertexCount; i++)
+                    Check((projection.DisplayMesh.vertices[i] - OwnedMeshProjection.ToUnity(expectedDynamicDisplay.Mesh.Positions[i])).sqrMagnitude < 1e-10f, "Spring display differs from source palette deformation");
                 for (int i = 1; i < 12; i++)
                 {
                     TickSpringPlayback(1f / 60);
