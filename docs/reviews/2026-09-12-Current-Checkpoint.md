@@ -34,3 +34,7 @@ metadataを読んだ直後、mesh/skinの検査前に共有フィールドとLab
 ## R11修正追記
 
 最近傍祖先jointを解決するImportedJointHierarchyを追加。2026-09-12の修正後Coreは338件合格。1/3個の中間node、skin slot登録順違い、親の移動/回転に伴う子の追従、native保存/Openを検証した。上記本文は修正前のレビュー記録として保持する。R12は未修正、実素材受入は未実施。最新のbuild証拠と再開順はcurrent_taskを参照。
+
+## R12修正追記
+
+取込metadataを候補として準備し、graph追加成功時だけ公開する構造へ変更した。シリアライズも事前に完了させ、古い先行更新メソッドを廃止。Windows Playerで不正skinを初回/Undo後に拒否した場合とduplicate graphのcommand拒否時に、文書・attachments・session・Label・dirty・Undo/Redo可否が変化しないこと、正常な再試行が成功することを検証した。build/reportの最終証拠はcurrent_task参照。実マウス受入は未実施。

@@ -25,12 +25,6 @@ namespace NyaForge.UnityRuntime
             if (!importedVrmSpringSession.HasCompleteDetails) vrmSpringStatus.text += " 詳細不足：再取込または元設定の確認が必要です。";
         }
 
-        void SetImportedVrmSpring(VrmMetadata metadata)
-        {
-            importedVrmSpringSession = metadata == null ? null : VrmSpringSession.Create(metadata);
-            RefreshVrmSpringStatus();
-        }
-
         void ClearImportedVrmSpring()
         {
             importedVrmSpringSession = null;

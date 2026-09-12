@@ -111,12 +111,11 @@ namespace NyaForge.UnityRuntime
             });
         }
 
-        void SetImportedVrmExpressions(byte[] bytes, VrmMetadata metadata, MorphSet morphs)
+        static VrmExpressionSession PrepareImportedExpressions(byte[] bytes, VrmMetadata metadata, MorphSet morphs)
         {
-            importedVrmSession = null;
-            if (metadata == null || morphs == null) return;
-            try { importedVrmSession = VrmExpressionSession.Create(metadata, VrmExpressionMapper.ResolveForImportedMesh(bytes, metadata, morphs)); }
-            catch (AuthoringException error) { Debug.LogWarning("[NyaForge VRM] expression mapping unavailable: " + error.Code + ": " + error.Message); }
+            if (metadata == null || morphs == null) return null;
+            try { return VrmExpressionSession.Create(metadata, VrmExpressionMapper.ResolveForImportedMesh(bytes, metadata, morphs)); }
+            catch (AuthoringException error) { Debug.LogWarning("[NyaForge VRM] expression mapping unavailable: " + error.Code + ": " + error.Message); return null; }
         }
 
         void ClearImportedVrmExpressions() { importedVrmSession = null; }

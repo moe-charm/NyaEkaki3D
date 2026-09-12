@@ -11,6 +11,7 @@ namespace NyaForge.UnityRuntime
     {
         void VerifyVrmImportRoundtrip(string output, List<string> checks)
         {
+            VerifyImportFailureIsolation(output, checks);
             foreach (bool legacy in new[] { false, true })
             {
                 string directory = Path.Combine(output, legacy ? "vrm0-import" : "vrm1-import");

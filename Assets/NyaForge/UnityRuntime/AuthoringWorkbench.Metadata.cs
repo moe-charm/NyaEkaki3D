@@ -6,13 +6,13 @@ namespace NyaForge.UnityRuntime
 {
     public sealed partial class AuthoringWorkbench
     {
-        void CaptureImportedMetadata()
+        static ProjectAttachments PrepareImportedMetadata(ImportedRigSession rig, VrmExpressionSession expressions, VrmSpringSession springs)
         {
             var bytes = new Dictionary<string, byte[]>();
-            if (importedRigSession != null) bytes.Add(ProjectAttachments.Rig, ImportedRigSessionCodec.Write(importedRigSession));
-            if (importedVrmSession != null) bytes.Add(ProjectAttachments.Expressions, VrmExpressionSessionCodec.Write(importedVrmSession));
-            if (importedVrmSpringSession != null) bytes.Add(ProjectAttachments.Springs, VrmSpringSessionCodec.Write(importedVrmSpringSession));
-            workspace.SetAttachments(new ProjectAttachments(bytes));
+            if (rig != null) bytes.Add(ProjectAttachments.Rig, ImportedRigSessionCodec.Write(rig));
+            if (expressions != null) bytes.Add(ProjectAttachments.Expressions, VrmExpressionSessionCodec.Write(expressions));
+            if (springs != null) bytes.Add(ProjectAttachments.Springs, VrmSpringSessionCodec.Write(springs));
+            return new ProjectAttachments(bytes);
         }
     }
 }
