@@ -35,6 +35,7 @@ namespace NyaForge.UnityRuntime
             {
                 importedRigSession.ResolveHumanoid(graph);
                 importedRigStatus.text = "取込骨対応: " + importedRigSession.NodeToBone.Count + " bone · humanoid " + importedRigSession.HumanoidNodes.Count;
+                if (importedRigSession.MeshInstanceTransform != null) importedRigStatus.text += " · node affine保存済み";
                 if (importedRigSession.SourceNodeOrigins == null) importedRigStatus.text += " 元node座標なし：座標変換には再取込が必要です。";
             }
             catch (AuthoringException error)

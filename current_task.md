@@ -1198,3 +1198,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthori
 - private RadDollV3 VRMを使ったAuthoring suite **PASS / 74 checks**: `Artifacts/Authoring-20260913-021825-ea371b80cb854b9ba8d31247e4e30471/report.json`。実素材の候補取込、EditMesh、native Save/Open、標準skinned GLB出力・再取込を確認した。素材はpublic repositoryへ入れていない。
 - Unity Bridge **PASS**（Unity 2022.3.22f1）: `Artifacts/BridgeReceiver-20260913-021930-911-a5659f6dc6c24f98bbd8fe74410feac1/bridge-report.json`。
 - これはPlayer自動検証とprivate実素材smokeの証拠であり、実マウスで特定node instanceを選び、matrixを含む出力をVRChat内で受入した証拠ではない。SIM-02B/SIM-07Aと実操作受入は継続する。
+
+## skinned instance status表示（2026-09-13）
+
+Workbenchの取込骨対応statusに「node affine保存済み」を表示し、選択nodeの配置情報がsessionへ保持されていることをGUIで確認できるようにした。Windows Player build **PASS**: `Logs/build-player-20260913-022259-574.log`, `Builds/SkinnedInstanceAffineV6Ui/NyaForge.exe`。
