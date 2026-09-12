@@ -32,6 +32,16 @@ internal static partial class Program
             var skin = ReplaceJsonChunk(bytes, skinRoot.ToString(Newtonsoft.Json.Formatting.None)); Expect("UNSUPPORTED_FORMAT", () => GlbImporter.Read(skin));
             var bad = (byte[])bytes.Clone(); bad[0] = 0; Expect("INVALID_IMPORT", () => GlbImporter.Read(bad));
         });
+
+        Test("GLB importer selects a mesh by source index without collapsing morph identity", () =>
+        {
+            var root = JObject.Parse(ReadJsonChunk(BuildGlb()));
+            var meshes = (JArray)root["meshes"]!; var second = (JObject)meshes[0]!.DeepClone(); ((JObject)second["extras"]!)["targetNames"] = new JArray("AccessorySmile"); meshes.Add(second);
+            var bytes = ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None));
+            Expect("UNSUPPORTED_FORMAT", () => GlbImporter.Read(bytes));
+            var selected = GlbImporter.Read(bytes, 1); var first = GlbImporter.Read(bytes, 0); Equal(1, selected.MeshIndex); Equal("AccessorySmile", selected.Morphs.Targets[0].Name); True(first.Morphs.Targets[0].TargetId != selected.Morphs.Targets[0].TargetId); Equal(ChecksHashForTest(bytes), selected.SourceHash);
+            Expect("INVALID_IMPORT", () => GlbImporter.Read(bytes, -1)); Expect("INVALID_IMPORT", () => GlbImporter.Read(bytes, 2));
+        });
     }
 
     static byte[] BuildGlb()

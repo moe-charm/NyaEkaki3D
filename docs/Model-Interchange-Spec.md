@@ -136,7 +136,7 @@ flowchart LR
 
 コード照合対象は `4abd9d9` と取込説明の修正。GLB importは1mesh/1skin、translation-only、4weight、256骨/256morph。取込source nodeは最大4096、一時実行骨は最大256。nativeの材質/rig機能が進んでいても、任意の外部モデルを完全に取り込める段階ではない。
 
-現行readerには本仕様をまだ満たさない箇所もある。`GlbImport`は材質・静的scene構造・NORMAL/TANGENT morphを保持せず警告し、追加UV等も全属性を取り込まない。`GlbSceneInventoryReader`は複数mesh/instance/skinの参照とnode world transformを候補化するが、geometry/skinを複数制作対象へ公開する機構ではない。未知の `extensionsRequired` を網羅して拒否する処理、任意のVRM meta/利用条件/未知拡張を依存込みで保管する機構も未実装。これらはI04-B/Eの解消対象で、現在の取込成功を本仕様の完全保持成功と称しない。容量監査には16MiB/blob・100,000頂点・32submesh等の予算も含める。
+現行readerには本仕様をまだ満たさない箇所もある。`GlbImport`は材質・静的scene構造・NORMAL/TANGENT morphを保持せず警告し、追加UV等も全属性を取り込まない。`GlbSceneInventoryReader`は複数mesh/instance/skinの参照とnode world transformを候補化し、`GlbImporter.Read(bytes, meshIndex)` / `GlbSourceSkinImporter.Read(bytes, meshIndex, skinIndex)` は選択した一候補を読み取るが、geometry/skinを複数制作対象へ公開する機構ではない。未知の `extensionsRequired` を網羅して拒否する処理、任意のVRM meta/利用条件/未知拡張を依存込みで保管する機構も未実装。これらはI04-B/Eの解消対象で、現在の取込成功を本仕様の完全保持成功と称しない。容量監査には16MiB/blob・100,000頂点・32submesh等の予算も含める。
 
 T03の読取調査は完了。実素材要求には20mesh、257骨、18weight/頂点、単一mesh262morphがあり、一般基底も必要。[観測条件と限界](Real-Asset-Import-Plan.md)を参照。これらは最低限の検証入力であり、新しい一律上限値そのものではない。
 

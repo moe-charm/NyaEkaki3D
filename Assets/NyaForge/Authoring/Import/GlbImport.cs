@@ -14,14 +14,15 @@ namespace NyaForge.Authoring.Import
     public sealed class ImportedMeshSource
     {
         public string SourceHash { get; }
+        public int MeshIndex { get; }
         public string Format { get; }
         public MeshData Mesh { get; }
         public MorphSet Morphs { get; }
         public IReadOnlyList<string> Warnings { get; }
-        internal ImportedMeshSource(string sourceHash, MeshData mesh, MorphSet morphs, IEnumerable<string> warnings)
+        internal ImportedMeshSource(string sourceHash, int meshIndex, MeshData mesh, MorphSet morphs, IEnumerable<string> warnings)
         {
-            Checks.HashText(sourceHash); Checks.Require(mesh != null, "INVALID_IMPORT", "Imported mesh is required.");
-            SourceHash = sourceHash; Format = "glb.v2"; Mesh = mesh; Morphs = morphs;
+            Checks.HashText(sourceHash); Checks.Require(meshIndex >= 0 && mesh != null, "INVALID_IMPORT", "Imported mesh is required.");
+            SourceHash = sourceHash; MeshIndex = meshIndex; Format = "glb.v2"; Mesh = mesh; Morphs = morphs;
             Warnings = Array.AsReadOnly((warnings ?? Array.Empty<string>()).ToArray());
         }
     }
@@ -35,19 +36,34 @@ namespace NyaForge.Authoring.Import
     {
         public static ImportedMeshSource Read(byte[] bytes)
         {
-            return ReadDocument(GlbDocumentReader.Read(bytes));
+            var document = GlbDocumentReader.Read(bytes);
+            var meshes = Array(document.Root, "meshes");
+            Checks.Require(meshes.Count == 1, "UNSUPPORTED_FORMAT", "Import one mesh at a time; select a mesh explicitly for a multi-mesh GLB.");
+            return ReadDocument(document, 0);
         }
 
-        internal static ImportedMeshSource ReadDocument(GlbDocument document) { Checks.Require(document != null, "INVALID_IMPORT", "GLB document is required."); return Parse(document.Root, document.Bin, document.SourceHash); }
+        /// <summary>Reads one source mesh by its GLB index without changing the source hash.</summary>
+        public static ImportedMeshSource Read(byte[] bytes, int meshIndex)
+        {
+            return ReadDocument(GlbDocumentReader.Read(bytes), meshIndex);
+        }
 
-        static ImportedMeshSource Parse(JObject root, byte[] bin, string sourceHash)
+        internal static ImportedMeshSource ReadDocument(GlbDocument document) { return ReadDocument(document, 0); }
+
+        internal static ImportedMeshSource ReadDocument(GlbDocument document, int meshIndex)
+        {
+            Checks.Require(document != null, "INVALID_IMPORT", "GLB document is required.");
+            return Parse(document.Root, document.Bin, document.SourceHash, meshIndex);
+        }
+
+        static ImportedMeshSource Parse(JObject root, byte[] bin, string sourceHash, int meshIndex)
         {
             Checks.Require((string)root["asset"]?["version"] == "2.0", "UNSUPPORTED_FORMAT", "GLB asset version must be 2.0.");
             var buffers = Array(root, "buffers"); Checks.Require(buffers.Count == 1, "UNSUPPORTED_FORMAT", "Only one GLB buffer is supported.");
             int byteLength = Int(buffers[0], "byteLength", 0, bin.Length); Checks.Require(byteLength <= bin.Length, "INVALID_IMPORT", "GLB buffer exceeds its BIN chunk.");
             var views = Array(root, "bufferViews"); var accessors = Array(root, "accessors"); var meshes = Array(root, "meshes");
-            Checks.Require(meshes.Count == 1, "UNSUPPORTED_FORMAT", "Import one mesh at a time.");
-            var meshToken = meshes[0] as JObject; Checks.Require(meshToken != null, "INVALID_IMPORT", "GLB mesh is invalid.");
+            Checks.Require(meshIndex >= 0 && meshIndex < meshes.Count, "INVALID_IMPORT", "Selected GLB mesh index is out of range.");
+            var meshToken = meshes[meshIndex] as JObject; Checks.Require(meshToken != null, "INVALID_IMPORT", "GLB mesh is invalid.");
             Checks.Require(root["skins"] == null || root["skins"] is JArray, "INVALID_IMPORT", "GLB skins property is invalid.");
             Checks.Require(root["skins"] == null || ((JArray)root["skins"]).Count == 0, "UNSUPPORTED_FORMAT", "Skin bindings are not imported yet.");
             var primitives = Array(meshToken, "primitives"); Checks.Require(primitives.Count > 0 && primitives.Count <= AuthoringLimits.MaxSubmeshes, "BUDGET_EXCEEDED", "GLB primitive count exceeds the submesh budget.");
@@ -64,10 +80,10 @@ namespace NyaForge.Authoring.Import
             var submeshes = new int[parts.Length][]; int vertexOffset = 0;
             for (int i = 0; i < parts.Length; i++) { submeshes[i] = parts[i].Indices.Select(index => checked(index + vertexOffset)).ToArray(); vertexOffset += parts[i].Positions.Length; }
             var mesh = new MeshData(positions, normals, tangents, uv0, submeshes);
-            MorphSet morphs = ParseMorphs(meshToken, parts, mesh, sourceHash);
+            MorphSet morphs = ParseMorphs(meshToken, parts, mesh, sourceHash, meshIndex);
             var warnings = new List<string> { "Imported as " + parts.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " static triangle primitive(s); original glTF scene hierarchy, materials and skin bindings are not retained." };
             if (morphs != null) warnings.Add("POSITION morph targets were retained; normal/tangent morph deltas are not imported.");
-            return new ImportedMeshSource(sourceHash, mesh, morphs, warnings);
+            return new ImportedMeshSource(sourceHash, meshIndex, mesh, morphs, warnings);
         }
 
         sealed class PrimitiveData
@@ -103,7 +119,7 @@ namespace NyaForge.Authoring.Import
             bool present = selector(parts[0]); Checks.Require(parts.All(p => selector(p) == present), "UNSUPPORTED_FORMAT", "All primitives must use the same " + name + " attribute layout."); return present;
         }
 
-        static MorphSet ParseMorphs(JToken meshToken, PrimitiveData[] parts, MeshData mesh, string sourceHash)
+        static MorphSet ParseMorphs(JToken meshToken, PrimitiveData[] parts, MeshData mesh, string sourceHash, int meshIndex)
         {
             int morphCount = parts[0].MorphDeltas.Length; Checks.Require(parts.All(p => p.MorphDeltas.Length == morphCount), "UNSUPPORTED_FORMAT", "All primitives must use the same morph target layout.");
             if (morphCount == 0) return null;
@@ -116,15 +132,20 @@ namespace NyaForge.Authoring.Import
                 foreach (var part in parts) { foreach (var delta in part.MorphDeltas[i].Select((delta, index) => new MorphDelta(index + vertexOffset, delta))) if (delta.Delta.X != 0 || delta.Delta.Y != 0 || delta.Delta.Z != 0) entries.Add(delta); vertexOffset += part.Positions.Length; }
                 string name = "Morph " + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 if (names != null && i < names.Count && names[i].Type == JTokenType.String && !string.IsNullOrWhiteSpace((string)names[i])) name = (string)names[i];
-                result.Add(MorphTarget.Create(mesh, MorphTargetId(sourceHash, i), name, entries));
+                result.Add(MorphTarget.Create(mesh, MorphTargetId(sourceHash, meshIndex, i), name, entries));
             }
             return MorphSet.Create(mesh, result);
         }
 
         internal static string MorphTargetId(string sourceHash, int index)
         {
-            Checks.HashText(sourceHash); Checks.Require(index >= 0, "INVALID_MORPH", "Morph target index must be non-negative.");
-            return StableId(sourceHash + ":morph:" + index.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            return MorphTargetId(sourceHash, 0, index);
+        }
+
+        internal static string MorphTargetId(string sourceHash, int meshIndex, int index)
+        {
+            Checks.HashText(sourceHash); Checks.Require(meshIndex >= 0 && index >= 0, "INVALID_MORPH", "Morph target identity must be non-negative.");
+            return StableId(sourceHash + ":mesh:" + meshIndex.ToString(System.Globalization.CultureInfo.InvariantCulture) + ":morph:" + index.ToString(System.Globalization.CultureInfo.InvariantCulture));
         }
 
         static string StableId(string text)

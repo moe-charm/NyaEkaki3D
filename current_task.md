@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。I04-Aの完全source保存/GUI接続、mesh属性/POSITION morph変換、source slot weight/一般bind deformer、GLB全JOINTS_n/WEIGHTS_n候補読取、native weight packageとrig session v5・GUI接続、評価済みgraph meshへのsource skin adapter、authored poseからのsource palette生成、Workbench取込後/揺れ再生中のsource skin表示接続まで追加。I04-Bの入口として複数mesh/instance/skin参照を元indexで保持するGLB scene inventoryを追加した。制作graphへの複数対象公開と複数SkinDeformは未完了。直近Core393件合格。任意の実モデル取込・実操作・性能の受入は未完了。
+更新: 2026-09-12。I04-Aの完全source保存/GUI接続、mesh属性/POSITION morph変換、source slot weight/一般bind deformer、GLB全JOINTS_n/WEIGHTS_n候補読取、native weight packageとrig session v5・GUI接続、評価済みgraph meshへのsource skin adapter、authored poseからのsource palette生成、Workbench取込後/揺れ再生中のsource skin表示接続まで追加。I04-Bの入口として複数mesh/instance/skin参照を元indexで保持するGLB scene inventoryと、指定mesh/skinを選ぶ静的・skinned候補読取を追加した。制作graphへの複数対象公開と複数SkinDeformは未完了。直近Core395件合格。任意の実モデル取込・実操作・性能の受入は未完了。
 
 ## 開発の入口
 
@@ -15,7 +15,7 @@
 | 状態 / ID | 実行する作業 | 完了条件・依存 |
 |---|---|---|
 | [ ] I04-A / P1 **継続** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 数値/reader/codec/GUI生成/native原本なしOpen、mesh/POSITION morph変換、SourceSkinBinding/SourceSkinDeformer、GLB全JOINTS_n/WEIGHTS_n候補、NYSPとrig v5/native/GUI接続、評価済みGraphMeshValueへのSourceSkinGraphAdapter、authored poseからのSourceSkinPosePalette、Workbench取込後/揺れ再生中の自動表示を追加済み。次は複数mesh/instance/skin、複数SkinDeform、再利用mesh/object、normal/tangentと失敗時原子性を検証。現在はSkinDeform一個のsource入力を対象にし、sparse/normalized weightは未対応 |
-| [ ] I04-B / P1 **着手** | 複数mesh/instance/skin、source→制作ID対応 | `GlbSceneInventoryReader`でmesh/primitive数、node instance、skin joint参照、node world transformを元indexのまま候補化済み。次は選択した候補のgeometry/skinを複数制作対象へ公開し、Objects[0]前提、同名morph、共有参照、編集/保存/Openを解消・検証する |
+| [ ] I04-B / P1 **着手** | 複数mesh/instance/skin、source→制作ID対応 | `GlbSceneInventoryReader`でmesh/primitive数、node instance、skin joint参照、node world transformを元indexのまま候補化し、`GlbImporter.Read(bytes, meshIndex)` と `GlbSourceSkinImporter.Read(bytes, meshIndex, skinIndex)` で指定候補を選択できるようにした。次は選択候補のgeometry/skinを複数制作対象へ公開し、Objects[0]前提、同名morph、共有参照、編集/保存/Openを解消・検証する |
 | [ ] I04-C / P1 | rig/weight/morph容量とcodec/hash/表示/出力 | 257骨・18weight・単一mesh262morph以上の入力を削減なしで往復。byte/メモリ予算と超過時の拒否を同時に決める |
 | [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
 | [ ] I04-E / P1 | 機能report、材質/animation/VRM意味情報/未知拡張の保持とGUI/MCP | 必須未知拡張の拒否、既知VRM内の未保持field、opaque依存資源と参照失効、未対応を完全成功にしない。report設計はAと並行可 |
@@ -62,6 +62,8 @@
 - Windows-SourceGraphDisplay build **PASS** (`Logs/build-player-source-graph-display.txt`、Unity `Logs/build-player-20260912-175730-836.log`)、Player **PASS** (`Artifacts/Authoring-20260912-175754-c5f5eff9c46646e5b075718e7323c699/report.json`)。取込直後と揺れ中の頂点をsource palette結果と比較し、VRM0/1の保存/Open、再利用mesh/object、失敗保護を回帰確認。実マウス操作・任意実素材・画像目視の受入ではない。
 - GLB scene inventory: Core **393 passed / 0 failed** (`Logs/core-scene-inventory.txt`)。複数mesh resource、mesh instanceのnode/mesh/skin元index、nodeのsource-world transform、skin joint順を保持し、mesh/skin/nodeの明示型不正、範囲外参照、重複joint、skin-only nodeを拒否。
 - Windows-SceneInventory build **PASS** (`Logs/build-player-scene-inventory.txt`、Unity `Logs/build-player-20260912-181457-233.log`)、Player **PASS** (`Artifacts/Authoring-20260912-181525-a0ffa6291c3a4931b99fc50b5d49c50e/report.json`)。既存VRM0/1取込・source palette表示・Spring再生・Save/Open・失敗保護を69 checksで回帰確認。inventoryは候補読取の自動検証で、複数対象のWorkbench公開、実マウス操作、任意実素材・画像目視の受入ではない。
+- mesh/skin selection: Core **395 passed / 0 failed** (`Logs/core-mesh-skin-selection.txt`)。multi-mesh GLBを暗黙にmesh 0へ畳み込まず、選択したmeshのgeometry/morphとskinのsource indexを保持し、mesh index付きmorph identity、範囲外index、既存単一mesh APIの拒否を確認。
+- Windows-MeshSelection build **PASS** (`Logs/build-player-mesh-selection.txt`、Unity `Logs/build-player-20260912-182005-738.log`)、Player **PASS** (`Artifacts/Authoring-20260912-182032-0b8589ed3d8a464f93b59c07f52942ff/report.json`)。既存WorkbenchのVRM0/1取込・source palette表示・Spring再生・Save/Open・失敗保護を回帰確認。選択候補の複数graph公開、実マウス操作、任意実素材・画像目視の受入ではない。
 
 - GUI完全source接続: Windows-SourceSkinImport build **PASS** (`Logs/build-player-20260912-170004-544.log`)、Player **PASS** (`Artifacts/Authoring-20260912-170036-ad7444ce32a14d94b4b57c23c2f86ff7/report.json`)。VRM0/1で元GLBとNYFS一致、再生中Save、生成fixtureの原本パスを移動後にOpen、完全payload維持と制作姿勢復元を確認。import失敗保護も合格。実マウス/任意実素材の受入ではない。今回はCore変更なしでCore suiteを再実行していない。
 

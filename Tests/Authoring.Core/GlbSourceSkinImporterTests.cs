@@ -25,6 +25,15 @@ internal static partial class Program
             // Reusing the same accessors intentionally exposes duplicate source slots, which must be diagnosed.
             Expect("DUPLICATE_WEIGHT",()=>GlbSourceSkinImporter.Read(ReplaceJsonChunk(bytes,root.ToString())));
         });
+        Test("GLB source skin importer selects a mesh while retaining the shared source skin", () =>
+        {
+            var root = JObject.Parse(ReadJsonChunk(BuildSkinnedGlb())); var meshes = (JArray)root["meshes"]!; meshes.Add(meshes[0]!.DeepClone());
+            ((JArray)root["nodes"]!).Add(new JObject { ["name"] = "Accessory", ["mesh"] = 1, ["skin"] = 0 });
+            var bytes = ReplaceJsonChunk(BuildSkinnedGlb(), root.ToString(Newtonsoft.Json.Formatting.None));
+            Expect("UNSUPPORTED_FORMAT", () => GlbSourceSkinImporter.Read(bytes));
+            var selected = GlbSourceSkinImporter.Read(bytes, 1, 0); Equal(1, selected.MeshIndex); Equal(0, selected.SkinIndex); Equal(3, selected.MeshSource.Mesh.VertexCount); Equal(3, selected.Binding.Weights.Count);
+            Equal(ChecksHashForTest(bytes), selected.SourceHash); Equal(selected.SourceHash, selected.MeshSource.SourceHash); Equal(selected.SourceHash, selected.Skin.Nodes.SourceHash);
+        });
         Test("GLB source skin importer rejects unpaired, noncontiguous and malformed attribute sets", () =>
         {
             var baseBytes=BuildSkinnedGlb();

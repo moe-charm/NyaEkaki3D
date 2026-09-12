@@ -9,6 +9,8 @@ namespace NyaForge.Authoring.Import
     public sealed class GlbSourceSkinImportResult
     {
         public string SourceHash { get; }
+        public int MeshIndex { get; }
+        public int SkinIndex { get; }
         public ImportedMeshSource MeshSource { get; }
         public SourceSkin Skin { get; }
         public SourceSkinBinding Binding { get; }
@@ -16,7 +18,7 @@ namespace NyaForge.Authoring.Import
         {
             Checks.HashText(sourceHash); Checks.Require(meshSource != null && skin != null && binding != null, "INVALID_IMPORT", "Source skin result is incomplete.");
             Checks.Require(meshSource.SourceHash == sourceHash && skin.Nodes.SourceHash == sourceHash && binding.SourceHash == sourceHash, "INVALID_IMPORT", "Source skin result identities differ.");
-            SourceHash = sourceHash; MeshSource = meshSource; Skin = skin; Binding = binding;
+            SourceHash = sourceHash; MeshIndex = meshSource.MeshIndex; SkinIndex = skin.SkinIndex; MeshSource = meshSource; Skin = skin; Binding = binding;
         }
     }
 
@@ -25,9 +27,21 @@ namespace NyaForge.Authoring.Import
     {
         public static GlbSourceSkinImportResult Read(byte[] bytes, int skinIndex = 0)
         {
-            var document = GlbDocumentReader.Read(bytes);
+            var document = GlbDocumentReader.Read(bytes); var meshes = Array(document.Root, "meshes");
+            Checks.Require(meshes.Count == 1 && meshes[0] is JObject, "UNSUPPORTED_FORMAT", "Source skin candidate imports one mesh at a time; select a mesh explicitly for a multi-mesh GLB.");
+            return Read(document, 0, skinIndex);
+        }
+
+        /// <summary>Reads one mesh and one skin by their source indices without collapsing a multi-mesh GLB.</summary>
+        public static GlbSourceSkinImportResult Read(byte[] bytes, int meshIndex, int skinIndex)
+        {
+            return Read(GlbDocumentReader.Read(bytes), meshIndex, skinIndex);
+        }
+
+        static GlbSourceSkinImportResult Read(GlbDocument document, int meshIndex, int skinIndex)
+        {
             var root = document.Root; var meshes = Array(root, "meshes");
-            Checks.Require(meshes.Count == 1 && meshes[0] is JObject, "UNSUPPORTED_FORMAT", "Source skin candidate imports one mesh at a time.");
+            Checks.Require(meshIndex >= 0 && meshIndex < meshes.Count && meshes[meshIndex] is JObject, "INVALID_IMPORT", "Source skin mesh index is out of range.");
             var buffers = Array(root, "buffers"); Checks.Require(buffers.Count == 1 && buffers[0] is JObject, "UNSUPPORTED_FORMAT", "Source skin candidate requires one embedded buffer.");
             var buffer = (JObject)buffers[0]; Checks.Require(buffer["uri"] == null && buffer["extensions"] == null, "UNSUPPORTED_FORMAT", "Source skin candidate requires the embedded GLB buffer.");
             int bufferLength = Integer(buffer["byteLength"], 1, AuthoringLimits.MaxBlobBytes, "buffer byteLength");
@@ -35,21 +49,21 @@ namespace NyaForge.Authoring.Import
             var skins = Array(root, "skins"); Checks.Require(skinIndex >= 0 && skinIndex < skins.Count, "INVALID_IMPORT", "Source skin index is missing.");
             var skin = GlbSourceSkinReader.Read(document, GlbNodeTransformReader.Read(root["nodes"] as JArray, document.SourceHash), skinIndex);
             var staticRoot = (JObject)root.DeepClone(); staticRoot.Remove("skins");
-            var staticMesh = (JObject)((JArray)staticRoot["meshes"])[0];
+            var staticMesh = (JObject)((JArray)staticRoot["meshes"])[meshIndex];
             foreach (var token in (JArray)staticMesh["primitives"])
             {
                 var primitive = token as JObject; Checks.Require(primitive != null, "INVALID_IMPORT", "Source primitive is invalid.");
                 var attributes = primitive["attributes"] as JObject; Checks.Require(attributes != null, "INVALID_IMPORT", "Source primitive attributes are required.");
                 foreach (var property in attributes.Properties().Where(p => p.Name.StartsWith("JOINTS_", StringComparison.Ordinal) || p.Name.StartsWith("WEIGHTS_", StringComparison.Ordinal)).ToArray()) property.Remove();
             }
-            var meshSource = GlbImporter.ReadDocument(new GlbDocument(staticRoot, document.Bin, document.SourceHash));
-            var binding = ReadWeights(document, skin, meshSource.Mesh, bufferLength);
+            var meshSource = GlbImporter.ReadDocument(new GlbDocument(staticRoot, document.Bin, document.SourceHash), meshIndex);
+            var binding = ReadWeights(document, skin, meshSource.Mesh, bufferLength, meshIndex);
             return new GlbSourceSkinImportResult(document.SourceHash, meshSource, skin, binding);
         }
 
-        static SourceSkinBinding ReadWeights(GlbDocument document, SourceSkin skin, MeshData mesh, int bufferLength)
+        static SourceSkinBinding ReadWeights(GlbDocument document, SourceSkin skin, MeshData mesh, int bufferLength, int meshIndex)
         {
-            var root = document.Root; var meshes = Array(root, "meshes"); var meshToken = (JObject)meshes[0]; var primitives = Array(meshToken, "primitives");
+            var root = document.Root; var meshes = Array(root, "meshes"); Checks.Require(meshIndex >= 0 && meshIndex < meshes.Count, "INVALID_IMPORT", "Source skin mesh index is out of range."); var meshToken = (JObject)meshes[meshIndex]; var primitives = Array(meshToken, "primitives");
             var accessors = Array(root, "accessors"); var views = Array(root, "bufferViews"); var result = new List<SourceSkinWeight>(); int vertexOffset = 0;
             for (int p = 0; p < primitives.Count; p++)
             {
