@@ -1,3 +1,17 @@
+# 2026-09-13 feedback recheck (`0d1e957`)
+
+提示されたレビュー（基準 `0d1e957`）を現行HEAD `51eb4af`へ再照合し、Coreを再実行した。結果は **461 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4aec0876bd0c47cbb63c11a58443b069`）。5件のP1は重複実装せず、次の対応を現行の正として記録する。
+
+| 指摘 | 現行対応 | 回帰・残る境界 |
+| --- | --- | --- |
+| 複数モデル後のSave/Openで情報が混ざる | rig、expression、springをgraphId単位のsession tableへ保存し、旧single attachmentはgraphIdへ移行する | 異なるskeletonの自動結合、共有mesh/skin/morph参照は未対応 |
+| source skinの二重変形／下流編集消失 | `SkinDeform`入力位置へsource paletteを差し替えてgraphを再評価し、EditMesh/Morph/材質/Outputを同じ順序で保持 | 実アバターの自動fit・貫通とVRChat内見た目は未受入 |
+| skinned node affineの二重適用 | skinned表示と標準GLB出力はjoint world frame＋保持したinverse-bindを正本にし、mesh node affineは監査metadataだけにする | 任意GLBの全node意味保存は未完了 |
+| 出力時のinverse-bind欠落 | sourceの一般inverse-bind行列をnative rig sessionから標準／拡張skinned GLB writerへ渡す。scale・回転を含む行列回帰を維持 | 実Unity/VRChat receiverでの拡張profile受入は未確認 |
+| 装着後のクリック判定ずれ | 描画・Frame・選択判定をroot変換後の`WorldPoints`で統一し、ローカル点とは分離する | 実マウス、DPI差の受入は未実施 |
+
+列挙されたP2（linear `baseColorFactor`／metallic既定値、局所material slot、装着先選択保持、PhysBones source hash、揺れUndo revision、GLB共通root・morph境界、normal/tangent morph変換）も現行回帰で閉じている。埋め込みbase-color画像はnative Paintへ縮小保持し、Save/Openと標準skinned GLB再取込まで確認済み。完全な外部texture・animation・VRM拡張保持、実VRChat SDK/PhysBones受入は引き続き別タスクとする。
+
 # 2026-09-13 embedded base-color GLB output recheck
 
 実RadDollV3で、native Paintへ縮小保持した埋め込みbase-color画像が標準skinned GLB出力で失われないことを追加確認した。出力GLBをskin importerで再読込し、画像付きmaterialが存在することを検証している。Coreは直前の **461 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a7b92fd3fb184402a46aef4f4dfa676c`）を正とする。Windows Player `Builds/MaterialResizeV3/NyaForge.exe` のAuthoring **80 checks PASS**（`Artifacts/Authoring-20260913-082925-87045e69ee724ec791289be206d54dbe/report.json`）、Unity **2022.3.22f1** Bridge **PASS**（`Artifacts/BridgeReceiver-20260913-083342-809-9f1c2a45fffe418e81ce36a04541093f/bridge-report.json`）。

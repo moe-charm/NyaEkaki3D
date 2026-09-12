@@ -1,3 +1,11 @@
+# 2026-09-13 feedback recheck (`0d1e957`)
+
+The supplied review was checked against current `main` at `51eb4af`. Core was rerun with **461 passed / 0 failed** (`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4aec0876bd0c47cbb63c11a58443b069`). The five P1 findings are already covered by later changes: graphId-keyed rig/expression/spring session tables prevent metadata from one imported object being applied to another; source skin is injected at the `SkinDeform` input and the graph is reevaluated so downstream edits are preserved; skinned node affine is audit metadata rather than a second display/export transform; retained general inverse-bind matrices are passed to both skinned GLB writers; and attachment projection exposes transformed `WorldPoints` for picking and framing.
+
+The listed P2 findings are also covered by current regression paths: linear glTF material factors and the metallic default, per-slot material routing, attachment choice retention, pinned PhysBones source assets, secondary-motion Undo/revision handling, morph boundary output, and normal/tangent morph conversion. Embedded base-color images are now owned by native Paint, survive Save/Open, and are retained in standard skinned GLB output within the documented image budget.
+
+This receipt does not claim acceptance for different-skeleton merge, shared mesh/skin/morph references, complete external texture or animation/VRM-extension retention, real VRChat SDK/PhysBones behavior, real mouse/DPI differences, or in-avatar visual acceptance.
+
 # 2026-09-13 embedded base-color GLB output recheck
 
 The real RadDollV3 smoke now re-imports the standard skinned GLB and verifies that its material inventory still contains embedded base-color images retained by native Paint. `Builds/MaterialResizeV3/NyaForge.exe` passed **80 Authoring checks** (`Artifacts/Authoring-20260913-082925-87045e69ee724ec791289be206d54dbe/report.json`); Unity **2022.3.22f1** Bridge passed (`Artifacts/BridgeReceiver-20260913-083342-809-9f1c2a45fffe418e81ce36a04541093f/bridge-report.json`). This covers image retention through import, native Save/Open, and standard skinned GLB output/re-import. It does not cover non-base-color maps, animation, VRM extensions, or real VRChat acceptance.
