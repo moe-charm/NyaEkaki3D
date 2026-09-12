@@ -31,6 +31,15 @@ internal static partial class Program
                 Near(eightWeights[i].Weight, sixteenWeights[i].Weight);
             }
         });
+        Test("GLB skin importers decode normalized integer weights", () =>
+        {
+            var bytes = BuildSkinnedGlb(false, true);
+            var source = GlbSourceSkinImporter.Read(bytes);
+            var skin = GlbSkinImporter.Read(bytes);
+            Near(1f, source.Binding.Weights[0].Single().Weight);
+            Near(.5f, source.Binding.Weights[1].Single(weight => weight.JointSlot == 0).Weight);
+            Near(.5f, skin.Binding.Weights[1].First(weight => weight.BoneId != skin.Binding.Weights[0][0].BoneId).Weight);
+        });
         Test("GLB source skin importer finds paired JOINTS_1 and WEIGHTS_1", () =>
         {
             var bytes = BuildSkinnedGlb(); var root=JObject.Parse(ReadJsonChunk(bytes));

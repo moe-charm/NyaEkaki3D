@@ -102,7 +102,7 @@ namespace NyaForge.Authoring.Import
                 Checks.Require(attributes["JOINTS_1"] == null && attributes["WEIGHTS_1"] == null, "UNSUPPORTED_FORMAT", "Only one four-influence skin set is supported.");
                 int positionCount = AccessorCount(Array(root, "accessors"), IntProperty(attributes, "POSITION", 0, int.MaxValue, "POSITION"));
                 var jointValues = ReadJointVectors(Array(root, "accessors"), Array(root, "bufferViews"), document.Bin, IntProperty(attributes, "JOINTS_0", 0, int.MaxValue, "JOINTS_0"));
-                var weightValues = ReadFloatVectors(Array(root, "accessors"), Array(root, "bufferViews"), document.Bin, IntProperty(attributes, "WEIGHTS_0", 0, int.MaxValue, "WEIGHTS_0"), "VEC4", "weights");
+                var weightValues = ReadWeightVectors(Array(root, "accessors"), Array(root, "bufferViews"), document.Bin, IntProperty(attributes, "WEIGHTS_0", 0, int.MaxValue, "WEIGHTS_0"), "weights");
                 Checks.Require(jointValues.Length == positionCount && weightValues.Length == positionCount, "INVALID_IMPORT", "Skin attribute count differs from POSITION.");
                 for (int v = 0; v < positionCount; v++)
                     for (int i = 0; i < 4; i++) if (weightValues[v][i] > 0) { Checks.Require(jointValues[v][i] < jointNodes.Length, "INVALID_IMPORT", "Skin joint index is outside the skin."); rawWeights.Add(new SkinBinding.VertexWeightInput(vertexOffset + v, jointToBone.BoneIds[jointValues[v][i]], weightValues[v][i])); }
@@ -185,6 +185,31 @@ namespace NyaForge.Authoring.Import
         {
             var accessor = Accessor(accessors, id, type, new[] { 5126 }); int components = type == "VEC4" ? 4 : type == "MAT4" ? 16 : 0; int count = Count(accessor, AuthoringLimits.MaxVertices); int viewId = IntProperty(accessor, "bufferView", 0, views.Count - 1, "bufferView"); var view = (JObject)views[viewId]; int viewOffset = IntOptional(view, "byteOffset"), accessorOffset = IntOptional(accessor, "byteOffset"), stride = view["byteStride"] == null ? components * 4 : IntProperty(view, "byteStride", components * 4, 4096, "byteStride"); ValidateRange(viewOffset, accessorOffset, stride, count, components * 4, IntProperty(view, "byteLength", 0, bin.Length, "byteLength"), bin.Length, label);
             var result = new float[count][]; for (int i = 0; i < count; i++) { result[i] = new float[components]; for (int c = 0; c < components; c++) { result[i][c] = BitConverter.ToSingle(bin, viewOffset + accessorOffset + i * stride + c * 4); Checks.Finite(result[i][c]); } } return result;
+        }
+
+        static float[][] ReadWeightVectors(JArray accessors, JArray views, byte[] bin, int id, string label)
+        {
+            var accessor = Accessor(accessors, id, "VEC4", new[] { 5121, 5123, 5126 });
+            int type = IntProperty(accessor, "componentType", 0, int.MaxValue, "componentType");
+            bool normalized = accessor["normalized"] != null && (bool)accessor["normalized"];
+            Checks.Require(type == 5126 ? !normalized : normalized, "UNSUPPORTED_FORMAT", label + " integer weights must be normalized (float weights must not be normalized).");
+            int width = type == 5121 ? 1 : type == 5123 ? 2 : 4;
+            int count = Count(accessor, AuthoringLimits.MaxVertices), viewId = IntProperty(accessor, "bufferView", 0, views.Count - 1, "bufferView");
+            var view = (JObject)views[viewId]; int viewOffset = IntOptional(view, "byteOffset"), accessorOffset = IntOptional(accessor, "byteOffset");
+            int stride = view["byteStride"] == null ? width * 4 : IntProperty(view, "byteStride", width * 4, 4096, "byteStride");
+            ValidateRange(viewOffset, accessorOffset, stride, count, width * 4, IntProperty(view, "byteLength", 0, bin.Length, "byteLength"), bin.Length, label);
+            var result = new float[count][];
+            for (int i = 0; i < count; i++)
+            {
+                result[i] = new float[4];
+                for (int c = 0; c < 4; c++)
+                {
+                    int offset = viewOffset + accessorOffset + i * stride + c * width;
+                    result[i][c] = type == 5126 ? BitConverter.ToSingle(bin, offset) : (type == 5121 ? bin[offset] / 255f : BitConverter.ToUInt16(bin, offset) / 65535f);
+                    Checks.Finite(result[i][c]);
+                }
+            }
+            return result;
         }
 
         static void ValidateTranslationMatrix(float[] m, string label)

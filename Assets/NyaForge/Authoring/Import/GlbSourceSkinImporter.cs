@@ -115,8 +115,26 @@ namespace NyaForge.Authoring.Import
 
         static float[][] ReadWeights(JArray accessors, JArray views, byte[] bin, int bufferLength, int id, int expected, string label)
         {
-            var accessor = Accessor(accessors, id, "VEC4", new[] {5126}, label); var data = ReadRaw(accessor, views, bin, bufferLength, 16, expected, label);
-            var result = new float[expected][]; for (int row = 0; row < expected; row++) { result[row] = new float[4]; for (int i = 0; i < 4; i++) result[row][i] = BitConverter.ToSingle(data[row], i * 4); }
+            var accessor = Accessor(accessors, id, "VEC4", new[] {5121, 5123, 5126}, label);
+            int componentType = Integer(accessor["componentType"], 5121, 5126, label + " componentType");
+            Checks.Require(componentType == 5121 || componentType == 5123 || componentType == 5126, "UNSUPPORTED_FORMAT", label + " componentType is unsupported.");
+            var normalized = accessor["normalized"];
+            bool isNormalized = normalized != null && normalized.Type == JTokenType.Boolean && (bool)normalized;
+            Checks.Require(normalized == null || normalized.Type == JTokenType.Boolean, "INVALID_IMPORT", label + " normalized must be a boolean.");
+            Checks.Require(componentType == 5126 ? !isNormalized : isNormalized, "UNSUPPORTED_FORMAT", label + " integer weights must be normalized (float weights must not be normalized).");
+            int width = componentType == 5121 ? 1 : componentType == 5123 ? 2 : 4;
+            var data = ReadRaw(accessor, views, bin, bufferLength, width * 4, expected, label);
+            var result = new float[expected][];
+            for (int row = 0; row < expected; row++)
+            {
+                result[row] = new float[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    int offset = i * width;
+                    result[row][i] = componentType == 5126 ? BitConverter.ToSingle(data[row], offset) : componentType == 5121 ? data[row][offset] / 255f : (data[row][offset] | data[row][offset + 1] << 8) / 65535f;
+                    Checks.Finite(result[row][i]);
+                }
+            }
             return result;
         }
 
@@ -130,7 +148,7 @@ namespace NyaForge.Authoring.Import
             Checks.Require(Integer(view["buffer"], 0, 0, label + " buffer") == 0, "INVALID_IMPORT", label + " buffer reference is invalid.");
             int viewOffset = OptionalInteger(view["byteOffset"], label + " view offset"), accessorOffset = OptionalInteger(accessor["byteOffset"], label + " accessor offset");
             int stride = view["byteStride"] == null ? elementBytes : Integer(view["byteStride"], elementBytes, 252, label + " stride"); int viewLength = Integer(view["byteLength"], 1, AuthoringLimits.MaxGlbImportBytes, label + " view length");
-            int component = Integer(accessor["componentType"], 0, int.MaxValue, label + " componentType"); int componentWidth = (component == 5121 || component == 5126) ? 1 : 2;
+            int component = Integer(accessor["componentType"], 0, int.MaxValue, label + " componentType"); int componentWidth = component == 5121 ? 1 : component == 5123 ? 2 : 4;
             Checks.Require(stride % 4 == 0 && accessorOffset % componentWidth == 0 && ((long)viewOffset + accessorOffset) % 4 == 0 && (long)viewOffset + viewLength <= bufferLength &&
                 (long)accessorOffset + (long)(expected - 1) * stride + elementBytes <= viewLength, "INVALID_IMPORT", label + " range or alignment is invalid.");
             var result = new byte[expected][]; for (int row = 0; row < expected; row++) { result[row] = new byte[elementBytes]; Buffer.BlockCopy(bin, checked(viewOffset + accessorOffset + row * stride), result[row], 0, elementBytes); }
