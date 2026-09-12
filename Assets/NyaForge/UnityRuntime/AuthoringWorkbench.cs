@@ -37,7 +37,7 @@ namespace NyaForge.UnityRuntime
         Quaternion orbit = Quaternion.Euler(0, 180, 0);
         float distance = .24f;
 
-        bool HasUnsaved => workspace != null && workspace.IsDirty;
+        bool HasUnsaved => workspace != null && (workspace.IsDirty || saveIncomplete);
         public bool IsOpen => active;
 
         void Awake() { Application.wantsToQuit += WantsToQuit; }
@@ -347,7 +347,7 @@ namespace NyaForge.UnityRuntime
             if (!active) reopen?.Invoke();
             confirmRow.Clear(); confirmRow.style.display = DisplayStyle.Flex;
             confirmRow.Add(new Label("制作データに未保存の変更があります。終了方法を選んでください。"));
-            confirmRow.Add(Button("保存して終了", () => { SaveProject(); if (!HasUnsaved) { allowQuit = true; Application.Quit(); } }, "authoring-save-quit"));
+            confirmRow.Add(Button("保存して終了", () => { if (TrySaveForExit()) { allowQuit = true; Application.Quit(); } }, "authoring-save-quit"));
             confirmRow.Add(Button("変更を破棄して終了", () => { allowQuit = true; Application.Quit(); }, "authoring-discard-quit"));
             confirmRow.Add(Button("キャンセル", () => confirmRow.style.display = DisplayStyle.None, "authoring-cancel-quit"));
             controls.schedule.Execute(() => controls.ScrollTo(confirmRow));

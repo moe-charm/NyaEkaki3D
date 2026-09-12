@@ -151,6 +151,7 @@ namespace NyaForge.UnityRuntime
                 controls.scrollOffset = Vector2.zero;
                 checks.Add("Save As creates a new project; unsaved exit guard; Undo returns to saved state");
                 VerifyGraphProjection(output, checks);
+                VerifySaveFailureGuard(output, checks);
                 VerifyGraphExports(output, checks, graphExports);
                 TopologyVerification.Verify(output, checks);
                 RigGraphVerification.Verify(output, checks);

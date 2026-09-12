@@ -37,25 +37,13 @@ namespace NyaForge.UnityRuntime
             ClearImportedVrmExpressions();
             ClearImportedVrmSpring();
             workspace = next; commands = new AuthoringCommandService(workspace);
+            saveIncomplete = false;
             savedDirectory = loadedPath == null ? null : Path.GetFullPath(loadedPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             projectPath.SetValueWithoutNotify(loadedPath ?? Path.Combine(Application.persistentDataPath, "Authoring", "Project-" + Guid.NewGuid().ToString("N").Substring(0, 8)));
             Select(projection.Points.Length == 0 ? Array.Empty<int>() : new[] { 0 }); Frame(); Refresh();
             SetStatus(loadedPath == null ? "新しい制作プロジェクトです。形を追加して始めてください。" : "制作状態を開きました。ここから新しい履歴を始めます。旧形式は別フォルダへ保存してください。");
         }
 
-
-        void SaveProject() => Try(() =>
-        {
-            var directory = Path.GetFullPath(projectPath.value).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            // A new destination starts at version zero; existing destinations must be opened first.
-            long expectedVersion = string.Equals(directory, savedDirectory, StringComparison.OrdinalIgnoreCase) ? workspace.SaveVersion : 0;
-            ProjectStore.Save(directory, workspace, expectedVersion);
-            VrmExpressionSessionStore.Save(directory, importedVrmSession);
-            VrmSpringSessionStore.Save(directory, importedVrmSpringSession);
-            graphCanvas.SaveLayout();
-            savedDirectory = directory;
-            Refresh(); SetStatus("保存しました: " + directory);
-        });
 
         void OpenProject()
         {

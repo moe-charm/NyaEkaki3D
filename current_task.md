@@ -10,9 +10,9 @@
 
 ## 最優先: 実装レビューの修正タスク（2026-09-12）
 
-ユーザー依頼「ここまでチェック」「チェック後current_task更新してタスク化」に対応。本番ソースは変更せず、レビューとタスク化まで実施した。詳細な再現条件、対象行、完了条件、証拠は [Rig / VRMレビュー](docs/reviews/2026-09-12-Rig-Vrm-Review.md) を参照する。以下はすべて**未着手**であり、レビュー完了と修正完了を区別する。
+ユーザー依頼「ここまでチェック」「チェック後current_task更新してタスク化」に対応したレビューを起点に修正を進める。詳細な再現条件、対象行、完了条件、証拠は [Rig / VRMレビュー](docs/reviews/2026-09-12-Rig-Vrm-Review.md) を参照する。現在R03が**進行中**、他は未着手。チェックは各タスクの全完了条件を満たしたときだけ付ける。
 
-- [ ] **R03 / P1 — 保存全体の成功判定と失敗時の保護**。project保存後にsidecar保存が失敗してもdirtyが解除される問題を直す。manifestとVRM設定の整合性、旧保存の復旧、Save As再試行、保存失敗時に終了しないことまで検証する。最初に着手。
+- [ ] **R03 / P1 — 保存全体の成功判定と失敗時の保護（進行中）**。Windows GUIの保存失敗後の未保存表示・終了防止・Save As再試行を修正しPlayer検証済み。manifestとVRM設定を一組で公開・復旧する保存transaction、Core/MCPからの保存を含む整合性保護は未完了。
 - [ ] **R01 / P1 — VRM1 authors配列**。文字列として扱うreaderと誤ったfixtureを修正する。複数作者をimportからsession保存・再読込まで保持し、既存形式の移行も定める。
 - [ ] **R02 / P1 — 同一nodeの複数コライダーの往復**。`nodes:[0,0]`を重複禁止readerで拒否する問題を直す。順序・件数を保持し、VRM0/1のimport→Save→Openを確認する。
 - [ ] **R09 / P2 — VRM1 SpringBoneの既定値**。省略stiffness/dragForceを1.0/0.5にし、明示0と区別する。session再読込でも一致させる。
@@ -28,6 +28,14 @@
 再開順: **R03 → R01/R02/R09 → R04/R05/R06/R07/R08**、R10は各修正へ同梱する。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
 
 修正後は、未保持のgravityDir・collider shape値と保存移行を含むVRM入力契約を整え、node→stable BoneId、preview接続へ進む。一般node transform、skin/morph出力、実アバター受入、C1〜C5の全体目標は維持する。
+
+### R03前段: Windows GUIの保存失敗保護（2026-09-12）
+
+- 保存の呼出しと成否判定を`AuthoringWorkbench.Saving.cs`へ分離した。保存全工程の成功をboolで返し、失敗後はWorkbenchの`saveIncomplete`を保持して未保存表示と終了／作品切替の確認を維持する。「保存して終了」は保存成功の明示結果を必須にした。
+- 本体が保存できた時点でGUIの保存先も更新し、付属設定が失敗したSave Asの再試行に正しい保存versionを使う。再試行成功か、ユーザーが確認して作品を切り替えるまで失敗状態を解除しない。
+- `AuthoringWorkbench.SaveFailureVerification.cs`で、専用fixtureのexpression / Spring sidecarを排他ロックして削除失敗を起こした。main保存後にも終了・無確認切替を拒否し、ロック解除後にversion 2へ保存でき、Openも成功することをPlayerで検証した。実マウスクリックではなく終了ボタンが使う判定関数の検証。
+- Windows-SaveFailureGuard build **PASS**: `Logs/build-player-20260912-131616-600.log`。Authoring suite **PASS**: `Artifacts/Authoring-20260912-131645-43dcd4028e8c4f72988dd960d8e5a921/report.json`。専用の`Save failure guard` checkが成功している。本変更はUnityRuntimeのみのためCore/Bridgeの新規実行は行っていない。
+- **残件**: この保護はGUIの終了・再試行に対するもの。本体の`workspace.IsDirty`や既存manifestとsidecarの途中状態を原子的に戻す仕組みではなく、プロセス異常終了やCore/MCP保存の整合性までは解決しない。次は設定のimmutable blob化とmanifestによる一括公開等を検討し、既存sidecarの読込互換・移行、writer lock、Save As、途中失敗の旧作品復旧を共通保存coordinatorで実装する。R03は未完了のまま維持する。
 
 ## 出力予算検証 `forge_validate`（2026-09-12）
 
