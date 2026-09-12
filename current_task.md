@@ -4,6 +4,8 @@
 
 ## 開発の入口
 
+今回のSIM-02B実装では、receiver GUIの保存・読込・適用前に`PhysBonesBindingValidator`を通す。必要stable BoneId／collider groupの欠落、avatar root外、重複Transform、空groupを共通診断し、vendor SDKの型判断はbackendへ委譲する。
+
 作業先: `Z:/TextureVoice_local/git/NyaForge`。Windows先行、macOSは将来。
 読む順: このファイル → [モデル交換仕様](docs/Model-Interchange-Spec.md) → [実素材調査](docs/Real-Asset-Import-Plan.md) → 対象コード。製品全体の範囲は [開発計画](docs/Development-Plan.md) と [設計v2](docs/NyaForge-Authoring-Design2.md) を参照。[文書一覧](docs/README.md)参照。
 製品目標は小物の制作・出力を一周し、低ポリ全身キャラ、品質向上へ進むこと。設計v2は製品方針、v1は背景資料。設計中の外部依存・機能は採用済みや実装済みを意味しない。
@@ -52,6 +54,8 @@
 | [ ] SIM-06 / P2 | BoneSpringとUnityアプリ向け出力 | BoneSpring fixtureの保存・再構築と、Magica用profileの依存不足診断・版照合・再出力を確認 |
 | [ ] SIM-07A / P1 | PhysBones target受入 | SIM-02B＋SIM-03A/B後。同じ髪束でroot移動・停止・旋回・pose・colliderを受入し、対応SDK／受取Unity／VRChat内の結果を別々に記録 |
 
+SIM-02Bのbinding validationは実装済み。次は対象SDKの版・完全修飾型を固定し、実componentの生成／更新を同じ明示mappingで確認する。
+
 実行順は **SIM-01B残り → SIM-02B → SIM-07A**（SIM-03A/03Bは完了）。SIM-01BはI04-Aと並行し、SIM-04〜06は主経路の受入を置換しない。C2の必須は選んだ出力先で髪束1本が動くこと。Magica導入時の購入・vendorソース取得／配布はこのタスク化では実行せず、public repoには自作adapter・fixture・設定schemaだけを置く。
 
 ### 既存工程
@@ -94,6 +98,8 @@
 - SIM-02B receiver regression: 最新Player出力を `Tools/Test-NyaForgeUnityBridge.ps1` へ接続し、Unity **2022.3.22f1** receiver **PASS**（`Artifacts/BridgeReceiver-20260912-213134-704-b2d9a3661628485d88bca9c1b40e0c19/bridge-report.json`）。PhysBonesのmanaged-only、未管理component保護、capability不足の事前停止、reflection field mapping、branch preflight、binding identity確認を回帰した。これは合成fixture受入であり、実VRChat SDK／実アバター／VRChat内動作ではない。
 - SIM-02B receiver regression (RebindGui5): 最新Player成果物を同じBridge検証へ接続し、Unity **2022.3.22f1** receiver **PASS**（`Artifacts/BridgeReceiver-20260912-215208-952-9086fd84d8f541499ee8873c5e073a99/bridge-report.json`）。GUI再bind追加後もmanaged-only、未管理component保護、capability preflight、reflection mapping、branch preflight、binding identityを維持した。これは合成fixture受入であり、実VRChat SDK／実アバター／VRChat内動作ではない。
 - SIM-02B reflection catalog regression: Unity **2022.3.22f1** receiver **PASS**（`Artifacts/BridgeReceiver-20260912-220031-153-b6d83d0cd2ef48ba94dc95e896ab488e/bridge-report.json`）。別component型のmarker干渉を分離したうえで、継承元private fieldを含むreflection discovery、package apply、managed-only、rollbackを確認した。これはSDK形状fixtureの受入であり、実VRChat SDK／実アバター／VRChat内動作ではない。
+- SIM-02B binding validation: Unity **2022.3.22f1** receiverで`PhysBonesBindingValidator`の有効なdescendant mapping、root外bone、不足collider groupを確認した。保存／読込／適用前の共通検証としてGUIへ接続済み。これは合成fixtureの受入であり、実VRChat SDK／実アバター／VRChat内動作ではない。
+- SIM-02B binding validation checkpoint: Windows Player build **PASS**（`Logs/build-player-20260912-220850-504.log`）、Player **PASS**（`Artifacts/Authoring-20260912-220901-ad5f61277a8d434a822f0ea09c3c2f43/report.json`）。同成果物をUnity **2022.3.22f1** receiverへ渡し、**10 checks PASS**（`Artifacts/BridgeReceiver-20260912-220932-900-7db78aa674cd4198849405029fd7accb/bridge-report.json`）。validatorの有効mapping、root外bone、不足collider groupを回帰した。これは合成fixtureの受入であり、実VRChat SDK／実アバター／VRChat内動作ではない。
 
 - GUI完全source接続: Windows-SourceSkinImport build **PASS** (`Logs/build-player-20260912-170004-544.log`)、Player **PASS** (`Artifacts/Authoring-20260912-170036-ad7444ce32a14d94b4b57c23c2f86ff7/report.json`)。VRM0/1で元GLBとNYFS一致、再生中Save、生成fixtureの原本パスを移動後にOpen、完全payload維持と制作姿勢復元を確認。import失敗保護も合格。実マウス/任意実素材の受入ではない。今回はCore変更なしでCore suiteを再実行していない。
 

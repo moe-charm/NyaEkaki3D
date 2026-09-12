@@ -189,6 +189,31 @@ namespace NyaForge.UnityBridge.Editor
                 child.transform.SetParent(avatar.transform, false);
                 var collider = avatar.AddComponent<BoxCollider>();
                 string rootId = Guid.NewGuid().ToString("D"), childId = Guid.NewGuid().ToString("D");
+                var validMapping = PhysBonesBindingValidator.Validate(avatar.transform,
+                    new[]
+                    {
+                        new KeyValuePair<string, Transform>(childId, child.transform),
+                        new KeyValuePair<string, Transform>(rootId, avatar.transform)
+                    },
+                    new[] { new KeyValuePair<int, IEnumerable<Component>>(3, new Component[] { collider }) },
+                    new[] { rootId, childId }, new[] { 3 });
+                Require(validMapping.IsValid, "PhysBones binding validator rejected a valid descendant mapping.");
+                var outside = new GameObject("NyaForge PhysBones binding outside fixture");
+                try
+                {
+                    var invalidMapping = PhysBonesBindingValidator.Validate(avatar.transform,
+                        new[]
+                        {
+                            new KeyValuePair<string, Transform>(rootId, avatar.transform),
+                            new KeyValuePair<string, Transform>(childId, outside.transform)
+                        },
+                        Array.Empty<KeyValuePair<int, IEnumerable<Component>>>(),
+                        new[] { rootId, childId }, new[] { 3 });
+                    Require(!invalidMapping.IsValid && invalidMapping.Errors.Any(error => error.Contains("outside the avatar root"))
+                        && invalidMapping.Errors.Any(error => error.Contains("collider group is missing")),
+                        "PhysBones binding validator did not reject an outside transform and missing collider group.");
+                }
+                finally { Object.DestroyImmediate(outside); }
                 var binding = (NyaForgePhysBonesBinding)Undo.AddComponent(avatar, typeof(NyaForgePhysBonesBinding));
                 binding.Capture("exports/physbones/test.json", "manifest-hash", "vrchat.physbones", "verification-sdk",
                     "profile-hash", "skeleton-hash",

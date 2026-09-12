@@ -133,13 +133,13 @@ namespace NyaForge.UnityBridge.Editor
             }
             EditorGUILayout.EndHorizontal();
 
-            bool ready = avatarRoot != null && RequiredBones().All(bone => boneBindings.ContainsKey(bone.BoneId) && boneBindings[bone.BoneId] != null)
-                && groups.All(group => colliderBindings.ContainsKey(group) && colliderBindings[group].Any(component => component != null));
+            var validation = ValidateCurrentBindings();
+            bool ready = validation.IsValid;
             using (new EditorGUI.DisabledScope(!ready))
             {
                 if (GUILayout.Button(managedOnly ? "管理対象へ更新" : "PhysBones componentを作成／更新", GUILayout.Height(32))) ApplyPackage();
             }
-            if (!ready) EditorGUILayout.HelpBox("Avatar root、stable bone、collider group（参照時）をすべて指定してください。", MessageType.Warning);
+            if (!ready) EditorGUILayout.HelpBox("割当を保存／適用できません: " + validation.Summary, MessageType.Warning);
             if (!string.IsNullOrEmpty(status)) EditorGUILayout.HelpBox(status, statusType);
         }
 
@@ -183,10 +183,21 @@ namespace NyaForge.UnityBridge.Editor
 
         bool readyForBinding()
         {
-            if (package == null || avatarRoot == null) return false;
-            var groups = RequiredColliderGroups().ToArray();
-            return RequiredBones().All(bone => boneBindings.ContainsKey(bone.BoneId) && boneBindings[bone.BoneId] != null)
-                && groups.All(group => colliderBindings.ContainsKey(group) && colliderBindings[group].Any(component => component != null));
+            return ValidateCurrentBindings().IsValid;
+        }
+
+        PhysBonesBindingValidationResult ValidateCurrentBindings()
+        {
+            if (package == null || avatarRoot == null)
+                return PhysBonesBindingValidator.Validate(avatarRoot, boneBindings, ColliderBindingsForValidation());
+            return PhysBonesBindingValidator.Validate(avatarRoot, boneBindings, ColliderBindingsForValidation(),
+                RequiredBones().Select(bone => bone.BoneId), RequiredColliderGroups());
+        }
+
+        IEnumerable<KeyValuePair<int, IEnumerable<Component>>> ColliderBindingsForValidation()
+        {
+            foreach (var pair in colliderBindings)
+                yield return new KeyValuePair<int, IEnumerable<Component>>(pair.Key, pair.Value);
         }
 
         void SaveBindings()
@@ -194,6 +205,8 @@ namespace NyaForge.UnityBridge.Editor
             try
             {
                 if (!readyForBinding()) throw new InvalidOperationException("完全なstable bone／collider group割当が必要です。");
+                PhysBonesBindingValidator.RequireValid(avatarRoot, boneBindings, ColliderBindingsForValidation(),
+                    RequiredBones().Select(bone => bone.BoneId), RequiredColliderGroups());
                 if (binding == null) binding = (NyaForgePhysBonesBinding)Undo.AddComponent(avatarRoot.gameObject, typeof(NyaForgePhysBonesBinding));
                 var groups = colliderBindings.Select(pair => new KeyValuePair<int, IEnumerable<Component>>(pair.Key, pair.Value));
                 binding.Capture(manifestPath, package.ManifestHash, package.Target.TargetId, package.Target.SdkVersion,
@@ -231,6 +244,8 @@ namespace NyaForge.UnityBridge.Editor
                     if (group == null) continue;
                     colliderBindings[group.GroupIndex] = group.Colliders.Where(component => component != null).ToList();
                 }
+                PhysBonesBindingValidator.RequireValid(avatarRoot, boneBindings, ColliderBindingsForValidation(),
+                    RequiredBones().Select(bone => bone.BoneId), RequiredColliderGroups());
                 status = "保存済み割当を読み込みました。";
                 statusType = MessageType.Info;
             }
@@ -247,6 +262,8 @@ namespace NyaForge.UnityBridge.Editor
             try
             {
                 if (package == null || avatarRoot == null) throw new InvalidOperationException("target packageとavatar rootが必要です。");
+                PhysBonesBindingValidator.RequireValid(avatarRoot, boneBindings, ColliderBindingsForValidation(),
+                    RequiredBones().Select(bone => bone.BoneId), RequiredColliderGroups());
                 var bones = new Dictionary<string, Transform>(boneBindings, StringComparer.Ordinal);
                 VrcPhysBonesReflectionBackend backend;
                 if (!VrcPhysBonesReflectionBackend.TryCreate(out backend, package.Target.SdkVersion))

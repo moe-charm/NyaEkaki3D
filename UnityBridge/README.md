@@ -38,6 +38,8 @@ receiver検証はSDK形状fixtureによる合成確認です。実際のVRChat S
 
 受け取り側では **Tools > NyaForge > Import PhysBones Target...** を開き、manifestを選択します。表示されたstable BoneIdごとにavatarのTransformを手動で割り当て、必要なcollider groupへComponentを指定します。「現在の割当を保存」でavatar rootへ`NyaForgePhysBonesBinding`を追加し、manifest hash・target／SDK・profile／skeleton hashとともにscene／prefabへ保存できます。次回は同じavatar rootとpackageを選び、「保存済み割当を読み込む」で復元します。identityが一致しないpackageは読み込まず、再対応を促します。その後「作成／更新」または「管理対象だけを更新」を実行します。windowは名前自動検索や暗黙のbone index変換を行いません。
 
+保存・適用の前には`PhysBonesBindingValidator`が共通で実行されます。必要なstable BoneId／collider groupの欠落、空のgroup、同じBoneIdやTransformの重複、avatar root外のTransform／Componentを検出して停止します。vendor SDKのcomponent型や個別プロパティの適合性はこの検証に含めず、reflection／SDK backendのpreflightへ委譲します。1つのcolliderを複数groupで共有する割当は許可し、同一group内の重複だけを拒否します。保存済み割当の読込時も同じ検証を通るため、階層を変更したsceneは適用前に診断できます。
+
 Prefab の頂点は、Bake の正の均一スケールと平行移動を一度だけ適用したメートル座標です。Prefab の Transform は位置ゼロ・回転ゼロ・スケール 1 です。UV0、法線、接線、頂点順、サブメッシュと三角形順を保持します。法線の自動再計算・頂点結合・最適化は行いません。
 
 「シーンにも配置する」を有効にすると、読み込んだ Prefab を配置します。親は任意のシーン Transform を明示して選べます。親子関係の変更時にはワールド位置を維持するため、骨名や首の位置からの推測はありません。親のスケールは正の均一値に限定します。これは首へのフィットや rest-pose の骨対応を実装した機能ではなく、通常の Unity の親子付けです。位置を調整して使ってください。シーン配置は Unity Undo で取り消せますが、書き出したアセットの削除は行いません。
