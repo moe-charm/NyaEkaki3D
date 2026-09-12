@@ -1,10 +1,10 @@
 # Workbenchの揺れプレビュー
 
-モデル取込パネル内の「揺れのプレビュー（VRM1）」から、再生/再開、一時停止、リセットを操作する。取込済みrig/Spring sessionがあり、評価可能なPose nodeが1個あるgraphが対象。VRM0や一般node変換の未対応条件は引き続き診断する。
+モデル取込パネル内の「揺れのプレビュー（VRM0 / VRM1）」から、再生/再開、一時停止、リセットを操作する。取込済みrig/Spring sessionがあり、評価可能なPose nodeが1個あるgraphが対象。VRM0は全source階層を持つrig sessionが必要。一般node変換や骨予算などの未対応条件は引き続き診断する。
 
 ## 所有と表示
 
-- `AuthoringWorkbench.SpringPlayback` が操作・ライフサイクルを担当し、Coreの `Vrm1SpringPreview` が計算を所有する。
+- `AuthoringWorkbench.SpringPlayback` が操作・ライフサイクルを担当し、`IVrmSpringPreview`を通してCoreの `Vrm0SpringPreview` / `Vrm1SpringPreview` が計算を所有する。[VRM0の契約](VRM0-Spring-Playback.md)参照。
 - 開始時に最終出力表示へ切り替える。毎フレームは保存graphからのbase poseを使い、揺れた出力poseで別のgraph値を一時評価する。
 - `OwnedMeshProjection.Spring` がその最終meshと材質を表示する。workspaceのgraph、評価結果、attachments、Undoには書かない。
 - 保存、通常出力、確認画像用のsnapshotは編集中の姿勢を使う。UIにも「保存対象外」を表示する。
@@ -18,7 +18,7 @@
 
 ## 検証範囲
 
-Windows専用の `SpringPlaybackVerification` は自作VRM1を読み、再生により表示頂点が動くこと、graph/metadata不変、停止/再開、Reset、Save/Openで一時姿勢を保存しないこと、編集で停止することを確認する。自動時間更新を止めて固定時間を渡すhandler検証であり、OSの実マウス操作・実モデル・文字サイズや隠れの目視受入は別途。
+Windows専用の `SpringPlaybackVerification` は自作VRM0/VRM1を読み、再生により表示頂点が動くこと、graph/metadata不変、停止/再開、Reset、Save/Openで一時姿勢を保存しないこと、編集で停止することを確認する。自動時間更新を止めて固定時間を渡すhandler検証であり、OSの実マウス操作・実モデル・文字サイズや隠れの目視受入は別途。
 
 VRM0 root展開、複数Pose node、一般node変換、実アバター、負荷・GUI目視の受入は未完了。I03-C全体の完了判断は `current_task.md` の残件を含めて行う。
 

@@ -14,6 +14,11 @@ namespace NyaForge.Authoring.Import
             rig.ValidateSource(springs.SourceHash);
             Checks.Require(springs.Format == "vrm0" || springs.Format == "vrm1", "UNSUPPORTED_FORMAT", "Unknown VRM collider coordinate convention.");
             var space = new ImportedNodeSpace(rig, graph, pose);
+            return Convert(springs, space.TransformPoint, space.UniformScale);
+        }
+
+        internal static IReadOnlyList<SpringBoneColliderGroup> Convert(VrmSpringSession springs, Func<int, Vec3, Vec3> transformPoint, Func<int, float> uniformScale)
+        {
             var groups = new List<SpringBoneColliderGroup>();
             foreach (var group in springs.ColliderGroups)
             {
@@ -26,9 +31,9 @@ namespace NyaForge.Authoring.Import
                     var shape = group.Shapes[i];
                     Checks.Require(shape.Offset.HasValue && (shape.Kind == "sphere" || shape.Tail.HasValue), "IMPORT_COLLIDER_DETAILS_MISSING", "Collider offset/tail is unknown.");
                     int node = group.ColliderNodeIndices[i];
-                    float radius = shape.Radius * space.UniformScale(node);
-                    Vec3 center = space.TransformPoint(node, SourceLocal(springs.Format, shape.Offset.Value));
-                    Vec3? tail = shape.Kind == "capsule" ? (Vec3?)space.TransformPoint(node, SourceLocal(springs.Format, shape.Tail.Value)) : null;
+                    float radius = shape.Radius * uniformScale(node);
+                    Vec3 center = transformPoint(node, SourceLocal(springs.Format, shape.Offset.Value));
+                    Vec3? tail = shape.Kind == "capsule" ? (Vec3?)transformPoint(node, SourceLocal(springs.Format, shape.Tail.Value)) : null;
                     colliders.Add(new SpringBoneCollider(center, radius, tail));
                 }
                 groups.Add(new SpringBoneColliderGroup("VRM collider group " + groups.Count, colliders));

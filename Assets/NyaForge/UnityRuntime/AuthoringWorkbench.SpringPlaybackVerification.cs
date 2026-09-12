@@ -11,15 +11,24 @@ namespace NyaForge.UnityRuntime
     {
         void VerifySpringPlayback(string output, List<string> checks)
         {
+            foreach (bool legacy in new[] { false, true })
+            {
+                var directory = Path.Combine(output, legacy ? "vrm0-playback" : "vrm1-playback");
+                Directory.CreateDirectory(directory); VerifySpringPlaybackFormat(directory, checks, legacy);
+            }
+        }
+
+        void VerifySpringPlaybackFormat(string output, List<string> checks, bool legacy)
+        {
             springAutomaticTick = false;
             try
             {
                 var path = Path.Combine(output, "playback.vrm");
-                File.WriteAllBytes(path, VrmVerificationFixture.Create(false, playback: true));
+                File.WriteAllBytes(path, VrmVerificationFixture.Create(legacy, playback: true));
                 ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null); ImportModel(path);
                 string authored = workspace.Document.StateHash, metadata = workspace.Attachments.ContentHash;
                 var baseline = projection.DisplayMesh.vertices;
-                Check(springPlay.enabledSelf, "Spring play button is disabled for VRM1");
+                Check(springPlay.enabledSelf, "Spring play button is disabled for VRM");
                 StartSpringPlayback();
                 TickSpringPlayback(1f / 60);
                 var reusedMesh = projection.DisplayMesh; var reusedObject = projection.DisplayObject;
@@ -50,7 +59,7 @@ namespace NyaForge.UnityRuntime
                 var node = graph.Nodes[springPoseNode];
                 Execute(AuthoringOperation.UpdateNode(GraphNode.PoseNode(node.NodeId, node.Pose)));
                 Check(springPlayback == null, "Editing did not stop Spring playback");
-                checks.Add("VRM1 playback handlers: displayed mesh changes with reused mesh/object and restored edit points, authored graph/metadata unchanged, pause/resume/reset, Save/Open excludes simulation, editing stops playback");
+                checks.Add((legacy ? "VRM0" : "VRM1") + " playback handlers: displayed mesh changes with reused mesh/object and restored edit points, authored graph/metadata unchanged, pause/resume/reset, Save/Open excludes simulation, editing stops playback");
             }
             finally { ClearSpringPlayback(true); springAutomaticTick = true; }
         }

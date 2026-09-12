@@ -29,9 +29,14 @@ namespace NyaForge.UnityRuntime
                 ["skins"] = new JArray(new JObject { ["joints"] = new JArray(0, 1), ["inverseBindMatrices"] = 4 })
             };
             AddVrm(json, legacy);
-            if (playback) json["extensions"]["VRMC_springBone"] = new JObject {
+            if (playback && !legacy) json["extensions"]["VRMC_springBone"] = new JObject {
                 ["specVersion"] = "1.0", ["springs"] = new JArray(new JObject { ["center"] = 0, ["joints"] = new JArray(
                     new JObject { ["node"] = 0, ["stiffness"] = 1, ["gravityPower"] = .2, ["gravityDir"] = new JArray(1, 0, 0) }, new JObject { ["node"] = 1 }) }) };
+
+            if (playback && legacy) json["extensions"]["VRM"]["secondaryAnimation"] = new JObject {
+                ["colliderGroups"] = new JArray(), ["boneGroups"] = new JArray(new JObject {
+                    ["bones"] = new JArray(0), ["center"] = 0, ["stiffiness"] = 1, ["gravityPower"] = .2,
+                    ["gravityDir"] = new JObject { ["x"] = 1, ["y"] = 0, ["z"] = 0 } }) };
 
             if (invalidSkin) json["nodes"][1]["scale"] = new JArray(2, 1, 1);
             return BuildGlbContainer(Encoding.UTF8.GetBytes(json.ToString(Newtonsoft.Json.Formatting.None)), bin.ToArray());

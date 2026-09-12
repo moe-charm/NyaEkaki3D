@@ -6,7 +6,7 @@ using NyaForge.Authoring.Rig;
 namespace NyaForge.Authoring.Import
 {
     /// <summary>Owns one source-pinned VRM1 preview and refreshes external transforms for each frame.</summary>
-    public sealed class Vrm1SpringPreview
+    public sealed class Vrm1SpringPreview : IVrmSpringPreview
     {
         readonly VrmSpringSession source;
         readonly ImportedRigSession rig;

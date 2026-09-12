@@ -23,6 +23,10 @@ namespace NyaForge.Authoring.Rig
             Reset(pose, colliders, centers);
         }
 
+        // Configuration, poses, states and center frames are immutable. A fork can publish
+        // a frame only after an outer adapter has also validated its projected output.
+        internal SpringPreviewController Fork() => (SpringPreviewController)MemberwiseClone();
+
         public void Play() { IsPlaying = true; }
         public void Pause() { IsPlaying = false; }
 

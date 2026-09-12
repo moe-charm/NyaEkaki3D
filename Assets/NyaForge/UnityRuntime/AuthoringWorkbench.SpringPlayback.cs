@@ -11,7 +11,7 @@ namespace NyaForge.UnityRuntime
 {
     public sealed partial class AuthoringWorkbench
     {
-        Vrm1SpringPreview springPlayback;
+        IVrmSpringPreview springPlayback;
         AuthoringWorkspace springWorkspace;
         string springDocumentHash, springMetadataHash, springPoseNode;
         Label springPlaybackStatus;
@@ -20,7 +20,7 @@ namespace NyaForge.UnityRuntime
 
         void BuildSpringPlayback(VisualElement parent)
         {
-            var panel = new Foldout { text = "揺れのプレビュー（VRM1）", value = false, name = "spring-playback" };
+            var panel = new Foldout { text = "揺れのプレビュー（VRM0 / VRM1）", value = false, name = "spring-playback" };
             springPlaybackStatus = new Label { name = "spring-playback-status" };
             springPlaybackStatus.style.whiteSpace = WhiteSpace.Normal;
             panel.Add(springPlaybackStatus);
@@ -28,16 +28,16 @@ namespace NyaForge.UnityRuntime
             springPause = Button("一時停止", () => { springPlayback?.Pause(); RefreshSpringPlayback(); }, "spring-pause");
             springReset = Button("リセットして元の姿勢へ", () => { ClearSpringPlayback(true); }, "spring-reset");
             panel.Add(springPlay); panel.Add(springPause); panel.Add(springReset);
-            var help = new Label("表示だけのプレビューです。保存・出力には編集中の姿勢を使います。編集・作品切替でリセットします。VRM0と一般のnode変換は未対応です。");
+            var help = new Label("表示だけのプレビューです。保存・出力には編集中の姿勢を使います。編集・作品切替でリセットします。一般のnode回転・scaleの取込は未対応です。");
             help.style.whiteSpace = WhiteSpace.Normal; panel.Add(help); parent.Add(panel);
         }
 
         void RefreshSpringPlayback()
         {
             if (springPlaybackStatus == null) return;
-            bool ready = importedRigSession != null && importedVrmSpringSession?.Format == "vrm1" && importedVrmSpringSession.SpringBones.Count > 0;
+            bool ready = importedRigSession != null && (importedVrmSpringSession?.Format == "vrm1" || (importedVrmSpringSession?.Format == "vrm0" && importedRigSession.Hierarchy != null)) && importedVrmSpringSession.SpringBones.Count > 0;
             springPlay.SetEnabled(ready); springPause.SetEnabled(springPlayback?.IsPlaying == true); springReset.SetEnabled(springPlayback != null);
-            springPlaybackStatus.text = springPlayback == null ? (ready ? "再生できます。未対応設定は開始時に表示します。" : "対応するVRM1のskinとSpring設定を読み込んでください。")
+            springPlaybackStatus.text = springPlayback == null ? (ready ? "再生できます。未対応設定は開始時に表示します。" : "対応するVRMのskinとSpring設定を読み込んでください。")
                 : (springPlayback.IsPlaying ? "再生中" : "一時停止") + " · " + springPlayback.CompletedSteps + " step · 保存対象外";
         }
 
@@ -45,12 +45,14 @@ namespace NyaForge.UnityRuntime
         {
             if (springPlayback != null) { springPlayback.Play(); RefreshSpringPlayback(); return; }
             if (workspace == null || workspace.Document.IsEmpty || importedRigSession == null || importedVrmSpringSession == null)
-                throw new InvalidOperationException("VRM1モデルを取り込んでください。");
+                throw new InvalidOperationException("対応するVRMモデルを取り込んでください。");
             var graph = workspace.Document.Objects[0].Graph;
             var poses = graph.Nodes.Values.Where(node => node.TypeId == BuiltinNodes.Pose).ToArray();
             if (poses.Length != 1 || !workspace.Preview.IsComplete || !workspace.Preview.Evaluation.PoseOutputs.TryGetValue(poses[0].NodeId, out var value))
                 throw new InvalidOperationException("プレビューは評価済みのPose nodeが1個あるgraphに対応します。");
-            var candidate = new Vrm1SpringPreview(importedVrmSpringSession, importedRigSession, graph, value.Pose);
+            IVrmSpringPreview candidate = importedVrmSpringSession.Format == "vrm0"
+                ? new Vrm0SpringPreview(importedVrmSpringSession, importedRigSession, graph, value.Pose)
+                : new Vrm1SpringPreview(importedVrmSpringSession, importedRigSession, graph, value.Pose);
             SelectEditStage(0);
             springWorkspace = workspace; springDocumentHash = workspace.Document.StateHash; springMetadataHash = workspace.Attachments.ContentHash;
             springPoseNode = poses[0].NodeId; springPlayback = candidate; springPlayback.Play(); RefreshSpringPlayback();

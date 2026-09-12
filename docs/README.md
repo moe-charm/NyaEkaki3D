@@ -7,6 +7,7 @@
 | [current_task.md](../current_task.md) | 現在の作業、直近の完了事項、次に着手する範囲 |
 | [Rig / VRM修正後の検証範囲](reviews/2026-09-12-Repair-Coverage.md) | 正式回帰とPlayer検査の対応、未確認経路と手動受入の区別 |
 | [元node空間](Imported-Node-Space.md) | 元node原点とinverse-bind Headの区別、rig session v2、座標変換 |
+| [VRM0再生接続](VRM0-Spring-Playback.md) | 実行設定・center/collider・状態所有・共通GUIと対応範囲 |
 | [一時source骨格](Imported-Preview-Rig.md) | 通常nodeの実行骨格化、skin姿勢との往復、必要祖先と予算 |
 | [VRM0 subtree展開](VRM0-Spring-Expansion.md) | source順の全子孫・仮想末端と実行接続の境界 |
 | [全source階層](Imported-Source-Hierarchy.md) | rig session v3、非joint node・children順の保持、旧版移行 |

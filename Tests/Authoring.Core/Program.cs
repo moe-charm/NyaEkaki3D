@@ -17,6 +17,7 @@ internal static partial class Program
         RunAuthoringStateTests();
         RunVrm0SpringExpansionTests();
         RunImportedPreviewRigTests();
+        RunVrm0SpringPreviewTests();
         RunFaceInspectionTests();
         RunPolygonWireTests();
         RunPaintWireTests();

@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。VRM1の再生/停止/リセットGUIと一時mesh表示を接続し、Windows Playerのhandler検証が合格。全source node階層の保存（T01）を追加し、Coreの直近検証は359件合格。R01〜R12は記録した自動検証範囲で修正済み。VRM0展開、一般node変換、実素材・実操作・負荷の受入は未完了。
+更新: 2026-09-12。VRM0/VRM1の再生GUIを接続し、両形式のWindows Player handler検証が合格。Coreの直近検証は360件合格。R01〜R12、T01とT02の対応profileは自動検証済み。一般node変換・実素材/実操作・負荷・可動world root等の受入は未完了。
 
 ## 開発の入口
 
@@ -13,13 +13,13 @@
 最新チェック対象は `4c9ced1`。[再生接続後のレビューと完了条件](docs/reviews/2026-09-12-Playback-Checkpoint.md)。今回Coreを再実行し **353 passed / 0 failed** (`Logs/core-checkpoint-taskification.txt`)。既存Player PASSを再確認したが、今回はbuild/Player・実操作・実素材の検証は行っていない。
 
 - [x] **T01 / P1 — 全source node階層の保持・保存（自動検証完了）**。不変型ImportedSourceHierarchyへ親/原点/元children順を保持し、rig session v3へ保存する。v1/v2は階層不明を維持。Core354件とWindows Player取込Save/Openが合格。VRM0展開はT02。
-- [ ] **T02 / P1 — VRM0展開とpreview接続**。T01後にroot/分岐/末端/centerの契約と数値回帰を実装し、GUI保存往復を確認。
+- [x] **T02 / P1 — VRM0展開とpreview接続（対応profileの自動検証完了）**。source subtree→一時骨格→実行chain/center/collider→skin pose→GUIへ接続。Windows両形式の再生/停止/Reset/Save/Openを確認。一般transform・実素材・可動world root・参照runtimeとの全挙動比較は残件。
 - [ ] **T03 / P1 — 実素材の取込条件調査**。独立して着手可能。一般node変換や複数mesh等の必要範囲を確定し、必要なI04を先行させる。
 - [ ] **T04 / P2 — 時間超過・性能受入**。現行はframe時間0.25秒超で停止する。実測し、継続/停止方針と回帰を決める。
 - [ ] **T05 / P1 — Windows実操作受入**。T03と必要なI04後に取込・再生・保存/Open・終了・文字の欠けを確認。
 - [ ] **T06 / P2 — 外部MCP metadata保存受入**。内部handler検証とは別にtransport経由の失敗保護と再試行を確認。
 
-次の実装はT02（T01は完了）。T03の結果でI04を前倒しする。各完了条件は上記レビュー参照。以下I03/I04/A01は親タスクで、T01〜T06はその実行単位。R11/R12の元の再現条件は [追加レビュー](docs/reviews/2026-09-12-Current-Checkpoint.md) に保持する。
+次はT03の実素材取込条件調査。T01/T02は対応profileの自動検証まで完了。T03でI04の必要範囲を確定してからT05へ進み、T04の時間超過/性能も確認する。各完了条件は上記レビュー参照。以下I03/I04/A01は親タスクで、T01〜T06はその実行単位。R11/R12の元の再現条件は [追加レビュー](docs/reviews/2026-09-12-Current-Checkpoint.md) に保持する。
 
 - [x] **R11 / P1 — 中間nodeによる骨階層欠落を修正（Core検証完了）**。ImportedJointHierarchyが検証済みsource木から最近傍祖先jointを解決する。合成済みtranslationとinverse-bind由来Headの契約を維持し、tailも中間node越しの子jointから決定する。中間node1/3個・骨登録順違い・親の移動/回転への追従・native保存/Openの4回帰が合格。一般回転/scaleや実モデル受入は別タスク。
 - [x] **R12 / P2 — 取込の候補生成と公開を分離（Windows自動検証完了）**。mesh検査より前のSpring session/Label更新をやめる。完了条件: 不正skin・command失敗時に文書、metadata、表示、dirty/Undoが変わらず、再試行で成功するPlayer検証。Windows Playerで不正skin・command拒否・再試行を検証済み。
@@ -30,6 +30,13 @@
 - [ ] **A01 — Windows実素材・実操作受入**。利用可能なローカルモデルで取込・保存/Open・姿勢・揺れ・文字サイズと欠け・保存して終了を確認する。外部MCP transportのmetadata保存も別項目で検証する。完了条件: build名、入力、確認手順、結果、未対応事項の記録。素材はprivate/追跡除外を維持。
 
 初回レビュー時点の証拠（現状は下段参照）: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
+
+### T02: VRM0実行所有者と共通再生GUI（2026-09-12）
+
+- `Vrm0SpringRuntime`へ設定・通常nodeのcenter/collider変換を分離し、`Vrm0SpringPreview`が固定stepとskin投影を所有する。Advanceはcontroller候補で計算し、skin投影成功後に公開。旧状態を失わない。colliderの形状検査は既存adapterを共用。Workbenchは`IVrmSpringPreview`で両形式を切替。[契約](docs/VRM0-Spring-Playback.md)。
+- Core **360 passed / 0 failed**: `Logs/core-vrm0-preview.txt`、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-df8da434d3c544b0a89b385f7ba153ad`。合成VRM0 reader/session→owner、通常nodeのcenter/collider、重力Z、12step、停止/再開、外部姿勢更新、時間不正/scale変更時の状態保持とResetを確認。
+- Windows-Vrm0Playback build **PASS**: `Logs/build-player-20260912-160702-715.log`。Player suite **PASS**: `Artifacts/Authoring-20260912-160736-8e0e5bae1c24440082b9c84dd1b27fc4/report.json`。VRM0/1両方で表示変化・Mesh/Object再利用・編集点復元・停止/再開・Save/Openで一時姿勢非保存・編集時破棄のhandler検証を通した。実クリック/実素材/画像目視は未受入。
+- T02は対応profileの接続完了。次はT03→必要なI04→T05。256実行骨の予算、translation-only取込、base pose時点のcollider snapshot、固定avatar座標、0.25秒超frameでの停止を制限として明示する。揺れるnodeに付いたcolliderの逐次更新や可動world rootはI03-Bの比較/拡張残件。C0〜C5全体は未完了。
 
 ### T02: 通常nodeを含む一時骨格・skin姿勢の往復（2026-09-12）
 
