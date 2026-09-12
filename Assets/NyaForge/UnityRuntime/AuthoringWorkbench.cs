@@ -162,7 +162,9 @@ namespace NyaForge.UnityRuntime
             files.Add(Button("保存", SaveProject, "authoring-save"));
             files.Add(Button("開く", () => ConfirmReplace(OpenProject), "authoring-open"));
             side.Add(Button("Unity用に書き出す", Export, "authoring-export"));
-            side.Add(new Label("出力はstatic meshです。Unity Bridgeで読み込みます。履歴は起動中のみ保持します。"));
+            side.Add(Button("標準GLB（表示形状）", ExportGlbStatic, "authoring-export-glb-static"));
+            side.Add(Button("標準GLB（skin/morph保持）", ExportGlbSkinned, "authoring-export-glb-skinned"));
+            side.Add(new Label("Unity用出力はnative機能を保持します。標準GLBは表示形状、または対応範囲内のskin/morphを出力します。"));
             confirmRow = new VisualElement { name = "authoring-confirm" }; confirmRow.style.display = DisplayStyle.None; side.Add(confirmRow);
             status = new Label { name = "authoring-status" }; status.AddToClassList("status"); root.Add(status);
 

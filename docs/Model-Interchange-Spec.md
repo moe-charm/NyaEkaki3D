@@ -152,3 +152,14 @@ T03の読取調査は完了。実素材要求には20mesh、257骨、18weight/�
 I04-Eのreport設計はAと同時に進め、完全取込の公開にはA〜Eの必要範囲が揃うことを条件とする。次の実装はI04-A。FBX runtimeライブラリの最終選定、未知payloadの永続化schema、最終容量値は各作業で根拠を伴って決める。これらの未決を理由にsource affine実装を待たせない。
 
 本仕様を満たしても、C2〜C5の全身制作・品質向上・ターゲット互換の完成とはしない。[開発計画](Development-Plan.md)の全範囲を維持する。
+
+## 標準GLB出力プロファイル（2026-09-13）
+
+`GlbExportService` はnative制作データを変更せず、明示的な2 profileで標準glTF 2.0 GLBを生成する。
+
+| profile | 保持する情報 | 境界 |
+|---|---|---|
+| `StaticGeometry` | 現在評価できる表示メッシュ、頂点属性、正の一様変換 | skin・骨・morph・材質・アニメーションは含めず、複数submeshは現時点で一つのprimitiveへ結合 |
+| `SkinnedGeometry` | 単一graphのsource mesh、4 influence weight、骨階層、inverse bind、POSITION morph | rest pose・identity source transform・未編集source meshに限定。頂点編集、任意pose、未対応nodeは拒否しnative exportを案内 |
+
+GUIには「標準GLB（表示形状）」と「標準GLB（skin/morph保持）」を分けて表示する。出力先は`<project>/exports/glb-*`の新規ディレクトリに限定し、失敗時はstagingを削除して既存制作状態を変更しない。標準GLBの読込確認はCore importerで行い、Unity・VRChat実機での外観／挙動受入とは分離して記録する。

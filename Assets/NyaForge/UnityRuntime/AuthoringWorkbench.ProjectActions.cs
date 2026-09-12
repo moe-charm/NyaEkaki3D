@@ -100,5 +100,19 @@ namespace NyaForge.UnityRuntime
             }
         });
 
+        void ExportGlbStatic() => Try(() =>
+        {
+            var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-static-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            var result = GlbExportService.ExportStatic(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory);
+            SetStatus("標準GLB（表示形状）を書き出しました: " + result.Path);
+        });
+
+        void ExportGlbSkinned() => Try(() =>
+        {
+            var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            var result = GlbExportService.ExportSkinned(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory);
+            SetStatus("標準GLB（skin/morph保持）を書き出しました: " + result.Path);
+        });
+
     }
 }

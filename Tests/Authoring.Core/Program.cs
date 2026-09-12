@@ -113,6 +113,7 @@ internal static partial class Program
         RunMorphTests();
         RunMorphGraphTests();
         RunGlbImportTests();
+        RunGlbExportServiceTests();
         RunGlbSkinImportTests();
         RunVrmMetadataTests();
         RunSpringBoneTests();
