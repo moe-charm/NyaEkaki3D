@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。I04-Aの完全source保存/GUI接続、mesh属性/POSITION morph変換、source slot weight/一般bind deformer、GLB全JOINTS_n/WEIGHTS_n候補読取、native weight packageとrig session v5・GUI接続、評価済みgraph meshへのsource skin adapter、authored poseからのsource palette生成、Workbench取込後/揺れ再生中のsource skin表示接続まで追加。I04-Bの入口として複数mesh/instance/skin参照を元indexで保持するGLB scene inventory、指定mesh/skinを選ぶ静的・skinned候補読取、Workbenchの候補確認・選択GUIを追加した。SIM-01の共通secondary-motion契約（安定ID、固定頂点、collider、出力種別、adapter能力、unknown version保持付きNYSM v1 codec）とVRM1 resolved spring migrationを追加した。制作graphへの複数対象公開と複数SkinDeform、nativeへのSIM設定接続は未完了。直近Core400件合格。任意の実モデル取込・実操作・性能の受入は未完了。
+更新: 2026-09-12。I04-Aの完全source保存/GUI接続、mesh属性/POSITION morph変換、source slot weight/一般bind deformer、GLB全JOINTS_n/WEIGHTS_n候補読取、native weight packageとrig session v5・GUI接続、評価済みgraph meshへのsource skin adapter、authored poseからのsource palette生成、Workbench取込後/揺れ再生中のsource skin表示接続まで追加。I04-Bの入口として複数mesh/instance/skin参照を元indexで保持するGLB scene inventory、指定mesh/skinを選ぶ静的・skinned候補読取、Workbenchの候補確認・選択GUIを追加した。SIM-01の共通secondary-motion契約（安定ID、固定頂点、collider、出力種別、adapter能力、unknown version保持付きNYSM v1 codec）とVRM1 resolved spring migration、SIM-02のPhysBones target DTO／NYPP v1 codec／loss report境界を追加した。制作graphへの複数対象公開と複数SkinDeform、nativeへのSIM設定接続は未完了。直近Core403件合格。任意の実モデル取込・実操作・性能の受入は未完了。
 
 ## 開発の入口
 
@@ -27,10 +27,10 @@
 
 ### ボーンの追加フィードバック: SIMタスク（2026-09-12）
 
-[揺れ・布adapter計画](docs/Secondary-Motion-Plan.md)へ採用方針・依存・完了条件を整理した。**PhysBones優先、MagicaCloth2は任意adapter**。SIM-01のUnity非依存契約とcodecを実装したが、PhysBones／MagicaCloth2の導入・実行接続はまだ行っていない。直近はSIM-01のnative attachment接続とI04-Aの保存接続を継続する。
+[揺れ・布adapter計画](docs/Secondary-Motion-Plan.md)へ採用方針・依存・完了条件を整理した。**PhysBones優先、MagicaCloth2は任意adapter**。SIM-01のUnity非依存契約とcodec、SIM-02のPhysBones target DTO／loss report境界を実装したが、PhysBones／MagicaCloth2の導入・実行接続はまだ行っていない。直近はSIM-02のnative attachment接続・Unity SDK BridgeとI04-Aの保存接続を継続する。
 
 - [ ] SIM-01 / P1 **継続**: `Authoring/Simulation`に共通データ（stable bone chain、fixed vertex、collider group、output kind）、adapter capability/evaluation contract、unknown versionを保持する`NYSM` v1 codecを追加。VRM1のresolved springを共通topologyへ移すmigrationも追加した。次はnative attachmentへの保存/Open・未知版GUI表示・stale再bindをI04-Aへ接続。
-- [ ] SIM-02 / P1: PhysBones DTO・Unity Bridge・target別loss report。
+- [ ] SIM-02 / P1 **継続**: `PhysBonesTargetProfile`／`PhysBonesChain`でSDK版付きのstable root・endpoint・exclusion・branch・collider・limits・curves・interactionを保持し、`NYPP` v1 codecと`PhysBonesLossReport`で未知版保持・対応/未対応/SDK差異を明示するCore境界を追加。次はnative attachmentへの保存/Open、Unity SDK component writer、管理対象限定更新、受け取り側設定/動作確認。
 - [ ] SIM-03 / P1: GUI/MCPの設定・再構築・reset・一定時間再生・連続撮影とbackend証拠。
 - [ ] SIM-04 / P2: C2でMagicaCloth2 BoneClothの髪束1本を任意評価。未導入buildも維持。
 - [ ] SIM-05 / P2: C3でMeshClothの固定領域・morph重複拒否と性能を評価。
@@ -66,6 +66,7 @@
 - Windows-MeshSelection build **PASS** (`Logs/build-player-mesh-selection.txt`、Unity `Logs/build-player-20260912-182005-738.log`)、Player **PASS** (`Artifacts/Authoring-20260912-182032-0b8589ed3d8a464f93b59c07f52942ff/report.json`)。既存WorkbenchのVRM0/1取込・source palette表示・Spring再生・Save/Open・失敗保護を回帰確認。選択候補の複数graph公開、実マウス操作、任意実素材・画像目視の受入ではない。
 - Workbench mesh/skin selection GUI: Windows-ImportSelectionGui build **PASS** (`Logs/build-player-import-selection-gui.txt`、Unity `Logs/build-player-20260912-182741-785.log`)、Player **PASS** (`Artifacts/Authoring-20260912-182805-b75017ed69104ec5bcb4895c830547f7/report.json`)。自作multi-mesh fixtureで候補確認、mesh 1 / skin 0指定、取込後のsource payload/topologyを確認し、既存VRM0/1回帰を70 checksで実施。複数対象の同時公開、実マウス操作、任意実素材・画像目視の受入ではない。
 - SIM-01 secondary-motion contract: Core **400 passed / 0 failed** (`Logs/core-secondary-motion.txt`)。`NYSM` v1のprofile／stable chain／fixed vertex／collider group往復、bone-poseとmesh-deformation出力の分離、unknown versionのopaque保持、skeleton/topology stale拒否、resolved springの共通topology移行、VRM1 sessionからのsource node→authored BoneId移行を確認。Windows-SecondaryMotionCore2 build **PASS** (`Logs/build-player-20260912-184902-690.log`)、Player **PASS** (`Artifacts/Authoring-20260912-184923-60fa1a94c49d4c67833fcb32277bdfdf/report.json`, 70 checks) で既存Workbench回帰も確認。native attachment、PhysBones/MagicaCloth2実adapter、VRM0 source-node移行は未接続。
+- SIM-02 PhysBones target boundary: Core **403 passed / 0 failed** (`Logs/core-sim02.txt`)。`NYPP` v1のroot/endpoint/exclusion/branch/collider/limits/curve/interaction DTO往復、stable bone・stale skeleton拒否、unknown versionのopaque保持、SDK capabilityとloss reportのsupported/unsupported/warning分離を確認。Unity SDK component writer、native attachment、実VRChat SDK/アバター動作、実操作・画像目視の受入は未確認。
 
 - GUI完全source接続: Windows-SourceSkinImport build **PASS** (`Logs/build-player-20260912-170004-544.log`)、Player **PASS** (`Artifacts/Authoring-20260912-170036-ad7444ce32a14d94b4b57c23c2f86ff7/report.json`)。VRM0/1で元GLBとNYFS一致、再生中Save、生成fixtureの原本パスを移動後にOpen、完全payload維持と制作姿勢復元を確認。import失敗保護も合格。実マウス/任意実素材の受入ではない。今回はCore変更なしでCore suiteを再実行していない。
 

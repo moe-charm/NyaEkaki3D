@@ -86,6 +86,31 @@ internal static partial class Program
             var asset = VrmSecondaryMotionMigration.FromVrm1(VrmSpringSession.Create(metadata), rig, graph, pose);
             asset.ValidateFor(imported.Skeleton, imported.Mesh); Equal(1, asset.Chains.Count); Equal(1, asset.Chains[0].BoneIds.Count); Equal(rig.NodeToBone[1], asset.Chains[0].BoneIds[0]); Equal(1, asset.ColliderGroups[0].Colliders.Count);
         });
+
+        Test("PhysBones target DTO roundtrips stable mapping and preserves endpoint data", () =>
+        {
+            var skeleton = BuildPhysBonesSkeleton(out var rootId, out var childId, out var excludedId);
+            var curve = new PhysBonesCurve(PhysBonesCurveChannel.Radius, new[] { new PhysBonesCurveKey(0, 0), new PhysBonesCurveKey(1, .25f) });
+            var chain = new PhysBonesChain("tail", rootId, new[] { rootId }, PhysBonesEndpointMode.Position, "", new Vec3(0, .4f, 0), PhysBonesMultiChildType.Ignore, new[] { excludedId }, null, null, PhysBonesParameters.Default, PhysBonesInteraction.Default, new[] { curve });
+            var profile = new PhysBonesTargetProfile("vrchat.physbones", "sdk-3", "package-1", skeleton.ContentHash, "", new[] { chain });
+            profile.ValidateFor(null, skeleton); var reopened = PhysBonesTargetCodec.Read(PhysBonesTargetCodec.Write(profile));
+            Equal(profile.ContentHash, reopened.ContentHash); Equal(profile.SkeletonHash, reopened.SkeletonHash); Equal(PhysBonesEndpointMode.Position, reopened.Chains[0].EndpointMode); True(reopened.Chains[0].EndpointPosition.HasValue); Equal(excludedId, reopened.Chains[0].ExcludedBoneIds[0]); Equal(2, reopened.Chains[0].Curves[0].Keys.Count);
+            var unknown = PhysBonesTargetCodec.Write(profile); BitConverter.GetBytes(99).CopyTo(unknown, 4); var document = PhysBonesTargetCodec.ReadDocument(unknown); False(document.IsSupported); Equal(99, document.WireVersion); True(document.RawBytes.SequenceEqual(unknown)); Expect("UNSUPPORTED_FORMAT", () => PhysBonesTargetCodec.Read(unknown));
+        });
+
+        Test("PhysBones loss report separates supported values from unsupported target features", () =>
+        {
+            var skeleton = BuildPhysBonesSkeleton(out var rootId, out _, out _); var chain = new PhysBonesChain("tail", rootId, new[] { rootId }, PhysBonesEndpointMode.Auto, "", null, PhysBonesMultiChildType.Ignore, null, null, null, PhysBonesParameters.Default, PhysBonesInteraction.Default, new[] { new PhysBonesCurve(PhysBonesCurveChannel.Stiffness, new[] { new PhysBonesCurveKey(0, .5f) }) });
+            var profile = new PhysBonesTargetProfile("vrchat.physbones", "sdk-profile", "", skeleton.ContentHash, "", new[] { chain });
+            var capabilities = new PhysBonesCapabilities("vrchat.physbones", "sdk-installed", new[] { PhysBonesFeatures.Root, PhysBonesFeatures.Limits, PhysBonesFeatures.Interaction }); var report = PhysBonesLossReport.Compare(profile, capabilities);
+            False(report.IsLossless); True(report.Supported.Any(item => item.Path == PhysBonesFeatures.Root)); True(report.Unsupported.Any(item => item.Path == PhysBonesFeatures.Curves)); True(report.Warnings.Any(item => item.Code == "SDK_VERSION_MISMATCH")); True(report.ContentHash.Length == 64);
+        });
+
+        Test("PhysBones target rejects unstable or stale bone mappings", () =>
+        {
+            var skeleton = BuildPhysBonesSkeleton(out var rootId, out var childId, out _); Expect("INVALID_PHYSBONES", () => new PhysBonesChain("bad", rootId, new[] { rootId, rootId }, PhysBonesEndpointMode.Auto, "", null, PhysBonesMultiChildType.Ignore, null, null, null, PhysBonesParameters.Default, PhysBonesInteraction.Default, null));
+            var chain = new PhysBonesChain("tail", rootId, new[] { rootId, childId }, PhysBonesEndpointMode.Auto, "", null, PhysBonesMultiChildType.Ignore, null, null, null, PhysBonesParameters.Default, PhysBonesInteraction.Default, null); var profile = new PhysBonesTargetProfile("vrchat.physbones", "sdk", "", skeleton.ContentHash, "", new[] { chain }); var changed = BuildSecondarySkeleton(out _, out _); Expect("SIMULATION_SKELETON_CHANGED", () => profile.ValidateFor(null, changed));
+        });
     }
 
     static SkeletonDefinition BuildSecondarySkeleton(out string rootId, out string childId)
@@ -95,6 +120,17 @@ internal static partial class Program
         {
             new BoneDefinition(rootId, "Root", "", new Vec3(0, 0, 0), new Vec3(0, 1, 0)),
             new BoneDefinition(childId, "Child", rootId, new Vec3(0, 1, 0), new Vec3(0, 2, 0))
+        });
+    }
+
+    static SkeletonDefinition BuildPhysBonesSkeleton(out string rootId, out string childId, out string excludedId)
+    {
+        rootId = Guid.NewGuid().ToString("D"); childId = Guid.NewGuid().ToString("D"); excludedId = Guid.NewGuid().ToString("D");
+        return new SkeletonDefinition(new[]
+        {
+            new BoneDefinition(rootId, "Root", "", new Vec3(0, 0, 0), new Vec3(0, 1, 0)),
+            new BoneDefinition(childId, "Child", rootId, new Vec3(0, 1, 0), new Vec3(0, 2, 0)),
+            new BoneDefinition(excludedId, "Excluded", rootId, new Vec3(.1f, 1, 0), new Vec3(.1f, 2, 0))
         });
     }
 }
