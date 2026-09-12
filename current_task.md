@@ -1,3 +1,7 @@
+# 2026-09-13 embedded base-color Save/Open hash recheck
+
+実RadDollV3の埋め込みbase-color画像をnative Paintへ縮小保持する経路について、取込直後だけでなくnative Save/Open後のPaint画像hash一致も検証条件へ追加した。private一時素材はリポジトリへ入れていない。Coreは直前の **461 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a7b92fd3fb184402a46aef4f4dfa676c`）を正とする。Windows Player `Builds/MaterialResizeV2/NyaForge.exe` のAuthoring **80 checks PASS**（`Artifacts/Authoring-20260913-082108-0f81ed3a0c5d485f8cfb874f8b467fb4/report.json`）、Unity **2022.3.22f1** Bridge **PASS**（`Artifacts/BridgeReceiver-20260913-082532-936-f38ed0cdd41e46b4ba92be111f08e16c/bridge-report.json`）。
+
 # 2026-09-13 embedded base-color image budget retention
 
 GLB/VRMの埋め込みbase-color画像が1024pxを超える場合、取込を白一色へ退避せず、最大8192pxまでデコードしてアスペクト比を保った最近傍縮小を行い、native Paintの1024px上限へ所有データとして保存するようにした。8192px超・壊れた画像・16MiB超は従来どおり明示診断で省略し、外部URIやbase-color以外のtexture mapは推測取得しない。実RadDollV3（private一時素材、埋め込み画像6件）で縮小後のPaintノードとSave/Open依存なしを確認した。Core **461 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a7b92fd3fb184402a46aef4f4dfa676c`）。Windows Player `Builds/MaterialResizeV1/NyaForge.exe` Authoring **80 checks PASS**（`Artifacts/Authoring-20260913-081327-dc634884b6f0475e9ebbcabff60eff72/report.json`）、Unity **2022.3.22f1** Bridge **PASS**（`Artifacts/BridgeReceiver-20260913-081803-691-55c8fee7b2794de8a139d297b4ca5482/bridge-report.json`）。

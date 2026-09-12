@@ -34,6 +34,8 @@ namespace NyaForge.UnityRuntime
             var importedPaints = workspace.Document.ActiveObject.Graph.Nodes.Values
                 .Where(node => node.TypeId == BuiltinNodes.Paint && node.PaintImage != null).ToArray();
             Check(importedPaints.All(node => node.PaintImage.Width <= 1024 && node.PaintImage.Height <= 1024), "Imported base-color Paint exceeded the native 1024px budget.");
+            var importedPaintHashes = importedPaints.OrderBy(node => node.NodeId, StringComparer.Ordinal)
+                .Select(node => Checks.Hash(PaintImageCodec.Write(node.PaintImage))).ToArray();
             if (importedPaints.Length > 0)
                 checks.Add("embedded base-color images are owned by native Paint and fit the 1024px budget");
             SelectEditStage(1); Select(new[] { 0 });
@@ -47,6 +49,11 @@ namespace NyaForge.UnityRuntime
             Check(TrySaveProject(), "Real model project save failed.");
             OpenProject();
             Check(GraphEvaluator.Evaluate(workspace.Document.ActiveObject.Graph).Output.Mesh.ContentHash == edited, "Real model Save/Open changed edited geometry.");
+            var reopenedPaintHashes = workspace.Document.ActiveObject.Graph.Nodes.Values
+                .Where(node => node.TypeId == BuiltinNodes.Paint && node.PaintImage != null)
+                .OrderBy(node => node.NodeId, StringComparer.Ordinal)
+                .Select(node => Checks.Hash(PaintImageCodec.Write(node.PaintImage))).ToArray();
+            Check(importedPaintHashes.SequenceEqual(reopenedPaintHashes), "Real model Save/Open changed owned base-color Paint images.");
             string glb = Path.Combine(project, "exports", "real-model-skinned");
             var export = GlbExportService.ExportSkinned(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, glb);
             Check(File.Exists(export.Path), "Real model standard skinned GLB was not created.");
