@@ -16,6 +16,7 @@ internal static partial class Program
         if(args.Contains("--surface-profile")) return SurfacePaintProfile.Run(Root);
         RunAuthoringStateTests();
         RunVrm0SpringExpansionTests();
+        RunImportedPreviewRigTests();
         RunFaceInspectionTests();
         RunPolygonWireTests();
         RunPaintWireTests();

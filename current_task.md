@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。VRM1の再生/停止/リセットGUIと一時mesh表示を接続し、Windows Playerのhandler検証が合格。全source node階層の保存（T01）を追加し、Coreの直近検証は357件合格。R01〜R12は記録した自動検証範囲で修正済み。VRM0展開、一般node変換、実素材・実操作・負荷の受入は未完了。
+更新: 2026-09-12。VRM1の再生/停止/リセットGUIと一時mesh表示を接続し、Windows Playerのhandler検証が合格。全source node階層の保存（T01）を追加し、Coreの直近検証は359件合格。R01〜R12は記録した自動検証範囲で修正済み。VRM0展開、一般node変換、実素材・実操作・負荷の受入は未完了。
 
 ## 開発の入口
 
@@ -30,6 +30,13 @@
 - [ ] **A01 — Windows実素材・実操作受入**。利用可能なローカルモデルで取込・保存/Open・姿勢・揺れ・文字サイズと欠け・保存して終了を確認する。外部MCP transportのmetadata保存も別項目で検証する。完了条件: build名、入力、確認手順、結果、未対応事項の記録。素材はprivate/追跡除外を維持。
 
 初回レビュー時点の証拠（現状は下段参照）: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
+
+### T02: 通常nodeを含む一時骨格・skin姿勢の往復（2026-09-12）
+
+- `ImportedPreviewRig`へ必要なsource node/skin joint/全祖先から一時骨格を作る責務と、制作poseとの相互変換を分離。skinのBoneIdを維持し、通常nodeは決定的IDを持つ。source原点とinverse-bind Headの差を両方向へ補正。元graph/skin/skeletonは変更しない。[契約](docs/Imported-Preview-Rig.md)。
+- Core **359 passed / 0 failed**: `Logs/core-preview-rig.txt`、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-799f80a8863c4dc38d01556bbda60956`。回転姿勢往復・必要祖先・無関係枝除外・ID再現・stale拒否を確認。非joint helperを12stepシミュレーションして子skin骨へ回転を投影し、元姿勢を保持した。
+- Windows-PreviewRig build **PASS**: `Logs/build-player-20260912-160115-422.log`。Coreの姿勢変換追加で、今回Player GUI suiteは再実行していない。実素材/実操作の受入は未実施。
+- 次はVRM0展開targetから実行chainを作り、この一時骨格のcenter/collider変換、固定step所有者、Workbenchへ接続する。呼出側は展開targetとcenter/collider nodeを必要集合へ含める。必要node+祖先が実行Coreの256骨予算を超える場合は明示拒否。T02全体は未完了。
 
 ### T02前段: VRM0 source subtree展開（2026-09-12）
 

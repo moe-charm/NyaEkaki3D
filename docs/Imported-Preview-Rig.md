@@ -1,0 +1,15 @@
+# 通常nodeを含むプレビュー骨格
+
+`ImportedPreviewRig`は保存済みsource階層から一時的なSkeletonDefinitionを作る。制作graph・skin binding・元SkeletonDefinitionを書き換えず、`FromAuthored`と`ToAuthored`で姿勢だけを往復する。
+
+対象はすべてのskin joint、呼出側が指定するsource node、その全祖先。VRM0接続側は展開された全target、center、必要なcollider nodeを指定すること。無関係な枝は追加しないが、必要な通常nodeや祖先を省略して骨予算に合わせることもしない。実行Coreの上限256骨を超える場合は明示拒否する。source保存上限4096とは別の制限であり、一般モデルへの対応は未受入。
+
+skin jointのBoneIdは維持し、通常nodeにはsource hashとnode indexから決定的な専用IDを与える。親は元sourceの親、Headは元node原点。Tailは表示用の短い仮値で、Spring計算へは別途VRMの明示head/tailを渡す必要がある。
+
+姿勢入力では、skin jointは元poseの基底を使い、骨Headとsource原点の差を補正する。通常nodeは最近傍のskin祖先の変換に追従し、skin祖先のないnodeはsource rest姿勢を使う。既存skin jointの絶対姿勢は上書きして推定しない。
+
+計算後は元skin jointだけを抽出し、原点補正を逆向きに適用して元SkeletonHashのPoseSetへ戻す。一般source回転/scaleは取込profileの対応外のまま。graph/skeleton変更や違うPoseSetの入力は利用時に拒否する。
+
+Core検証では、source原点とinverse-bind Headの差・回転姿勢の往復、必須祖先の保持と無関係な枝の除外、IDの再現性、skin祖先のないnode、stale骨格を確認した。通常nodeだけをSpringで12step動かし、子skin骨への回転伝播と元姿勢の不変性を検証した。
+
+このモジュールは姿勢変換まで。VRM0の実行設定・center/collider変換・固定step所有者・Workbench再生GUIへの接続はT02の残件。
