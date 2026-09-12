@@ -57,6 +57,7 @@ internal static partial class Program
         RunGraphBakeTests();
         RunGraphLayoutTests();
         RunPolygonMeshTests();
+        RunChokerPrimitiveTests();
         RunPolygonDerivedDataTests();
         RunPolygonStorageTests();
         RunPolygonEditingTests();

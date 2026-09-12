@@ -21,6 +21,7 @@ namespace NyaForge.UnityRuntime
             side.Add(Button("空の形状から始める",()=>CreatePolygonGraph(true),"graph-create-empty-polygon"));
             side.Add(Button("四角面から始める", CreatePolygonGraph, "graph-create-polygon"));
             side.Add(Button("左右対称で始める", CreateMirrorGraph, "graph-create-mirror"));
+            side.Add(Button("チョーカー形状を追加", CreateChokerGraph, "graph-create-choker"));
             editStage = new DropdownField("表示・編集段", new List<string> { "最終出力（確認）" }, 0) { name = "graph-edit-stage" };
             editStage.style.flexDirection = FlexDirection.Column;
             editStage.RegisterValueChangedCallback(_ => Try(() => SelectEditStage(editStage.index)));
@@ -51,6 +52,20 @@ namespace NyaForge.UnityRuntime
                 new[] { new GraphEdge(source, "mesh", edit, "mesh"), new GraphEdge(edit, "mesh", output, "mesh") }, output);
             Execute(AuthoringOperation.AddGraph(graph));
             if (IsGraph && workspace.Document.ActiveObject.Graph.GraphId == graph.GraphId) { SelectEditStage(editStageIds.IndexOf(edit)); Frame(); }
+        }
+
+        void CreateChokerGraph()
+        {
+            string source = Guid.NewGuid().ToString("D"), edit = Guid.NewGuid().ToString("D"), output = Guid.NewGuid().ToString("D");
+            var polygon = NyaForge.Authoring.Topology.PolygonPrimitives.Choker(Guid.NewGuid().ToString("D"));
+            var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), new[] { GraphNode.Polygon(source, polygon, new RestTransform(1, new Vec3())), GraphNode.PolygonEdit(edit), GraphNode.Output(output) },
+                new[] { new GraphEdge(source, "mesh", edit, "mesh"), new GraphEdge(edit, "mesh", output, "mesh") }, output);
+            Execute(AuthoringOperation.AddGraph(graph));
+            if (IsGraph && workspace.Document.ActiveObject.Graph.GraphId == graph.GraphId)
+            {
+                SelectEditStage(editStageIds.IndexOf(edit)); Frame();
+                SetStatus("チョーカー形状を追加しました。頂点編集・厚み・UV・材質を調整してください。");
+            }
         }
 
         void SelectEditStage(int index)
@@ -92,6 +107,7 @@ namespace NyaForge.UnityRuntime
             root.Q<Button>("graph-create-polygon").SetEnabled(workspace.Document.IsEmpty);
             root.Q<Button>("graph-create-empty-polygon").SetEnabled(workspace.Document.IsEmpty);
             root.Q<Button>("graph-create-mirror").SetEnabled(workspace.Document.IsEmpty);
+            root.Q<Button>("graph-create-choker").SetEnabled(workspace.Document.IsEmpty || IsGraph);
             var previous = activeEditContext; activeEditContext = null;
             editStageInfo.text = IsGraph ? "編集するEditMeshを選んでください。最終出力は確認用です。" : "プレートは従来の頂点編集を使用します。";
             if (IsGraph && index > 0)

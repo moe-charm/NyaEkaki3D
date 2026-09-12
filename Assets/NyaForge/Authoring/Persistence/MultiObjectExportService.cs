@@ -96,7 +96,12 @@ namespace NyaForge.Authoring
                         var singleDocument = new AuthoringDocument(workspace.Document.DocumentId, workspace.Document.Name,
                             workspace.Document.DocumentRevision, new[] { item }, item.ObjectId, false);
                         var singleWorkspace = new AuthoringWorkspace(singleDocument);
-                        string objectDirectory = Path.Combine(staging, "objects", index.ToString("D2", System.Globalization.CultureInfo.InvariantCulture) + "-" + item.ObjectId);
+                        // Keep the per-object folder short. The object identity is
+                        // already recorded in the package manifest and including a
+                        // 36-character UUID here can push Windows' legacy path
+                        // limit over the edge once blobs and atomic temp names are
+                        // added below it.
+                        string objectDirectory = Path.Combine(staging, "objects", index.ToString("D2", System.Globalization.CultureInfo.InvariantCulture));
                         var export = ProjectExportService.Export(singleWorkspace, singleWorkspace.InstanceId,
                             singleDocument.DocumentId, singleDocument.DocumentRevision, objectDirectory);
                         string relative = Path.GetRelativePath(staging, export.ManifestPath).Replace(Path.DirectorySeparatorChar, '/');
