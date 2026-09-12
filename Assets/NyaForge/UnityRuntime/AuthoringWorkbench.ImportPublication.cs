@@ -64,6 +64,21 @@ namespace NyaForge.UnityRuntime
         static SecondaryMotionAsset BuildImportedSecondaryMotion(AuthoringGraph graph, ImportedRigSession rig, VrmSpringSession springs)
         {
             if (rig == null || springs == null) return null;
+            // VRM0 spring roots may legally reference source nodes that are not
+            // joints of the selected skin (for example, an avatar can keep hair
+            // dynamics outside the body skin). The authored secondary-motion
+            // attachment uses the selected graph skeleton, so defer those
+            // source-only chains to the transient preview instead of attempting
+            // to index an authored pose with a preview-only bone id.
+            if (springs.Format == "vrm0")
+            {
+                var expanded = Vrm0SpringExpansion.Resolve(springs, rig, graph);
+                bool sourceOnly = expanded.Any(group =>
+                    group.Targets.Any(target => !rig.NodeToBone.ContainsKey(target.NodeIndex)) ||
+                    (group.CenterNodeIndex >= 0 && !rig.NodeToBone.ContainsKey(group.CenterNodeIndex)) ||
+                    group.ColliderGroupIndices.Any(index => springs.ColliderGroups[index].ColliderNodeIndices.Any(node => !rig.NodeToBone.ContainsKey(node))));
+                if (sourceOnly) return null;
+            }
             var poseNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.Pose && node.Pose != null);
             if (poseNode == null) throw new AuthoringException("INVALID_POSE", "Spring migration requires an authored pose node.");
             return springs.Format == "vrm0"

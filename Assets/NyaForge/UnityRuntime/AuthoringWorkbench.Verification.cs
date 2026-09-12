@@ -44,6 +44,7 @@ namespace NyaForge.UnityRuntime
             var graphExports = new List<string>();
             string failure = null;
             var arguments = Environment.GetCommandLineArgs();
+            int modelImportIndex = Array.IndexOf(arguments, "--authoring-import-model");
             int reopenIndex = Array.IndexOf(arguments, "--authoring-reopen-project");
             if (reopenIndex >= 0 && reopenIndex + 1 < arguments.Length)
             {
@@ -80,6 +81,8 @@ namespace NyaForge.UnityRuntime
                 string emptyId = workspace.Document.DocumentId;
                 OpenProject();
                 Check(workspace.Document.IsEmpty && workspace.Document.DocumentId == emptyId && !HasUnsaved, "Empty save/reopen failed");
+                if (modelImportIndex >= 0 && modelImportIndex + 1 < arguments.Length)
+                    VerifyCommandLineModelImport(arguments[modelImportIndex + 1], output, checks);
                 AddSample(1);
                 Check(!workspace.Document.IsEmpty && workspace.CanUndo && projection.Points.Length > 0, "Sample did not use the command path");
                 bool replaced = false;
@@ -226,7 +229,7 @@ namespace NyaForge.UnityRuntime
                 graphicsDevice = SystemInfo.graphicsDeviceName, checks = checks.ToArray(), bakeManifests = exports.ToArray(),
                 graphBakeManifests = graphExports.ToArray(),
                 screenshot = screenshot, width = Screen.width, height = Screen.height,
-                triangles = workspace?.Evaluate().TriangleCount ?? 0
+                triangles = workspace?.Evaluate()?.TriangleCount ?? 0
             };
             File.WriteAllText(Path.Combine(output, "report.json"), JsonUtility.ToJson(report, true));
             Debug.Log("NYAFORGE_AUTHORING_CHECK " + (report.passed ? "PASS" : "FAIL"));

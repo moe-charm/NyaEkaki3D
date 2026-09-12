@@ -241,7 +241,14 @@ namespace NyaForge.Authoring
             {
                 var bone = skinned.Skeleton.Bones[i]; var node = (JObject)nodes[jointNodes[i]]; var parent = bone.ParentBoneId == "" ? (BoneDefinition)null : skinned.Skeleton.ById[bone.ParentBoneId];
                 var origin = parent == null ? bone.Head : bone.Head - parent.Head; node["translation"] = new JArray(origin.X, origin.Y, origin.Z);
-                if (parent == null) roots.Add(jointNodes[i]); else ((JObject)nodes[byId[parent.BoneId]])["children"] = Append((JObject)nodes[byId[parent.BoneId]]["children"], jointNodes[i]);
+                if (parent == null) roots.Add(jointNodes[i]);
+                else
+                {
+                    // children is a JArray after the first child; casting the
+                    // token itself to JObject breaks any skeleton with siblings.
+                    var parentNode = (JObject)nodes[byId[parent.BoneId]];
+                    parentNode["children"] = Append(parentNode["children"], jointNodes[i]);
+                }
             }
             foreach (var root in roots) sceneNodes.Add(root);
             var ibm = new Vec4[skinned.Skeleton.Bones.Count * 4];

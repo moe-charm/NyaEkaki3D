@@ -12,6 +12,11 @@ namespace NyaForge.UnityRuntime
             string path = Path.Combine(output, "invalid-skin.vrm");
             File.WriteAllBytes(path, VrmVerificationFixture.Create(false, true));
             ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null);
+            // A preceding optional real-model smoke may have selected a different
+            // mesh/skin. Keep this fixture deterministic and select its only pair.
+            modelImportMeshIndex.SetValueWithoutNotify(0);
+            modelImportSkinIndex.SetValueWithoutNotify(0);
+            modelImportInstanceIndex.SetValueWithoutNotify(-1);
             VerifyImportUnchanged(() => ImportModel(path));
             string good = Path.Combine(output, "retry-skin.vrm");
             File.WriteAllBytes(good, VrmVerificationFixture.Create(true));
