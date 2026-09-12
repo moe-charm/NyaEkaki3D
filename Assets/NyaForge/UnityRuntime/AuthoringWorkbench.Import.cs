@@ -89,12 +89,13 @@ namespace NyaForge.UnityRuntime
                 nodes.Add(GraphNode.MorphSetNode(morphId, imported.Morphs)); nodes.Add(GraphNode.MorphDeformNode(deformId, zeroWeights));
                 edges.Add(new GraphEdge(sourceId, "mesh", deformId, "mesh")); edges.Add(new GraphEdge(morphId, "morphs", deformId, "morphs")); finalNode = deformId;
             }
-            finalNode = AppendImportedMaterials(nodes, edges, finalNode, imported.Mesh.Submeshes.Count, imported.Materials);
+            var materialWarnings = new List<string>();
+            finalNode = AppendImportedMaterials(nodes, edges, finalNode, imported.Mesh.Submeshes.Count, imported.Materials, materialWarnings);
             nodes.Add(GraphNode.Output(outputId)); edges.Add(new GraphEdge(finalNode, "mesh", outputId, "mesh"));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
             var diagnostics = imported.Diagnostics.Count == 0 ? null : new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, null, imported.Diagnostics);
             CommitImportedGraph(graph, new ImportMetadataCandidate(null, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm, diagnostics));
-            Refresh(); SetStatus("GLBを取り込みました。mesh " + meshIndex + " · " + (imported.Morphs == null ? " morphなし" : " morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(imported.Diagnostics));
+            Refresh(); SetStatus("GLBを取り込みました。mesh " + meshIndex + " · " + (imported.Morphs == null ? " morphなし" : " morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(imported.Diagnostics) + ImportMaterialWarningSummary(materialWarnings));
         }
 
         void ImportSkinnedModel(byte[] bytes, VrmMetadata vrm, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null)
@@ -111,7 +112,8 @@ namespace NyaForge.UnityRuntime
                 nodes.Insert(1, GraphNode.MorphSetNode(morphId, imported.Morphs)); nodes.Insert(2, GraphNode.MorphDeformNode(morphDeformId, weights)); edges.Add(new GraphEdge(sourceId, "mesh", morphDeformId, "mesh")); edges.Add(new GraphEdge(morphId, "morphs", morphDeformId, "morphs")); finalNode = morphDeformId;
             }
             edges.Add(new GraphEdge(finalNode, "mesh", editId, "mesh")); edges.Add(new GraphEdge(editId, "mesh", bindId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", bindId, "skeleton")); edges.Add(new GraphEdge(skeletonId, "skeleton", poseId, "skeleton")); edges.Add(new GraphEdge(editId, "mesh", deformId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", deformId, "skeleton")); edges.Add(new GraphEdge(bindId, "binding", deformId, "binding")); edges.Add(new GraphEdge(poseId, "pose", deformId, "pose"));
-            finalNode = AppendImportedMaterials(nodes, edges, deformId, imported.Mesh.Submeshes.Count, imported.Materials);
+            var materialWarnings = new List<string>();
+            finalNode = AppendImportedMaterials(nodes, edges, deformId, imported.Mesh.Submeshes.Count, imported.Materials, materialWarnings);
             edges.Add(new GraphEdge(finalNode, "mesh", outputId, "mesh"));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
             var sourceCandidate = GlbSourceSkinImporter.Read(bytes, meshIndex, skinIndex);
@@ -119,13 +121,18 @@ namespace NyaForge.UnityRuntime
                 .WithSourceSkin(sourceCandidate.Skin, sourceCandidate.Binding);
             var diagnostics = imported.Diagnostics.Count == 0 ? null : new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, imported.SkinIndex, imported.Diagnostics);
             CommitImportedGraph(graph, new ImportMetadataCandidate(rigSession, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm, diagnostics));
-            Refresh(); SetStatus("GLB skinを取り込みました。mesh " + meshIndex + " · skin " + skinIndex + " · bone " + imported.Skeleton.Bones.Count + " · weight " + imported.Binding.Weights.Count + (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(imported.Diagnostics));
+            Refresh(); SetStatus("GLB skinを取り込みました。mesh " + meshIndex + " · skin " + skinIndex + " · bone " + imported.Skeleton.Bones.Count + " · weight " + imported.Binding.Weights.Count + (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(imported.Diagnostics) + ImportMaterialWarningSummary(materialWarnings));
         }
 
         static string ImportDiagnosticSummary(IReadOnlyList<GlbImportDiagnostic> diagnostics)
         {
             if (diagnostics == null || diagnostics.Count == 0) return "";
             return " · 診断 " + string.Join(" / ", diagnostics.Select(item => (item.IsBlocking ? "保持不可" : "一部保持") + ":" + item.Code));
+        }
+
+        static string ImportMaterialWarningSummary(IReadOnlyList<string> warnings)
+        {
+            return warnings == null || warnings.Count == 0 ? "" : " · 材質画像 " + warnings.Count + "件はサイズ/形式のため省略";
         }
 
         IEnumerator PickModel()

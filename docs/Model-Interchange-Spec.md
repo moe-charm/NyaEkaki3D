@@ -173,3 +173,7 @@ GUIには「標準GLB（表示形状）」「標準GLB（skin/morph保持）」�
 ### 8.1 skinned node instance affine（2026-09-13）
 
 node instanceを選択したskinned importでは、mesh resourceのsource-local geometryとskin paletteを変更せず、選択nodeのworld affineを `ImportedRigSession` v6 の `meshInstanceTransform` へ保存する。表示はsource skin後の最終graph outputへ一度だけ適用し、標準SkinnedGeometry GLBではmesh nodeのcolumn-major `matrix` として出力する。旧session v1〜v5は従来どおり読める。複数instanceの同時結合、共有skin参照、実VRChatでの出力受入は未完了である。
+
+### 実モデル材質・複数slot往復（2026-09-13）
+
+RadDollV3 VRM（private temp、mesh 1 / skin 1、129,348 vertices、171 bones、35 morphs）で、埋め込みbase-color画像6件が1024px上限を超える場合はnative Paintへ無理に保持せず、材質係数と診断を残して省略することを確認した。sRGB変換の端点丸めを0〜1へクランプし、標準SkinnedGeometry出力では複数material slotごとに使用頂点を局所リマップして、再読込時の頂点重複計上を防いだ。Windows Player `Builds/RealModelMaterialClampV4/NyaForge.exe` と `Artifacts/Authoring-20260913-045250-aab62f6896e0479b93da4a562d8573eb/report.json` で、取込→EditMesh→Save/Open→標準skinned GLB→再取込を一周合格。Core 446件合格。実VRChatの見た目・挙動、1024px超画像の完全保持、追加texture mapは未完了。

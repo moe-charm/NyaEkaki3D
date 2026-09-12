@@ -133,7 +133,11 @@ namespace NyaForge.Authoring.Import
 
         static float SrgbToLinear(float value)
         {
-            return value <= .04045f ? value / 12.92f : (float)Math.Pow((value + .055f) / 1.055f, 2.4);
+            // The glTF endpoint value 1 can round slightly above one when the
+            // exponent is evaluated in double precision and converted to float.
+            // MaterialParameters treats the normalized range as a hard contract.
+            double converted = value <= .04045f ? value / 12.92 : Math.Pow((value + .055) / 1.055, 2.4);
+            return (float)Math.Max(0d, Math.Min(1d, converted));
         }
     }
 }

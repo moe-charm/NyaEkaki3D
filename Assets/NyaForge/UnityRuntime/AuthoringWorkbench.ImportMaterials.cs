@@ -11,7 +11,7 @@ namespace NyaForge.UnityRuntime
 {
     public sealed partial class AuthoringWorkbench
     {
-        static string AppendImportedMaterials(List<GraphNode> nodes, List<GraphEdge> edges, string meshNodeId, int submeshCount, IReadOnlyList<GlbMaterialSource> materials)
+        static string AppendImportedMaterials(List<GraphNode> nodes, List<GraphEdge> edges, string meshNodeId, int submeshCount, IReadOnlyList<GlbMaterialSource> materials, List<string> warnings = null)
         {
             if (materials == null || materials.Count != submeshCount || materials.Count == 0) return meshNodeId;
             var slots = materials.Select(item => item.SubmeshIndex).Distinct().OrderBy(item => item).ToArray();
@@ -26,7 +26,14 @@ namespace NyaForge.UnityRuntime
                 edges.Add(new GraphEdge(materialId, "material", assignmentId, GraphNode.MaterialSlotPort(material.SubmeshIndex)));
                 if (material.HasEmbeddedBaseColorImage)
                 {
-                    var image = DecodeEmbeddedImage(material);
+                    PaintImage image;
+                    try { image = DecodeEmbeddedImage(material); }
+                    catch (AuthoringException error)
+                    {
+                        string message = "material " + material.SourceMaterialIndex + " の埋め込みbase color画像をnative Paintへ保持できないため省略しました（" + error.Code + "）。";
+                        warnings?.Add(message); Debug.LogWarning(message);
+                        continue;
+                    }
                     string imageId = Guid.NewGuid().ToString("D");
                     nodes.Add(GraphNode.Paint(imageId, image.Width, image.Height, image));
                     edges.Add(new GraphEdge(meshNodeId, "mesh", imageId, "mesh"));
@@ -45,7 +52,8 @@ namespace NyaForge.UnityRuntime
             {
                 texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, false);
                 if (!texture.LoadImage(bytes, false)) throw new AuthoringException("INVALID_IMAGE", "埋め込みbase color画像を読み込めませんでした。");
-                PaintImage.ValidateDimensions(texture.width, texture.height);
+                if (texture.width < 1 || texture.height < 1 || texture.width > 1024 || texture.height > 1024)
+                    throw new AuthoringException("IMAGE_DIMENSION_EXCEEDED", "埋め込みbase color画像は1024x1024以内で保持します（" + texture.width + "x" + texture.height + "）。");
                 var colors = texture.GetPixels32();
                 var rgba = new byte[colors.Length * 4];
                 for (int i = 0; i < colors.Length; i++)
