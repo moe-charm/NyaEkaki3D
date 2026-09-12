@@ -163,6 +163,7 @@ namespace NyaForge.UnityRuntime
                 VerifySaveFailureGuard(output, checks);
                 VerifySpringCore(checks);
                 VerifyVrmImportRoundtrip(output, checks);
+                VerifySecondaryMotionRebind(checks);
                 VerifyPhysBonesTargetStatus(output, checks);
                 VerifyGraphExports(output, checks, graphExports);
                 TopologyVerification.Verify(output, checks);
