@@ -38,34 +38,56 @@ namespace NyaForge.Authoring
         }
 
         public static GlbExportResult ExportSkinned(AuthoringWorkspace workspace, string instance, string document, long revision, string directory)
-            => ExportSkinned(workspace, instance, document, revision, directory, null);
+            => ExportSkinnedCore(workspace, instance, document, revision, directory, GlbExportProfile.SkinnedGeometry, null, false);
 
         /// <summary>Writes a skinned GLB while retaining a selected source node instance affine on the mesh node.</summary>
         public static GlbExportResult ExportSkinned(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, SourceAffine instanceWorldTransform)
+            => ExportSkinnedCore(workspace, instance, document, revision, directory, GlbExportProfile.SkinnedGeometry, _ => instanceWorldTransform, true);
+
+        /// <summary>Writes a skinned GLB while retaining one explicit source node affine per graph object.</summary>
+        public static GlbExportResult ExportSkinnedWithTransforms(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, IReadOnlyDictionary<string, SourceAffine> instanceWorldTransforms)
+            => ExportSkinnedCore(workspace, instance, document, revision, directory, GlbExportProfile.SkinnedGeometry,
+                item => instanceWorldTransforms != null && instanceWorldTransforms.TryGetValue(item.ObjectId, out var value) ? value : null, false, instanceWorldTransforms);
+
+        static GlbExportResult ExportSkinnedCore(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, GlbExportProfile profile, Func<AuthoringObject, SourceAffine> transformResolver, bool singleTransformMode, IReadOnlyDictionary<string, SourceAffine> transformMap = null)
         {
             ValidateRequest(workspace, instance, document, revision, directory);
             lock (workspace.Gate)
             {
-                Checks.Require(instanceWorldTransform == null || workspace.Document.Objects.Count == 1, "GLB_SKIN_MULTI_INSTANCE_TRANSFORM", "A selected node instance transform is only valid for a single-object export.");
-                var skinned = workspace.Document.Objects.Select(item => BuildSkinnedObject(item, instanceWorldTransform, GlbExportProfile.SkinnedGeometry)).ToArray();
+                Checks.Require(!singleTransformMode || !workspace.Document.Objects.Any() || transformResolver(workspace.Document.Objects[0]) == null || workspace.Document.Objects.Count == 1,
+                    "GLB_SKIN_MULTI_INSTANCE_TRANSFORM", "A selected node instance transform is only valid for a single-object export.");
+                if (transformMap != null)
+                    Checks.Require(transformMap.Keys.All(id => workspace.Document.Objects.Any(item => item.ObjectId == id)), "GLB_SKIN_INSTANCE_TRANSFORM", "A skinned instance transform references an unknown graph object.");
+                var skinned = workspace.Document.Objects.Select(item => BuildSkinnedObject(item, transformResolver == null ? null : transformResolver(item), profile)).ToArray();
                 ValidateSharedSkeleton(skinned);
-                string path = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, GlbExportProfile.SkinnedGeometry);
-                return new GlbExportResult(path, GlbExportProfile.SkinnedGeometry, skinned.Length);
+                string path = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, profile);
+                return new GlbExportResult(path, profile, skinned.Length);
             }
         }
 
         /// <summary>Writes a skinned GLB with every authored influence split into JOINTS_n/WEIGHTS_n sets.</summary>
         public static GlbExportResult ExportSkinnedExtended(AuthoringWorkspace workspace, string instance, string document, long revision, string directory)
-            => ExportSkinnedExtended(workspace, instance, document, revision, directory, null);
+            => ExportSkinnedExtendedCore(workspace, instance, document, revision, directory, null, false);
 
         /// <summary>Writes an extended skinned GLB while retaining a selected source node instance affine.</summary>
         public static GlbExportResult ExportSkinnedExtended(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, SourceAffine instanceWorldTransform)
+            => ExportSkinnedExtendedCore(workspace, instance, document, revision, directory, _ => instanceWorldTransform, true);
+
+        /// <summary>Writes an extended skinned GLB with one explicit source node affine per graph object.</summary>
+        public static GlbExportResult ExportSkinnedExtendedWithTransforms(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, IReadOnlyDictionary<string, SourceAffine> instanceWorldTransforms)
+            => ExportSkinnedExtendedCore(workspace, instance, document, revision, directory,
+                item => instanceWorldTransforms != null && instanceWorldTransforms.TryGetValue(item.ObjectId, out var value) ? value : null, false, instanceWorldTransforms);
+
+        static GlbExportResult ExportSkinnedExtendedCore(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, Func<AuthoringObject, SourceAffine> transformResolver, bool singleTransformMode, IReadOnlyDictionary<string, SourceAffine> transformMap = null)
         {
             ValidateRequest(workspace, instance, document, revision, directory);
             lock (workspace.Gate)
             {
-                Checks.Require(instanceWorldTransform == null || workspace.Document.Objects.Count == 1, "GLB_SKIN_MULTI_INSTANCE_TRANSFORM", "A selected node instance transform is only valid for a single-object export.");
-                var skinned = workspace.Document.Objects.Select(item => BuildSkinnedObject(item, instanceWorldTransform, GlbExportProfile.SkinnedGeometryExtended)).ToArray();
+                Checks.Require(!singleTransformMode || !workspace.Document.Objects.Any() || transformResolver(workspace.Document.Objects[0]) == null || workspace.Document.Objects.Count == 1,
+                    "GLB_SKIN_MULTI_INSTANCE_TRANSFORM", "A selected node instance transform is only valid for a single-object export.");
+                if (transformMap != null)
+                    Checks.Require(transformMap.Keys.All(id => workspace.Document.Objects.Any(item => item.ObjectId == id)), "GLB_SKIN_INSTANCE_TRANSFORM", "A skinned instance transform references an unknown graph object.");
+                var skinned = workspace.Document.Objects.Select(item => BuildSkinnedObject(item, transformResolver == null ? null : transformResolver(item), GlbExportProfile.SkinnedGeometryExtended)).ToArray();
                 ValidateSharedSkeleton(skinned);
                 string path = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, GlbExportProfile.SkinnedGeometryExtended);
                 return new GlbExportResult(path, GlbExportProfile.SkinnedGeometryExtended, skinned.Length);

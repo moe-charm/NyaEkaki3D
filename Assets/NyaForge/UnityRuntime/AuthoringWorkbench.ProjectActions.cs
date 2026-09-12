@@ -110,16 +110,31 @@ namespace NyaForge.UnityRuntime
         void ExportGlbSkinned() => Try(() =>
         {
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            var result = GlbExportService.ExportSkinned(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, importedRigSession?.MeshInstanceTransform);
+            var result = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedInstanceTransforms());
             SetStatus("標準GLB（skin/morph保持）を書き出しました: " + result.Path);
         });
 
         void ExportGlbSkinnedExtended() => Try(() =>
         {
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-extended-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            var result = GlbExportService.ExportSkinnedExtended(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, importedRigSession?.MeshInstanceTransform);
+            var result = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedInstanceTransforms());
             SetStatus("拡張GLB（全weight保持）を書き出しました: " + result.Path);
         });
+
+        IReadOnlyDictionary<string, SourceAffine> SkinnedInstanceTransforms()
+        {
+            var result = new Dictionary<string, SourceAffine>(StringComparer.Ordinal);
+            if (workspace?.Document?.Objects == null) return result;
+            foreach (var item in workspace.Document.Objects)
+            {
+                if (item.Graph == null) continue;
+                if (importedRigSessions.TryGetValue(item.Graph.GraphId, out var session) && session?.MeshInstanceTransform != null)
+                    result[item.ObjectId] = session.MeshInstanceTransform;
+            }
+            if (importedRigSession?.MeshInstanceTransform != null && workspace.Document.ActiveObject?.Graph != null)
+                result[workspace.Document.ActiveObject.ObjectId] = importedRigSession.MeshInstanceTransform;
+            return result;
+        }
 
     }
 }

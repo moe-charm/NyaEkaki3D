@@ -160,7 +160,7 @@ I04-Eのreport設計はAと同時に進め、完全取込の公開にはA〜Eの
 
 ### 同一skeletonの複数mesh（2026-09-13）
 
-`SkinnedGeometry`／`SkinnedGeometryExtended`は、同一skeleton hashを共有する複数graph objectをmeshごとのprimitive/nodeとして出力し、一つのshared skinを参照できる。異なるskeletonの結合、instance affine付き複数objectの同時出力、共有mesh／morph参照の完全保持は未対応である。
+`SkinnedGeometry`／`SkinnedGeometryExtended`は、同一skeleton hashを共有する複数graph objectをmeshごとのprimitive/nodeとして出力し、一つのshared skinを参照できる。graph objectごとの `ImportedRigSession.MeshInstanceTransform` はnodeごとのmatrixへ保持する。異なるskeletonの結合、共有mesh／morph参照の完全保持は未対応である。
 
 `GlbExportService` はnative制作データを変更せず、明示的な2 profileで標準glTF 2.0 GLBを生成する。
 
@@ -176,7 +176,7 @@ GUIには「標準GLB（表示形状）」「標準GLB（skin/morph保持）」�
 
 ### 8.1 skinned node instance affine（2026-09-13）
 
-node instanceを選択したskinned importでは、mesh resourceのsource-local geometryとskin paletteを変更せず、選択nodeのworld affineを `ImportedRigSession` v6 の `meshInstanceTransform` へ保存する。表示はsource skin後の最終graph outputへ一度だけ適用し、標準SkinnedGeometry GLBではmesh nodeのcolumn-major `matrix` として出力する。旧session v1〜v5は従来どおり読める。複数instanceの同時結合、共有skin参照、実VRChatでの出力受入は未完了である。
+node instanceを選択したskinned importでは、mesh resourceのsource-local geometryとskin paletteを変更せず、選択nodeのworld affineを `ImportedRigSession` v6 の `meshInstanceTransform` へ保存する。表示はsource skin後の最終graph outputへ一度だけ適用し、標準SkinnedGeometry GLBではmesh nodeのcolumn-major `matrix` として出力する。旧session v1〜v5は従来どおり読める。複数objectの同時出力でもgraph objectごとのaffineを保持できるが、共有mesh参照、異なるskeletonの結合、実VRChatでの出力受入は未完了である。
 
 ### 実モデル材質・複数slot往復（2026-09-13）
 

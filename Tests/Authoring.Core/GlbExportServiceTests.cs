@@ -108,6 +108,14 @@ internal static partial class Program
             Equal(1, firstImported.Skeleton.Bones.Count);
             Equal(1, secondImported.Skeleton.Bones.Count);
 
+            var transforms = workspace.Document.Objects.ToDictionary(item => item.ObjectId,
+                item => SourceAffine.FromTrs(new Vec3(item.ObjectId == workspace.Document.Objects[0].ObjectId ? 1f : -1f, 0, 0), new Vec4(0, 0, 0, 1), new Vec3(1, 1, 1)), StringComparer.Ordinal);
+            string transformedDirectory = Path.Combine(Root, "glb-skinned-multi-affine-" + Guid.NewGuid().ToString("N"));
+            var transformed = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, transformedDirectory, transforms);
+            var transformedNodes = ((JArray)JObject.Parse(ReadJsonChunk(File.ReadAllBytes(transformed.Path)))["nodes"]!).OfType<JObject>().Where(node => node["mesh"] != null).ToArray();
+            Equal(2, transformedNodes.Length);
+            True(transformedNodes.All(node => node["matrix"] is JArray && ((JArray)node["matrix"]!).Count == 16));
+
             var foreign = new SkeletonDefinition(new[] { new BoneDefinition(GraphId(), "ForeignRoot", "", new Vec3(), new Vec3(0, .1f, 0)) });
             var mixedWorkspace = AuthoringWorkspace.CreateEmpty();
             Ok(Execute(mixedWorkspace, AuthoringOperation.AddGraph(BuildGraph(first, skeleton))));
