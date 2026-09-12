@@ -4,7 +4,7 @@ Windows-first authoring app for VR characters, clothing, and items. The product 
 
 This public repository contains the generic Unity Viewer, authoring core and UI, Unity Bridge, public synthetic fixtures, tests, and documentation. Private avatar files, textures, licenses, and packs stay in their source projects; generated builds and local verification outputs are excluded from Git.
 
-The viewer opens a prepared asset pack and supports visibility, morph values, pose playback, camera framing, named confirmation sets, reload, and visual checks. Authoring includes empty projects, typed graphs, a runtime node canvas, non-destructive vertex editing, polygon source/edit nodes, face selection and region extrusion, Undo/Redo, native saving, and static-mesh Unity Bridge export. Static projects write schema 2 and graph projects write schema 3; readers support schemas 1/2/3. Editing arbitrary avatar pack meshes is a later milestone. See the current task for evidence and remaining limits.
+The viewer opens a prepared asset pack and supports visibility, morph values, pose playback, camera framing, named confirmation sets, reload, and visual checks. Authoring includes empty projects, typed graphs, a runtime node canvas, non-destructive vertex editing, polygon source/edit nodes, face selection and region extrusion, Undo/Redo, native saving, GLB/VRM one-mesh import with rest-pose skin editing, and standard GLB export profiles. Static projects write schema 2 and graph projects write schema 3; readers support schemas 1/2/3. FBX/BLEND and arbitrary pack editing remain outside the current import boundary. See the current task for evidence and remaining limits.
 
 ## Start here
 
