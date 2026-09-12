@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
+using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Simulation;
 using Newtonsoft.Json.Linq;
 
@@ -95,6 +96,20 @@ internal static partial class Program
             Equal(4, JObject.Parse(File.ReadAllText(Path.Combine(directory, ProjectStore.ManifestName))).Value<int>("schemaVersion"));
             File.WriteAllText(Path.Combine(directory, ProjectAttachments.Springs), "stale");
             var reopened = ProjectStore.Open(directory); Equal(0, reopened.Attachments.Hashes.Count); False(reopened.IsDirty);
+        });
+
+        Test("legacy GLB diagnostics sidecar migrates on save", () =>
+        {
+            string directory = Dir("snapshot-legacy-import-diagnostics"); var w = Fresh(); ProjectStore.Save(directory, w, 0);
+            var record = new ImportedGlbDiagnostics(Guid.NewGuid().ToString("D"), new string('e', 64), 0, null,
+                new[] { new GlbImportDiagnostic("EXTENSIONS_PARTIAL", "extensionsUsed", false, "inventory-only") });
+            byte[] bytes = ImportedGlbDiagnosticsCodec.Write(new[] { record });
+            File.WriteAllBytes(Path.Combine(directory, ProjectAttachments.ImportDiagnostics), bytes);
+            var loaded = ProjectStore.Open(directory); True(bytes.SequenceEqual(loaded.Attachments.Read(ProjectAttachments.ImportDiagnostics))); False(loaded.IsDirty);
+            ProjectStore.Save(directory, loaded, 1);
+            var manifest = JObject.Parse(File.ReadAllText(Path.Combine(directory, ProjectStore.ManifestName)));
+            Equal(4, manifest.Value<int>("schemaVersion"));
+            var reopened = ProjectStore.Open(directory); True(bytes.SequenceEqual(reopened.Attachments.Read(ProjectAttachments.ImportDiagnostics))); False(reopened.IsDirty);
         });
 
         Test("snapshot Save As failure can retry without advancing source version", () =>
