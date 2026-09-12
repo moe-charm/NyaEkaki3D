@@ -300,6 +300,7 @@ namespace NyaForge.UnityRuntime
             RefreshPaint();
             RefreshMaterials();RefreshRig();RefreshMorph();RefreshEvidenceCapture();
             RefreshModelImport();
+            RefreshPhysBonesStatus();
             RefreshSpringPlayback();
             RefreshValidation();
         }

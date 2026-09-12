@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Import;
+using NyaForge.Authoring.Simulation;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -37,6 +38,7 @@ namespace NyaForge.UnityRuntime
             activeEditContext = null;
             selectedFaces.Clear(); faceMode.SetValueWithoutNotify(false);
             importedRigSession = null;
+            ClearImportedPhysBones();
             ClearImportedVrmExpressions();
             ClearImportedVrmSpring();
             workspace = next; commands = new AuthoringCommandService(workspace);
@@ -56,14 +58,17 @@ namespace NyaForge.UnityRuntime
             var rigSession = rigBytes == null ? null : ImportedRigSessionCodec.Read(rigBytes);
             var expressionBytes = next.Attachments.Read(ProjectAttachments.Expressions);
             var springBytes = next.Attachments.Read(ProjectAttachments.Springs);
+            var physBonesBytes = next.Attachments.Read(ProjectAttachments.PhysBones);
             var expressionSession = expressionBytes == null ? null : VrmExpressionSessionCodec.Read(expressionBytes);
             var springSession = springBytes == null ? null : VrmSpringSessionCodec.Read(springBytes);
+            var physBonesDocument = physBonesBytes == null ? null : PhysBonesTargetCodec.ReadDocument(physBonesBytes);
             if (rigSession != null && expressionSession != null) rigSession.ValidateSource(expressionSession.SourceHash);
             if (rigSession != null && springSession != null) rigSession.ValidateSource(springSession.SourceHash);
             ReplaceWorkspace(next, directory);
             importedRigSession = rigSession;
             importedVrmSession = expressionSession; Refresh();
             importedVrmSpringSession = springSession; RefreshVrmSpringStatus();
+            SetImportedPhysBones(physBonesDocument);
         }
 
         void Export() => Try(() =>
