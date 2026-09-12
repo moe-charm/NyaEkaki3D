@@ -95,6 +95,7 @@ internal static partial class Program
         RunGlbImportTests();
         RunGlbSkinImportTests();
         RunVrmMetadataTests();
+        RunSpringBoneTests();
         RunSkeletonGraphTests();
         RunPoseGraphTests();
         RunPaintPathSimplifierTests();

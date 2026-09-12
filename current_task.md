@@ -155,6 +155,12 @@
 - `VrmSpringSession`／`VrmSpringSessionCodec`を追加し、SpringBoneのchain、joint、root、center、collider group、基本パラメータを`vrm-spring-session.nyaforge.json`へbounded deterministic JSONとして保存する。元VRM bytesとruntimeの物理状態は保存しない。
 - Workbenchのモデル取り込み時にsessionを作り、Save/Open／新規project切替で表情sessionと同じライフサイクルを通す。モデル取り込みパネルに復元済みのchain／joint／collider group数と「物理未実装」を表示する。
 - Core **292 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-7f9bd35157d24405a8fba0bf168dbd5a`。session codecの往復・決定性とmodern collider node保持を追加確認した。Windows-VrmSpringSession2 Player build / Authoring suite **PASS**: `Logs/build-player-20260912-124641-743.log`、`Artifacts/Authoring-20260912-124711-2f4bf3dc9cae41ae8f7daa33ea743bb5/report.json`。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-124750-959-ec88c07451b74aed908178b9bd7409df/bridge-report.json`。実VRMのSave/Open手動受入とSpringBone runtime挙動は未確認。
+### SpringBone preview core（2026-09-12）
+
+- `SpringBoneJointSettings`、`SpringBoneChain`、`SpringBoneColliderGroup`、`SpringBoneState`、`SpringBoneSimulator`を`Authoring/Rig`へ追加した。stable `BoneId`のchainを入力に、detachedなVerlet 1ステップ、stiffness/gravity/drag、rest length制約、sphere collider解決を計算し、完全な`PoseSet`と次状態を返す。Unity、VRM node index、シーン状態、元VRM bytesには依存しない。
+- 入力はchain 256、joint 1,024、collider group参照、delta time 0〜0.25秒などの予算と範囲を検証し、重複joint、未知bone、別skeleton/chainのstateを拒否する。`CreateInitialState`は状態をコピーして保持し、同じ入力の反復結果を決定的にする。
+- この段階はVRM node→stable `BoneId` adapter、Workbench/Unity runtimeへの姿勢接続、VRM形式への物理設定保存、実VRMの見た目受入を含まない。次段で受け取り先を決めて接続する。
+- Core **297 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-676025c66f614051bc750de1b7a6cf70`。初期状態、gravityによる姿勢回転と長さ制約、sphere collider、入力拒否、状態コピー・決定性を確認した。Windows-SpringPreviewCore Player build **PASS**: `Logs/build-player-20260912-125700-714.log`、`Builds/Windows-SpringPreviewCore/NyaForge.exe`。Authoring suite **PASS**: `Artifacts/Authoring-20260912-125726-ea62fbeeb288427ab8aefc0ab045afbb/report.json`、screenshot `authoring.png`を目視した。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-125809-882-6a66d11236df481794f08776fbaad3c2/bridge-report.json`。実VRMのSave/Open、VRM node mapping、SpringBoneの実ランタイム挙動、手動見た目受入は未確認。
 ## 材質inspection
 
 - AuthoringMaterialReaderを分離追加。graph_inspectの各nodeにmaterialOutput（linear RGBA、metallic、roughness、emission、alphaMode/cutoff、contentHash、画像identity）とassignedMaterialを返す。画像本体は返さずhash/寸法のみ。
