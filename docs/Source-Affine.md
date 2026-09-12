@@ -1,5 +1,15 @@
 # source affine数値基盤（I04-A）
 
+## 完全source skinの保存payload
+
+`SourceSkinCodec`は`NYFS` magicとversion 1を持つbounded binary。sourceHash（ASCII 64byte）、全nodeのparent/local matrix/元children順、skin index、任意skeleton root、joint slot列、明示inverse-bind全entryを保存する。matrixはcolumn-majorの16×IEEE754 double、整数はlittle-endian int32。計算済みworldは重複保存せず、読込時にlocalと親子関係から再合成する。SourceAffineの数値精度を保存時にfloatへ縮小しない。
+
+rootの-1は省略、bind数の-1はfresh sourceでの省略。他の負値やゼロbind数は不正。identity行列を明示した入力と省略入力を区別する。旧rig session v1/v2/v3の情報不足をこの省略に読み替えない。
+
+総payloadは16MiB以下。writeは必要byte数を事前計算し、readは残りbyte数とnode/edge予算を検査してから配列を確保する。trailing/truncated data、不正version、特異matrixを拒否し、復元候補の全検証が成功してから返す。正規payloadはread→writeでbyte同一、local/world値とchildren順が維持されることをCoreで確認する。
+
+このcodecはnative接続用部品で、まだproject attachmentに登録していない。次はrig sessionの版更新/参照方法と旧版移行を実装し、project Save/Open・metadata hash・原本なし再開を検証する。GUIから保存できるという意味ではない。既存3attachmentの枠へ任意データを無制限に追加しない。
+
 ## source skin候補
 
 `SourceSkin`はsource node transformsとskin index、元のjoint slot順、任意のskeleton root、一般inverse-bind行列を不変保持する。制作骨格の256骨制限とは独立し、source node予算内の257骨以上も表現する。JOINTS属性の値はこのslotからsource nodeへ引く。配列順をソートしたり、node名から対応を推測しない。

@@ -21,6 +21,7 @@ internal static partial class Program
         RunSourceAffineTests();
         RunSourceSkinTests();
         RunGlbSourceSkinTests();
+        RunSourceSkinCodecTests();
         RunGlbNodeTransformTests();
         RunFaceInspectionTests();
         RunPolygonWireTests();
