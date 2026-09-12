@@ -40,7 +40,11 @@ namespace NyaForge.UnityRuntime
                 string authored = workspace.Document.StateHash, metadata = workspace.Attachments.ContentHash;
                 var baseline = projection.DisplayMesh.vertices;
                 Check(springPlay.enabledSelf, "Spring play button is disabled for VRM");
-                StartSpringPlayback();
+                var mcpPlay = DispatchSecondaryMotionMcp("secondary_motion_play");
+                Check((bool)mcpPlay["success"] && (bool)mcpPlay["playing"], "MCP secondary-motion play did not start the shared playback owner");
+                var mcpRebuild = DispatchSecondaryMotionMcp("secondary_motion_rebuild");
+                Check((bool)mcpRebuild["success"] && (bool)mcpRebuild["playing"] && (long)mcpRebuild["completedSteps"] == 0,
+                    "MCP secondary-motion rebuild did not replace the transient playback owner");
                 TickSpringPlayback(1f / 60);
                 var reusedMesh = projection.DisplayMesh; var reusedObject = projection.DisplayObject;
                 var dynamicGraph = workspace.Document.Objects[0].Graph;
@@ -58,10 +62,14 @@ namespace NyaForge.UnityRuntime
                 Check(springPlayback != null && springPlayback.CompletedSteps == 12, "GUI Spring preview did not run");
                 Check(projection.DisplayMesh.vertices.Where((v, i) => (v - baseline[i]).sqrMagnitude > 1e-10f).Any(), "Spring pose did not reach displayed mesh");
                 Check(workspace.Document.StateHash == authored && workspace.Attachments.ContentHash == metadata, "Playback changed authored state");
-                springPlayback.Pause(); RefreshSpringPlayback(); var frozen = springPlayback.State;
+                var mcpPause = DispatchSecondaryMotionMcp("secondary_motion_pause");
+                Check((bool)mcpPause["success"] && !(bool)mcpPause["playing"], "MCP secondary-motion pause did not pause the shared owner");
+                var frozen = springPlayback.State;
                 TickSpringPlayback(.2f);
                 Check(ReferenceEquals(frozen, springPlayback.State) && !springPause.enabledSelf, "Pause did not freeze preview");
-                StartSpringPlayback(); TickSpringPlayback(1f / 60);
+                var mcpResume = DispatchSecondaryMotionMcp("secondary_motion_play");
+                Check((bool)mcpResume["success"] && (bool)mcpResume["playing"], "MCP secondary-motion resume did not restart playback");
+                TickSpringPlayback(1f / 60);
                 Check(springPlayback.CompletedSteps == 13, "Resume reset or skipped history");
                 projectPath.SetValueWithoutNotify(Path.Combine(output, "playback-project"));
                 Check(TrySaveProject(), "Save during Spring playback failed");
@@ -72,14 +80,20 @@ namespace NyaForge.UnityRuntime
                 Check(springPlayback == null && workspace.Document.StateHash == authored && !HasUnsaved, "Open persisted transient simulation");
                 var restored = projection.DisplayMesh.vertices;
                 Check(restored.Where((v, i) => (v - baseline[i]).sqrMagnitude > 1e-10f).Any() == false, "Open did not restore authored mesh");
-                StartSpringPlayback(); TickSpringPlayback(1f / 60); ClearSpringPlayback(true);
+                StartSpringPlayback(); TickSpringPlayback(1f / 60); var mcpReset = DispatchSecondaryMotionMcp("secondary_motion_reset");
+                Check((bool)mcpReset["success"] && !(bool)mcpReset["playing"], "MCP secondary-motion reset did not clear playback");
                 Check(springPlayback == null && !springReset.enabledSelf && projection.PointBatchCount > 0, "Reset did not restore editing projection");
                 StartSpringPlayback();
+                springPlayback.Pause();
+                long beforeStep = springPlayback.CompletedSteps;
+                var mcpStep = DispatchSecondaryMotionMcp("secondary_motion_step");
+                Check((bool)mcpStep["success"] && !(bool)mcpStep["playing"] && (long)mcpStep["completedSteps"] == beforeStep + 1,
+                    "MCP secondary-motion step did not advance one fixed step while remaining paused");
                 var graph = workspace.Document.Objects[0].Graph;
                 var node = graph.Nodes[springPoseNode];
                 Execute(AuthoringOperation.UpdateNode(GraphNode.PoseNode(node.NodeId, node.Pose)));
                 Check(springPlayback == null, "Editing did not stop Spring playback");
-                checks.Add((legacy ? "VRM0" : "VRM1") + " playback handlers: complete source skin matches GLB and survives native Save/Open; displayed mesh changes with reused mesh/object and restored edit points, authored graph/metadata unchanged, pause/resume/reset, Save/Open excludes simulation, editing stops playback");
+                checks.Add((legacy ? "VRM0" : "VRM1") + " playback handlers: complete source skin matches GLB and survives native Save/Open; displayed mesh changes with reused mesh/object and restored edit points, authored graph/metadata unchanged, GUI and MCP pause/resume/rebuild/reset/step, Save/Open excludes simulation, editing stops playback");
             }
             finally { ClearSpringPlayback(true); springAutomaticTick = true; }
         }

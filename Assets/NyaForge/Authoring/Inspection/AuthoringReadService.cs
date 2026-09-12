@@ -17,7 +17,7 @@ namespace NyaForge.Authoring.Inspection
             return new JObject
             {
                 ["instanceId"]=instance,["schemaVersion"]=1,
-                ["remoteMethods"]=new JArray("get_state","capabilities","graph_inspect","vertices_inspect","faces_inspect","validate","import_image","apply","capture","save_project","export"),["remoteEditing"]=true,
+                ["remoteMethods"]=new JArray("get_state","capabilities","graph_inspect","vertices_inspect","faces_inspect","validate","import_image","apply","capture","save_project","export","secondary_motion_state","secondary_motion_play","secondary_motion_pause","secondary_motion_reset","secondary_motion_rebuild","secondary_motion_step"),["remoteEditing"]=true,
                 ["remoteOperations"]=new JArray("layers.stroke","layers.mask.stroke","layers.mask.fill","layers.mask.clear","layers.migrate","layers.add","layers.appearance","layers.remove","layers.move","layers.rename","paint.stroke","polygon.vertices.add","polygon.faces.create","polygon.solidify","polygon.uv.project","polygon.vertices.translate","polygon.faces.extrude","polygon.faces.delete","polygon.faces.material","vertices.translate","graph.vertices.translate","graph.connect","graph.disconnect","history.undo","history.redo","object.add_graph","graph.node.add","graph.node.update","graph.node.remove","graph.output"),
                 ["remoteNodeTypes"]=new JArray(BuiltinNodes.Paint,BuiltinNodes.PolygonSource,BuiltinNodes.PolygonEdit,BuiltinNodes.AssignMaterials,BuiltinNodes.Plane,BuiltinNodes.EditMesh,BuiltinNodes.Output,BuiltinNodes.StandardMaterial,BuiltinNodes.AssignMaterial,BuiltinNodes.Skeleton),
                 ["units"]="meters",["space"]="avatar",

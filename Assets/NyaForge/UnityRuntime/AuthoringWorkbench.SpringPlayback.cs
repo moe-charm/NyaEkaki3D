@@ -15,7 +15,7 @@ namespace NyaForge.UnityRuntime
         AuthoringWorkspace springWorkspace;
         string springDocumentHash, springMetadataHash, springPoseNode;
         Label springPlaybackStatus;
-        Button springPlay, springPause, springReset;
+        Button springPlay, springPause, springReset, springRebuild, springStep;
         bool springAutomaticTick = true;
 
         void BuildSpringPlayback(VisualElement parent)
@@ -27,7 +27,9 @@ namespace NyaForge.UnityRuntime
             springPlay = Button("再生 / 再開", () => Try(StartSpringPlayback), "spring-play");
             springPause = Button("一時停止", () => { springPlayback?.Pause(); RefreshSpringPlayback(); }, "spring-pause");
             springReset = Button("リセットして元の姿勢へ", () => { ClearSpringPlayback(true); }, "spring-reset");
-            panel.Add(springPlay); panel.Add(springPause); panel.Add(springReset);
+            springRebuild = Button("現在の設定で再構築", () => Try(RebuildSpringPlayback), "spring-rebuild");
+            springStep = Button("1固定step進む", () => Try(StepSpringPlayback), "spring-step");
+            panel.Add(springPlay); panel.Add(springPause); panel.Add(springReset); panel.Add(springRebuild); panel.Add(springStep);
             var help = new Label("表示だけのプレビューです。保存・出力には編集中の姿勢を使います。編集・作品切替でリセットします。一般のnode回転・scaleの取込は未対応です。");
             help.style.whiteSpace = WhiteSpace.Normal; panel.Add(help); parent.Add(panel);
         }
@@ -37,6 +39,7 @@ namespace NyaForge.UnityRuntime
             if (springPlaybackStatus == null) return;
             bool ready = importedRigSession != null && (importedVrmSpringSession?.Format == "vrm1" || (importedVrmSpringSession?.Format == "vrm0" && importedRigSession.Hierarchy != null)) && importedVrmSpringSession.SpringBones.Count > 0;
             springPlay.SetEnabled(ready); springPause.SetEnabled(springPlayback?.IsPlaying == true); springReset.SetEnabled(springPlayback != null);
+            springRebuild?.SetEnabled(springPlayback != null); springStep?.SetEnabled(springPlayback != null);
             springPlaybackStatus.text = springPlayback == null ? (ready ? "再生できます。未対応設定は開始時に表示します。" : "対応するVRMのskinとSpring設定を読み込んでください。")
                 : (springPlayback.IsPlaying ? "再生中" : "一時停止") + " · " + springPlayback.CompletedSteps + " step · 保存対象外";
         }
@@ -56,6 +59,24 @@ namespace NyaForge.UnityRuntime
             SelectEditStage(0);
             springWorkspace = workspace; springDocumentHash = workspace.Document.StateHash; springMetadataHash = workspace.Attachments.ContentHash;
             springPoseNode = poses[0].NodeId; springPlayback = candidate; springPlayback.Play(); RefreshSpringPlayback();
+        }
+
+        void RebuildSpringPlayback()
+        {
+            if (springPlayback == null) { StartSpringPlayback(); return; }
+            bool wasPlaying = springPlayback.IsPlaying;
+            ClearSpringPlayback(true);
+            StartSpringPlayback();
+            if (!wasPlaying) { springPlayback.Pause(); RefreshSpringPlayback(); }
+        }
+
+        void StepSpringPlayback()
+        {
+            if (springPlayback == null) throw new InvalidOperationException("先に揺れのプレビューを開始してください。");
+            bool wasPlaying = springPlayback.IsPlaying;
+            springPlayback.Play();
+            TickSpringPlayback(1f / 60f);
+            if (springPlayback != null && !wasPlaying) { springPlayback.Pause(); RefreshSpringPlayback(); }
         }
 
         void TickSpringPlayback(float elapsed)

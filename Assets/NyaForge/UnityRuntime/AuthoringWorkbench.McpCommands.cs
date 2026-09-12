@@ -13,6 +13,7 @@ namespace NyaForge.UnityRuntime
             if(request.Method=="save_project") return SaveMcpProject(request.Save);
             if(request.Method=="get_state") { var state=AuthoringReadService.Read(workspace,pipeInstance,request.Method);state["saveTarget"]=McpSaveTarget();return state; }
             if(request.Method=="capture") return CaptureMcpEvidence();
+            if(request.Method.StartsWith("secondary_motion_",System.StringComparison.Ordinal)) return DispatchSecondaryMotionMcp(request.Method);
             if(request.Method!="apply" && request.Method!="import_image") return AuthoringReadService.Read(workspace,pipeInstance,request.Method);
             var command=request.Method=="import_image" ? NyaForge.Authoring.CommandWireReader.Read(request.ImageImport,PaintPngImporter.Read) : request.Command;
             var result=commands.Execute(command,projection);
