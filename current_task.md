@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。Rigのweight/pose基盤、Morph graph/UI、GLB v2の最小import境界をCoreとWindows Playerで検証。
+更新: 2026-09-12。Rigのweight/pose基盤、Morph graph/UI、GLB v2のbounded import境界をCoreとWindows Playerで検証。
 
 ## 開発の入口
 
@@ -47,11 +47,11 @@
 ### GLB import境界（2026-09-12）
 
 - `Authoring.Import.GlbImport` を追加。GLB v2のheader／chunk長／UTF-8 JSON／単一BINを検査し、16MiB予算内でPOSITION、任意のNORMAL/TANGENT/TEXCOORD_0、triangle indexをCPU可読`MeshData`へ変換する。
-- 1 primitiveに限定し、skin、複数primitive、sparse accessor、非対応component/type、未知chunkは`UNSUPPORTED_FORMAT`等で拒否する。元のscene階層やquadを復元したとは主張しない。
+- 1 meshあたり最大32 primitiveまでをsubmeshとして結合し、primitiveごとの頂点順序とindex範囲を保持する。skin、属性有無の混在、morph target数の混在、sparse accessor、非対応component/type、未知chunkは`UNSUPPORTED_FORMAT`等で拒否する。元のscene階層・material・quadを復元したとは主張しない。
 - primitiveのPOSITION morph targetを`MorphSet`へ変換し、`extras.targetNames`を名前へ反映、source hashから決定的target IDを生成する。normal/tangent morph差分、humanoid、VRM metadataは未対応としてwarningsに残す。
 - WorkbenchへWindows Explorer経由の「GLBモデルを取り込む」を追加。空の制作projectだけに新規graph（Source→MorphDeform任意→Output）を作り、既存作品を置き換えない。元GLBをprivateへコピーせず、取り込み済みmesh/blobのみnative graphへ保存する。
-- Core **286 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4ab7b857e2a9405691468a5764b80268`。合成GLBのgeometry／morph往復と、複数primitive・破損header拒否を確認。
-- Windows-GlbUi2 Player build / Authoring suite **PASS**: `Logs/build-player-20260912-112311-852.log`、`Artifacts/Authoring-20260912-112329-765f34960e8740b5b8224383327e3d19/report.json`。標準fixtureの起動・描画・既存GUI回帰を確認した。GLB pickerの実マウス選択とRadDollV3/VRM実データ受け入れは未確認。
+- Core **286 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-8a99a1b52c014bda9edfe8a06a9ab595`。合成GLBの複数primitive結合・submesh分離・morph差分結合、skin拒否、破損header拒否を確認。
+- Windows-GlbMulti Player build / Authoring suite **PASS**: `Logs/build-player-20260912-113225-389.log`、`Artifacts/Authoring-20260912-113250-94a7a54f014948bf9904b11fcb901beb/report.json`。標準fixtureの起動・描画・既存GUI回帰を確認し、画像も目視した。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-113320-467-aecbf12069194bd49a2a6fe6a16ed16d/bridge-report.json`。GLB pickerの実マウス選択とRadDollV3/VRM実データ受け入れは未確認。
 
 - `Authoring.Rig` を独立モジュールとして追加。`SkeletonDefinition` はcanonical UUIDのbone、親子階層、head/tailのrest座標を不変データとして保持し、循環・欠落親・重複IDを公開前に拒否する。
 - `SkinBinding` はmeshのtopology hashとskeleton hashを固定し、全頂点に1〜4本の明示boneを要求して、重みを降順・決定的順序で正規化する。同一boneの重複、未知bone、未weight、上限超過を拒否する。

@@ -20,12 +20,16 @@ internal static partial class Program
             True(result.Warnings.Any(w => w.Contains("static triangle", StringComparison.Ordinal)));
         });
 
-        Test("GLB import boundary rejects unsupported structure before publishing", () =>
+        Test("GLB importer combines bounded primitives and rejects unsupported structure", () =>
         {
             var bytes = BuildGlb(); var root = JObject.Parse(ReadJsonChunk(bytes));
             ((JArray)root["meshes"]![0]!["primitives"]!).Add(((JArray)root["meshes"]![0]!["primitives"]!)[0]!.DeepClone());
             var changed = ReplaceJsonChunk(bytes, root.ToString(Newtonsoft.Json.Formatting.None));
-            Expect("UNSUPPORTED_FORMAT", () => GlbImporter.Read(changed));
+            var combined = GlbImporter.Read(changed);
+            Equal(8, combined.Mesh.VertexCount); Equal(2, combined.Mesh.Submeshes.Count); Equal(4, combined.Mesh.TriangleCount);
+            Equal(1, combined.Morphs.Targets.Count); Equal(2, combined.Morphs.Targets[0].Deltas.Count);
+            var skinRoot = JObject.Parse(ReadJsonChunk(bytes)); skinRoot["skins"] = new JArray(new JObject());
+            var skin = ReplaceJsonChunk(bytes, skinRoot.ToString(Newtonsoft.Json.Formatting.None)); Expect("UNSUPPORTED_FORMAT", () => GlbImporter.Read(skin));
             var bad = (byte[])bytes.Clone(); bad[0] = 0; Expect("INVALID_IMPORT", () => GlbImporter.Read(bad));
         });
     }

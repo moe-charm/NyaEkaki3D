@@ -27,9 +27,9 @@ namespace NyaForge.Authoring.Import
     }
 
     /// <summary>
-    /// Imports one static GLB mesh primitive and its POSITION morph targets. The adapter
-    /// intentionally refuses multi-primitive, skin and unsupported accessor layouts until
-    /// an explicit topology/source-map contract exists.
+    /// Imports one static GLB mesh and its POSITION morph targets. Multiple triangle
+    /// primitives are combined into bounded submeshes while preserving primitive-local
+    /// vertex order. Scene hierarchy, materials and skin bindings remain out of scope.
     /// </summary>
     public static class GlbImporter
     {
@@ -77,34 +77,74 @@ namespace NyaForge.Authoring.Import
             int byteLength = Int(buffers[0], "byteLength", 0, bin.Length); Checks.Require(byteLength <= bin.Length, "INVALID_IMPORT", "GLB buffer exceeds its BIN chunk.");
             var views = Array(root, "bufferViews"); var accessors = Array(root, "accessors"); var meshes = Array(root, "meshes");
             Checks.Require(meshes.Count == 1, "UNSUPPORTED_FORMAT", "Import one mesh at a time.");
-            var primitives = Array((JObject)meshes[0], "primitives"); Checks.Require(primitives.Count == 1, "UNSUPPORTED_FORMAT", "Multi-primitive meshes need an explicit source-map adapter.");
-            var primitive = (JObject)primitives[0]; Checks.Require(primitive["mode"] == null || Int(primitive, "mode", 4, 4) == 4, "UNSUPPORTED_FORMAT", "Only triangle primitives are supported.");
+            var meshToken = meshes[0] as JObject; Checks.Require(meshToken != null, "INVALID_IMPORT", "GLB mesh is invalid.");
+            Checks.Require(root["skins"] == null || root["skins"] is JArray, "INVALID_IMPORT", "GLB skins property is invalid.");
+            Checks.Require(root["skins"] == null || ((JArray)root["skins"]).Count == 0, "UNSUPPORTED_FORMAT", "Skin bindings are not imported yet.");
+            var primitives = Array(meshToken, "primitives"); Checks.Require(primitives.Count > 0 && primitives.Count <= AuthoringLimits.MaxSubmeshes, "BUDGET_EXCEEDED", "GLB primitive count exceeds the submesh budget.");
+            var parts = primitives.Select(token => { var primitive = token as JObject; Checks.Require(primitive != null, "INVALID_IMPORT", "GLB primitive is invalid."); return ReadPrimitive(primitive, accessors, views, bin); }).ToArray();
+            bool hasNormals = AttributePresence(parts, p => p.Normals.Length > 0, "NORMAL");
+            bool hasTangents = AttributePresence(parts, p => p.Tangents.Length > 0, "TANGENT");
+            bool hasUv0 = AttributePresence(parts, p => p.Uv0.Length > 0, "TEXCOORD_0");
+            int vertexCount = parts.Sum(p => p.Positions.Length); Checks.Require(vertexCount <= AuthoringLimits.MaxVertices, "BUDGET_EXCEEDED", "GLB vertex count exceeds the authoring budget.");
+            int indexCount = parts.Sum(p => p.Indices.Length); Checks.Require(indexCount <= AuthoringLimits.MaxIndices, "BUDGET_EXCEEDED", "GLB index count exceeds the authoring budget.");
+            var positions = parts.SelectMany(p => p.Positions).ToArray();
+            var normals = hasNormals ? parts.SelectMany(p => p.Normals).ToArray() : System.Array.Empty<Vec3>();
+            var tangents = hasTangents ? parts.SelectMany(p => p.Tangents).ToArray() : System.Array.Empty<Vec4>();
+            var uv0 = hasUv0 ? parts.SelectMany(p => p.Uv0).ToArray() : System.Array.Empty<Vec2>();
+            var submeshes = new int[parts.Length][]; int vertexOffset = 0;
+            for (int i = 0; i < parts.Length; i++) { submeshes[i] = parts[i].Indices.Select(index => checked(index + vertexOffset)).ToArray(); vertexOffset += parts[i].Positions.Length; }
+            var mesh = new MeshData(positions, normals, tangents, uv0, submeshes);
+            MorphSet morphs = ParseMorphs(meshToken, parts, mesh, sourceHash);
+            var warnings = new List<string> { "Imported as " + parts.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " static triangle primitive(s); original glTF scene hierarchy, materials and skin bindings are not retained." };
+            if (morphs != null) warnings.Add("POSITION morph targets were retained; normal/tangent morph deltas are not imported.");
+            return new ImportedMeshSource(sourceHash, mesh, morphs, warnings);
+        }
+
+        sealed class PrimitiveData
+        {
+            public Vec3[] Positions; public Vec3[] Normals; public Vec4[] Tangents; public Vec2[] Uv0; public int[] Indices; public Vec3[][] MorphDeltas;
+        }
+
+        static PrimitiveData ReadPrimitive(JObject primitive, JArray accessors, JArray views, byte[] bin)
+        {
+            Checks.Require(primitive != null, "INVALID_IMPORT", "GLB primitive is invalid.");
+            Checks.Require(primitive["mode"] == null || Int(primitive, "mode", 4, 4) == 4, "UNSUPPORTED_FORMAT", "Only triangle primitives are supported.");
             var attributes = (JObject)primitive["attributes"]; Checks.Require(attributes != null, "INVALID_IMPORT", "GLB primitive attributes are required.");
+            Checks.Require(attributes["JOINTS_0"] == null && attributes["WEIGHTS_0"] == null, "UNSUPPORTED_FORMAT", "Skin attributes are not imported yet.");
             int positionAccessor = AccessorId(attributes, "POSITION"); var positions = Vec3Accessor(accessors, views, bin, positionAccessor, "position");
             var normals = OptionalVec3(attributes, "NORMAL", accessors, views, bin, positions.Length, "normal");
             var tangents = OptionalVec4(attributes, "TANGENT", accessors, views, bin, positions.Length, "tangent");
             var uv0 = OptionalVec2(attributes, "TEXCOORD_0", accessors, views, bin, positions.Length, "texcoord_0");
             int[] indices = primitive["indices"] == null ? Enumerable.Range(0, positions.Length).ToArray() : IndexAccessor(accessors, views, bin, Int(primitive, "indices", 0, accessors.Count - 1));
             Checks.Require(indices.Length > 0 && indices.Length % 3 == 0 && indices.All(index => index >= 0 && index < positions.Length), "INVALID_IMPORT", "Triangle indices are invalid.");
-            var mesh = new MeshData(positions, normals, tangents, uv0, new[] { indices });
-            MorphSet morphs = ParseMorphs(root, meshes[0], primitive, accessors, views, bin, mesh, sourceHash);
-            var warnings = new List<string> { "Imported as one static triangle primitive; original glTF scene hierarchy and skin bindings are not retained." };
-            if (morphs != null) warnings.Add("POSITION morph targets were retained; normal/tangent morph deltas are not imported.");
-            return new ImportedMeshSource(sourceHash, mesh, morphs, warnings);
+            var targetTokens = primitive["targets"] as JArray;
+            var morphs = new Vec3[targetTokens == null ? 0 : targetTokens.Count][];
+            for (int i = 0; i < morphs.Length; i++)
+            {
+                var target = targetTokens[i] as JObject; Checks.Require(target != null && target["POSITION"] != null, "UNSUPPORTED_FORMAT", "Every morph target needs a POSITION accessor.");
+                morphs[i] = Vec3Accessor(accessors, views, bin, Int(target, "POSITION", 0, accessors.Count - 1), "morph position");
+                Checks.Require(morphs[i].Length == positions.Length, "INVALID_IMPORT", "Morph POSITION count must match the primitive base mesh.");
+            }
+            return new PrimitiveData { Positions = positions, Normals = normals, Tangents = tangents, Uv0 = uv0, Indices = indices, MorphDeltas = morphs };
         }
 
-        static MorphSet ParseMorphs(JObject root, JToken meshToken, JObject primitive, JArray accessors, JArray views, byte[] bin, MeshData mesh, string sourceHash)
+        static bool AttributePresence(PrimitiveData[] parts, Func<PrimitiveData, bool> selector, string name)
         {
-            var targets = primitive["targets"] as JArray; if (targets == null || targets.Count == 0) return null;
+            bool present = selector(parts[0]); Checks.Require(parts.All(p => selector(p) == present), "UNSUPPORTED_FORMAT", "All primitives must use the same " + name + " attribute layout."); return present;
+        }
+
+        static MorphSet ParseMorphs(JToken meshToken, PrimitiveData[] parts, MeshData mesh, string sourceHash)
+        {
+            int morphCount = parts[0].MorphDeltas.Length; Checks.Require(parts.All(p => p.MorphDeltas.Length == morphCount), "UNSUPPORTED_FORMAT", "All primitives must use the same morph target layout.");
+            if (morphCount == 0) return null;
             var result = new List<MorphTarget>();
-            for (int i = 0; i < targets.Count; i++)
+            var extras = meshToken["extras"] as JObject; var names = extras?["targetNames"] as JArray;
+            int vertexOffset = 0;
+            for (int i = 0; i < morphCount; i++)
             {
-                var target = targets[i] as JObject; Checks.Require(target != null && target["POSITION"] != null, "UNSUPPORTED_FORMAT", "Every morph target needs a POSITION accessor.");
-                var deltas = Vec3Accessor(accessors, views, bin, Int(target, "POSITION", 0, accessors.Count - 1), "morph position");
-                Checks.Require(deltas.Length == mesh.VertexCount, "INVALID_IMPORT", "Morph POSITION count must match the base mesh.");
-                var entries = deltas.Select((delta, index) => new MorphDelta(index, delta)).Where(delta => delta.Delta.X != 0 || delta.Delta.Y != 0 || delta.Delta.Z != 0);
+                var entries = new List<MorphDelta>(); vertexOffset = 0;
+                foreach (var part in parts) { foreach (var delta in part.MorphDeltas[i].Select((delta, index) => new MorphDelta(index + vertexOffset, delta))) if (delta.Delta.X != 0 || delta.Delta.Y != 0 || delta.Delta.Z != 0) entries.Add(delta); vertexOffset += part.Positions.Length; }
                 string name = "Morph " + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                var extras = meshToken["extras"] as JObject; var names = extras?["targetNames"] as JArray;
                 if (names != null && i < names.Count && names[i].Type == JTokenType.String && !string.IsNullOrWhiteSpace((string)names[i])) name = (string)names[i];
                 result.Add(MorphTarget.Create(mesh, StableId(sourceHash + ":morph:" + i), name, entries));
             }
