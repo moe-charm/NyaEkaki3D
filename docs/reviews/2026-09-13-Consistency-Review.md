@@ -1,5 +1,11 @@
 # 2026-09-13 consistency review receipt
 
+## 最新HEAD再照合（`13bc959`）
+
+前回receiptの基準HEAD以降もP1/P2の修正を維持している。Core再実行は **454 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-40f038c9de1a437994666a376c0af406`）。Explorerから`project.nyaforge.json`を選ぶnative project再開導線も追加済みで、標準GLBでは表現できないattachment metadataをnative packageへ保持する出力境界を壊していない。
+
+実SDK・実VRChat・実マウス/DPI差・任意GLBの完全な依存資源保持は、この静的／合成回帰の証拠には含めない。
+
 ## 再照合（2026-09-13 / `dc31fa3`）
 
 現行mainで4件のP1修正を再確認し、Core **448 passed / 0 failed**（artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4bbb7b6347fd456ead93289028b5571a`）を取得した。直近のチョーカー形状追加、既存graphへの小物object追加、頂点編集、Save/Open、複数対象BakeもPlayerで確認済み。合成Bridgeの合格は実VRChat SDKの受入とは分け、次の作業をSDKの版・完全修飾型を固定した実component生成／更新へ限定する。

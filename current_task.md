@@ -1,3 +1,11 @@
+## 2026-09-13 consistency feedback recheck (`13bc959`)
+
+提示されたconsistency review（基準 `1c76e4a`）を、最新main `13bc959`へ再照合した。P1の4件は現行実装とCore回帰で閉じている。16bit `JOINTS_n` は2バイト幅で復号し、8bit/16bit同値を確認済み。source skin表示は`SourceSkinGraphAdapter.ApplyToEvaluation`で最終graph outputへ適用するため、SkinDeform後のEditMeshを保持する。PhysBones target packageはprofileが参照するsource assetを同梱し、receiver側でhashを検証する。静的GLB取込のskin判定は選択meshのnode instanceに限定し、同じファイル内の静的小物を拒否しない。
+
+P2も、揺れreset時のsource-skin projection cache無効化、PhysBones managed markerのstable root/name再利用、削除curveの初期化、secondary-motion再bindのUndo、MCP captureのcamera metadata保持、負weightの事前拒否を実装・回帰済み。今回の再実行は **Core 454 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-40f038c9de1a437994666a376c0af406`）。Explorer project pickerを含むWindows PlayerとUnity Bridgeの直近PASSは前カードの記録を正とする。
+
+残る受入境界は、実VRChat SDKでのPhysBones component生成・更新、実マウス/DPI差、実アバターの自動fit・貫通修正、VRChat内の見た目、任意GLBの複数mesh結合・共有参照・完全な材質/animation保持。次の作業はこの境界を混ぜず、実SDKの版・完全修飾型を固定した受け取り検証、または複数mesh/共有参照の明示仕様化から選ぶ。
+
 ## 2026-09-13 native project Explorer picker
 
 制作フォルダを手入力せず再開できるよう、Windows Authoring画面へ「Explorerで選ぶ…」を追加した。Explorerで`project.nyaforge.json`を選ぶと親フォルダをnative projectとして検証し、別JSON・manifest欠落・存在しない選択は開かない。ダイアログ中にworkspaceのdocumentが変わった場合も置換せず、既存の未保存確認（保存／破棄／キャンセル）を通してから開く。保存形式、nativeの正本、GLB/VRM取込経路は変更していない。
