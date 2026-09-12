@@ -83,6 +83,7 @@ namespace NyaForge.Authoring.Import
         static ImportedSkinnedMeshSource Parse(GlbDocument document, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null)
         {
             var root = document.Root;
+            GlbImportDiagnostics.RequireSupportedRequiredExtensions(root);
             var meshes = Array(root, "meshes"); Checks.Require(meshIndex >= 0 && meshIndex < meshes.Count, "INVALID_IMPORT", "Selected GLB mesh index is out of range.");
             var meshToken = meshes[meshIndex] as JObject; Checks.Require(meshToken != null, "INVALID_IMPORT", "GLB mesh is invalid.");
             var primitives = Array(meshToken, "primitives"); Checks.Require(primitives.Count > 0 && primitives.Count <= AuthoringLimits.MaxSubmeshes, "BUDGET_EXCEEDED", "GLB primitive count exceeds the submesh budget.");

@@ -4,6 +4,8 @@
 
 ### 直近の実装カード（2026-09-13）
 
+- **I04-E / 必須拡張ガード**: 完全なadapterがない `extensionsRequired` はGLB/VRM取込前に `UNSUPPORTED_EXTENSION` で拒否し、`extensionsUsed` は従来どおり partial 診断として保持する。Core 446件、Windows Authoring suite（Player `Builds/RequiredExtensionGuardV1/NyaForge.exe`、report `Artifacts/Authoring-20260913-045811-6f323347842b4d548e95a60aebd4700b/report.json`）合格。
+
 - **I04-E / 実モデル材質診断と複数slot GLB往復**: 埋め込みbase-color画像は1024x1024以内だけnative Paintへ保持し、超過/不正形式は明示warningで省略する。sRGB係数は0〜1へクランプし、skinned GLBの複数material slotはスロットごとの局所頂点アクセサへ分割して再取込時の重複計上を防ぐ。Core 446件、RadDollV3 Windows Player smoke（取込→編集→保存/Open→標準skinned GLB→再取込）合格。
 
 - **I04-C / GLB予算分離**: GLB/VRMの取込・標準GLB出力は128 MiB、1 mesh 200,000頂点までを専用予算で検査する。native blobの16 MiB予算は維持し、実素材を通すための拡張を他形式へ波及させない。
@@ -39,7 +41,7 @@ reflection型解決は`VrcPhysBonesReflectionResolver`へ分離し、assembly-qu
 | [ ] I04-B / P1 **継続** | 複数mesh/instance/skin、source→制作ID対応 | `GlbSceneInventoryReader`でmesh/primitive数、node instance、skin joint参照、node world transformを元indexのまま候補化し、候補確認・node instance選択GUIを追加した。native documentは最大64 objectのactive object方式へ拡張し、`object.select`、graph object追加、Save/Open、Workbench対象切替を検証済み。非active objectは読み取り専用の背面表示とFrame対象にでき、複数object package出力も追加した。GLB取込はgraph projectへ新objectとして追加する。複数graph objectのrig sessionをgraph IDで保存・active objectへ再選択する経路を追加済み。残りはmesh結合、同名morph/共有mesh・skin参照と実素材受入。 |
 | [ ] I04-C / P1 **継続** | rig/weight/morph容量とcodec/hash/表示/出力 | nativeは512骨・32 influence・512 morphへ拡張し、257骨・18weight・単一mesh262morphの削減なし往復、GLB全JOINTS_n/WEIGHTS_n取込、`SkinnedGeometryExtended`出力を回帰済み。標準SkinnedGeometryは互換上4 influenceを明示拒否する。実GLB受取先・VRChat側確認が残る |
 | [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
-| [ ] I04-E / P1 **継続** | 機能report、材質/animation/VRM意味情報/未知拡張の保持とGUI/MCP | GLB importerのコード付きdiagnosticsをnative attachmentへ保存し、MCP graph inspection・取込後status・GUI詳細パネルで表示。必須未知拡張の拒否、依存資源込みopaque保持、既知VRM内の未保持fieldが残件 |
+| [ ] I04-E / P1 **継続** | 機能report、材質/animation/VRM意味情報/未知拡張の保持とGUI/MCP | GLB importerのコード付きdiagnosticsをnative attachmentへ保存し、MCP graph inspection・取込後status・GUI詳細パネルで表示。未実装の `extensionsRequired` は取込前拒否済み。依存資源込みopaque保持、既知VRM内の未保持field、完全材質/animation保持が残件 |
 | [ ] T04 / P2 **継続** | 時間超過・性能受入 | 高密度Paint合成fixtureでframe時間（30 samples、p95/max）、GC/managed heap/Unity allocatorを `dense-paint-profile.json` へ保存し、250ms観測境界を記録した。次は実アバター比較、長時間working-set、停止ポリシーを別試験で定める |
 | [ ] T05 / P1 **継続** | Windows実素材・実操作と受取側 | RadDollV3 VRMで取込→EditMesh→Save/Open→標準skinned GLB→再取込を合格（`RealModelMaterialClampV4`）。残りは実マウス・DPI/文字欠け・pose/揺れ・実VRChatの出力受取確認、追加texture mapと大画像の完全保持 |
 | [ ] T06 / P2 | 外部MCP metadata保存受入 | 内部handlerと区別し、transport経由で保存/Open・失敗保護・再試行を確認 |

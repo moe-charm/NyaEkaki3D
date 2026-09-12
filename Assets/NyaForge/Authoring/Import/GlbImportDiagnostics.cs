@@ -26,6 +26,13 @@ namespace NyaForge.Authoring.Import
     /// <summary>Reports lossy GLB features before the mesh is published to a graph object.</summary>
     internal static class GlbImportDiagnostics
     {
+        /// <summary>Rejects required extensions until a complete adapter exists.</summary>
+        public static void RequireSupportedRequiredExtensions(JObject root)
+        {
+            var required = Names(root?["extensionsRequired"]);
+            Checks.Require(required.Count == 0, "UNSUPPORTED_EXTENSION", "Required glTF extensions are not supported by this importer: " + string.Join(", ", required) + ".");
+        }
+
         public static IReadOnlyList<GlbImportDiagnostic> ForMesh(JObject root, JObject mesh)
         {
             Checks.Require(root != null && mesh != null, "INVALID_IMPORT", "GLB diagnostic source is required.");

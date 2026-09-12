@@ -74,6 +74,7 @@ namespace NyaForge.Authoring.Import
         static ImportedMeshSource Parse(JObject root, byte[] bin, string sourceHash, int meshIndex, SourceAffine instanceWorld)
         {
             Checks.Require((string)root["asset"]?["version"] == "2.0", "UNSUPPORTED_FORMAT", "GLB asset version must be 2.0.");
+            GlbImportDiagnostics.RequireSupportedRequiredExtensions(root);
             var buffers = Array(root, "buffers"); Checks.Require(buffers.Count == 1, "UNSUPPORTED_FORMAT", "Only one GLB buffer is supported.");
             int byteLength = Int(buffers[0], "byteLength", 0, bin.Length); Checks.Require(byteLength <= bin.Length, "INVALID_IMPORT", "GLB buffer exceeds its BIN chunk.");
             var views = Array(root, "bufferViews"); var accessors = Array(root, "accessors"); var meshes = Array(root, "meshes");

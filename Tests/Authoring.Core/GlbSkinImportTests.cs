@@ -31,10 +31,12 @@ internal static partial class Program
             root["materials"] = new JArray(new JObject()); root["animations"] = new JArray(new JObject()); root["extensionsRequired"] = new JArray("EXT_required");
             var primitive = (JObject)((JArray)((JObject)((JArray)root["meshes"]!)[0]!)["primitives"]!)[0]!;
             primitive["material"] = 0;
+            var bytes = ReplaceJsonChunk(BuildSkinnedGlb(), root.ToString(Newtonsoft.Json.Formatting.None));
+            Expect("UNSUPPORTED_EXTENSION", () => GlbSkinImporter.Read(bytes));
+            root["extensionsRequired"] = new JArray();
             var result = GlbSkinImporter.Read(ReplaceJsonChunk(BuildSkinnedGlb(), root.ToString(Newtonsoft.Json.Formatting.None)));
             True(result.Diagnostics.Any(item => item.Code == "MATERIALS_NOT_RETAINED" && item.IsBlocking));
             True(result.Diagnostics.Any(item => item.Code == "ANIMATIONS_NOT_RETAINED" && item.IsBlocking));
-            True(result.Diagnostics.Any(item => item.Code == "REQUIRED_EXTENSIONS_NOT_RETAINED" && item.IsBlocking));
         });
 
         Test("GLB skin importer accepts general node TRS without dropping source frames", () =>

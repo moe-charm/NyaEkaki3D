@@ -177,3 +177,5 @@ node instanceを選択したskinned importでは、mesh resourceのsource-local 
 ### 実モデル材質・複数slot往復（2026-09-13）
 
 RadDollV3 VRM（private temp、mesh 1 / skin 1、129,348 vertices、171 bones、35 morphs）で、埋め込みbase-color画像6件が1024px上限を超える場合はnative Paintへ無理に保持せず、材質係数と診断を残して省略することを確認した。sRGB変換の端点丸めを0〜1へクランプし、標準SkinnedGeometry出力では複数material slotごとに使用頂点を局所リマップして、再読込時の頂点重複計上を防いだ。Windows Player `Builds/RealModelMaterialClampV4/NyaForge.exe` と `Artifacts/Authoring-20260913-045250-aab62f6896e0479b93da4a562d8573eb/report.json` で、取込→EditMesh→Save/Open→標準skinned GLB→再取込を一周合格。Core 446件合格。実VRChatの見た目・挙動、1024px超画像の完全保持、追加texture mapは未完了。
+
+必須拡張の扱いは、完全なadapterが登録されていない `extensionsRequired` を取込前に `UNSUPPORTED_EXTENSION` で拒否する。`extensionsUsed` は部分対応の診断を付けて候補情報として扱う。これにより、必須拡張を含む入力を部分取込の成功として公開しない。

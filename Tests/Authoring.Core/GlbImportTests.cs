@@ -71,10 +71,12 @@ internal static partial class Program
             root["extensionsUsed"] = new JArray("EXT_test"); root["extensionsRequired"] = new JArray("EXT_required");
             var primitive = (JObject)((JArray)((JObject)((JArray)root["meshes"]!)[0]!)["primitives"]!)[0]!;
             primitive["material"] = 0;
+            var bytes = ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None));
+            Expect("UNSUPPORTED_EXTENSION", () => GlbImporter.Read(bytes));
+            root["extensionsRequired"] = new JArray();
             var imported = GlbImporter.Read(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None)));
             True(imported.Diagnostics.Any(item => item.Code == "MATERIALS_NOT_RETAINED" && item.IsBlocking));
             True(imported.Diagnostics.Any(item => item.Code == "ANIMATIONS_NOT_RETAINED" && item.IsBlocking));
-            True(imported.Diagnostics.Any(item => item.Code == "REQUIRED_EXTENSIONS_NOT_RETAINED" && item.IsBlocking));
             True(imported.Diagnostics.Any(item => item.Code == "EXTENSIONS_PARTIAL" && !item.IsBlocking));
             True(imported.Warnings.Any(item => item.Contains("MATERIALS_NOT_RETAINED", StringComparison.Ordinal)));
         });
