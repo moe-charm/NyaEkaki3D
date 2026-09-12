@@ -2,7 +2,7 @@
 
 更新: 2026-09-12。I02。`ImportedRigSession`は元ファイルのsource hash、取込時skeleton hash、対象GraphId/SkeletonNodeId、node→BoneId、humanoid semantic→nodeを保持する。元モデルのbytesは含まない。
 
-現在のwriterはversion 2で、元node原点も保持する。version 1/2 readerと座標変換の詳細は [元node空間](Imported-Node-Space.md) を参照。
+現在のwriterはversion 3で、元node原点と全source階層・children順を保持する。readerはversion 1/2/3に対応し、旧版の階層は不明を維持する。[全source階層](Imported-Source-Hierarchy.md) と [元node空間](Imported-Node-Space.md) を参照。
 
 ## 保存形式と境界
 

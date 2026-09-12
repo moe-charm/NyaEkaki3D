@@ -23,3 +23,7 @@
 | T06 / P2 | 外部MCP transportからmetadata保存を確認する | 保存対応build | 外部クライアントの取込/保存/Open、失敗時旧状態・dirty保持と再試行を証拠化。内部handler試験と区別する |
 
 次の実装単位はT01。T03の結果によってI04をT02/T05に先行させる。T01/T02はI03-B、T04はI03-C、T05/T06はA01に属する。既存C0〜C5、skin/morph出力と受け取り先検証は開発計画に残す。タスク化は実装完了を意味しない。
+
+## T01実装後の追記
+
+T01はrig session v3と全source階層保持として実装し、Core354件・Windows-SourceHierarchy Player suiteが合格。詳細と証拠はcurrent_taskのT01節を参照。上記表はチェック時点の作業分割であり、次の実装はT02。実素材/実操作の受入は引き続き未完了。

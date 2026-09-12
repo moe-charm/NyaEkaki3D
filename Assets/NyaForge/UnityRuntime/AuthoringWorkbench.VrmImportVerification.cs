@@ -38,6 +38,7 @@ namespace NyaForge.UnityRuntime
                 var humanoid = importedRigSession.ResolveHumanoid(graph);
                 Check(humanoid["hips"] == importedRigSession.NodeToBone[0], "Humanoid mapping changed on Open");
                 var skeletonNode = graph.Nodes[importedRigSession.SkeletonNodeId];
+                Check(importedRigSession.Hierarchy != null && importedRigSession.Hierarchy.Parents.Count == 3 && importedRigSession.Hierarchy.Parents[1] == 0 && importedRigSession.Hierarchy.Children[0][0] == 1, "Source hierarchy was lost on Open");
                 Check(importedRigSession.SourceNodeOrigins != null && importedRigSession.SourceNodeOrigins[1].Y == .3f, "Source node origin was lost on Open");
                 var restPose = PoseSet.Create(skeletonNode.Skeleton, skeletonNode.Skeleton.Bones.Select(b => new BonePose(b.BoneId, PoseTransform.FromTranslation(b.Head))));
                 var nodeSpace = new NyaForge.Authoring.Import.ImportedNodeSpace(importedRigSession, graph, restPose);

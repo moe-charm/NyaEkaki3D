@@ -20,8 +20,9 @@ namespace NyaForge.Authoring.Import
         public ImportedBoneMap BoneMap { get; }
         public IReadOnlyDictionary<int, Vec3> SourceNodeOrigins { get; }
         public IReadOnlyList<string> Warnings { get; }
+        public ImportedSourceHierarchy Hierarchy { get; }
 
-        internal ImportedSkinnedMeshSource(string sourceHash, MeshData mesh, MorphSet morphs, SkeletonDefinition skeleton, SkinBinding binding, IEnumerable<string> warnings, IDictionary<int, string> nodeToBone, IDictionary<int, Vec3> nodeOrigins)
+        internal ImportedSkinnedMeshSource(string sourceHash, MeshData mesh, MorphSet morphs, SkeletonDefinition skeleton, SkinBinding binding, IEnumerable<string> warnings, IDictionary<int, string> nodeToBone, IDictionary<int, Vec3> nodeOrigins, ImportedSourceHierarchy hierarchy)
         {
             Checks.HashText(sourceHash); Checks.Require(mesh != null && skeleton != null && binding != null, "INVALID_IMPORT", "Skinned GLB result is incomplete.");
             Checks.Require(binding.MeshTopologyHash == mesh.TopologyHash && binding.SkeletonHash == skeleton.ContentHash, "INVALID_IMPORT", "Skinned GLB identities are inconsistent.");
@@ -30,6 +31,7 @@ namespace NyaForge.Authoring.Import
             Checks.Require(nodeOrigins != null && nodeOrigins.Count == nodeToBone.Count && nodeToBone.Keys.All(nodeOrigins.ContainsKey), "INVALID_IMPORT", "Source node origins must cover imported joints.");
             foreach (var origin in nodeOrigins.Values) Checks.Finite(origin);
             SourceNodeOrigins = new System.Collections.ObjectModel.ReadOnlyDictionary<int, Vec3>(new Dictionary<int, Vec3>(nodeOrigins));
+            hierarchy.ValidateJointOrigins(SourceNodeOrigins); Hierarchy = hierarchy;
             Warnings = Array.AsReadOnly((warnings ?? Array.Empty<string>()).ToArray());
         }
     }
@@ -67,9 +69,8 @@ namespace NyaForge.Authoring.Import
             var jointNodes = joints.Select(token => IntToken(token, 0, nodes.Count - 1, "skin joint")).ToArray();
             Checks.Require(jointNodes.Distinct().Count() == jointNodes.Length, "INVALID_SKELETON", "GLB skin repeats a joint node.");
             var parentByNode = ReadParents(nodes);
-            var local = nodes.Select(ReadLocalTranslation).ToArray();
-            var world = new Vec3[nodes.Count]; var state = new byte[nodes.Count];
-            for (int i = 0; i < nodes.Count; i++) ResolveWorld(i, parentByNode, local, world, state);
+            var hierarchy = ImportedSourceHierarchy.FromTranslations(Enumerable.Range(0, nodes.Count).Select(i => parentByNode.TryGetValue(i, out var parent) ? parent : -1).ToArray(), nodes.Select(ReadLocalTranslation).ToArray(), nodes.Select(n => (IReadOnlyList<int>)((JArray)n["children"] ?? new JArray()).Select(c => (int)c).ToArray()).ToArray());
+            var world = hierarchy.Origins.ToArray();
             var jointToBone = BuildSkeleton(document.SourceHash, skin, nodes, joints, jointNodes, parentByNode, world, document.Bin, root);
 
             // Reuse the static mesh adapter after removing only skin attributes from a cloned JSON tree.
@@ -100,7 +101,7 @@ namespace NyaForge.Authoring.Import
             Checks.Require(vertexOffset == baseSource.Mesh.VertexCount, "INVALID_IMPORT", "Skin vertex count differs from imported mesh.");
             var binding = SkinBinding.Create(baseSource.Mesh, jointToBone.Skeleton, rawWeights);
             var warnings = new List<string>(baseSource.Warnings) { "GLB skin weights were imported into a translation-only rest skeleton; inverse-bind rotation and scale are outside this adapter." };
-            return new ImportedSkinnedMeshSource(document.SourceHash, baseSource.Mesh, baseSource.Morphs, jointToBone.Skeleton, binding, warnings, jointToBone.NodeToBone, jointNodes.ToDictionary(node => node, node => world[node]));
+            return new ImportedSkinnedMeshSource(document.SourceHash, baseSource.Mesh, baseSource.Morphs, jointToBone.Skeleton, binding, warnings, jointToBone.NodeToBone, jointNodes.ToDictionary(node => node, node => world[node]), hierarchy);
         }
 
         sealed class SkeletonResult
@@ -156,10 +157,7 @@ namespace NyaForge.Authoring.Import
             var translation = node["translation"]; if (translation == null) return new Vec3(); var values = Numbers(translation, 3, "node translation"); return new Vec3(values[0], values[1], values[2]);
         }
 
-        static Vec3 ResolveWorld(int index, Dictionary<int, int> parents, Vec3[] local, Vec3[] world, byte[] state)
-        {
-            if (state[index] == 2) return world[index]; Checks.Require(state[index] == 0, "BONE_CYCLE", "GLB node hierarchy contains a cycle."); state[index] = 1; world[index] = parents.ContainsKey(index) ? ResolveWorld(parents[index], parents, local, world, state) + local[index] : local[index]; state[index] = 2; return world[index];
-        }
+
 
         static int[][] ReadJointVectors(JArray accessors, JArray views, byte[] bin, int id)
         {
