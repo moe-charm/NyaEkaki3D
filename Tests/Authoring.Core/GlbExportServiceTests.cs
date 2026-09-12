@@ -134,6 +134,38 @@ internal static partial class Program
             True(!Directory.Exists(rejectedDirectory));
         });
 
+        Test("skinned GLB export connects multiple root bones through a common skeleton root", () =>
+        {
+            var mesh = AuthoringFixtures.Panel(1);
+            string rootA = GraphId(), rootB = GraphId();
+            var skeleton = new SkeletonDefinition(new[]
+            {
+                new BoneDefinition(rootA, "RootA", "", new Vec3(0, 0, 0), new Vec3(0, .1f, 0)),
+                new BoneDefinition(rootB, "RootB", "", new Vec3(.2f, 0, 0), new Vec3(.2f, .1f, 0))
+            });
+            var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount)
+                .Select(i => new SkinBinding.VertexWeightInput(i, rootA, 1f)));
+            var pose = PoseSet.Create(skeleton, skeleton.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head))));
+            var skinned = new GlbExportService.SkinnedObject
+            {
+                Mesh = new GlbExportService.MeshObject { Mesh = mesh, Name = "multi-root" },
+                Skeleton = skeleton, Binding = binding, Pose = pose
+            };
+            var bytes = GlbWriter.Build(new[] { skinned.Mesh }, skinned, GlbExportProfile.SkinnedGeometry);
+            var json = JObject.Parse(ReadJsonChunk(bytes));
+            var skin = (JObject)((JArray)json["skins"]!)[0];
+            int skeletonNode = (int)skin["skeleton"]!;
+            var rootNode = (JObject)((JArray)json["nodes"]!)[skeletonNode];
+            var children = (JArray)rootNode["children"]!;
+            Equal(2, children.Count);
+            var jointNodes = ((JArray)skin["joints"]!).Select(token => (int)token).ToHashSet();
+            True(children.All(child => jointNodes.Contains((int)child!)));
+            Equal("NyaForgeSkeletonRoot", (string)rootNode["name"]!);
+            var imported = GlbSkinImporter.Read(bytes);
+            Equal(2, imported.Skeleton.Bones.Count);
+            Equal(2, GlbSourceSkinImporter.Read(bytes).Skin.InverseBindMatrices.Count);
+        });
+
         Test("extended skinned GLB export roundtrips every authored influence set", () =>
         {
             var mesh = PrimitiveGeometry.Plane(.2f, .1f);
@@ -187,6 +219,21 @@ internal static partial class Program
             var imported = GlbImporter.Read(bytes);
             Equal(1, imported.Morphs.Targets[0].NormalDeltas.Count); Equal(1, imported.Morphs.Targets[0].TangentDeltas.Count);
             Near(.2f, imported.Morphs.Targets[0].NormalDeltas[0].Y); Near(.1f, imported.Morphs.Targets[0].TangentDeltas[0].Y);
+        });
+
+        Test("GLB morph POSITION accessors include required bounds", () =>
+        {
+            var mesh = AuthoringFixtures.Panel(1); string id = GraphId();
+            var morph = MorphTarget.Create(mesh, id, "Bounds", new[] { new MorphDelta(0, new Vec3(.25f, -.5f, .75f)) });
+            var bytes = GlbWriter.Build(new[] { new GlbExportService.MeshObject { Mesh = mesh, Morphs = MorphSet.Create(mesh, new[] { morph }), Name = "morph-bounds" } }, null, GlbExportProfile.StaticGeometry);
+            var json = JObject.Parse(ReadJsonChunk(bytes));
+            var primitive = (JObject)((JArray)((JObject)((JArray)json["meshes"]!)[0])!["primitives"]!)[0];
+            var target = (JObject)((JArray)primitive["targets"]!)[0];
+            int accessorIndex = (int)target["POSITION"]!;
+            var accessor = (JObject)((JArray)json["accessors"]!)[accessorIndex];
+            True(accessor["min"] is JArray && accessor["max"] is JArray);
+            Equal(3, ((JArray)accessor["min"]!).Count); Equal(3, ((JArray)accessor["max"]!).Count);
+            Near(-.5f, (float)((JArray)accessor["min"]!)[1]!); Near(.75f, (float)((JArray)accessor["max"]!)[2]!);
         });
 
         Test("GLB export preserves standard PBR material and embedded base color", () =>

@@ -1,3 +1,9 @@
+# 2026-09-13 GLB skeleton/morph conformance
+
+GLB出力の仕様穴を追加で閉じた。複数の親なしboneを持つskinned出力では `NyaForgeSkeletonRoot` を生成し、skinの `skeleton` から全joint rootへ到達できる共通祖先を出力する。morphの `POSITION` accessorにはglTF必須の `min/max` を付け、slot primitive側も同じ規則に揃えた。新しいCore回帰を含め **463 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f891479b2fe344a1a8935eb6974232c6`）。
+
+Windows Player `Builds/MorphBoundsV1/NyaForge.exe` の800x600 Authoring suiteも **PASS**（`Artifacts/Authoring-20260913-084200-71702ef26aa14b9389f34352f292694a/report.json`、画面 `authoring.png`）。同成果物をUnity **2022.3.22f1** Bridgeへ渡した検証も **PASS**（`Artifacts/BridgeReceiver-20260913-084245-214-4bdf3a3c031a/bridge-report.json`）。Bridgeは合成receiverであり、実VRChat SDK/実アバター受入とは分ける。
+
 # 2026-09-13 feedback recheck (`0d1e957`)
 
 提示されたレビュー（基準 `0d1e957`）を現行HEAD `51eb4af`へ再照合し、Coreを再実行した。結果は **461 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4aec0876bd0c47cbb63c11a58443b069`）。5件のP1は重複実装せず、次の対応を現行の正として記録する。

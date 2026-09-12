@@ -178,7 +178,7 @@ GUIには「標準GLB（表示形状）」「標準GLB（skin/morph保持）」�
 
 node instanceを選択したskinned importでは、mesh resourceのsource-local geometryとskin paletteを変更せず、選択nodeのworld affineを `ImportedRigSession` v6 の `meshInstanceTransform` へ保存する。表示とWorkbench/MCPの標準SkinnedGeometry出力では、このmesh node affineをスキン後へ追加適用せず、joint world frameとinverse-bindだけで評価する。旧session v1〜v5は従来どおり読める。複数objectの同時出力でもgraph objectごとのsource affine metadataを保持できるが、共有mesh参照、異なるskeletonの結合、実VRChatでの出力受入は未完了である。
 
-`Expressions` と `Springs` のnative attachmentはGraphId keyed table (`NVXE` / `NVXS`) を正本とする。旧単一blobはrigまたは単独graphへ移行して読める。複数graphを再Openする際はrig/sessionを同じGraphIdで突き合わせ、source hashが一致しない組合せを `IMPORT_SOURCE_CHANGED` で拒否する。Workbenchからのskinned GLB出力では、利用可能なimported source skinのinverse-bind行列をobjectごとに保持し、未提供の制作graphは従来のrest-derived identity fallbackを使う。頂点編集のhit testは装着root適用後のworld座標で行い、表示位置と選択位置を一致させる。
+`Expressions` と `Springs` のnative attachmentはGraphId keyed table (`NVXE` / `NVXS`) を正本とする。旧単一blobはrigまたは単独graphへ移行して読める。複数graphを再Openする際はrig/sessionを同じGraphIdで突き合わせ、source hashが一致しない組合せを `IMPORT_SOURCE_CHANGED` で拒否する。Workbenchからのskinned GLB出力では、利用可能なimported source skinのinverse-bind行列をobjectごとに保持し、未提供の制作graphは従来のrest-derived identity fallbackを使う。頂点編集のhit testは装着root適用後のworld座標で行い、表示位置と選択位置を一致させる。skinned writerで親なしboneが複数ある場合は共通skeleton rootを生成し、morphのPOSITION accessorには `min/max` 境界値を付ける。
 
 ### 実モデル材質・複数slot往復（2026-09-13）
 

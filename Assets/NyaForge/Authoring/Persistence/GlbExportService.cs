@@ -352,7 +352,10 @@ namespace NyaForge.Authoring
                     foreach (var target in meshObject.Morphs.Targets)
                     {
                         var deltas = new Vec3[mesh.VertexCount]; foreach (var pair in target.Deltas) deltas[pair.Key] = pair.Value;
-                        var targetJson = new JObject { ["POSITION"] = AddVec3(binary, views, accessors, deltas, ArrayBuffer, false) };
+                        // glTF requires POSITION morph accessors to carry min/max
+                        // bounds. Keep zero deltas in the range so the accessor
+                        // remains valid even when only a subset of vertices moves.
+                        var targetJson = new JObject { ["POSITION"] = AddVec3(binary, views, accessors, deltas, ArrayBuffer, true) };
                         if (target.NormalDeltas.Count > 0)
                         {
                             var normalDeltas = new Vec3[mesh.VertexCount]; foreach (var pair in target.NormalDeltas) normalDeltas[pair.Key] = pair.Value;
@@ -465,7 +468,7 @@ namespace NyaForge.Authoring
                 foreach (var target in morphs.Targets)
                 {
                     var deltas = new Vec3[sourceVertices.Count]; foreach (var pair in target.Deltas) if (remap.TryGetValue(pair.Key, out int local)) deltas[local] = pair.Value;
-                    var targetJson = new JObject { ["POSITION"] = AddVec3(binary, views, accessors, deltas, ArrayBuffer, false) };
+                    var targetJson = new JObject { ["POSITION"] = AddVec3(binary, views, accessors, deltas, ArrayBuffer, true) };
                     if (target.NormalDeltas.Count > 0) { var values = new Vec3[sourceVertices.Count]; foreach (var pair in target.NormalDeltas) if (remap.TryGetValue(pair.Key, out int local)) values[local] = pair.Value; targetJson["NORMAL"] = AddVec3(binary, views, accessors, values, ArrayBuffer, false); }
                     if (target.TangentDeltas.Count > 0) { var values = new Vec3[sourceVertices.Count]; foreach (var pair in target.TangentDeltas) if (remap.TryGetValue(pair.Key, out int local)) values[local] = pair.Value; targetJson["TANGENT"] = AddVec3(binary, views, accessors, values, ArrayBuffer, false); }
                     targets.Add(targetJson);
@@ -499,7 +502,23 @@ namespace NyaForge.Authoring
                     parentNode["children"] = Append(parentNode["children"], jointNodes[i]);
                 }
             }
-            foreach (var root in roots) sceneNodes.Add(root);
+            // A glTF skin's optional skeleton property names one common root.
+            // When the authored rig has several parentless bones, create a
+            // synthetic root so every joint remains reachable from that
+            // property instead of silently leaving later roots outside the
+            // exported skeleton hierarchy.
+            int skeletonRoot;
+            if (roots.Count == 1)
+            {
+                skeletonRoot = roots[0];
+                sceneNodes.Add(skeletonRoot);
+            }
+            else
+            {
+                skeletonRoot = nodes.Count;
+                nodes.Add(new JObject { ["name"] = "NyaForgeSkeletonRoot", ["children"] = new JArray(roots) });
+                sceneNodes.Add(skeletonRoot);
+            }
             Checks.Require(skinned.InverseBindMatrices == null || skinned.InverseBindMatrices.Count >= skinned.Skeleton.Bones.Count,
                 "GLB_SKIN_BIND", "Retained inverse-bind matrices must cover every exported joint.");
             int ibmOffset = binary.Write(writer =>
@@ -513,7 +532,7 @@ namespace NyaForge.Authoring
                 }
             });
             int ibmView = AddView(views, ibmOffset, skinned.Skeleton.Bones.Count * 64, ArrayBuffer); int ibmAccessor = AddAccessor(accessors, ibmView, 5126, skinned.Skeleton.Bones.Count, "MAT4", false, null, null);
-            var skin = new JObject { ["joints"] = new JArray(jointNodes), ["inverseBindMatrices"] = ibmAccessor }; if (roots.Count > 0) skin["skeleton"] = roots[0]; skins.Add(skin); return skins.Count - 1;
+            var skin = new JObject { ["joints"] = new JArray(jointNodes), ["inverseBindMatrices"] = ibmAccessor, ["skeleton"] = skeletonRoot }; skins.Add(skin); return skins.Count - 1;
         }
 
         static JArray Append(JToken existing, int value) { var array = existing as JArray ?? new JArray(); array.Add(value); return array; }
