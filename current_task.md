@@ -1345,3 +1345,8 @@ Core **459 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/N
 複数graph objectをshared-skin GLBへ出力する際、`ImportedRigSession.MeshInstanceTransform`をgraph object IDごとに収集し、mesh nodeごとのcolumn-major `matrix`として保持する経路を追加した。GUIとMCPは`ExportSkinnedWithTransforms`／`ExportSkinnedExtendedWithTransforms`を使い、単一objectの既存API互換、未知object IDの拒否、異なるskeletonの拒否を維持する。これにより、同一skeletonを共有する複数meshを元node配置込みで一括出力できる。
 
 Core **459 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-19be84b2f5824a7d96c40b8019560659`）。合成2mesh fixtureでobjectごとに異なるtranslationを与え、両mesh nodeのmatrix保持と再読込を回帰した。Windows Player `Builds/PerObjectAffineV1/NyaForge.exe` の800x600 Authoring suite **PASS**（report `Artifacts/Authoring-20260913-070744-4761096855254f5780f9773c388a29fd/report.json`）。Unity Bridge **PASS**（Unity 2022.3.22f1、`Artifacts/BridgeReceiver-20260913-070816-667-d581cf14d9734e499dae852fe97d49f7/bridge-report.json`）。実VRChat内の配置・見た目、異なるskeleton結合、共有mesh／morph参照、実マウス／DPI受入は別境界として残る。
+## 2026-09-13 PerObjectAffineV1 実RadDollV3再回帰
+
+`Builds/PerObjectAffineV1/NyaForge.exe`でprivate一時素材 `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm` を読み取り専用に使い、GLB/VRM候補確認、skin取込、rest-space頂点編集、native Save/Open、標準skin GLB出力を再回帰した。最新Player Authoring suite **PASS**（800x600、`Artifacts/Authoring-20260913-071034-98196e26e7af47cfa3df95cd3eab7bbd/report.json`）。同じ出力のUnity **2022.3.22f1 BridgeもPASS**（`Artifacts/BridgeReceiver-20260913-071148-485-e6720b8b0f8d49858a5198eafa261b7b/bridge-report.json`）。private素材はpublic repositoryへ追加していない。
+
+これは実素材の取込・編集・保存・GLB出力smokeであり、実マウス/DPI差、実VRChat内の見た目・挙動、標準VRM出力、異なるskeleton結合と完全材質保持の証拠ではない。
