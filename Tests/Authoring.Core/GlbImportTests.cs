@@ -28,7 +28,7 @@ internal static partial class Program
             var combined = GlbImporter.Read(changed);
             Equal(8, combined.Mesh.VertexCount); Equal(2, combined.Mesh.Submeshes.Count); Equal(4, combined.Mesh.TriangleCount);
             Equal(1, combined.Morphs.Targets.Count); Equal(2, combined.Morphs.Targets[0].Deltas.Count);
-            var skinRoot = JObject.Parse(ReadJsonChunk(bytes)); skinRoot["skins"] = new JArray(new JObject());
+            var skinRoot = JObject.Parse(ReadJsonChunk(bytes)); skinRoot["skins"] = new JArray(new JObject()); skinRoot["nodes"] = new JArray(new JObject { ["mesh"] = 0, ["skin"] = 0 });
             var skin = ReplaceJsonChunk(bytes, skinRoot.ToString(Newtonsoft.Json.Formatting.None)); Expect("UNSUPPORTED_FORMAT", () => GlbImporter.Read(skin));
             var bad = (byte[])bytes.Clone(); bad[0] = 0; Expect("INVALID_IMPORT", () => GlbImporter.Read(bad));
         });
@@ -41,6 +41,16 @@ internal static partial class Program
             Expect("UNSUPPORTED_FORMAT", () => GlbImporter.Read(bytes));
             var selected = GlbImporter.Read(bytes, 1); var first = GlbImporter.Read(bytes, 0); Equal(1, selected.MeshIndex); Equal("AccessorySmile", selected.Morphs.Targets[0].Name); True(first.Morphs.Targets[0].TargetId != selected.Morphs.Targets[0].TargetId); Equal(ChecksHashForTest(bytes), selected.SourceHash);
             Expect("INVALID_IMPORT", () => GlbImporter.Read(bytes, -1)); Expect("INVALID_IMPORT", () => GlbImporter.Read(bytes, 2));
+        });
+        Test("GLB importer allows an unskinned accessory beside a skinned mesh", () =>
+        {
+            var root = JObject.Parse(ReadJsonChunk(BuildGlb()));
+            root["skins"] = new JArray(new JObject { ["joints"] = new JArray(0) });
+            ((JArray)root["meshes"]!).Add(((JArray)root["meshes"]!)[0]!.DeepClone());
+            root["nodes"] = new JArray(new JObject { ["mesh"] = 0, ["skin"] = 0 }, new JObject { ["mesh"] = 1 });
+            var bytes = ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None));
+            True(GlbImporter.Read(bytes, 1).Mesh.VertexCount == 4);
+            Expect("UNSUPPORTED_FORMAT", () => GlbImporter.Read(bytes, 0));
         });
     }
 

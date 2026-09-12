@@ -78,7 +78,7 @@ namespace NyaForge.UnityRuntime
                 if (skeleton == null) throw new InvalidOperationException("PhysBones targetに対応する骨格がありません。");
                 string project = Path.GetFullPath(projectPath.value);
                 string directory = Path.Combine(project, "exports", "physbones-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-                string manifest = PhysBonesTargetPackage.Export(directory, importedPhysBonesTarget, skeleton);
+                string manifest = PhysBonesTargetPackage.Export(directory, importedPhysBonesTarget, skeleton, importedSecondaryMotionAsset);
                 SetStatus("PhysBones targetを書き出しました: " + manifest);
             });
         }

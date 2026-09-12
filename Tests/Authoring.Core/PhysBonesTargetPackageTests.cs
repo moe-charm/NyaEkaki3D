@@ -51,5 +51,19 @@ internal static partial class Program
             var bytes = File.ReadAllBytes(path); bytes[bytes.Length - 1] ^= 1; File.WriteAllBytes(path, bytes);
             Expect("HASH_MISMATCH", () => PhysBonesTargetPackage.Read(manifest));
         });
+        Test("PhysBones target package embeds a pinned source asset for receiver validation", () =>
+        {
+            var skeleton = BuildPhysBonesSkeleton(out var rootId, out _, out _);
+            var sourceProfile = new SecondaryMotionProfile("test.adapter", "test.simulator", 1, "1", "", SecondaryMotionOutputKind.BonePose, Array.Empty<byte>());
+            var source = new SecondaryMotionAsset(sourceProfile, skeleton.ContentHash, "", new[] { new SecondaryMotionChain("tail", new[] { rootId }, Array.Empty<int>()) }, null, null);
+            var chain = new PhysBonesChain("tail", rootId, new[] { rootId }, PhysBonesEndpointMode.Auto, "", null,
+                PhysBonesMultiChildType.Ignore, null, null, null, PhysBonesParameters.Default, PhysBonesInteraction.Default, null);
+            var target = new PhysBonesTargetProfile("vrchat.physbones", "sdk", "", skeleton.ContentHash, source.ContentHash, new[] { chain });
+            string directory = Dir("physbones-target-package-source");
+            string manifest = PhysBonesTargetPackage.Export(directory, target, skeleton, source);
+            var reopened = PhysBonesTargetPackage.Read(manifest);
+            Equal(source.ContentHash, reopened.Source.ContentHash);
+            True(File.Exists(Path.Combine(directory, PhysBonesTargetPackage.SourceFileName)));
+        });
     }
 }

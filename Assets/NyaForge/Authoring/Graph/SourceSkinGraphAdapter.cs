@@ -44,7 +44,9 @@ namespace NyaForge.Authoring.Graph
             GraphPoseValue pose = null;
             Checks.Require(poseEdge != null && evaluation.PoseOutputs.TryGetValue(poseEdge.FromNode, out pose),
                 "INPUT_UNRESOLVED", "The authored SkinDeform pose input is unavailable.");
-            return Apply(input, session, graph, pose.Pose, evaluation.Output);
+            // Apply the source palette to the complete authored output.  This preserves
+            // edits made after SkinDeform (EditMesh, morph and material graph stages).
+            return Apply(evaluation.Output, session, graph, pose.Pose);
         }
 
         public static GraphMeshValue Apply(GraphMeshValue input, ImportedRigSession session,

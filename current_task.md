@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。I04-Aの完全source保存/GUI接続、mesh属性/POSITION morph変換、source slot weight/一般bind deformer、GLB全JOINTS_n/WEIGHTS_n候補読取、native weight packageとrig session v5・GUI接続、評価済みgraph meshへのsource skin adapter、authored poseからのsource palette生成、Workbench取込後/揺れ再生中のsource skin表示接続まで追加。I04-Bの入口として複数mesh/instance/skin参照を元indexで保持するGLB scene inventory、指定mesh/skinを選ぶ静的・skinned候補読取、Workbenchの候補確認・選択GUIを追加した。今回、native documentへ複数objectとactive objectを追加し、`object.select`、graph objectの追加、Save/Open、Workbench対象切替、既存1object互換を実装した。GLB取込は既存graph projectへ新しいgraph objectとして追加し、取り込んだobjectをactiveにする。さらに非active objectを読み取り専用の背面として同じviewportへ表示し、表示切替と全対象Frameを追加した。SIM-01の共通secondary-motion契約（安定ID、固定頂点、collider、出力種別、adapter能力、unknown version保持付きNYSM v1 codec）とVRM1 resolved spring migration、SIM-02のPhysBones target DTO／NYPP v1 codec／loss report境界／schema 4 attachment保存／Workbench状態表示、PhysBones target package、UnityBridgeの管理対象限定writer／reflection backend／合成receiver検証、receiverの明示stable binding保存を追加した。SIM-03Aとして揺れプレビューのGUI/MCPライフサイクル（play/pause/reset/rebuild/fixed-step/state）を共通ownerと外部MCP transportへ接続し、SIM-03Bとして固定step連続PNG・hash・実行条件のrun記録と外部MCP経路を追加した。複数objectの結合出力、共有mesh/skin/morph参照、複数SkinDeformの同時評価は未完了。直近Core413件合格。任意の実モデル取込・実操作・性能・実VRChat受入は未完了。
+更新: 2026-09-12。I04-Aの完全source保存/GUI接続、mesh属性/POSITION morph変換、source slot weight/一般bind deformer、GLB全JOINTS_n/WEIGHTS_n候補読取、native weight packageとrig session v5・GUI接続、評価済みgraph meshへのsource skin adapter、authored poseからのsource palette生成、Workbench取込後/揺れ再生中のsource skin表示接続まで追加。I04-Bの入口として複数mesh/instance/skin参照を元indexで保持するGLB scene inventory、指定mesh/skinを選ぶ静的・skinned候補読取、Workbenchの候補確認・選択GUIを追加した。今回、native documentへ複数objectとactive objectを追加し、`object.select`、graph objectの追加、Save/Open、Workbench対象切替、既存1object互換を実装した。GLB取込は既存graph projectへ新しいgraph objectとして追加し、取り込んだobjectをactiveにする。さらに非active objectを読み取り専用の背面として同じviewportへ表示し、表示切替と全対象Frameを追加した。複数objectを個別に読み戻せる`multi-object.nyaforge-bake.json`パッケージ出力をGUI/MCPへ接続した。SIM-01の共通secondary-motion契約（安定ID、固定頂点、collider、出力種別、adapter能力、unknown version保持付きNYSM v1 codec）とVRM1 resolved spring migration、SIM-02のPhysBones target DTO／NYPP v1 codec／loss report境界／schema 4 attachment保存／Workbench状態表示、PhysBones target package、UnityBridgeの管理対象限定writer／reflection backend／合成receiver検証、receiverの明示stable binding保存を追加した。SIM-03Aとして揺れプレビューのGUI/MCPライフサイクル（play/pause/reset/rebuild/fixed-step/state）を共通ownerと外部MCP transportへ接続し、SIM-03Bとして固定step連続PNG・hash・実行条件のrun記録と外部MCP経路を追加した。複数objectのmesh結合、共有mesh/skin/morph参照、複数SkinDeformの同時評価は未完了。P1レビュー対応として16bit JOINTS読取、選択mesh単位のskin判定、source skin後の全graph編集保持、PhysBones source asset同梱を実装した。直近Core417件合格。任意の実モデル取込・実操作・性能・実VRChat受入は未完了。
 
 ## 開発の入口
 
@@ -19,7 +19,7 @@ reflection型解決は`VrcPhysBonesReflectionResolver`へ分離し、assembly-qu
 | 状態 / ID | 実行する作業 | 完了条件・依存 |
 |---|---|---|
 | [ ] I04-A / P1 **継続** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 数値/reader/codec/GUI生成/native原本なしOpen、mesh/POSITION morph変換、SourceSkinBinding/SourceSkinDeformer、GLB全JOINTS_n/WEIGHTS_n候補、NYSPとrig v5/native/GUI接続、評価済みGraphMeshValueへのSourceSkinGraphAdapter、authored poseからのSourceSkinPosePalette、Workbench取込後/揺れ再生中の自動表示を追加済み。次は複数mesh/instance/skin、複数SkinDeform、再利用mesh/object、normal/tangentと失敗時原子性を検証。現在はSkinDeform一個のsource入力を対象にし、sparse/normalized weightは未対応 |
-| [ ] I04-B / P1 **継続** | 複数mesh/instance/skin、source→制作ID対応 | `GlbSceneInventoryReader`でmesh/primitive数、node instance、skin joint参照、node world transformを元indexのまま候補化し、候補確認・node instance選択GUIを追加した。native documentは最大64 objectのactive object方式へ拡張し、`object.select`、graph object追加、Save/Open、Workbench対象切替を検証済み。非active objectは読み取り専用の背面表示とFrame対象にできる。GLB取込はgraph projectへ新objectとして追加する。残りは結合出力、同名morph/共有mesh・skin参照、複数SkinDeformの同時評価と実素材受入。 |
+| [ ] I04-B / P1 **継続** | 複数mesh/instance/skin、source→制作ID対応 | `GlbSceneInventoryReader`でmesh/primitive数、node instance、skin joint参照、node world transformを元indexのまま候補化し、候補確認・node instance選択GUIを追加した。native documentは最大64 objectのactive object方式へ拡張し、`object.select`、graph object追加、Save/Open、Workbench対象切替を検証済み。非active objectは読み取り専用の背面表示とFrame対象にでき、複数object package出力も追加した。GLB取込はgraph projectへ新objectとして追加する。残りはmesh結合、同名morph/共有mesh・skin参照、複数SkinDeformの同時評価と実素材受入。 |
 | [ ] I04-C / P1 | rig/weight/morph容量とcodec/hash/表示/出力 | 257骨・18weight・単一mesh262morph以上の入力を削減なしで往復。byte/メモリ予算と超過時の拒否を同時に決める |
 | [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
 | [ ] I04-E / P1 | 機能report、材質/animation/VRM意味情報/未知拡張の保持とGUI/MCP | 必須未知拡張の拒否、既知VRM内の未保持field、opaque依存資源と参照失効、未対応を完全成功にしない。report設計はAと並行可 |
@@ -76,6 +76,9 @@ SIM-02Bのbinding validationは実装済み。次は対象SDKの版・完全修�
 ## 直近の証拠
 
 - Multi-object authoring foundation: Core **413 passed / 0 failed** (`Logs/core-multi-object-foundation-v6.txt`、temporary output `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-1b7178a1a74946b6b3fb680843792dcd`)。graph/staticの2 object追加・active選択・`object.select`・state hash・Save/Open・active object評価と、複数static objectでの編集保持を確認。最終Windows Player build **PASS** (`Logs/build-player-20260912-230432-122.log`、`Builds/Windows-MultiObjectBackdrop/NyaForge.exe`)。Player Authoring **PASS** (`Artifacts/Authoring-20260912-230451-673c5685904b451e91b19f0f469888e3/report.json`)、Bridge **PASS** (`Artifacts/BridgeReceiver-20260912-230523-234-756d4f789c794e14bae97eb3c343130f/bridge-report.json`)。非active objectの読み取り専用backdrop、表示切替、Frame、Save/Openを検証した。これはactive objectを一度に編集する基盤の証拠で、結合出力、共有参照、実素材、実操作・画像目視、実VRChat受入を含まない。
+- Multi-object authoring foundation: Core **413 passed / 0 failed** (`Logs/core-multi-object-foundation-v6.txt`、temporary output `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-1b7178a1a74946b6b3fb680843792dcd`)。graph/staticの2 object追加・active選択・`object.select`・state hash・Save/Open・active object評価と、複数static objectでの編集保持を確認。最終Windows Player build **PASS** (`Logs/build-player-20260912-230432-122.log`、`Builds/Windows-MultiObjectBackdrop/NyaForge.exe`)。Player Authoring **PASS** (`Artifacts/Authoring-20260912-230451-673c5685904b451e91b19f0f469888e3/report.json`)、Bridge **PASS** (`Artifacts/BridgeReceiver-20260912-230523-234-756d4f789c794e14bae97eb3c343130f/bridge-report.json`)。非active objectの読み取り専用backdrop、表示切替、Frame、Save/Openを検証した。これはactive objectを一度に編集する基盤の証拠で、結合出力、共有参照、実素材、実操作・画像目視、実VRChat受入を含まない。
+- Multi-object package export: Core **414 passed / 0 failed** (`Logs/core-multi-object-export-v2.txt`、temporary output `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0a53bf40af3142579164c8697d022158`)。複数graph objectを個別Bakeへ出力し、`multi-object.nyaforge-bake.json`から全manifestを検証、文書revision/state hash不変と既存出力先の拒否を確認。mesh結合やskin/morphの統合出力ではない。
+- P1 consistency fixes: Core **417 passed / 0 failed** (Logs/core-p1-final.txt、temporary output C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3c1404b7cc604ef0bf33e4b52ddb4563)。8/16bit JOINTSの同値読取、skin付きmeshと同居する静的小物の選択取込、source skin適用後も下流graph編集を保持する評価、PhysBones target packageのsource asset同梱とreceiver側自動検証を追加。Windows Player **PASS** (Logs/build-player-20260912-p1-final2.log、Builds/Windows-P1ConsistencyFinal2/NyaForge.exe)、Authoring **PASS** (Artifacts/Authoring-20260912-232526-29c4d7d74e9d43f8b2aae80c26032d6c/report.json, 73 checks)、Bridge **PASS** (Artifacts/BridgeReceiver-20260912-232610-682-ea55fcb213e149e4aca246b668ed4e1c/bridge-report.json)。実SDK・実アバター・実VRChatの受入、mesh結合・共有参照・複数SkinDeformは未完了。
 
 - SourceMeshTransform: Core **378 passed / 0 failed** (`Logs/core-source-mesh-transform.txt`)。非一様/shear/鏡映の位置・方向・面順/UV保持、morph ID維持とtopology再pin、morph適用との可換性、不正方向/stale入力を検証。一般skinのweight混合・GUI取込はまだ未接続。
 - Windows-SourceMeshTransform build **PASS** (`Logs/build-player-20260912-170453-386.log`)。独立Coreモジュール追加のためPlayer GUI suiteは今回再実行していない。
@@ -1124,67 +1127,3 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthori
 - 既存の大量の未コミット変更を保持。今回commit/pushなし。既存Playerを終了・上書きしない。
 
 保持する残件: Mirror中心切断・結合、厚み品質と自己交差、cut/merge/bridge/create/curves、全削除・空polygon、UV回転/拡縮handle・seam・unwrap、複数object、skin/morph・rig・target出力。UV表示2048面・画像1024角・layer16枚/保持payload32MiBを最終製品要件と読み替えない。
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

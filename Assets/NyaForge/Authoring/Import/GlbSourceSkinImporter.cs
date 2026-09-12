@@ -110,7 +110,7 @@ namespace NyaForge.Authoring.Import
         {
             var accessor = Accessor(accessors, id, "VEC4", new[] {5121,5123}, label); Checks.Require(accessor["normalized"] == null || (accessor["normalized"].Type == JTokenType.Boolean && !(bool)accessor["normalized"]), "INVALID_IMPORT", label + " cannot be normalized.");
             int componentType = Integer(accessor["componentType"], 5121, 5123, label + " componentType"); Checks.Require(componentType == 5121 || componentType == 5123, "UNSUPPORTED_FORMAT", label + " componentType is unsupported."); int width = componentType == 5121 ? 1 : 2; var data = ReadRaw(accessor, views, bin, bufferLength, width * 4, expected, label);
-            return data.Select(row => Enumerable.Range(0,4).Select(i => componentType == 5121 ? row[i] : row[i] | row[i+1] << 8).ToArray()).ToArray();
+            return data.Select(row => Enumerable.Range(0,4).Select(i => componentType == 5121 ? row[i] : row[i * 2] | row[i * 2 + 1] << 8).ToArray()).ToArray();
         }
 
         static float[][] ReadWeights(JArray accessors, JArray views, byte[] bin, int bufferLength, int id, int expected, string label)

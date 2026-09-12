@@ -248,7 +248,7 @@ namespace NyaForge.UnityBridge.Editor
         {
             if (string.IsNullOrWhiteSpace(manifestPath)) throw new ArgumentException("PhysBones package manifest is required.", "manifestPath");
             var package = PhysBonesTargetPackage.Read(manifestPath);
-            return Inspect(package.Target, package.Skeleton, context, backend, mode, source);
+            return Inspect(package.Target, package.Skeleton, context, backend, mode, source ?? package.Source);
         }
 
         /// <summary>Reads a self-contained target package and applies it after the same stable-ID preflight.</summary>
@@ -258,7 +258,7 @@ namespace NyaForge.UnityBridge.Editor
         {
             if (string.IsNullOrWhiteSpace(manifestPath)) throw new ArgumentException("PhysBones package manifest is required.", "manifestPath");
             var package = PhysBonesTargetPackage.Read(manifestPath);
-            return Apply(package.Target, package.Skeleton, context, backend, mode, source);
+            return Apply(package.Target, package.Skeleton, context, backend, mode, source ?? package.Source);
         }
 
         static Prepared Prepare(PhysBonesTargetProfile profile, SkeletonDefinition skeleton,

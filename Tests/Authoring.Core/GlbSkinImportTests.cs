@@ -36,21 +36,25 @@ internal static partial class Program
         });
     }
 
-    static byte[] BuildSkinnedGlb()
+    static byte[] BuildSkinnedGlb(bool joints16 = false)
     {
         using (var bin = new MemoryStream()) using (var b = new BinaryWriter(bin))
         {
             foreach (var p in new[] { new Vec3(0, 0, 0), new Vec3(.1f, 0, 0), new Vec3(0, .1f, 0) }) { b.Write(p.X); b.Write(p.Y); b.Write(p.Z); }
             foreach (ushort i in new ushort[] { 0, 1, 2 }) b.Write(i);
             while (bin.Length % 4 != 0) b.Write((byte)0);
-            foreach (byte[] row in new[] { new byte[] { 0, 0, 0, 0 }, new byte[] { 0, 1, 0, 0 }, new byte[] { 1, 0, 0, 0 } }) b.Write(row);
+            foreach (byte[] row in new[] { new byte[] { 0, 0, 0, 0 }, new byte[] { 0, 1, 0, 0 }, new byte[] { 1, 0, 0, 0 } })
+            {
+                if (!joints16) b.Write(row);
+                else foreach (byte value in row) b.Write((ushort)value);
+            }
             foreach (var row in new[] { new[] { 1f, 0f, 0f, 0f }, new[] { .5f, .5f, 0f, 0f }, new[] { 0f, 1f, 0f, 0f } }) foreach (float value in row) b.Write(value);
             WriteIdentity(b); WriteTranslationInverse(b, .1f);
             var json = new JObject
             {
                 ["asset"] = new JObject { ["version"] = "2.0" }, ["buffers"] = new JArray(new JObject { ["byteLength"] = (int)bin.Length }),
-                ["bufferViews"] = new JArray(new JObject { ["buffer"] = 0, ["byteOffset"] = 0, ["byteLength"] = 36 }, new JObject { ["buffer"] = 0, ["byteOffset"] = 36, ["byteLength"] = 6 }, new JObject { ["buffer"] = 0, ["byteOffset"] = 44, ["byteLength"] = 12 }, new JObject { ["buffer"] = 0, ["byteOffset"] = 56, ["byteLength"] = 48 }, new JObject { ["buffer"] = 0, ["byteOffset"] = 104, ["byteLength"] = 128 }),
-                ["accessors"] = new JArray(new JObject { ["bufferView"] = 0, ["componentType"] = 5126, ["count"] = 3, ["type"] = "VEC3" }, new JObject { ["bufferView"] = 1, ["componentType"] = 5123, ["count"] = 3, ["type"] = "SCALAR" }, new JObject { ["bufferView"] = 2, ["componentType"] = 5121, ["count"] = 3, ["type"] = "VEC4" }, new JObject { ["bufferView"] = 3, ["componentType"] = 5126, ["count"] = 3, ["type"] = "VEC4" }, new JObject { ["bufferView"] = 4, ["componentType"] = 5126, ["count"] = 2, ["type"] = "MAT4" }),
+                ["bufferViews"] = new JArray(new JObject { ["buffer"] = 0, ["byteOffset"] = 0, ["byteLength"] = 36 }, new JObject { ["buffer"] = 0, ["byteOffset"] = 36, ["byteLength"] = 6 }, new JObject { ["buffer"] = 0, ["byteOffset"] = 44, ["byteLength"] = joints16 ? 24 : 12 }, new JObject { ["buffer"] = 0, ["byteOffset"] = joints16 ? 68 : 56, ["byteLength"] = 48 }, new JObject { ["buffer"] = 0, ["byteOffset"] = joints16 ? 116 : 104, ["byteLength"] = 128 }),
+                ["accessors"] = new JArray(new JObject { ["bufferView"] = 0, ["componentType"] = 5126, ["count"] = 3, ["type"] = "VEC3" }, new JObject { ["bufferView"] = 1, ["componentType"] = 5123, ["count"] = 3, ["type"] = "SCALAR" }, new JObject { ["bufferView"] = 2, ["componentType"] = joints16 ? 5123 : 5121, ["count"] = 3, ["type"] = "VEC4" }, new JObject { ["bufferView"] = 3, ["componentType"] = 5126, ["count"] = 3, ["type"] = "VEC4" }, new JObject { ["bufferView"] = 4, ["componentType"] = 5126, ["count"] = 2, ["type"] = "MAT4" }),
                 ["meshes"] = new JArray(new JObject { ["primitives"] = new JArray(new JObject { ["attributes"] = new JObject { ["POSITION"] = 0, ["JOINTS_0"] = 2, ["WEIGHTS_0"] = 3 }, ["indices"] = 1 }) }),
                 ["nodes"] = new JArray(new JObject { ["name"] = "Root", ["children"] = new JArray(1) }, new JObject { ["name"] = "Child", ["translation"] = new JArray(0, .1, 0) }),
                 ["skins"] = new JArray(new JObject { ["joints"] = new JArray(0, 1), ["inverseBindMatrices"] = 4 })

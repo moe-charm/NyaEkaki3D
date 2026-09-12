@@ -17,6 +17,20 @@ internal static partial class Program
             var output = SourceSkinDeformer.Apply(result.MeshSource.Mesh,result.Skin,result.Binding,rest);
             for(int i=0;i<output.VertexCount;i++) SpringPointNear(result.MeshSource.Mesh.Positions[i],output.Positions[i]);
         });
+        Test("GLB source skin importer decodes 8-bit and 16-bit JOINTS with identical slot values", () =>
+        {
+            var eight = GlbSourceSkinImporter.Read(BuildSkinnedGlb());
+            var sixteen = GlbSourceSkinImporter.Read(BuildSkinnedGlb(true));
+            var eightWeights = eight.Binding.Weights.OrderBy(pair => pair.Key).SelectMany(pair => pair.Value).ToArray();
+            var sixteenWeights = sixteen.Binding.Weights.OrderBy(pair => pair.Key).SelectMany(pair => pair.Value).ToArray();
+            Equal(eightWeights.Length, sixteenWeights.Length);
+            for (int i = 0; i < eightWeights.Length; i++)
+            {
+                Equal(eightWeights[i].VertexIndex, sixteenWeights[i].VertexIndex);
+                Equal(eightWeights[i].JointSlot, sixteenWeights[i].JointSlot);
+                Near(eightWeights[i].Weight, sixteenWeights[i].Weight);
+            }
+        });
         Test("GLB source skin importer finds paired JOINTS_1 and WEIGHTS_1", () =>
         {
             var bytes = BuildSkinnedGlb(); var root=JObject.Parse(ReadJsonChunk(bytes));

@@ -65,7 +65,11 @@ namespace NyaForge.Authoring.Import
             Checks.Require(meshIndex >= 0 && meshIndex < meshes.Count, "INVALID_IMPORT", "Selected GLB mesh index is out of range.");
             var meshToken = meshes[meshIndex] as JObject; Checks.Require(meshToken != null, "INVALID_IMPORT", "GLB mesh is invalid.");
             Checks.Require(root["skins"] == null || root["skins"] is JArray, "INVALID_IMPORT", "GLB skins property is invalid.");
-            Checks.Require(root["skins"] == null || ((JArray)root["skins"]).Count == 0, "UNSUPPORTED_FORMAT", "Skin bindings are not imported yet.");
+            // A GLB may contain both skinned and static node instances.  Only reject a
+            // selected mesh when that mesh itself is linked to a skin; unrelated skins
+            // must not prevent importing a static accessory.
+            if (root["skins"] is JArray && ((JArray)root["skins"]).Count > 0)
+                Checks.Require(!MeshHasSkin(root, meshIndex), "UNSUPPORTED_FORMAT", "Selected GLB mesh has skin bindings; use the skinned importer.");
             var primitives = Array(meshToken, "primitives"); Checks.Require(primitives.Count > 0 && primitives.Count <= AuthoringLimits.MaxSubmeshes, "BUDGET_EXCEEDED", "GLB primitive count exceeds the submesh budget.");
             var parts = primitives.Select(token => { var primitive = token as JObject; Checks.Require(primitive != null, "INVALID_IMPORT", "GLB primitive is invalid."); return ReadPrimitive(primitive, accessors, views, bin); }).ToArray();
             bool hasNormals = AttributePresence(parts, p => p.Normals.Length > 0, "NORMAL");
@@ -84,6 +88,19 @@ namespace NyaForge.Authoring.Import
             var warnings = new List<string> { "Imported as " + parts.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " static triangle primitive(s); original glTF scene hierarchy, materials and skin bindings are not retained." };
             if (morphs != null) warnings.Add("POSITION morph targets were retained; normal/tangent morph deltas are not imported.");
             return new ImportedMeshSource(sourceHash, meshIndex, mesh, morphs, warnings);
+        }
+
+        static bool MeshHasSkin(JObject root, int meshIndex)
+        {
+            var nodes = root["nodes"] as JArray;
+            if (nodes == null) return false;
+            foreach (var token in nodes)
+            {
+                var node = token as JObject;
+                if (node == null || node["mesh"] == null || node["skin"] == null) continue;
+                if (node["mesh"].Type == JTokenType.Integer && (int)node["mesh"] == meshIndex) return true;
+            }
+            return false;
         }
 
         sealed class PrimitiveData
