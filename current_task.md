@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。T03の実素材調査と取込・情報保持・保存・出力の仕様整理が完了。次はI04-A（一般source affine変換）。VRM0/1の対応profileはGUI接続とPlayer handler検証済み。直近Core360件合格、任意の実モデル取込・実操作・性能の受入は未完了。
+更新: 2026-09-12。T03の実素材調査と取込・情報保持・保存・出力の仕様整理が完了。I04-Aの数値基盤を追加し、次はnode decode・階層合成と保存への接続。VRM0/1の対応profileはGUI接続とPlayer handler検証済み。直近Core363件合格、任意の実モデル取込・実操作・性能の受入は未完了。
 
 ## 開発の入口
 
@@ -14,7 +14,7 @@
 
 | 状態 / ID | 実行する作業 | 完了条件・依存 |
 |---|---|---|
-| [ ] I04-A / P1 **次に実装** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 回転/scale/鏡映/階層/元原点とbindの差の数値回帰、旧translation/native移行契約。まずCoreの独立数値モジュールから |
+| [ ] I04-A / P1 **次に実装** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 回転/scale/鏡映/階層/元原点とbindの差の数値回帰、旧translation/native移行契約。数値基盤SourceAffineは追加済み。次はnode decode/階層合成/保存への接続 |
 | [ ] I04-B / P1 | 複数mesh/instance/skin、source→制作ID対応 | Objects[0]前提も監査。全対象・同名morph・共有参照を編集/保存/Openで保持。Aの変換契約に依存 |
 | [ ] I04-C / P1 | rig/weight/morph容量とcodec/hash/表示/出力 | 257骨・18weight・単一mesh262morph以上の入力を削減なしで往復。byte/メモリ予算と超過時の拒否を同時に決める |
 | [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
@@ -34,6 +34,7 @@
 
 ## 直近の証拠
 
+- I04-A数値基盤: Core **363 passed / 0 failed** (`Logs/core-source-affine.txt`)、Windows-SourceAffine build **PASS** (`Logs/build-player-20260912-163153-722.log`)。一般GLB取込/Player実素材の受入は未実施。
 - 実装基準 `4abd9d9`。Core **360 passed / 0 failed**: `Logs/core-vrm0-preview.txt`（前段の実行結果）。Windows-Vrm0Playback Player **PASS**: `Artifacts/Authoring-20260912-160736-8e0e5bae1c24440082b9c84dd1b27fc4/report.json`。今回の仕様整理ではCore/Playerを再実行していない。
 - T03: `Tools/Inspect-BlenderImport.py`をBlender 4.4.0で実行。詳細 `private/import-inspection/20260912-inventory.json`、3入力の存在/SHA256一致を再確認。素材・派生モデルの保存/出力はしていない。
 - 取込パネルに残っていた「VRM0揺れ未対応」の古い説明を訂正し、説明を折り返すよう修正済み。Windows-ImportHelp build **PASS**: `Logs/build-player-20260912-161814-007.log`。説明修正のbuild結果であり、新しいimport機能や文字の目視受入を意味しない。
@@ -43,6 +44,13 @@
 ## 実装と検証の履歴
 
 以下は記録当時の状況。「次」「未完了」は当時の記述を含む。最新の状態・着手順は冒頭の表を使用する。
+
+### I04-A前段: source affine数値モジュール（2026-09-12）
+
+- `SourceAffine`へcolumn-major/TRS、parent×local、逆行列、Point/Vector/Normal/Tangentの変換を分離。double計算、入力不変、finite float出力、鏡映handednessと不正基底の診断を定めた。[計算と保存接続の契約](docs/Source-Affine.md)。
+- Core **363 passed / 0 failed**: `Logs/core-source-affine.txt`、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a8780732274b434e923d42a3b5ceede3`。非一様TRS、inverse-bind相殺、shear/鏡映、法線/接線、不正入力、小さいscaleを確認。
+- Windows-SourceAffine build **PASS**: `Logs/build-player-20260912-163153-722.log`。数値モジュール追加のためPlayer GUI suiteは今回再実行していない。
+- 次はnode JSON decode、完全local/world変換、一般inverse-bindの候補と保存移行。旧sessionの原点を完全な一般transformと捏造しない。既存translation-only制限を維持し、I04-A全体は未完了。
 
 ### T02: VRM0実行所有者と共通再生GUI（2026-09-12）
 
