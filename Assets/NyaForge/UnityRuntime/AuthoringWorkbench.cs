@@ -164,7 +164,8 @@ namespace NyaForge.UnityRuntime
             side.Add(Button("Unity用に書き出す", Export, "authoring-export"));
             side.Add(Button("標準GLB（表示形状）", ExportGlbStatic, "authoring-export-glb-static"));
             side.Add(Button("標準GLB（skin/morph保持）", ExportGlbSkinned, "authoring-export-glb-skinned"));
-            side.Add(new Label("Unity用出力はnative機能を保持します。標準GLBは表示形状、または対応範囲内のskin/morphを出力します。"));
+            side.Add(Button("拡張GLB（全weight保持）", ExportGlbSkinnedExtended, "authoring-export-glb-skinned-extended"));
+            side.Add(new Label("Unity用出力はnative機能を保持します。標準GLBは互換用4 influence、拡張GLBは全weightを出力します。"));
             confirmRow = new VisualElement { name = "authoring-confirm" }; confirmRow.style.display = DisplayStyle.None; side.Add(confirmRow);
             status = new Label { name = "authoring-status" }; status.AddToClassList("status"); root.Add(status);
 

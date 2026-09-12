@@ -9,7 +9,7 @@ using NyaForge.Authoring.Rig;
 
 namespace NyaForge.Authoring
 {
-    public enum GlbExportProfile { StaticGeometry, SkinnedGeometry }
+    public enum GlbExportProfile { StaticGeometry, SkinnedGeometry, SkinnedGeometryExtended }
 
     public sealed class GlbExportResult
     {
@@ -46,9 +46,26 @@ namespace NyaForge.Authoring
             lock (workspace.Gate)
             {
                 Checks.Require(workspace.Document.Objects.Count == 1, "GLB_SKIN_OBJECT_COUNT", "Skinned GLB export supports exactly one graph object.");
-                var skinned = BuildSkinnedObject(workspace.Document.Objects[0], instanceWorldTransform);
+                var skinned = BuildSkinnedObject(workspace.Document.Objects[0], instanceWorldTransform, GlbExportProfile.SkinnedGeometry);
                 string path = Write(directory, new[] { skinned.Mesh }, skinned, GlbExportProfile.SkinnedGeometry);
                 return new GlbExportResult(path, GlbExportProfile.SkinnedGeometry, 1);
+            }
+        }
+
+        /// <summary>Writes a skinned GLB with every authored influence split into JOINTS_n/WEIGHTS_n sets.</summary>
+        public static GlbExportResult ExportSkinnedExtended(AuthoringWorkspace workspace, string instance, string document, long revision, string directory)
+            => ExportSkinnedExtended(workspace, instance, document, revision, directory, null);
+
+        /// <summary>Writes an extended skinned GLB while retaining a selected source node instance affine.</summary>
+        public static GlbExportResult ExportSkinnedExtended(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, SourceAffine instanceWorldTransform)
+        {
+            ValidateRequest(workspace, instance, document, revision, directory);
+            lock (workspace.Gate)
+            {
+                Checks.Require(workspace.Document.Objects.Count == 1, "GLB_SKIN_OBJECT_COUNT", "Skinned GLB export supports exactly one graph object.");
+                var skinned = BuildSkinnedObject(workspace.Document.Objects[0], instanceWorldTransform, GlbExportProfile.SkinnedGeometryExtended);
+                string path = Write(directory, new[] { skinned.Mesh }, skinned, GlbExportProfile.SkinnedGeometryExtended);
+                return new GlbExportResult(path, GlbExportProfile.SkinnedGeometryExtended, 1);
             }
         }
 
@@ -93,7 +110,7 @@ namespace NyaForge.Authoring
             return new MeshObject { Mesh = evaluation.Output.Mesh, Transform = evaluation.Output.Transform, Name = item.ObjectId };
         }
 
-        static SkinnedObject BuildSkinnedObject(AuthoringObject item, SourceAffine instanceWorldTransform = null)
+        static SkinnedObject BuildSkinnedObject(AuthoringObject item, SourceAffine instanceWorldTransform, GlbExportProfile profile)
         {
             Checks.Require(!item.IsStaticProfile, "GLB_SKIN_PROFILE", "Skinned GLB export requires a graph object.");
             var graph = item.Graph; var evaluation = item.EvaluateGraph();
@@ -120,8 +137,9 @@ namespace NyaForge.Authoring
             // This interchange profile writes one JOINTS_0/WEIGHTS_0 set. Do
             // not silently drop fifth-and-later influences while producing a
             // file that claims to preserve the skin.
-            Checks.Require(binding.Weights.Values.All(values => values.Count <= 4),
-                "GLB_SKIN_INFLUENCES", "Skinned GLB export supports at most four influences per vertex; use native export for higher influence counts.");
+            if (profile == GlbExportProfile.SkinnedGeometry)
+                Checks.Require(binding.Weights.Values.All(values => values.Count <= 4),
+                    "GLB_SKIN_INFLUENCES", "Skinned GLB export supports at most four influences per vertex; use extended or native export for higher influence counts.");
             MorphSet morphs = morphNode == null ? null : morphNode.Morphs.ValidateFor(source.SourceMesh);
             var pose = poseNodes.Length == 0 ? DefaultPose(skeleton) : poseNodes[0].Pose.ValidateFor(skeleton);
             foreach (var bone in skeleton.Bones)
@@ -190,11 +208,12 @@ namespace NyaForge.Authoring
                 int normal = mesh.Normals.Count == 0 ? -1 : AddVec3(binary, views, accessors, mesh.Normals, ArrayBuffer, false);
                 int tangent = mesh.Tangents.Count == 0 ? -1 : AddVec4(binary, views, accessors, mesh.Tangents, ArrayBuffer);
                 int uv = mesh.Uv0.Count == 0 ? -1 : AddVec2(binary, views, accessors, mesh.Uv0, ArrayBuffer);
-                int joints = -1, weights = -1, skinIndex = -1;
-                if (profile == GlbExportProfile.SkinnedGeometry)
+                int joints = -1, weights = -1, skinIndex = -1; int[] jointSets = null, weightSets = null;
+                if (IsSkinned(profile))
                 {
-                    joints = AddJoints(binary, views, accessors, mesh.VertexCount, skinned.Binding, skinned.Skeleton);
-                    weights = AddWeights(binary, views, accessors, mesh.VertexCount, skinned.Binding);
+                    jointSets = AddJointSets(binary, views, accessors, mesh.VertexCount, skinned.Binding, skinned.Skeleton, profile == GlbExportProfile.SkinnedGeometryExtended);
+                    weightSets = AddWeightSets(binary, views, accessors, mesh.VertexCount, skinned.Binding, profile == GlbExportProfile.SkinnedGeometryExtended);
+                    joints = jointSets[0]; weights = weightSets[0];
                     skinIndex = AddSkeleton(binary, views, accessors, nodes, skins, sceneNodes, skinned);
                 }
                 var morphTargets = new JArray();
@@ -222,7 +241,18 @@ namespace NyaForge.Authoring
                 int indices = AddIndices(binary, views, accessors, allIndices);
                 var attrs = new JObject { ["POSITION"] = position };
                 if (normal >= 0) attrs["NORMAL"] = normal; if (tangent >= 0) attrs["TANGENT"] = tangent; if (uv >= 0) attrs["TEXCOORD_0"] = uv;
-                if (joints >= 0) { attrs["JOINTS_0"] = joints; attrs["WEIGHTS_0"] = weights; }
+                if (joints >= 0)
+                {
+                    attrs["JOINTS_0"] = joints; attrs["WEIGHTS_0"] = weights;
+                    if (profile == GlbExportProfile.SkinnedGeometryExtended)
+                    {
+                        for (int set = 1; set < jointSets.Length; set++)
+                        {
+                            attrs["JOINTS_" + set.ToString(System.Globalization.CultureInfo.InvariantCulture)] = jointSets[set];
+                            attrs["WEIGHTS_" + set.ToString(System.Globalization.CultureInfo.InvariantCulture)] = weightSets[set];
+                        }
+                    }
+                }
                 var primitive = new JObject { ["attributes"] = attrs, ["indices"] = indices, ["mode"] = 4 };
                 if (morphTargets.Count > 0) primitive["targets"] = morphTargets.DeepClone();
                 primitiveTemplates.Add(primitive);
@@ -235,7 +265,7 @@ namespace NyaForge.Authoring
                 }
                 meshes.Add(meshJson);
                 int meshNode = nodes.Count; var node = new JObject { ["name"] = "NyaForgeObject-" + i, ["mesh"] = i };
-                if (profile == GlbExportProfile.SkinnedGeometry)
+                if (IsSkinned(profile))
                 {
                     node["skin"] = skinIndex;
                     if (item.Affine != null) node["matrix"] = new JArray(item.Affine.ToColumnMajor());
@@ -284,15 +314,31 @@ namespace NyaForge.Authoring
         }
 
         static JArray Append(JToken existing, int value) { var array = existing as JArray ?? new JArray(); array.Add(value); return array; }
-        static int AddJoints(BinaryBuffer binary, JArray views, JArray accessors, int vertexCount, SkinBinding binding, SkeletonDefinition skeleton)
+        static bool IsSkinned(GlbExportProfile profile) => profile == GlbExportProfile.SkinnedGeometry || profile == GlbExportProfile.SkinnedGeometryExtended;
+        static int[] AddJointSets(BinaryBuffer binary, JArray views, JArray accessors, int vertexCount, SkinBinding binding, SkeletonDefinition skeleton, bool extended)
         {
-            var byId = skeleton.Bones.Select((bone, index) => new { bone.BoneId, index }).ToDictionary(x => x.BoneId, x => x.index, StringComparer.Ordinal); int offset = binary.Write(writer => { for (int vertex = 0; vertex < vertexCount; vertex++) { var values = binding.Weights[vertex].Take(4).ToArray(); for (int i = 0; i < 4; i++) writer.Write((ushort)(i < values.Length ? byId[values[i].BoneId] : 0)); } });
-            return AddAccessor(accessors, AddView(views, offset, checked(vertexCount * 8), ArrayBuffer), 5123, vertexCount, "VEC4", false, null, null);
+            int setCount = extended ? (binding.Weights.Values.Max(values => values.Count) + 3) / 4 : 1;
+            var byId = skeleton.Bones.Select((bone, index) => new { bone.BoneId, index }).ToDictionary(x => x.BoneId, x => x.index, StringComparer.Ordinal);
+            var result = new int[setCount];
+            for (int set = 0; set < setCount; set++)
+            {
+                int current = set;
+                int offset = binary.Write(writer => { for (int vertex = 0; vertex < vertexCount; vertex++) { var values = binding.Weights[vertex]; for (int i = 0; i < 4; i++) { int index = current * 4 + i; writer.Write((ushort)(index < values.Count ? byId[values[index].BoneId] : 0)); } } });
+                result[set] = AddAccessor(accessors, AddView(views, offset, checked(vertexCount * 8), ArrayBuffer), 5123, vertexCount, "VEC4", false, null, null);
+            }
+            return result;
         }
-        static int AddWeights(BinaryBuffer binary, JArray views, JArray accessors, int vertexCount, SkinBinding binding)
+        static int[] AddWeightSets(BinaryBuffer binary, JArray views, JArray accessors, int vertexCount, SkinBinding binding, bool extended)
         {
-            int offset = binary.Write(writer => { for (int vertex = 0; vertex < vertexCount; vertex++) { var values = binding.Weights[vertex].Take(4).ToArray(); float total = values.Sum(value => value.Weight); for (int i = 0; i < 4; i++) writer.Write(i < values.Length ? values[i].Weight / total : 0f); } });
-            return AddAccessor(accessors, AddView(views, offset, checked(vertexCount * 16), ArrayBuffer), 5126, vertexCount, "VEC4", false, null, null);
+            int setCount = extended ? (binding.Weights.Values.Max(values => values.Count) + 3) / 4 : 1;
+            var result = new int[setCount];
+            for (int set = 0; set < setCount; set++)
+            {
+                int current = set;
+                int offset = binary.Write(writer => { for (int vertex = 0; vertex < vertexCount; vertex++) { var values = binding.Weights[vertex]; float total = values.Sum(value => value.Weight); for (int i = 0; i < 4; i++) { int index = current * 4 + i; writer.Write(index < values.Count ? values[index].Weight / total : 0f); } } });
+                result[set] = AddAccessor(accessors, AddView(views, offset, checked(vertexCount * 16), ArrayBuffer), 5126, vertexCount, "VEC4", false, null, null);
+            }
+            return result;
         }
         static int AddIndices(BinaryBuffer binary, JArray views, JArray accessors, int[] values)
         { int offset = binary.Write(writer => { foreach (var value in values) writer.Write((uint)value); }); return AddAccessor(accessors, AddView(views, offset, checked(values.Length * 4), ElementArrayBuffer), 5125, values.Length, "SCALAR", false, null, null); }

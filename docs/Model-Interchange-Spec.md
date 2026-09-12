@@ -163,8 +163,9 @@ GLB/VRMの入出力にはnative blobと分離した128 MiBファイル予算と�
 |---|---|---|
 | `StaticGeometry` | 現在評価できる表示メッシュ、頂点属性、正の一様変換 | skin・骨・morph・材質・アニメーションは含めず、複数submeshは現時点で一つのprimitiveへ結合 |
 | `SkinnedGeometry` | 単一graphのsource mesh、4 influence weight、骨階層、inverse bind、POSITION/NORMAL/TANGENT morph | rest pose・identity source/output transformに限定。EditMeshによるトポロジー不変の頂点編集を保持する。任意pose、非ゼロmorph変形、未対応nodeは拒否しnative/static exportを案内 |
+| `SkinnedGeometryExtended` | 単一graphのsource mesh、最大32 influence weightを全JOINTS_n/WEIGHTS_n setで保持、骨階層、inverse bind、POSITION/NORMAL/TANGENT morph | rest pose・identity source/output transformに限定。標準profileで4 influenceを超える受取先には互換性を保証しない。任意pose、非ゼロmorph変形、未対応nodeは拒否 |
 
-GUIには「標準GLB（表示形状）」と「標準GLB（skin/morph保持）」を分けて表示する。出力先は`<project>/exports/glb-*`の新規ディレクトリに限定し、失敗時はstagingを削除して既存制作状態を変更しない。標準GLBの読込確認はCore importerで行い、Unity・VRChat実機での外観／挙動受入とは分離して記録する。
+GUIには「標準GLB（表示形状）」「標準GLB（skin/morph保持）」「拡張GLB（全weight保持）」を分けて表示する。出力先は`<project>/exports/glb-*`の新規ディレクトリに限定し、失敗時はstagingを削除して既存制作状態を変更しない。GLBの読込確認はCore importerで行い、Unity・VRChat実機での外観／挙動受入とは分離して記録する。
 
 ### 8.1 skinned node instance affine（2026-09-13）
 

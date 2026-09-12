@@ -55,6 +55,28 @@ internal static partial class Program
             True(restored.InstanceWorldTransform != null); Near(1f, restored.InstanceWorldTransform.TransformPoint(new Vec3()).X); Near(2f, restored.InstanceWorldTransform.TransformPoint(new Vec3()).Y); Near(3f, restored.InstanceWorldTransform.TransformPoint(new Vec3()).Z);
         });
 
+        Test("extended skinned GLB export roundtrips every authored influence set", () =>
+        {
+            var mesh = PrimitiveGeometry.Plane(.2f, .1f);
+            string sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), outputId = GraphId();
+            var bones = Enumerable.Range(0, 8).Select(i => new BoneDefinition(GraphId(), "Bone" + i, "", new Vec3(i * .01f, 0, 0), new Vec3(i * .01f, .1f, 0))).ToArray();
+            var skeleton = new SkeletonDefinition(bones);
+            var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount).SelectMany(vertex => bones.Select(bone => new SkinBinding.VertexWeightInput(vertex, bone.BoneId, .125f))));
+            var pose = PoseSet.Create(skeleton, bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head))));
+            var graph = new AuthoringGraph(GraphId(),
+                new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
+            var workspace = AuthoringWorkspace.CreateEmpty(); Ok(Execute(workspace, AuthoringOperation.AddGraph(graph)));
+            string directory = Path.Combine(Root, "glb-skinned-extended-" + Guid.NewGuid().ToString("N"));
+            var result = GlbExportService.ExportSkinnedExtended(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory);
+            Equal(GlbExportProfile.SkinnedGeometryExtended, result.Profile);
+            var bytes = File.ReadAllBytes(result.Path); var json = JObject.Parse(ReadJsonChunk(bytes));
+            var attrs = (JObject)((JObject)((JArray)((JObject)((JArray)json["meshes"]!)[0])!["primitives"]!)[0])!["attributes"]!;
+            True(attrs["JOINTS_1"] != null && attrs["WEIGHTS_1"] != null);
+            var imported = GlbSkinImporter.Read(bytes);
+            Equal(8, imported.Skeleton.Bones.Count); Equal(8, imported.Binding.Weights[0].Count); Near(1f, imported.Binding.Weights[0].Sum(weight => weight.Weight));
+        });
+
         Test("skinned GLB export keeps a rest-pose vertex edit", () =>
         {
             var mesh = PrimitiveGeometry.Plane(.2f, .1f);

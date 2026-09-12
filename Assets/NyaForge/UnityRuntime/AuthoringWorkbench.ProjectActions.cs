@@ -114,5 +114,12 @@ namespace NyaForge.UnityRuntime
             SetStatus("標準GLB（skin/morph保持）を書き出しました: " + result.Path);
         });
 
+        void ExportGlbSkinnedExtended() => Try(() =>
+        {
+            var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-extended-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            var result = GlbExportService.ExportSkinnedExtended(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, importedRigSession?.MeshInstanceTransform);
+            SetStatus("拡張GLB（全weight保持）を書き出しました: " + result.Path);
+        });
+
     }
 }
