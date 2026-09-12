@@ -4,6 +4,17 @@ using System.Text.Json;
 using NyaForge.Mcp;
 
 if(args.Length>0 && (args[0]=="--player-state" || args[0]=="--player-create")) { await PlayerStateVerification.RunAsync(args);return; }
+if(args.Length>0 && args[0]=="--player-secondary")
+{
+    if(args.Length!=5) throw new ArgumentException("Expected --player-secondary instance document revision stateHash");
+    using var deadline=new CancellationTokenSource(TimeSpan.FromSeconds(35));
+    await using var client=await ModelContextProtocol.Client.McpClient.CreateAsync(new ModelContextProtocol.Client.StdioClientTransport(new ModelContextProtocol.Client.StdioClientTransportOptions
+    {
+        Name="NyaForge Player secondary-motion verification",Command="dotnet",Arguments=[Path.Combine(AppContext.BaseDirectory,"NyaForge.Mcp.dll"),"--instance",args[1]],StandardErrorLines=line=>Console.Error.WriteLine(line)
+    }),cancellationToken:deadline.Token);
+    await PlayerSecondaryMotionVerification.RunAsync(client,args,deadline.Token);
+    return;
+}
 
 foreach(bool wrongIdentity in new[] {false,true})
 {

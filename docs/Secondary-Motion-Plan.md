@@ -39,9 +39,9 @@ SIM-01のCore契約を実装済み。`Authoring/Simulation`に安定ID付きchai
 
 検証: SIM-01/02 Core **406 passed / 0 failed**（`Logs/core-physbones-bridge-package.txt`）。`NYPP` v1 attachmentに加え、`physbones.nyaforge-target.json`・profile・skeleton payloadのhash検査付き往復と改ざん拒否を確認した。Windows-SecondaryMotionPhysBonesAttachment build／Player（既存回帰70 checks）もPASS（`Logs/build-player-20260912-190938-424.log`、`Artifacts/Authoring-20260912-190959-488cdb25d1124cb0b86f86853b0891c2/report.json`）。続くWindows-PhysBonesStatusGui2 build／Player **71 checks**では、保存済みtargetの対応版表示とunknown wire version 99の保持のみ表示を確認した（`Logs/build-player-20260912-191727-520.log`、`Artifacts/Authoring-20260912-191748-5e9371fb9e454c29b618a74947a443ce/report.json`）。Windows-PhysBonesBridgeGui4 build／Player **71 checks**とUnityBridge receiver **10 checks**もPASS（`Logs/build-all-20260912-195001-224.log`、`Artifacts/Authoring-20260912-195021-2abdd80c693f4d5ba51942a327f3e29b/report.json`、`Artifacts/BridgeReceiver-20260912-202001-392-7a27c7a4d1f647868118e83a3ca6bdc0/bridge-report.json`）。Workbenchのtarget package書き出し、`ApplyPackage`経由のmanifest/profile/skeleton読込、managed-only更新、未管理component保護、unsupported停止、reflection mapping、branch表現可能性の事前検査、configure失敗時rollback、受け取り側EditorWindowのstable BoneId／collider group手動割当とavatar rootへの保存／読込を確認した。これはUnityコンパイルと合成fixtureの自動検証であり、実VRChat SDK／実アバター／VRChat内、実マウス操作、画像目視の受入ではない。
 
-SIM-03Aの追加検証: Windows-SIM03A build **PASS**（`Logs/build-player-20260912-203151-117.log`）、Player **PASS / 71 checks**（`Artifacts/Authoring-20260912-203210-462c4859dbcd417eb9e1218f094528e9/report.json`）。VRM0/1のSpring previewへGUIのrebuild/fixed-stepと内部MCP handlerの`secondary_motion_play`／`pause`／`reset`／`rebuild`／`step`／`state`を接続し、同じtransient ownerで再生、停止、再構築、固定step、Save/Open時の非保存、編集時破棄を確認した。これはPlayer内handlerの自動検証であり、外部named-pipe MCP transport、非同期vendor構築、実SDK／実アバター／VRChat内動作、実マウス操作・画像目視の受入ではない。
+SIM-03Aの追加検証: Windows-SIM03B build **PASS**（`Logs/build-player-20260912-204039-364.log`）、Player **PASS / 72 checks**（`Artifacts/Authoring-20260912-204100-9a3d2feb718345d880ae3b9f998f27ca/report.json`）。VRM0/1のSpring previewへGUI・内部MCP handler・外部sidecar toolの`secondary_motion_play`／`pause`／`reset`／`rebuild`／`step`／`state`を接続し、実MCP client→sidecar→named pipe→Player main threadの経路で再生、停止、再構築、固定step、reset、Save/Open時の非保存、編集時破棄を確認した。外部MCP fixtureはVRM1で固定し、Playerの自動tickを止めてstep数を決定的に照合した。これはMCP transportとPlayer内自動検証であり、非同期vendor構築、実SDK／実アバター／VRChat内動作、実マウス操作・画像目視の受入ではない。
 
-実装を止めずに受け入れ可能な順へ、SIM-01〜07を次の小タスクへ分ける。主経路は **SIM-02B → SIM-03A → SIM-03B → SIM-07A** とし、MagicaCloth2は任意評価へ隔離する。
+実装を止めずに受け入れ可能な順へ、SIM-01〜07を次の小タスクへ分ける。SIM-03AのGUI・内部handler・外部sidecar lifecycleは完了済みで、現在の主経路は **SIM-02B → SIM-03B → SIM-07A**。MagicaCloth2は任意評価へ隔離する。
 
 | ID / 優先・段階 | 作業 | 依存 / 完了条件 |
 |---|---|---|
@@ -49,14 +49,14 @@ SIM-03Aの追加検証: Windows-SIM03A build **PASS**（`Logs/build-player-20260
 | SIM-01B / P1・C2 | native attachmentとVRM0移行 | native Save/Open、未知版GUI表示、stale再bind、旧VRM0 source-node移行をI04-Aへ接続。SIM-03Aと並行可能 |
 | SIM-02A / P1・C2 **完了** | PhysBones target packageと合成Bridge | `NYPP` v1、schema 4 attachment、target package、loss report、stable bone／collider mapping、managed-only、branch preflight、rollback、receiver Windowを合成fixtureで検証済み |
 | SIM-02B / P1・C2 **次** | 実SDK受け取り側 | SDK版・型を固定し、manifest/profile/skeleton読込、stable BoneId／collider group手動割当、実component生成・更新を確認。unsupportedは書込み前停止、未管理component保護、SDK未導入public build維持 |
-| SIM-03A / P1・C2 **完了** | 共通GUI/MCPと再生所有者 | GUIと内部MCP handlerのplay/pause/reset/rebuild/fixed-step/stateを同じtransient owner／generationへ接続し、再生・停止・再構築・固定step・Save/Open非保存・編集時破棄を合成backendで確認済み。外部MCP transportと非同期vendor構築は後続 |
-| SIM-03B / P1・C2 | 連続撮影とbackend証拠 | input/config hash、adapter／package版、target、Unity/build、step/warmup、pose/root/collider条件と連続画像／失敗ログをrun単位で保存。外部MCP transportは別タスク |
+| SIM-03A / P1・C2 **完了** | 共通GUI/MCPと再生所有者 | GUI・内部MCP handler・外部sidecar toolのplay/pause/reset/rebuild/fixed-step/stateを同じtransient owner／generationへ接続し、再生・停止・再構築・固定step・reset・Save/Open非保存・編集時破棄を合成backendと実named-pipe経路で確認済み。非同期vendor構築は後続 |
+| SIM-03B / P1・C2 | 連続撮影とbackend証拠 | input/config hash、adapter／package版、target、Unity/build、step/warmup、pose/root/collider条件と連続画像／失敗ログをrun単位で保存。外部MCPの基本lifecycleはSIM-03Aで検証済み |
 | SIM-04 / P2・C2・任意 | MagicaCloth2 BoneCloth最小評価 | SIM-01/03。vendor依存を任意assemblyへ隔離し、未導入buildを維持。自作髪束1本のruntime生成・構築完了待ち・固定根・sphere衝突・rebuild/reset/破棄・写真列で採用可否を判断 |
 | SIM-05 / P2・C3 | MeshClothとmorph・固定領域の評価 | SIM-04後。BlendShape変形頂点との重複を拒否または分離案内し、法線更新と時間／GC／メモリを比較。morphを黙って無効化しない |
 | SIM-06 / P2・C3 | BoneSpringとUnityアプリ向け出力 | SIM-04後。BoneSpring fixtureの保存・再構築、Magica用profileの依存不足診断・package版照合・再出力を確認 |
 | SIM-07A / P1・C2→C5 | PhysBones target別受入 | SIM-02B＋SIM-03A/B後。同じ髪束でroot移動／停止・旋回・pose・colliderを確認し、受取UnityとVRChat内の結果を別証拠として記録 |
 
-SIM-02Bの実SDK受け取り側とSIM-03Bの外部MCP／証拠収集を先に進め、SIM-04はPhysBonesの受入を置換しない任意評価。MeshClothやMagica導入完了をC2の全身キャラ完成条件へ追加しない。C2の必須は選んだ出力先で髪束1本が動くこと。Magica導入時の購入・vendorソース取得／配布はこのタスク化では実行していない。public repoには自作adapter・fixture・設定schemaを置き、vendor assetを同梱しない。
+SIM-02Bの実SDK受け取り側とSIM-03Bの連続capture／証拠収集を先に進め、SIM-04はPhysBonesの受入を置換しない任意評価。MeshClothやMagica導入完了をC2の全身キャラ完成条件へ追加しない。C2の必須は選んだ出力先で髪束1本が動くこと。Magica導入時の購入・vendorソース取得／配布はこのタスク化では実行していない。public repoには自作adapter・fixture・設定schemaを置き、vendor assetを同梱しない。
 
 ## 評価の判定
 

@@ -5,6 +5,7 @@ param(
     [ValidatePattern('^[A-Za-z0-9_-]+$')][string]$BuildName = 'Windows',
     [string]$ReopenProject,
     [switch]$DensePaint,
+    [switch]$SecondaryMotionMcp,
     [string]$McpProbe,
     [ValidateRange(30,900)][int]$TimeoutSeconds = 120
 )
@@ -20,6 +21,10 @@ $arguments = @('--startup-empty', 'true', '--authoring-check-output', ('"{0}"' -
 Write-Output "Authoring check: $checkDirectory"
 if ($DensePaint) { $arguments += '--authoring-dense-paint' }
 if ($McpProbe) { $arguments += @('--authoring-mcp-probe', ('"{0}"' -f (Resolve-Path -LiteralPath $McpProbe).Path)) }
+if ($SecondaryMotionMcp) {
+    if (-not $McpProbe) { throw 'SecondaryMotionMcp requires -McpProbe.' }
+    $arguments += '--authoring-secondary-mcp'
+}
 if ($ReopenProject) {
     $reopenPath = (Resolve-Path -LiteralPath $ReopenProject).Path
     $arguments += @('--authoring-reopen-project', ('"{0}"' -f $reopenPath))

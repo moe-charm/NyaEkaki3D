@@ -26,6 +26,7 @@
 | [設計v2](NyaForge-Authoring-Design2.md) | 製品目標・全体設計の正本。Blenderなしの制作完結、ノードと直接編集の統合 |
 | [開発計画](Development-Plan.md) | ローカル実装との差分、C0〜C5への対応、直近の作業単位と終了条件 |
 | [使い方](Authoring-Quickstart.md) | 現在動く機能だけの起動・操作・再検証手順 |
+| [MCP接続](Mcp-Integration.md) | 外部sidecar、named pipe、公開tool、実Player検証と未接続境界 |
 | [Core README](../Assets/NyaForge/Authoring/README.md) | 現在の制作CoreのAPI・保存形式・制限 |
 | [Rig Core](../Assets/NyaForge/Authoring/Rig/README.md) | rest skeletonと正規化skin bindingのC2基盤・未接続範囲 |
 | [Secondary motion Core](../Assets/NyaForge/Authoring/Simulation/README.md) | simulator-neutral contract、NYSM v1 codec、adapter境界と未接続範囲 |

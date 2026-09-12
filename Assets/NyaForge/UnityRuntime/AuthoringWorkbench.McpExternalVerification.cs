@@ -6,18 +6,28 @@ namespace NyaForge.UnityRuntime
 {
     public sealed partial class AuthoringWorkbench
     {
-        IEnumerator VerifyExternalMcp(string probe,string output,Action<string> completed,bool create=false)
+        IEnumerator VerifyExternalMcp(string probe,string output,Action<string> completed,bool create=false,bool secondary=false)
         {
             Process process=null;string failure=null;
             var previousWorkspace=workspace;string previousPath=savedDirectory;
+            bool previousAutomaticTick=springAutomaticTick;
             try
             {
                 try
                 {
                     probe=Path.GetFullPath(probe);
                     if(!File.Exists(probe) || probe.Contains("\"") || probe.Contains("\n") || probe.Contains("\r")) throw new ArgumentException("Invalid MCP probe path");
-                    ReplaceWorkspace(create ? NyaForge.Authoring.AuthoringWorkspace.CreateEmpty() : NyaForge.Authoring.AuthoringWorkspace.CreateFixture(),null);
+                    if(secondary)
+                    {
+                        var source=Path.Combine(output,"secondary-motion.vrm");
+                        File.WriteAllBytes(source,VrmVerificationFixture.Create(false,playback:true));
+                        ReplaceWorkspace(NyaForge.Authoring.AuthoringWorkspace.CreateEmpty(),null);
+                        ImportModel(source);
+                        springAutomaticTick=false;
+                    }
+                    else ReplaceWorkspace(create ? NyaForge.Authoring.AuthoringWorkspace.CreateEmpty() : NyaForge.Authoring.AuthoringWorkspace.CreateFixture(),null);
                     projectPath.SetValueWithoutNotify(Path.Combine(output,create ? "mcp-created-native" : "mcp-static-native"));
+                    if(secondary && !TrySaveProject()) throw new InvalidOperationException("Secondary-motion MCP fixture could not be saved before the probe");
                     if(create)
                     {
                         Directory.CreateDirectory(projectPath.value);
@@ -27,7 +37,7 @@ namespace NyaForge.UnityRuntime
                     pipeInstance=workspace.InstanceId;authoringPipe=new Platform.AuthoringPipeServer(pipeInstance);
                     process=Process.Start(new ProcessStartInfo
                     {
-                        FileName="dotnet",Arguments="\""+probe+"\" "+(create ? "--player-create " : "--player-state ")+pipeInstance+" "+workspace.Document.DocumentId+" "+workspace.Document.DocumentRevision+" "+workspace.Document.StateHash,
+                        FileName="dotnet",Arguments="\""+probe+"\" "+(secondary ? "--player-secondary " : (create ? "--player-create " : "--player-state "))+pipeInstance+" "+workspace.Document.DocumentId+" "+workspace.Document.DocumentRevision+" "+workspace.Document.StateHash,
                         UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true
                     });
                 }
@@ -47,12 +57,12 @@ namespace NyaForge.UnityRuntime
                         {
                             var reopened=NyaForge.Authoring.ProjectStore.Open(projectPath.value);
                             if(reopened.Document.StateHash!=workspace.Document.StateHash || workspace.IsDirty || savedDirectory!=McpSaveDirectory()) failure="MCP native save/reopen or GUI saved-directory differs";
-                            if(!create)
+                            if(!create && !secondary)
                             {
                                 var manifests=Directory.GetFiles(Path.Combine(projectPath.value,"exports"),NyaForge.Authoring.BakeStore.ManifestName,SearchOption.AllDirectories);
                                 if(manifests.Length!=1 || NyaForge.Authoring.BakeStore.Read(manifests[0]).MeshContentHash!=workspace.Evaluate().ContentHash) failure="MCP export readback differs from current mesh";
                             }
-                            else
+                            else if(create)
                             {
                                 var surfaces=Directory.GetFiles(Path.Combine(projectPath.value,"exports"),NyaForge.Authoring.SurfaceBakeStore.ManifestName,SearchOption.AllDirectories);
                                 if(surfaces.Length!=1) failure="MCP painted surface export missing";
@@ -74,7 +84,7 @@ namespace NyaForge.UnityRuntime
                     }
                 }
             }
-            finally { StopMcp();process?.Dispose();ReplaceWorkspace(previousWorkspace,previousPath); }
+            finally { StopMcp();process?.Dispose();springAutomaticTick=previousAutomaticTick;ReplaceWorkspace(previousWorkspace,previousPath); }
             completed(failure);
         }
     }

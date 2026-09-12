@@ -1,6 +1,6 @@
-# MCP sidecar 初期実装
+# MCP sidecar とUnity listener
 
-2026-09-12。設計v2 §8の外部C#プロセス構成。Unity側listenerとcommand/Evidence接続は未実装であり、現時点では実アプリを操作できない。
+2026-09-12。設計v2 §8の外部C#プロセス構成。Windowsでは公式C# SDKを使うsidecarがstdioでtoolを公開し、明示したNyaForge instanceのnamed pipeへ一要求ずつ転送する。現在は制作・inspection・Evidenceとsecondary-motion previewのtoolが実Playerへ接続済み。未対応のSDK機能を成功扱いにしない。
 
 ## 面材質割り当てと複数slot inspection（2026-09-12）
 
@@ -38,15 +38,15 @@
 
 ## 構成と契約
 
-Programはstdio MCP hostとDIだけを担当。ForgeToolsは型付きtool入口、InstanceConnectionはローカルnamed pipe通信だけを担当。現在公開するtoolはforge_get_stateのみ（listener未接続）。stdoutはMCP専用、logはstderr。
+Programはstdio MCP hostとDIだけを担当。ForgeToolsは型付きtool入口、InstanceConnectionはローカルnamed pipe通信だけを担当。現在公開するtoolは17個で、secondary-motionの6操作（state/play/pause/reset/rebuild/step）を含む。stdoutはMCP専用、logはstderr。
 
-起動引数は --instance <GUID> 必須。接続先は NyaForge.Authoring.<GUID>。自動探索/別instanceへのfallbackなし。1接続1要求、UTF-8 JSON＋LF、version=1、requestId、expectedInstanceId、methodを送る。応答はversion/requestId/instanceIdを照合し、ok/resultまたはerrorを処理する。応答上限1MiB、深さ32、10秒timeout、CancellationToken対応。再試行なし。
+起動引数は --instance <GUID> 必須。接続先は NyaForge.Authoring.<GUID>。自動探索/別instanceへのfallbackなし。1接続1要求、UTF-8 JSON＋LF、version=1、requestId、expectedInstanceId、methodを送る。応答はversion/requestId/instanceIdを照合し、ok/resultまたはerrorを処理する。応答上限4MiB、深さ32、10秒timeout、CancellationToken対応。再試行なし。
 
 ## 検証と次工程
 
-- dotnet build Tools/NyaForge.Mcp/NyaForge.Mcp.csproj: 0 warning / 0 error。
-- dotnet run --project Tests/Mcp.Transport/Mcp.Transport.Tests.csproj: PASS。実named pipeで正常応答、別instance拒否、接続不可時の取消を検証。
-- MCP clientとのinitialize/tool list/tool call往復は次。Unity側のsame-user pipe listener、bounded main-thread queue、起動/終了寿命、state DTO、instance GUI表示、共通command service接続が必要。現時点の通信試験を実アプリ接続の成功とは扱わない。
+- `dotnet build Tests/Mcp.Transport/Mcp.Transport.Tests.csproj --no-restore`: 0 warning / 0 error。
+- `dotnet run --project Tests/Mcp.Transport/Mcp.Transport.Tests.csproj --no-build`: PASS。実named pipeの正常応答、別instance拒否、接続不可時の取消、公式MCP clientのtool discoveryとIPC error propagationを検証。
+- 実Playerでは通常の制作MCPに加えてsecondary-motionの外部sidecar経路まで接続済み。次はSIM-03Bの連続capture証拠、SIM-02Bの実SDK受け取り、複数object/rigを順に進める。旧節の「次」は当時の履歴であり、現在の状態は末尾の最新節と`current_task.md`を正本とする。
 ## 追加検証 2026-09-12
 公式SDK clientによる実stdio起動、tool list、forge_get_state call、IPC拒否のIsError伝播がPASS。テスト用named pipeからrevision=23を返しMCP結果のJSON値を照合した。実Unity listenerはまだ未接続。CoreのAuthoringStateReaderは状態要約の正本として追加し、242件のCore suiteが成功。次はUnity main-thread dispatchからこのreaderを呼ぶ。
 
@@ -231,4 +231,12 @@ material.standardとmesh.assign-materialを公開。linear色/metallic/roughness
 - polygon.faces.materialを既存MaterialFaceEditingへ接続するwireを追加し、観測済みcontext/face IDsとmaterialSlotを明示する。
 - Core261 passed/0 failed: C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-5aaf49ad31f04d95a5f5dbe693651c46。疎slot 3/9のinspection、assign-materials node wireの並べ替え/文字列拒否を確認。
 - Windows-MultiMaterialInspect build/Player suite PASS: Logs/build-player-20260912-085516-488.log、Artifacts/Authoring-20260912-085555-0a7329c440c94cc3a6ff75ca944383cd/report.json。MCP生成/材質inspection/既存制作一周も成功。全体目標継続。
+
+## secondary-motion previewの外部MCP接続（2026-09-12）
+
+- sidecarに`forge_secondary_motion_state`／`play`／`pause`／`reset`／`rebuild`／`step`を追加した。引数を持たないtyped toolとして`InstanceConnection`へ委譲し、Unity側の既存`DispatchSecondaryMotionMcp`と同じtransient playback ownerを使う。
+- `state`はVRM形式、available、playing、completedSteps、pendingSeconds、transient、savedを返す。`step`は1/60秒の固定step、`rebuild`は設定から再構築、`reset`は表示姿勢を復元する。いずれもnative documentやmetadataを変更しない。
+- `Tests/Mcp.Transport/PlayerSecondaryMotionVerification.cs`で公式MCP client→stdio sidecar→Windows named pipe→Player main threadを接続し、VRM1 fixtureのstate/play/pause/fixed-step/rebuild/resume/resetと文書ID・revision・stateHash不変を確認した。
+- Windows-SIM03B build **PASS**（`Logs/build-player-20260912-204039-364.log`）、Player **PASS / 72 checks**（`Artifacts/Authoring-20260912-204100-9a3d2feb718345d880ae3b9f998f27ca/report.json`）。sidecar単体は`dotnet build Tests/Mcp.Transport/Mcp.Transport.Tests.csproj --no-restore`で0 warning / 0 error、protocol suiteもPASS。
+- これはVRM previewとtransportの受入であり、PhysBones実SDK component生成、MagicaCloth2、実アバターの見た目、VRChat内動作、連続画像captureは別タスク。SIM-03Bではinput/config hashとcapture recordの証拠収集を続ける。
 

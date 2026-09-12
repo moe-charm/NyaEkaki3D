@@ -57,9 +57,18 @@ namespace NyaForge.UnityRuntime
             int probeIndex=Array.IndexOf(arguments,"--authoring-mcp-probe");
             if(failure==null && probeIndex>=0 && probeIndex+1<arguments.Length)
             {
-                yield return VerifyExternalMcp(arguments[probeIndex+1],output,error=>failure=error);
-                if(failure==null) yield return VerifyExternalMcp(arguments[probeIndex+1],output,error=>failure=error,true);
-                if(failure==null) checks.Add("External MCP client -> sidecar -> live Player: three matching instance/document/revision/hash reads");
+                bool secondary=Array.IndexOf(arguments,"--authoring-secondary-mcp")>=0;
+                if(secondary)
+                {
+                    yield return VerifyExternalMcp(arguments[probeIndex+1],output,error=>failure=error,false,true);
+                    if(failure==null) checks.Add("External MCP client -> sidecar -> live Player: secondary-motion state/play/pause/rebuild/fixed-step/reset and authored-state preservation");
+                }
+                else
+                {
+                    yield return VerifyExternalMcp(arguments[probeIndex+1],output,error=>failure=error);
+                    if(failure==null) yield return VerifyExternalMcp(arguments[probeIndex+1],output,error=>failure=error,true);
+                    if(failure==null) checks.Add("External MCP client -> sidecar -> live Player: three matching instance/document/revision/hash reads");
+                }
             }
             try
             {
