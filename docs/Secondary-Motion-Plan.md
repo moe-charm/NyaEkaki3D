@@ -35,6 +35,17 @@
 
 ## タスクと完了条件
 
+### 採用判断を実装へ渡す境界
+
+フィードバックの採用順は **PhysBones（P1）→ 固定step証拠（P1）→ 出力先別受入（P1）** とする。MagicaCloth2はUnityアプリ向けの任意adapterであり、VRChat用の代替実装として扱わない。制作の正本はnative、交換はGLB/VRM、adapter固有値は版付きtarget profileに保存する。各runは入力hashと設定hashで再現対象を固定し、previewの画像・ログ・状態をVRChat内の受入記録から分離する。
+
+実装カードの完了条件は以下の通り。
+
+- **SIM-02B**: SDK版・型を固定し、target packageを読み込んで managed componentだけを更新できる。unsupported/warningは書込み前に返し、失敗時のrollbackとSDK未導入buildを確認する。
+- **SIM-03B**: 固定step/warmupの連続frame、各画像hash、adapter/package/Unity/build、pose/root/collider条件、失敗ログを1 runへ束ねる。native revision・保存・制作姿勢は不変とする。
+- **SIM-07A**: root移動・停止・旋回・pose・colliderを、NyaForge preview／受取Unity／VRChat内の3面で別証拠として記録する。
+- **SIM-04〜06**: vendor依存をpublic repoから隔離し、BoneCloth、MeshCloth、BoneSpringを小さなfixtureで個別評価する。MeshClothはBlendShape重複を拒否または分離案内し、性能を記録する。
+
 SIM-01のCore契約を実装済み。`Authoring/Simulation`に安定ID付きchain、fixed vertex、collider group、bone/mesh出力種別、adapter capability/evaluation interface、unknown versionを保持する`NYSM` v1 codecを置いた。`Import/VrmSecondaryMotionMigration`はresolved VRM1 spring chainを共通topologyへ変換する。SIM-02としてPhysBones target DTO、`NYPP` v1 codec、SDK capabilityとsupported/unsupported/warningを分けるloss report、schema 4のPhysBones attachment保存/Open、Workbenchの対応版/stale/未知版表示、target package（manifest・profile・skeleton payload）、UnityBridgeのreflection writerと管理対象限定更新を追加した。実VRChat SDK／アバターでのcomponent動作とMagicaCloth2実adapterは未確認。巨大な汎用物理層を先に作らず、既存VRMと髪束fixtureで境界を確定する方針は維持する。
 
 検証: SIM-01/02 Core **406 passed / 0 failed**（`Logs/core-physbones-bridge-package.txt`）。`NYPP` v1 attachmentに加え、`physbones.nyaforge-target.json`・profile・skeleton payloadのhash検査付き往復と改ざん拒否を確認した。Windows-SecondaryMotionPhysBonesAttachment build／Player（既存回帰70 checks）もPASS（`Logs/build-player-20260912-190938-424.log`、`Artifacts/Authoring-20260912-190959-488cdb25d1124cb0b86f86853b0891c2/report.json`）。続くWindows-PhysBonesStatusGui2 build／Player **71 checks**では、保存済みtargetの対応版表示とunknown wire version 99の保持のみ表示を確認した（`Logs/build-player-20260912-191727-520.log`、`Artifacts/Authoring-20260912-191748-5e9371fb9e454c29b618a74947a443ce/report.json`）。Windows-PhysBonesBridgeGui4 build／Player **71 checks**とUnityBridge receiver **10 checks**もPASS（`Logs/build-all-20260912-195001-224.log`、`Artifacts/Authoring-20260912-195021-2abdd80c693f4d5ba51942a327f3e29b/report.json`、`Artifacts/BridgeReceiver-20260912-202001-392-7a27c7a4d1f647868118e83a3ca6bdc0/bridge-report.json`）。Workbenchのtarget package書き出し、`ApplyPackage`経由のmanifest/profile/skeleton読込、managed-only更新、未管理component保護、unsupported停止、reflection mapping、branch表現可能性の事前検査、configure失敗時rollback、受け取り側EditorWindowのstable BoneId／collider group手動割当とavatar rootへの保存／読込を確認した。これはUnityコンパイルと合成fixtureの自動検証であり、実VRChat SDK／実アバター／VRChat内、実マウス操作、画像目視の受入ではない。

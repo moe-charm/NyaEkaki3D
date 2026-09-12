@@ -29,6 +29,15 @@
 
 [揺れ・布adapter計画](docs/Secondary-Motion-Plan.md)へ採用方針・依存・完了条件を整理した。**PhysBones優先、MagicaCloth2は任意adapter**。SIM-01のUnity非依存契約とcodec、SIM-02AのPhysBones target DTO／loss report境界、schema 4 attachment保存、Workbench状態表示、target package、UnityBridgeの管理対象限定writerとreflection backend、受け取り側の明示stable binding保存を実装した。実VRChat SDK／アバター動作は未確認で、直近はSIM-02Bの実SDK受け取り側を先に進める。
 
+今回の判断を次の一本の流れで固定する。**native制作データ → 版付きtarget profile → 交換可能なsimulation adapter → GUI/MCPの共通実行所有者 → 固定stepの証拠 → 出力先ごとの受入**。PhysBonesはVRChat向けのP1経路として扱い、MagicaCloth2はUnityアプリ用の任意評価へ隔離する。MeshClothはBlendShapeとの重複と負荷を確認してからC3へ進める。vendor componentや独自scriptをVRChat出力へ持ち込まず、未対応項目はloss reportで停止・表示する。
+
+### フィードバックから分解した実装カード
+
+- **SIM-02B / 実SDK受け取り**: SDKの版と完全修飾型を先に固定する。target packageのmanifest/profile/skeletonを読み、stable BoneIdとcollider groupを手動割当できる状態から、managed componentだけを生成・更新する。書込み前にunsupported/warningを検査し、失敗時は原子 rollback。SDKが無いpublic buildは起動・保存・診断を維持する。
+- **SIM-03B / 連続撮影と証拠**: 1 run に `input/config hash`、adapter・package版、target、Unity/build、fixed step・warmup、pose/root/collider条件、各frameの画像hash、失敗ログを束ねる。撮影はtransient previewだけを使い、native revision・保存ファイル・制作姿勢を変更しない。実VRChat受入の証拠と混ぜない。
+- **SIM-07A / PhysBones受入**: 同じ髪束fixtureでroot移動、停止、旋回、pose、colliderを確認し、NyaForge preview、受取Unity、VRChat内を別々の結果として記録する。preview画像だけでVRChatの再現を判定しない。
+- **SIM-04〜06 / 任意評価**: MagicaCloth2のBoneCloth→MeshCloth→BoneSpringを独立adapterとして順に評価する。vendor packageはpublic repoへ同梱せず、runtime構築待ち・固定根・衝突・破棄・性能・morph境界を小さな髪束/布で確認する。PhysBonesのP1経路を置換しない。
+
 | 状態 / ID | 作業 | 完了条件・依存 |
 |---|---|---|
 | [x] SIM-01A / P1 | 共通secondary-motion契約 | `SecondaryMotionAsset`、stable chain、fixed vertex、collider group、bone/mesh output、adapter capability、`NYSM` v1 codec、VRM1 resolved spring migrationを実装し、unknown versionとstale skeleton/topologyを安全に扱う |
