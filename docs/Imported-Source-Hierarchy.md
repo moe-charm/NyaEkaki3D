@@ -4,7 +4,7 @@
 
 件数は1〜4096。範囲外・自己参照・循環・親と子の不一致・重複/欠落する子・非有限原点を拒否する。入力配列はコピーし、外部から変更できない。親検査とtranslation合成は反復処理で、深い入力木を再帰で辿らない。skinの最大256jointという別の制限は維持する。
 
-rig session writerはv3。`hierarchy`はnullまたはsource index順の `{parent, children, origin}` 配列。readerはv1/v2/v3を読み、旧版の階層はnullのまま再保存する。旧joint mappingや原点から元階層を推測しない。階層がある場合、既存joint原点との一致を検査する。プロジェクトmanifest形式は変更しない。
+rig session writerは完全source skinなしでv3、ありでv4。`hierarchy`はnullまたはsource index順の `{parent, children, origin}` 配列。readerはv1〜v4を読み、旧版の不明な階層はnullのまま再保存する。旧joint mappingや原点から元階層を推測しない。階層がある場合、既存joint原点との一致を検査する。v4の完全基底・bind payloadは [source affine契約](Source-Affine.md)を参照。プロジェクトmanifest形式は変更しない。
 
 このデータ保持によって通常nodeが編集可能な骨になったり、VRM0が再生可能になるわけではない。VRM0のroot展開・末端生成・通常nodeへのpose適用はT02で別途実装する。一般回転/scaleの取込もI04の範囲に残す。
 

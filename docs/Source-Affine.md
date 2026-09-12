@@ -8,7 +8,13 @@ rootの-1は省略、bind数の-1はfresh sourceでの省略。他の負値や�
 
 総payloadは16MiB以下。writeは必要byte数を事前計算し、readは残りbyte数とnode/edge予算を検査してから配列を確保する。trailing/truncated data、不正version、特異matrixを拒否し、復元候補の全検証が成功してから返す。正規payloadはread→writeでbyte同一、local/world値とchildren順が維持されることをCoreで確認する。
 
-このcodecはnative接続用部品で、まだproject attachmentに登録していない。次はrig sessionの版更新/参照方法と旧版移行を実装し、project Save/Open・metadata hash・原本なし再開を検証する。GUIから保存できるという意味ではない。既存3attachmentの枠へ任意データを無制限に追加しない。
+rig session v4の明示`sourceSkin` fieldへNYFSをbase64で格納する。既存Rig attachmentの型付き拡張であり、任意metadataを追加する入口にはしない。JSON/base64化後の全sessionも16MiB以下を要求するため、NYFS単体の上限いっぱいのデータはsessionとして保存できない場合がある。上限超過は拒否し、nativeへの公開前に診断する。
+
+`ImportedRigSession.WithSourceSkin`が不変な新sessionを返す。source hash、joint集合とnode→bone対応、全parent/children順/world原点が既存sessionと一致することを独立validationモジュールで検査する。元のjoint slot順と全基底/bindはNYFS側に保持する。任意の異素材データの付替えを許可しない。
+
+writerは完全sourceありの場合v4、なしの場合v3。readerはv1〜v4に対応。旧版に完全transform/bindを捏造せず、`SourceSkin == null`を維持する。v4はsourceSkin必須でnull/不正base64/不正NYFSを拒否する。既存native projectのRig attachment保存・hash検査を利用し、Save/Open後のNYFS byte一致をCoreで確認済み。
+
+GUI取込はまだWithSourceSkinを呼んでいないため、現在のGUI新規取込はv3のまま。次は取込からの生成接続とPlayer往復、一般geometry/skin座標対応を進める。v4保存成功だけで一般mesh/skinを正しく描画できるとは扱わない。
 
 ## source skin候補
 

@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。I04-AのSourceSkin候補・GLB dense inverse-bind読取に加え、完全source変換/bindの独立binary codecを追加。次はrig session/native接続と旧形式移行。VRM0/1の対応profileはGUI接続とPlayer handler検証済み。直近Core374件合格、任意の実モデル取込・実操作・性能の受入は未完了。
+更新: 2026-09-12。I04-AのNYFS codecをrig session v4/native保存へ接続。旧v1〜v3は完全source不明を維持する。次はGUI取込でのsource生成接続とPlayer往復。直近Core375件合格。一般geometry/skin座標対応、任意の実モデル取込・実操作・性能の受入は未完了。
 
 ## 開発の入口
 
@@ -14,7 +14,7 @@
 
 | 状態 / ID | 実行する作業 | 完了条件・依存 |
 |---|---|---|
-| [ ] I04-A / P1 **次に実装** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 回転/scale/鏡映/階層/元原点とbindの差の数値回帰、旧translation/native移行契約。SourceAffine、node/skin decodeとNYFS codecは追加済み。次はrig session/native接続と旧形式移行。sparse decodeも未対応 |
+| [ ] I04-A / P1 **次に実装** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | SourceAffine、node/skin decode、NYFS、rig v4/native往復と旧版移行は追加済み。次はGUI取込の生成接続とPlayer往復、一般geometry/skin座標対応。sparse decodeも未対応 |
 | [ ] I04-B / P1 | 複数mesh/instance/skin、source→制作ID対応 | Objects[0]前提も監査。全対象・同名morph・共有参照を編集/保存/Openで保持。Aの変換契約に依存 |
 | [ ] I04-C / P1 | rig/weight/morph容量とcodec/hash/表示/出力 | 257骨・18weight・単一mesh262morph以上の入力を削減なしで往復。byte/メモリ予算と超過時の拒否を同時に決める |
 | [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
@@ -47,6 +47,9 @@
 - [ ] **I04 / C0〜C5**: 任意モデル取込と制作/出力の製品全体は未完了。skin/morph出力・受取側確認などを [開発計画](docs/Development-Plan.md) から省かない。
 
 ## 直近の証拠
+
+- rig session v4: Core **375 passed / 0 failed** (`Logs/core-rig-v4.txt`)。実GLB由来sourceをWithSourceSkinで接続しnative Save/Open後のNYFS byte一致、旧v1〜v3の不明値維持、異source hash/骨集合/不正base64/nullの拒否を確認。GUI取込での生成はまだv3経路。
+- Windows-RigV4 build **PASS** (`Logs/build-player-20260912-165809-522.log`)。GUI生成接続前のため今回Player suiteは再実行していない。
 
 - SourceSkinCodec (NYFS v1): Core **374 passed / 0 failed** (`Logs/core-source-skin-codec.txt`)。GLB由来の完全matrix・bind・slot・children順の往復、write/read/write byte同一、省略/明示identity、切断/末尾/巨大count/不正basis/versionを検証。project attachment/GUI保存への接続は未完了。次はrig session/native版更新と移行。
 - Windows-SourceSkinCodec build **PASS** (`Logs/build-player-20260912-165437-619.log`)。独立codec追加のためPlayer GUI suiteは今回再実行していない。
