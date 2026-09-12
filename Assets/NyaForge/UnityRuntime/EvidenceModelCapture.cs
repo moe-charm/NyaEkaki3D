@@ -1,4 +1,5 @@
 using System;
+using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Evidence;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -10,13 +11,20 @@ namespace NyaForge.UnityRuntime
         internal static EvidenceImage Capture(EvaluatedSnapshot snapshot,EvidenceView view)
         {
             if(snapshot==null || view==null || snapshot.State!=EvidenceState.Ready) throw new InvalidOperationException("Model capture requires a ready mesh snapshot.");
+            return new EvidenceImage(snapshot,view,CapturePng(snapshot.Value,view));
+        }
+
+        /// <summary>Renders a transient graph value without acquiring or mutating an authored snapshot.</summary>
+        internal static byte[] CapturePng(GraphMeshValue value,EvidenceView view)
+        {
+            if(value==null || value.Mesh==null || view==null) throw new InvalidOperationException("Transient model capture requires a renderable mesh and camera view.");
             var scene=SceneManager.CreateScene("Evidence-"+Guid.NewGuid().ToString("N"));
             GameObject root=null,cameraRoot=null;Mesh mesh=null;Material template=null;MaterialSurfaceSet materials=null;RenderTexture target=null;Texture2D pixels=null;
             var previous=RenderTexture.active;
             try
             {
                 root=new GameObject("Evidence model") { layer=31 };SceneManager.MoveGameObjectToScene(root,scene);
-                var value=snapshot.Value;root.transform.position=OwnedMeshProjection.ToUnity(value.Transform.Translation);root.transform.localScale=Vector3.one*value.Transform.Scale;
+                root.transform.position=OwnedMeshProjection.ToUnity(value.Transform.Translation);root.transform.localScale=Vector3.one*value.Transform.Scale;
                 mesh=OwnedMeshProjection.CreateMesh(value.Mesh);root.AddComponent<MeshFilter>().sharedMesh=mesh;
                 var shader=Resources.Load<Shader>("AuthoringSurface");if(!shader) throw new InvalidOperationException("Evidence shader unavailable.");
                 template=new Material(shader) { color=new Color(.22f,.72f,.69f) };
@@ -28,7 +36,7 @@ namespace NyaForge.UnityRuntime
                 camera.transform.position=OwnedMeshProjection.ToUnity(view.Position);camera.transform.rotation=Quaternion.LookRotation(OwnedMeshProjection.ToUnity(view.Target)-camera.transform.position,OwnedMeshProjection.ToUnity(view.Up));
                 target=new RenderTexture(view.Width,view.Height,24,RenderTextureFormat.ARGB32);target.Create();camera.targetTexture=target;camera.aspect=(float)view.Width/view.Height;camera.Render();
                 pixels=new Texture2D(view.Width,view.Height,TextureFormat.RGBA32,false);RenderTexture.active=target;pixels.ReadPixels(new Rect(0,0,view.Width,view.Height),0,0);pixels.Apply();
-                return new EvidenceImage(snapshot,view,pixels.EncodeToPNG());
+                return pixels.EncodeToPNG();
             }
             finally
             {

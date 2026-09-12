@@ -1,16 +1,18 @@
 using System;
+using NyaForge.Authoring.Inspection;
 using Newtonsoft.Json.Linq;
 
 namespace NyaForge.UnityRuntime
 {
     public sealed partial class AuthoringWorkbench
     {
-        JObject DispatchSecondaryMotionMcp(string method)
+        JObject DispatchSecondaryMotionMcp(string method, SecondaryMotionCaptureRequest capture = null)
         {
             try
             {
                 switch (method)
                 {
+                    case "secondary_motion_capture": return CaptureSecondaryMotionMcp(capture);
                     case "secondary_motion_play": StartSpringPlayback(); break;
                     case "secondary_motion_pause":
                         if (springPlayback == null) throw new InvalidOperationException("揺れのプレビューは開始されていません。");

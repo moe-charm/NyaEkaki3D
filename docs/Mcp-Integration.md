@@ -38,7 +38,7 @@
 
 ## 構成と契約
 
-Programはstdio MCP hostとDIだけを担当。ForgeToolsは型付きtool入口、InstanceConnectionはローカルnamed pipe通信だけを担当。現在公開するtoolは17個で、secondary-motionの6操作（state/play/pause/reset/rebuild/step）を含む。stdoutはMCP専用、logはstderr。
+Programはstdio MCP hostとDIだけを担当。ForgeToolsは型付きtool入口、InstanceConnectionはローカルnamed pipe通信だけを担当。現在公開するtoolは18個で、secondary-motionの7操作（state/play/pause/reset/rebuild/step/capture）を含む。stdoutはMCP専用、logはstderr。
 
 起動引数は --instance <GUID> 必須。接続先は NyaForge.Authoring.<GUID>。自動探索/別instanceへのfallbackなし。1接続1要求、UTF-8 JSON＋LF、version=1、requestId、expectedInstanceId、methodを送る。応答はversion/requestId/instanceIdを照合し、ok/resultまたはerrorを処理する。応答上限4MiB、深さ32、10秒timeout、CancellationToken対応。再試行なし。
 
@@ -46,7 +46,7 @@ Programはstdio MCP hostとDIだけを担当。ForgeToolsは型付きtool入口�
 
 - `dotnet build Tests/Mcp.Transport/Mcp.Transport.Tests.csproj --no-restore`: 0 warning / 0 error。
 - `dotnet run --project Tests/Mcp.Transport/Mcp.Transport.Tests.csproj --no-build`: PASS。実named pipeの正常応答、別instance拒否、接続不可時の取消、公式MCP clientのtool discoveryとIPC error propagationを検証。
-- 実Playerでは通常の制作MCPに加えてsecondary-motionの外部sidecar経路まで接続済み。次はSIM-03Bの連続capture証拠、SIM-02Bの実SDK受け取り、複数object/rigを順に進める。旧節の「次」は当時の履歴であり、現在の状態は末尾の最新節と`current_task.md`を正本とする。
+- 実Playerでは通常の制作MCPに加えてsecondary-motionの外部sidecar経路まで接続済み。SIM-03Bの連続capture証拠まで完了し、次はSIM-02Bの実SDK受け取り、SIM-07AのPhysBones受入、複数object/rigを順に進める。旧節の「次」は当時の履歴であり、現在の状態は末尾の最新節と`current_task.md`を正本とする。
 ## 追加検証 2026-09-12
 公式SDK clientによる実stdio起動、tool list、forge_get_state call、IPC拒否のIsError伝播がPASS。テスト用named pipeからrevision=23を返しMCP結果のJSON値を照合した。実Unity listenerはまだ未接続。CoreのAuthoringStateReaderは状態要約の正本として追加し、242件のCore suiteが成功。次はUnity main-thread dispatchからこのreaderを呼ぶ。
 
@@ -238,5 +238,11 @@ material.standardとmesh.assign-materialを公開。linear色/metallic/roughness
 - `state`はVRM形式、available、playing、completedSteps、pendingSeconds、transient、savedを返す。`step`は1/60秒の固定step、`rebuild`は設定から再構築、`reset`は表示姿勢を復元する。いずれもnative documentやmetadataを変更しない。
 - `Tests/Mcp.Transport/PlayerSecondaryMotionVerification.cs`で公式MCP client→stdio sidecar→Windows named pipe→Player main threadを接続し、VRM1 fixtureのstate/play/pause/fixed-step/rebuild/resume/resetと文書ID・revision・stateHash不変を確認した。
 - Windows-SIM03B build **PASS**（`Logs/build-player-20260912-204039-364.log`）、Player **PASS / 72 checks**（`Artifacts/Authoring-20260912-204100-9a3d2feb718345d880ae3b9f998f27ca/report.json`）。sidecar単体は`dotnet build Tests/Mcp.Transport/Mcp.Transport.Tests.csproj --no-restore`で0 warning / 0 error、protocol suiteもPASS。
-- これはVRM previewとtransportの受入であり、PhysBones実SDK component生成、MagicaCloth2、実アバターの見た目、VRChat内動作、連続画像captureは別タスク。SIM-03Bではinput/config hashとcapture recordの証拠収集を続ける。
+- これはVRM previewとtransportの受入であり、PhysBones実SDK component生成、MagicaCloth2、実アバターの見た目、VRChat内動作は別タスク。連続画像captureは次節の`forge_secondary_motion_capture`で実装した。
+
+## forge_secondary_motion_capture
+
+`capture`に`frameCount`（1..8）、`warmupSteps`（0..120）、`width`／`height`（32..512、合計8×256×256 pixel以内）を指定し、VRM Spring previewを固定1/60秒でwarmup後に連続撮影する。返却はinline PNG image blocksと、`nyaforge.secondary-motion.capture` schema 1の`record`。recordにはdocument／revision／authoring state hash、input/config hash、adapter／package／target／Unity／build、fixed step、warmup、base pose、root/collider条件、各frameのcompletedSteps・pose/mesh/PNG hashを含め、失敗時は`captureStatus=failed`とerrorを返す。撮影はtransient previewだけを使い、完了後に authored displayへ戻す。sidecarのresponse safety budgetは3 MiB、IPC全体は4 MiB。
+
+Windows-SIM03B-Capture3で実MCP client→stdio sidecar→named pipe→Playerを接続し、128px・warmup2・3frameのPNG寸法/hash、completedSteps 3/4/5、撮影後のstate reset、documentId/revision/stateHash不変を確認した。これはpreview証拠の受入であり、PhysBones実SDK、実アバター、VRChat内の見た目を証明しない。
 

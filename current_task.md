@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。I04-Aの完全source保存/GUI接続、mesh属性/POSITION morph変換、source slot weight/一般bind deformer、GLB全JOINTS_n/WEIGHTS_n候補読取、native weight packageとrig session v5・GUI接続、評価済みgraph meshへのsource skin adapter、authored poseからのsource palette生成、Workbench取込後/揺れ再生中のsource skin表示接続まで追加。I04-Bの入口として複数mesh/instance/skin参照を元indexで保持するGLB scene inventory、指定mesh/skinを選ぶ静的・skinned候補読取、Workbenchの候補確認・選択GUIを追加した。SIM-01の共通secondary-motion契約（安定ID、固定頂点、collider、出力種別、adapter能力、unknown version保持付きNYSM v1 codec）とVRM1 resolved spring migration、SIM-02のPhysBones target DTO／NYPP v1 codec／loss report境界／schema 4 attachment保存／Workbench状態表示、PhysBones target package、UnityBridgeの管理対象限定writer／reflection backend／合成receiver検証、receiverの明示stable binding保存を追加した。SIM-03Aとして揺れプレビューのGUI/MCPライフサイクル（play/pause/reset/rebuild/fixed-step/state）を共通ownerと外部MCP transportへ接続し、保存対象外・編集時破棄・named-pipe一連の固定step/rebuild/resetを検証した。制作graphへの複数対象公開と複数SkinDeformは未完了。直近Core406件合格。任意の実モデル取込・実操作・性能・実VRChat受入は未完了。
+更新: 2026-09-12。I04-Aの完全source保存/GUI接続、mesh属性/POSITION morph変換、source slot weight/一般bind deformer、GLB全JOINTS_n/WEIGHTS_n候補読取、native weight packageとrig session v5・GUI接続、評価済みgraph meshへのsource skin adapter、authored poseからのsource palette生成、Workbench取込後/揺れ再生中のsource skin表示接続まで追加。I04-Bの入口として複数mesh/instance/skin参照を元indexで保持するGLB scene inventory、指定mesh/skinを選ぶ静的・skinned候補読取、Workbenchの候補確認・選択GUIを追加した。SIM-01の共通secondary-motion契約（安定ID、固定頂点、collider、出力種別、adapter能力、unknown version保持付きNYSM v1 codec）とVRM1 resolved spring migration、SIM-02のPhysBones target DTO／NYPP v1 codec／loss report境界／schema 4 attachment保存／Workbench状態表示、PhysBones target package、UnityBridgeの管理対象限定writer／reflection backend／合成receiver検証、receiverの明示stable binding保存を追加した。SIM-03Aとして揺れプレビューのGUI/MCPライフサイクル（play/pause/reset/rebuild/fixed-step/state）を共通ownerと外部MCP transportへ接続し、SIM-03Bとして固定step連続PNG・hash・実行条件のrun記録と外部MCP経路を追加した。制作graphへの複数対象公開と複数SkinDeformは未完了。直近Core408件合格。任意の実モデル取込・実操作・性能・実VRChat受入は未完了。
 
 ## 開発の入口
 
@@ -10,7 +10,7 @@
 
 ## 次に実行するタスク
 
-採用した方針: **nativeを制作の正本、GLB/VRMを交換形式、FBX/BLEND/Unityを原本として区別する。** 未対応データを黙って削らず、情報ごとの能力と保持結果を報告する。Blender調査は任意の開発ツールで、標準制作の必須依存へ変更しない。詳細・完了条件は [モデル交換仕様](docs/Model-Interchange-Spec.md)。ボーンのフィードバックは下記のSIM-02B→SIM-03B→SIM-07Aを主経路にし、完了済みSIM-03AのGUI/MCPライフサイクルを共通土台として使う。SIM-04〜06は主経路を遅らせない任意評価へ分離する。
+採用した方針: **nativeを制作の正本、GLB/VRMを交換形式、FBX/BLEND/Unityを原本として区別する。** 未対応データを黙って削らず、情報ごとの能力と保持結果を報告する。Blender調査は任意の開発ツールで、標準制作の必須依存へ変更しない。詳細・完了条件は [モデル交換仕様](docs/Model-Interchange-Spec.md)。ボーンのフィードバックは下記のSIM-02B→SIM-07Aを主経路にし、完了済みSIM-03A/03BのGUI/MCPライフサイクルと固定step証拠を共通土台として使う。SIM-04〜06は主経路を遅らせない任意評価へ分離する。
 
 | 状態 / ID | 実行する作業 | 完了条件・依存 |
 |---|---|---|
@@ -45,13 +45,13 @@
 | [x] SIM-02A / P1 | PhysBones target packageと合成Bridge | `PhysBonesTargetProfile`／`PhysBonesChain`、`NYPP` v1、schema 4 attachment、loss report、target package、reflection writer、managed-only、branch preflight、receiver Windowを追加し合成fixtureで検証済み |
 | [ ] SIM-02B / P1 **次に実行** | 実SDK受け取り側 | `NyaForgePhysBonesBinding`へpackage identity付きのstable BoneId／collider group手動割当を保存・読込できるようにした。次は対象SDKの版・型を固定し、package読込→実component生成・更新を実SDKで確認。未対応項目は書込み前にloss reportで停止し、未管理componentを変更しない。SDK未導入時のpublic buildは維持 |
 | [x] SIM-03A / P1 | GUI/MCPの設定と再生所有者 | GUI・内部MCP handler・外部sidecar toolにplay/pause/reset/rebuild/fixed-step/stateを接続し、同じtransient owner／generationで保存対象外、編集・作品切替時の破棄を確認済み。非同期vendor構築の実SDK接続は後続タスク |
-| [ ] SIM-03B / P1 | 連続撮影とbackend証拠 | input/config hash、adapter／package版、target、Unity/build、step/warmup、pose/root/collider条件を記録し、連続画像と失敗時ログを同じrunへ束ねる。実VRChat受入の証拠とは分ける |
+| [x] SIM-03B / P1 | 連続撮影とbackend証拠 | `SecondaryMotionCaptureRecord`／codec、固定1/60秒・warmup・最大8frame・pixel budget、input/config hash、adapter／package版、target、Unity/build、pose/root/collider条件、各PNG hashと失敗statusを1 runへ束ね、`forge_secondary_motion_capture`の実MCPで3frameを確認済み。native revision／保存／制作姿勢は不変。実VRChat受入の証拠とは分ける |
 | [ ] SIM-04 / P2・任意 | MagicaCloth2 BoneCloth最小評価 | vendor packageをpublic repoへ入れず任意assemblyへ隔離。自作髪束1本でruntime生成・構築完了待ち・固定根・sphere衝突・rebuild/reset/破棄・写真列を確認し、未導入buildも成功させる。SIM-02B/03Aを置換しない |
 | [ ] SIM-05 / P2 | MeshClothとmorph境界 | 小さい布で固定／可動領域を指定し、BlendShape変形頂点との重複を拒否または分離案内する。法線更新と時間／GC／メモリをSIM-04と比較 |
 | [ ] SIM-06 / P2 | BoneSpringとUnityアプリ向け出力 | BoneSpring fixtureの保存・再構築と、Magica用profileの依存不足診断・版照合・再出力を確認 |
 | [ ] SIM-07A / P1 | PhysBones target受入 | SIM-02B＋SIM-03A/B後。同じ髪束でroot移動・停止・旋回・pose・colliderを受入し、対応SDK／受取Unity／VRChat内の結果を別々に記録 |
 
-実行順は **SIM-02B → SIM-03B → SIM-07A**（SIM-03Aは完了）。SIM-01BはI04-Aと並行し、SIM-04〜06は主経路の受入を置換しない。C2の必須は選んだ出力先で髪束1本が動くこと。Magica導入時の購入・vendorソース取得／配布はこのタスク化では実行せず、public repoには自作adapter・fixture・設定schemaだけを置く。
+実行順は **SIM-02B → SIM-07A**（SIM-03A/03Bは完了）。SIM-01BはI04-Aと並行し、SIM-04〜06は主経路の受入を置換しない。C2の必須は選んだ出力先で髪束1本が動くこと。Magica導入時の購入・vendorソース取得／配布はこのタスク化では実行せず、public repoには自作adapter・fixture・設定schemaだけを置く。
 
 ### 既存工程
 
@@ -87,6 +87,7 @@
 - SIM-02 PhysBones target package: Core **406 passed / 0 failed** (`Logs/core-physbones-bridge-package.txt`)。`physbones.nyaforge-target.json`、`physbones-target.nyaforge.bin`、`skeleton.nyaforge.bin`をhash検査付きで往復し、改ざんprofileを拒否した。
 - SIM-02 UnityBridge writer: Windows-PhysBonesBridgeGui4 build **PASS** (`Logs/build-all-20260912-195001-224.log`)、Player **PASS / 71 checks** (`Artifacts/Authoring-20260912-195021-2abdd80c693f4d5ba51942a327f3e29b/report.json`)。receiver **PASS / 10 checks** (`Artifacts/BridgeReceiver-20260912-202001-392-7a27c7a4d1f647868118e83a3ca6bdc0/bridge-report.json`)、Unity 2022.3.22f1。Workbenchのtarget package書き出し、`ApplyPackage`経由のmanifest/profile/skeleton読込、stable bone mapping、managed-only更新、未管理component保護、unsupported preflight停止、SDK型形状のreflection mapping、branch表現可能性の事前検査、遅いconfigure失敗のrollback、package identity付きstable bindingの保存／stale manifest拒否を合成fixtureで確認した。受け取り側EditorWindow（stable BoneIdとcollider groupの手動割当、avatar rootへの保存／読込）もコンパイル確認済み。実VRChat SDK／実アバター／VRChat内動作の受入ではない。
 - SIM-03A secondary-motion lifecycle: Windows-SIM03B build **PASS** (`Logs/build-player-20260912-204039-364.log`)、Player **PASS / 72 checks** (`Artifacts/Authoring-20260912-204100-9a3d2feb718345d880ae3b9f998f27ca/report.json`)。VRM0/1の既存Spring previewへGUI・内部MCP handler・外部sidecar toolの`secondary_motion_play`／`pause`／`reset`／`rebuild`／`step`／`state`を接続し、実MCP client→sidecar→named pipe→Player main threadの経路で再生、pause/resume、1固定step、再構築、reset、Save/Openでシミュレーションを保存しないこと、編集時停止を確認した。外部MCP fixtureはVRM1で固定し、Playerの自動tickを停止してstep数を決定的に照合した。実SDK／実アバター／VRChat内動作、実マウス操作・画像目視の受入ではない。
+- SIM-03B secondary-motion capture: Core **408 passed / 0 failed**。`SecondaryMotionCaptureRecord`／codecとstrict requestを追加し、固定1/60秒、warmup、連続frameのpose/mesh/PNG hash、input/config hash、adapter/package/Unity/build、target/root/collider条件、complete/failed statusを記録する。`EvidenceModelCapture`のPNG描画をtransient `GraphMeshValue`でも共有し、`forge_secondary_motion_capture`をsidecarへ公開した。Windows-SIM03B-Capture3 build **PASS**（`Logs/build-player-20260912-210411-934.log`）、Player **PASS / 72 checks**（`Artifacts/Authoring-20260912-210441-f5a69f71558041289ab661a829c9958f/report.json`）。実MCPで128px・warmup2・3frameを取得し、PNG hash／寸法、completedSteps 3/4/5、撮影後のpreview reset、documentId/revision/stateHash不変を確認した。これはtransient previewの証拠であり、実SDK／実アバター／VRChat内動作、実マウス操作・画像目視・VRChat受入とは別である。
 
 - GUI完全source接続: Windows-SourceSkinImport build **PASS** (`Logs/build-player-20260912-170004-544.log`)、Player **PASS** (`Artifacts/Authoring-20260912-170036-ad7444ce32a14d94b4b57c23c2f86ff7/report.json`)。VRM0/1で元GLBとNYFS一致、再生中Save、生成fixtureの原本パスを移動後にOpen、完全payload維持と制作姿勢復元を確認。import失敗保護も合格。実マウス/任意実素材の受入ではない。今回はCore変更なしでCore suiteを再実行していない。
 

@@ -16,7 +16,7 @@ internal static class McpProtocolVerification
             Name="NyaForge protocol verification",Command="dotnet",Arguments=[executable,"--instance",instance.ToString("D")]
         }),cancellationToken:token);
         var tools=await client.ListToolsAsync(cancellationToken:token);
-        if(tools.Count!=17 || !tools.Any(t=>t.Name=="forge_apply") || !tools.Any(t=>t.Name=="forge_get_state") || !tools.Any(t=>t.Name=="forge_capabilities") || !tools.Any(t=>t.Name=="forge_graph_inspect") || !tools.Any(t=>t.Name=="forge_validate") || !tools.Any(t=>t.Name=="forge_secondary_motion_state") || !tools.Any(t=>t.Name=="forge_secondary_motion_step")) throw new Exception("Unexpected MCP tool registry");
+        if(tools.Count!=18 || !tools.Any(t=>t.Name=="forge_apply") || !tools.Any(t=>t.Name=="forge_get_state") || !tools.Any(t=>t.Name=="forge_capabilities") || !tools.Any(t=>t.Name=="forge_graph_inspect") || !tools.Any(t=>t.Name=="forge_validate") || !tools.Any(t=>t.Name=="forge_secondary_motion_state") || !tools.Any(t=>t.Name=="forge_secondary_motion_step") || !tools.Any(t=>t.Name=="forge_secondary_motion_capture")) throw new Exception("Unexpected MCP tool registry");
         foreach(bool accepted in new[]{true,false})
         {
             using var pipe=new NamedPipeServerStream("NyaForge.Authoring."+instance.ToString("D"),PipeDirection.InOut,1,PipeTransmissionMode.Byte,PipeOptions.Asynchronous);
