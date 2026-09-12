@@ -3,6 +3,8 @@
 更新: 2026-09-12。C0-R／C1-A、C1-Bの形状・UV編集、C1-CのPaint graphに加え、小物形状のGUI一周、layer/mask/PNG取り込み、3D paintと初期Surface往復まで検証記録あり。3D描画の準備をGUIから非同期化し、準備後の描画とviewport更新をPlayerで検証。最新の実装・証拠・再開手順と残件はcurrent_taskへ集約する。以下の終了条件は段階ごとの開発契約であり、C1全体の完了を意味しない。
 製品目標と技術契約は [設計v2](NyaForge-Authoring-Design2.md) が正本。この文書はローカル実装への適用順を定める。初期対応OSはWindows。macOS対応は今回の工程へ加えない。
 
+2026-09-12レビュー追記: Rig / VRMの読込・保存・SpringBone計算で再現不具合が見つかった。次のVRM adapter / GUI接続の前に [current_task.mdの修正タスク](../current_task.md) を実施する。[レビュー記録](reviews/2026-09-12-Rig-Vrm-Review.md)に再現条件と完了条件をまとめた。以下の過去のCore / Player合格記録は、この追加検査での不具合解消を意味しない。製品目標とC0〜C5の範囲は変更しない。
+
 ## C1-A開始時の比較表（進捗はcurrent_taskへ集約）
 
 HEADは `6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36` だが、制作Core・GUI・Bridge等は未コミットの作業ツリーに存在する。設計v2の第2節は同じコミットを調査した記録であり、次表はC1-A開始時点の比較で、現在はgraph文書・保存・command・canvas・Bakeまで進んでいる。既存変更を上書き・破棄しない。
