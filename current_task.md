@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01〜R10は下記のCore/Windows自動検証範囲で完了。実素材・実操作受入は独立して未完了。最新のCoreは326件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
+更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01〜R10は下記のCore/Windows自動検証範囲で完了。実素材・実操作受入は独立して未完了。最新のCoreは328件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
 
 ## 開発の入口
 
@@ -25,7 +25,7 @@
 
 検証済み: このレビューでCore **297 passed / 0 failed**を再実行。別fixtureで作者情報拒否、session往復失敗、保存失敗後dirty=False、step2姿勢ずれ、親子gap、chain間衝突混入、貫通、dt=0の進行、null参照例外、省略値の相違を確認した。Player/Bridgeは今回再実行していない。実VRM全体・手動見た目受入も未確認。
 
-再開順: **VRM入力契約 → mapping永続化 → runtime接続**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
+再開順: **I02 mapping永続化 → I03 runtime接続**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
 
 ### 実行単位と完了判定
 
@@ -39,6 +39,15 @@
 
 修正後は、未保持のgravityDir・collider shape値と保存移行を含むVRM入力契約を整え、node→stable BoneId、preview接続へ進む。一般node transform、skin/morph出力、実アバター受入、C1〜C5の全体目標は維持する。
 
+### I01: Spring詳細を欠落なく保存（2026-09-12）
+
+- `VrmSpringColliderShape`と`VrmSpringDetailJson`へtyped shapeとJSON vector検査を分離。重力方向、sphere/capsuleのoffset/radius/tailを元の座標系で保持し、VRM1の省略値とVRM0の不明値を区別する。
+- Spring sessionはversion 3 writer、version 1/2/3 reader。旧sessionで失われた方向・形状はnullで保持し、再書出し時にも推測値で埋めない。expression v2・project schema4は維持。Workbenchは詳細不足を表示する。
+- Core **328 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-14f6fee4f70e4a5eb99411298cdc29f9`。VRM0/1の非default詳細・codec往復、旧v1/v2移行、不明の保持、default capsule、vector不正・件数不一致・sphere tail拒否を確認。契約と出典は [Spring詳細](docs/VRM-Spring-Details.md)。
+- 元VRM0の省略vectorは不明として残る。HasCompleteDetailsは設定値の充足であり、runtime対応の保証ではない。I02のmapping永続化、I03の座標/時間変換・capsule物理・previewは未完了。
+
+- Windows-SpringDetails build **PASS**: `Logs/build-player-20260912-141632-673.log`。Authoring suite **PASS**: `Artifacts/Authoring-20260912-141755-08f376dbcbac4e2f8f8c670351f75395/report.json`。同じVRM0/1の詳細値取込→Save/Openと、旧sessionの不明値維持を検証した。詳細不足表示の実マウス/見た目受入は未実施。
+
 ### R10完了: 同じVRMの取込→Workbench保存→Open（2026-09-12）
 
 - `VrmVerificationFixture`は第三者素材を含まない合成GLB/VRM bytesを生成する。skin、morph、表情、VRM0同一node複数sphere、VRM1同一/異なるnodeとcapsule inventoryを含む。完全な製品アバターのVRM仕様適合fixtureではなく、取込対応profileを通す検証データ。
@@ -48,7 +57,7 @@
 
 ### 次の実装単位: VRM入力契約とpreview接続
 
-- [ ] **I01 — Spring入力の完全保持**。gravityDirとsphere/capsuleのoffset・radius・tailをtyped metadataへ保持する。旧sessionは不明値を捏造せず、移行方針と再取込の必要性を定める。Core solverのsphere対応とVRM capsule対応は区別する。
+- [x] **I01 — Spring入力の詳細保持（対応profileの自動検証完了）**。gravityDirとsphere/capsuleのoffset・radius・tailをtyped metadataへ保持する。旧sessionは不明値を捏造せず、移行方針と再取込の必要性を定める。Core solverのsphere対応とVRM capsule対応は区別する。
 - [ ] **I02 — 骨対応の保存**。ImportedBoneMap/humanoid bindingをnative保存へつなぎ、同一snapshotで保存・Openできるようにする。source/skeleton hashとnode参照を検査し、骨格編集時のstaleを明示する。
 - [ ] **I03 — runtime preview**。VRM node→BoneId、centerとcollider座標系、VRM設定の時間的意味をadapterで変換する。未対応node/shapeを黙って除外しない。Workbenchの再生・停止・リセットは保存/Undoとは分離して接続する。
 

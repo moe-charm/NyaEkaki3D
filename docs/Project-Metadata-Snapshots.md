@@ -50,7 +50,9 @@ attachmentsはimport情報としてworkspace単位で保持し、現時点では
 - Windows Player: 新規／上書き保存でmetadata blobを排他ロックし、終了・無確認切替を拒否。GUI保存とMCP handlerの再試行、および設定を含むOpenを確認。
 - 外部MCP transportを通すmetadata保存、実マウスの「保存して終了」、実VRMでの受入は今回の専用検査には含めない。実行ログはcurrent_taskへ記録する。
 
-## Session version 2（2026-09-12）
+## Session version 2（2026-09-12・作者配列への移行履歴）
+
+現在はSpring writerがversion 3、expression writerはversion 2。重力方向・形状と不明値の移行は [Spring詳細](VRM-Spring-Details.md) を参照。
 
 expression / Springの新しいwriterは`author`文字列の代わりに`authors`配列を出力する。readerはversion 1と2を受け入れ、旧単独名はカンマを含め1名として保持する。旧空名は空配列へ対応する。新形式の再書出しは決定的で、最大256名・各256文字の不変リストを保持する。`Author`は表示用の連結値で、保存元は`Authors`である。
 
@@ -58,4 +60,4 @@ expression / Springの新しいwriterは`author`文字列の代わりに`authors
 
 VRM1 importは非空の作者配列を必須とする。これは[公式meta schema](https://raw.githubusercontent.com/vrm-c/vrm-specification/master/specification/VRMC_vrm-1.0/schema/VRMC_vrm.meta.schema.json)に基づく。省略したstiffness=1、dragForce=0.5は[公式joint schema](https://raw.githubusercontent.com/vrm-c/vrm-specification/master/specification/VRMC_springBone-1.0/schema/VRMC_springBone.joint.schema.json)に合わせ、明示0は保持する。VRM全体のスキーマ検証を実装したという意味ではない。
 
-コライダーごとのnode列は重複を保持する。参照集合に必要な一意性検査とは分け、同一nodeの複数コライダーを保存後に失わない。shapeの詳細値とgravityDirの完全保持は引き続き別タスクである。
+コライダーごとのnode列は重複を保持する。参照集合に必要な一意性検査とは分け、同一nodeの複数コライダーを保存後に失わない。shapeの詳細値とgravityDirは後続のSpring version 3へ保持する。runtimeへの変換は別タスクである。

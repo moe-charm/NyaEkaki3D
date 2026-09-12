@@ -21,7 +21,8 @@ namespace NyaForge.UnityRuntime
             if (vrmSpringStatus == null) return;
             if (importedVrmSpringSession == null) { vrmSpringStatus.text = "SpringBone設定: なし"; return; }
             int joints = 0; foreach (var group in importedVrmSpringSession.SpringBones) joints += group.Joints.Count;
-            vrmSpringStatus.text = "SpringBone設定: " + importedVrmSpringSession.SpringBones.Count + " chain · " + joints + " joint · " + importedVrmSpringSession.ColliderGroups.Count + " collider group（設定保存済み・物理未実装）";
+            vrmSpringStatus.text = "SpringBone設定: " + importedVrmSpringSession.SpringBones.Count + " chain · " + joints + " joint · " + importedVrmSpringSession.ColliderGroups.Count + " collider group（preview未接続）";
+            if (!importedVrmSpringSession.HasCompleteDetails) vrmSpringStatus.text += " 詳細不足：再取込または元設定の確認が必要です。";
         }
 
         void SetImportedVrmSpring(VrmMetadata metadata)

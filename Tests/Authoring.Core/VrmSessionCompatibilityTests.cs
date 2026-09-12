@@ -19,7 +19,7 @@ internal static partial class Program
                 else root["expressions"] = new JArray();
                 Func<byte[], byte[]> roundtrip = bytes => spring ? VrmSpringSessionCodec.Write(VrmSpringSessionCodec.Read(bytes)) : VrmExpressionSessionCodec.Write(VrmExpressionSessionCodec.Read(bytes));
                 var migrated = JObject.Parse(Encoding.UTF8.GetString(roundtrip(Encoding.UTF8.GetBytes(root.ToString()))));
-                Equal(2, (int)migrated["version"]); Equal(1, ((JArray)migrated["authors"]).Count); Equal("Nya, Charm", (string)migrated["authors"][0]); True(migrated["author"] == null);
+                Equal(spring ? 3 : 2, (int)migrated["version"]); Equal(1, ((JArray)migrated["authors"]).Count); Equal("Nya, Charm", (string)migrated["authors"][0]); True(migrated["author"] == null);
                 migrated["authors"] = new JArray("Nya, Charm", new string('b', 256));
                 var payload = roundtrip(Encoding.UTF8.GetBytes(migrated.ToString()));
                 string name = spring ? ProjectAttachments.Springs : ProjectAttachments.Expressions;

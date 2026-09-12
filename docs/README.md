@@ -8,6 +8,7 @@
 | [Rig / VRM修正後の検証範囲](reviews/2026-09-12-Repair-Coverage.md) | 正式回帰とPlayer検査の対応、未確認経路と手動受入の区別 |
 | [取込骨対応](Imported-Bone-Mapping.md) | source nodeとstable BoneId、VRM humanoid対応、永続化の残件 |
 | [2026-09-12 Rig / VRMレビュー](reviews/2026-09-12-Rig-Vrm-Review.md) | bb1d89cの再現不具合、修正タスクR01〜R10の完了条件と検証の限界 |
+| [VRM Spring詳細](VRM-Spring-Details.md) | 重力方向と形状、Spring session v3、旧設定の不明値移行 |
 | [SpringBone時間契約](SpringBone-Time.md) | 停止・再開、可変時間の積分、物理履歴と表示の違い |
 | [SpringBone制約](SpringBone-Constraints.md) | 長さとsphere衝突の同時制約、計算上限、解なしと未収束の診断 |
 | [SpringBone姿勢契約](SpringBone-Pose-Contract.md) | base poseとState、親子の相対変換継承、連続stepの検証と残件 |

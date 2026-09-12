@@ -56,6 +56,7 @@ namespace NyaForge.UnityRuntime
                 OpenProject();
                 Check(!HasUnsaved && workspace.Attachments.ContentHash == metadata.ContentHash, "Retried project did not reopen");
                 Check(importedVrmSession.Title == "new" && importedVrmSpringSession.Title == "new", "Workbench did not decode snapshot metadata");
+                Check(!importedVrmSpringSession.HasCompleteDetails, "Legacy session invented missing Spring geometry");
                 Check(importedVrmSession.Authors.Count == 2 && importedVrmSession.Authors[1] == "Moe, Charm" && importedVrmSpringSession.Authors[1] == "Moe, Charm", "Workbench lost ordered authors");
                 var nodes = importedVrmSpringSession.ColliderGroups[0].ColliderNodeIndices;
                 Check(nodes.Count == 3 && nodes[0] == 0 && nodes[1] == 0 && nodes[2] == 2, "Workbench lost repeated collider nodes");

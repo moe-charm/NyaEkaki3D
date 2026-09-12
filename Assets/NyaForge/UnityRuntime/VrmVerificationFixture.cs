@@ -49,7 +49,7 @@ namespace NyaForge.UnityRuntime
                 vrm["blendShapeMaster"] = new JObject { ["blendShapeGroups"] = new JArray(new JObject { ["name"] = "happy", ["presetName"] = "happy", ["binds"] = new JArray(new JObject { ["mesh"] = 0, ["index"] = 0, ["weight"] = 50 }) }) };
                 vrm["secondaryAnimation"] = new JObject {
                     ["colliderGroups"] = new JArray(new JObject { ["node"] = 0, ["colliders"] = new JArray(new JObject { ["radius"] = .1, ["offset"] = new JObject { ["x"] = 0, ["y"] = 0, ["z"] = 0 } }, new JObject { ["radius"] = .2, ["offset"] = new JObject { ["x"] = 0, ["y"] = .1, ["z"] = 0 } }) }),
-                    ["boneGroups"] = new JArray(new JObject { ["comment"] = "tail", ["bones"] = new JArray(1), ["colliderGroups"] = new JArray(0), ["stiffiness"] = 1, ["dragForce"] = .5 }) };
+                    ["boneGroups"] = new JArray(new JObject { ["comment"] = "tail", ["bones"] = new JArray(1), ["colliderGroups"] = new JArray(0), ["stiffiness"] = 1, ["dragForce"] = .5, ["gravityDir"] = new JObject { ["x"] = 1, ["y"] = 0, ["z"] = -1 } }) };
             }
             else
             {
@@ -59,7 +59,7 @@ namespace NyaForge.UnityRuntime
                 root["extensions"]["VRMC_springBone"] = new JObject { ["specVersion"] = "1.0",
                     ["colliders"] = new JArray(new JObject { ["node"] = 0, ["shape"] = new JObject { ["sphere"] = new JObject { ["radius"] = .1, ["offset"] = new JArray(0, 0, 0) } } }, new JObject { ["node"] = 0, ["shape"] = new JObject { ["sphere"] = new JObject { ["radius"] = .2, ["offset"] = new JArray(0, .1, 0) } } }, new JObject { ["node"] = 1, ["shape"] = new JObject { ["capsule"] = new JObject { ["radius"] = .1, ["offset"] = new JArray(0, 0, 0), ["tail"] = new JArray(0, .1, 0) } } }),
                     ["colliderGroups"] = new JArray(new JObject { ["colliders"] = new JArray(0, 1, 2) }),
-                    ["springs"] = new JArray(new JObject { ["name"] = "tail", ["joints"] = new JArray(new JObject { ["node"] = 0 }, new JObject { ["node"] = 1, ["stiffness"] = 0, ["dragForce"] = 0 }), ["colliderGroups"] = new JArray(0) }) };
+                    ["springs"] = new JArray(new JObject { ["name"] = "tail", ["joints"] = new JArray(new JObject { ["node"] = 0, ["gravityDir"] = new JArray(2, -3, 4) }, new JObject { ["node"] = 1, ["stiffness"] = 0, ["dragForce"] = 0 }), ["colliderGroups"] = new JArray(0) }) };
             }
         }
 
