@@ -9,6 +9,7 @@ internal static partial class Program
     static void RunSpringDetailTests()
     {
         RunVrmColliderAdapterTests();
+        RunVrmSpringChainTests();
         Test("Spring old session geometry remains unknown after version 3 migration", () =>
         {
             foreach (int version in new[] { 1, 2 })
