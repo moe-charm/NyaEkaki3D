@@ -24,6 +24,18 @@ namespace NyaForge.UnityBridge
             return targetId == target && chainIndex == index && rootBoneId == root;
         }
 
+        /// <summary>Matches a chain by stable authoring labels, independent of profile array order.</summary>
+        public bool MatchesStable(string target, string name, string root)
+        {
+            return targetId == target && chainName == (name ?? "") && rootBoneId == root;
+        }
+
+        /// <summary>Matches the stable root identity when a profile chain was renamed.</summary>
+        public bool MatchesStableRoot(string target, string root)
+        {
+            return targetId == target && rootBoneId == root;
+        }
+
         /// <summary>Called only by the Bridge after the component has been created or updated.</summary>
         public void Bind(Component component, string target, int index, string name, string root, string hash)
         {

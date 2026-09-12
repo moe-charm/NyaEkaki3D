@@ -285,6 +285,7 @@ namespace NyaForge.UnityBridge.Editor
         {
             var markers = context.AvatarRoot.GetComponentsInChildren<NyaForgePhysBonesManaged>(true);
             var plans = new List<Plan>();
+            var usedMarkers = new HashSet<NyaForgePhysBonesManaged>();
             for (int index = 0; index < profile.Chains.Count; index++)
             {
                 var chain = profile.Chains[index];
@@ -313,9 +314,18 @@ namespace NyaForge.UnityBridge.Editor
                 }
                 var preflight = backend as IPhysBonesComponentPreflight;
                 if (preflight != null) preflight.Validate(chain, context);
-                var matching = markers.Where(marker => marker.Matches(profile.TargetId, index, chain.RootBoneId)).ToArray();
+                // Chain array position is presentation order and may change when a
+                // profile is edited. Prefer the stable target/name/root identity;
+                // retain the old index lookup only for legacy markers without a
+                // matching stable label.
+                var matching = markers.Where(marker => !usedMarkers.Contains(marker) && marker.MatchesStableRoot(profile.TargetId, chain.RootBoneId)).ToArray();
+                if (matching.Length > 1)
+                    matching = matching.Where(marker => marker.MatchesStable(profile.TargetId, chain.Name, chain.RootBoneId)).ToArray();
+                if (matching.Length == 0)
+                    matching = markers.Where(marker => !usedMarkers.Contains(marker) && marker.Matches(profile.TargetId, index, chain.RootBoneId)).ToArray();
                 if (matching.Length > 1) throw new PhysBonesBridgeException("MANAGED_COMPONENT_DUPLICATE", "More than one managed PhysBones marker matches chain " + index + ".");
                 var marker = matching.SingleOrDefault();
+                if (marker != null) usedMarkers.Add(marker);
                 Component existing = null;
                 if (marker != null)
                 {

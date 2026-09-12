@@ -150,6 +150,16 @@ namespace NyaForge.UnityBridge.Editor
             SetOptionalBool(component, new[] { "isAnimated", "IsAnimated" }, interaction.IsAnimated);
             if (interaction.Parameter == "") SetOptionalString(component, new[] { "parameter", "Parameter" }, interaction.Parameter);
             else SetString(component, new[] { "parameter", "Parameter" }, interaction.Parameter);
+            var authoredCurves = new HashSet<PhysBonesCurveChannel>(chain.Curves.Select(curve => curve.Channel));
+            // A managed component may have curves from an earlier profile. Clear
+            // channels omitted by the new profile so re-apply cannot leave stale
+            // SDK AnimationCurves behind.
+            foreach (PhysBonesCurveChannel channel in Enum.GetValues(typeof(PhysBonesCurveChannel)))
+            {
+                if (authoredCurves.Contains(channel)) continue;
+                var member = Find(new[] { CurveName(channel), Upper(CurveName(channel)) });
+                if (member != null && member.ValueType == typeof(AnimationCurve)) member.Set(component, new AnimationCurve());
+            }
             foreach (var curve in chain.Curves) SetCurve(component, curve);
         }
 

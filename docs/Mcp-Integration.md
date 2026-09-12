@@ -246,3 +246,10 @@ material.standardとmesh.assign-materialを公開。linear色/metallic/roughness
 
 Windows-SIM03B-Capture3で実MCP client→stdio sidecar→named pipe→Playerを接続し、128px・warmup2・3frameのPNG寸法/hash、completedSteps 3/4/5、撮影後のstate reset、documentId/revision/stateHash不変を確認した。これはpreview証拠の受入であり、PhysBones実SDK、実アバター、VRChat内の見た目を証明しない。
 
+
+## レビュー追従 2026-09-13
+
+- MCP sidecarの`CaptureResult`は、PNGの`data`だけをstructured/textから除去し、各画像の`camera`・解像度・hash・撮影条件を残す。PNG本体はImageContentBlockへ一度だけ渡す。
+- UnityBridgeのPhysBones reflection backendは、再適用時に新profileから消えたAnimationCurveを空curveへ初期化する。
+- PhysBones managed markerはchain配列位置を主識別子にせず、target/name/rootのstable identityを優先して再利用し、profileの並び替えで重複生成しない。旧marker向けにindex fallbackを残す。
+- これらはコード検証とビルド確認を行い、実VRChat SDK内の受入は引き続き未完了。
