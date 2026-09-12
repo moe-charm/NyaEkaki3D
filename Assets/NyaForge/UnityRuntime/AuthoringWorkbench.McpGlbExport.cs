@@ -23,9 +23,9 @@ namespace NyaForge.UnityRuntime
                     case GlbExportProfile.StaticGeometry:
                         result = GlbExportService.ExportStatic(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory); break;
                     case GlbExportProfile.SkinnedGeometry:
-                        result = GlbExportService.ExportSkinnedWithTransforms(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory, SkinnedInstanceTransforms()); break;
+                        result = GlbExportService.ExportSkinnedWithTransforms(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory, SkinnedInstanceTransforms(), SkinnedInverseBindMatrices()); break;
                     case GlbExportProfile.SkinnedGeometryExtended:
-                        result = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory, SkinnedInstanceTransforms()); break;
+                        result = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory, SkinnedInstanceTransforms(), SkinnedInverseBindMatrices()); break;
                     default: throw new AuthoringException("INVALID_GLB_EXPORT_REQUEST", "Unknown GLB export profile.");
                 }
                 SetStatus("AIから標準GLBを書き出しました：" + result.Path);

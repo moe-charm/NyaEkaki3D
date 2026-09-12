@@ -1,3 +1,7 @@
+# 2026-09-13 attachment selection and GLB material follow-up
+
+装着先Dropdownの選択保持を追加し、Refresh後もユーザーが選んだavatarを維持する。GUI/MCPのskinned GLB出力はgraph objectごとのinverse-bind保持経路を共有する。`baseColorFactor`は線形値として扱い、`metallicFactor`省略値は1へ合わせた。Core **460 passed / 0 failed**、Windows Player Authoring suite、Unity Bridgeで確認済み。
+
 # 2026-09-13 consistency review receipt
 
 ## 最新HEAD（`5826247`）再照合

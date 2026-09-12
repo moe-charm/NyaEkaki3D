@@ -2,6 +2,10 @@
 
 glTF `baseColorFactor` は線形値として読み書きするよう修正し、取込時の不要なsRGB変換と出力時の逆変換を廃止した。`metallicFactor` の省略値もglTF仕様の1へ合わせ、linear RGBと省略既定値の回帰を追加した。Core **460 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-66295ed6bf6a4d98815455f15972ac53`）。Windows Player `Builds/MaterialLinearV1/NyaForge.exe` Authoring suite（`Artifacts/Authoring-20260913-074940-af62bbf5049a4276bccce18c480d93e2/report.json`）とUnity Bridge（`Artifacts/BridgeReceiver-20260913-075048-365-c4c2956b407148a6afe5110e50f45e0f/bridge-report.json`）はPASS。
 
+# 2026-09-13 attachment selection and MCP bind parity
+
+装着先Dropdownの選択値をRefresh間で保持し、別avatarを選んだ直後に先頭候補へ戻る経路を修正した。WorkbenchのGUIとMCPのskinned GLB出力へ、graph objectごとのimported inverse-bind行列を同じ経路で渡すよう統一した。Windows Player `Builds/AttachmentSelectionV1/NyaForge.exe` のAuthoring suite（`Artifacts/Authoring-20260913-075348-262a37a7fa964c90b373e7ce80254da5/report.json`）とUnity Bridge（`Artifacts/BridgeReceiver-20260913-075417-960-ac4b7ab2f333483ba5963fc238e1586b/bridge-report.json`）はPASS。
+
 ## 2026-09-13 consistency feedback final recheck (`5826247`)
 
 提示されたレビュー（基準 `1c76e4a`）を現行 `main` の `5826247` へ再照合した。4件のP1と列挙されたP2は後続実装で閉じており、重複修正は行わず受入証拠を更新した。16bit `JOINTS_n` は2バイト幅で復号し、8bit/16bit同値・負weight拒否を回帰。source skin表示はgraph評価後の編集結果を保持し、PhysBones target packageはprofileが参照するsource assetを同梱してhash検証する。静的GLBのskin判定は選択meshに限定し、同居する小物を取り込める。

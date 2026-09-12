@@ -13,18 +13,28 @@ namespace NyaForge.UnityRuntime
     {
         static string AppendImportedMaterials(List<GraphNode> nodes, List<GraphEdge> edges, string meshNodeId, int submeshCount, IReadOnlyList<GlbMaterialSource> materials, List<string> warnings = null)
         {
-            if (materials == null || materials.Count != submeshCount || materials.Count == 0) return meshNodeId;
-            var slots = materials.Select(item => item.SubmeshIndex).Distinct().OrderBy(item => item).ToArray();
-            if (!slots.SequenceEqual(Enumerable.Range(0, submeshCount))) return meshNodeId;
+            if (materials == null || materials.Count == 0 || submeshCount <= 0) return meshNodeId;
+            // A glTF primitive may omit its material. Build the assignment for
+            // every slot and fill only the omitted slots with the standard
+            // default, preserving all explicitly imported material/image links.
+            var bySlot = new Dictionary<int, GlbMaterialSource>();
+            foreach (var material in materials)
+            {
+                Checks.Require(material.SubmeshIndex >= 0 && material.SubmeshIndex < submeshCount && !bySlot.ContainsKey(material.SubmeshIndex),
+                    "INVALID_IMPORT", "Imported material slot is duplicated or outside the mesh.");
+                bySlot.Add(material.SubmeshIndex, material);
+            }
+            var slots = Enumerable.Range(0, submeshCount).ToArray();
             string assignmentId = Guid.NewGuid().ToString("D");
             nodes.Add(GraphNode.AssignMaterials(assignmentId, slots));
             edges.Add(new GraphEdge(meshNodeId, "mesh", assignmentId, "mesh"));
-            foreach (var material in materials)
+            foreach (int slot in slots)
             {
+                bySlot.TryGetValue(slot, out var material);
                 string materialId = Guid.NewGuid().ToString("D");
-                nodes.Add(GraphNode.StandardMaterial(materialId, material.Parameters));
-                edges.Add(new GraphEdge(materialId, "material", assignmentId, GraphNode.MaterialSlotPort(material.SubmeshIndex)));
-                if (material.HasEmbeddedBaseColorImage)
+                nodes.Add(GraphNode.StandardMaterial(materialId, material?.Parameters ?? MaterialParameters.Default));
+                edges.Add(new GraphEdge(materialId, "material", assignmentId, GraphNode.MaterialSlotPort(slot)));
+                if (material?.HasEmbeddedBaseColorImage == true)
                 {
                     PaintImage image;
                     try { image = DecodeEmbeddedImage(material); }

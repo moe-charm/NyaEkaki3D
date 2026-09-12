@@ -20,6 +20,8 @@ namespace NyaForge.UnityRuntime
         Button attachmentApply, attachmentRemove;
         readonly List<string> attachmentTargetIds = new List<string>();
         readonly List<string> attachmentBoneIds = new List<string>();
+        string attachmentTargetChoice;
+        string attachmentChoiceOwner;
 
         void BuildAttachments(VisualElement parent)
         {
@@ -28,7 +30,7 @@ namespace NyaForge.UnityRuntime
             attachmentStatus.style.whiteSpace = WhiteSpace.Normal;
             attachmentPanel.Add(attachmentStatus);
             attachmentTarget = new DropdownField("アバター対象", new List<string> { "対象なし" }, 0) { name = "object-attachment-target" };
-            attachmentTarget.RegisterValueChangedCallback(_ => RefreshAttachmentControls());
+            attachmentTarget.RegisterValueChangedCallback(e => { attachmentTargetChoice = e.newValue; RefreshAttachmentControls(); });
             attachmentPanel.Add(attachmentTarget);
             attachmentBone = new DropdownField("BoneId", new List<string> { "対象なし" }, 0) { name = "object-attachment-bone" };
             attachmentPanel.Add(attachmentBone);
@@ -133,6 +135,8 @@ namespace NyaForge.UnityRuntime
             if (attachmentPanel == null) return;
             attachmentTargetIds.Clear(); attachmentBoneIds.Clear();
             var node = ActiveAttachmentNode();
+            string owner = workspace?.Document?.ActiveObjectId;
+            if (owner != attachmentChoiceOwner) { attachmentChoiceOwner = owner; attachmentTargetChoice = null; }
             if (!IsGraph)
             {
                 attachmentStatus.text = "装着: graph objectを選択してください。";
@@ -143,7 +147,8 @@ namespace NyaForge.UnityRuntime
             var targetLabels = targets.Select(item => "graph · " + item.ObjectId.Substring(0, Math.Min(8, item.ObjectId.Length))).ToList();
             if (targetLabels.Count == 0) targetLabels.Add("対象なし");
             attachmentTarget.choices = targetLabels;
-            int targetIndex = node == null ? -1 : attachmentTargetIds.IndexOf(node.AttachmentTargetObjectId);
+            string requestedTarget = string.IsNullOrEmpty(attachmentTargetChoice) ? node?.AttachmentTargetObjectId : attachmentTargetChoice;
+            int targetIndex = requestedTarget == null ? -1 : attachmentTargetIds.IndexOf(requestedTarget);
             if (targetIndex < 0) targetIndex = 0;
             attachmentTarget.SetValueWithoutNotify(targetLabels[targetIndex]);
             var target = targetIndex < targets.Length ? targets[targetIndex] : null;
@@ -195,6 +200,7 @@ namespace NyaForge.UnityRuntime
             if (skeleton == null || boneIndex < 0) throw new InvalidOperationException("装着先skeletonとBoneIdを選択してください。");
             var existing = ActiveAttachmentNode(); var node = GraphNode.AttachmentNode(existing?.NodeId ?? Guid.NewGuid().ToString("D"), target.ObjectId, attachmentBoneIds[boneIndex], session.SkeletonHash,
                 new Vec3(attachmentOffsetX.value / 1000f, attachmentOffsetY.value / 1000f, attachmentOffsetZ.value / 1000f));
+            attachmentTargetChoice = target.ObjectId;
             Execute(existing == null ? AuthoringOperation.AddNode(node) : AuthoringOperation.UpdateNode(node));
             SetStatus("小物をstable BoneIdへ装着しました。pose変更時にプレビューが追従します。");
         }
