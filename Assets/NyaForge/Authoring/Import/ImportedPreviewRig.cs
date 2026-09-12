@@ -30,7 +30,7 @@ namespace NyaForge.Authoring.Import
                 int node = start;
                 while (node >= 0 && selected.Add(node)) node = hierarchy.Parents[node];
             }
-            Checks.Require(selected.Count <= SkeletonDefinition.MaxBones, "BUDGET_EXCEEDED", "Required source nodes and ancestors exceed the 256-bone preview budget.");
+            Checks.Require(selected.Count <= SkeletonDefinition.MaxBones, "BUDGET_EXCEEDED", "Required source nodes and ancestors exceed the 512-bone preview budget.");
             var ids = selected.ToDictionary(n => n, n => rig.NodeToBone.TryGetValue(n, out var id) ? id : PreviewId(rig.SourceHash, n));
             var bones = new List<BoneDefinition>();
             foreach (int node in selected.OrderBy(n => n))

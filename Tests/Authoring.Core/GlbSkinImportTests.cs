@@ -20,6 +20,11 @@ internal static partial class Program
             Near(.5f, result.Binding.Weights[1].Single(w => w.BoneId == child.BoneId).Weight); Near(1f, result.Binding.Weights[2].Sum(w => w.Weight));
             True(result.Warnings.Any(w => w.Contains("affine", StringComparison.Ordinal)));
         });
+        Test("GLB skin importer combines contiguous weight sets into the authored binding", () =>
+        {
+            var result = GlbSkinImporter.Read(BuildSkinnedGlb(false, false, false, true));
+            Equal(2, result.Binding.Weights[0].Count); Near(1f, result.Binding.Weights[0].Sum(weight => weight.Weight));
+        });
 
         Test("GLB skin importer accepts general node TRS without dropping source frames", () =>
         {
@@ -44,7 +49,7 @@ internal static partial class Program
         });
     }
 
-    static byte[] BuildSkinnedGlb(bool joints16 = false, bool normalizedWeights = false, bool negativeWeights = false)
+    static byte[] BuildSkinnedGlb(bool joints16 = false, bool normalizedWeights = false, bool negativeWeights = false, bool secondSet = false)
     {
         using (var bin = new MemoryStream()) using (var b = new BinaryWriter(bin))
         {
@@ -62,8 +67,16 @@ internal static partial class Program
                 foreach (var row in new[] { new byte[] { 255, 0, 0, 0 }, new byte[] { 128, 128, 0, 0 }, new byte[] { 0, 255, 0, 0 } }) b.Write(row);
             else
                 foreach (var row in new[] { new[] { 1f, 0f, 0f, 0f }, new[] { .5f, .5f, 0f, 0f }, new[] { 0f, 1f, 0f, 0f } }) foreach (float value in row) b.Write(value);
+            int secondJointsOffset = -1, secondWeightsOffset = -1;
+            if (secondSet)
+            {
+                while (bin.Length % 4 != 0) b.Write((byte)0); secondJointsOffset = (int)bin.Length;
+                foreach (var row in new[] { new byte[] { 1, 0, 0, 0 }, new byte[] { 1, 0, 0, 0 }, new byte[] { 1, 0, 0, 0 } }) b.Write(row);
+                while (bin.Length % 4 != 0) b.Write((byte)0); secondWeightsOffset = (int)bin.Length;
+                foreach (var row in new[] { new[] { .25f, 0f, 0f, 0f }, new[] { 0f, 0f, 0f, 0f }, new[] { 0f, 0f, 0f, 0f } }) foreach (float value in row) b.Write(value);
+            }
             WriteIdentity(b); WriteTranslationInverse(b, .1f);
-            int weightsOffset = joints16 ? 68 : 56, weightsLength = normalizedWeights ? 12 : 48, inverseOffset = weightsOffset + weightsLength;
+            int weightsOffset = joints16 ? 68 : 56, weightsLength = normalizedWeights ? 12 : 48, inverseOffset = secondSet ? secondWeightsOffset + 48 : weightsOffset + weightsLength;
             var json = new JObject
             {
                 ["asset"] = new JObject { ["version"] = "2.0" }, ["buffers"] = new JArray(new JObject { ["byteLength"] = (int)bin.Length }),
@@ -73,6 +86,12 @@ internal static partial class Program
                 ["nodes"] = new JArray(new JObject { ["name"] = "Root", ["children"] = new JArray(1) }, new JObject { ["name"] = "Child", ["translation"] = new JArray(0, .1, 0) }),
                 ["skins"] = new JArray(new JObject { ["joints"] = new JArray(0, 1), ["inverseBindMatrices"] = 4 })
             };
+            if (secondSet)
+            {
+                var views = (JArray)json["bufferViews"]; int secondJointView = views.Count; views.Add(new JObject { ["buffer"] = 0, ["byteOffset"] = secondJointsOffset, ["byteLength"] = 12 }); int secondWeightView = views.Count; views.Add(new JObject { ["buffer"] = 0, ["byteOffset"] = secondWeightsOffset, ["byteLength"] = 48 });
+                var accessors = (JArray)json["accessors"]; int secondJointAccessor = accessors.Count; accessors.Add(new JObject { ["bufferView"] = secondJointView, ["componentType"] = 5121, ["count"] = 3, ["type"] = "VEC4" }); int secondWeightAccessor = accessors.Count; accessors.Add(new JObject { ["bufferView"] = secondWeightView, ["componentType"] = 5126, ["count"] = 3, ["type"] = "VEC4" });
+                var attrs = (JObject)((JObject)((JArray)((JObject)((JArray)json["meshes"])[0])["primitives"])[0])["attributes"]; attrs["JOINTS_1"] = secondJointAccessor; attrs["WEIGHTS_1"] = secondWeightAccessor;
+            }
             return BuildGlbContainer(Encoding.UTF8.GetBytes(json.ToString(Newtonsoft.Json.Formatting.None)), bin.ToArray());
         }
     }

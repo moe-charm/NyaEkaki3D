@@ -28,7 +28,7 @@ internal static partial class Program
             Expect("BONE_CYCLE", () => new SkeletonDefinition(new[] { new BoneDefinition(a, "A", b, new Vec3(), new Vec3(.1f, 0, 0)), new BoneDefinition(b, "B", a, new Vec3(.1f, 0, 0), new Vec3(.2f, 0, 0)) }));
         });
 
-        Test("skin binding normalizes and orders up to four influences", () =>
+        Test("skin binding normalizes and orders up to 32 influences", () =>
         {
             string root = GraphId(), child = GraphId();
             var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(root, "Root", "", new Vec3(), new Vec3(0, .1f, 0)), new BoneDefinition(child, "Child", root, new Vec3(0, .1f, 0), new Vec3(0, .2f, 0)) });
@@ -46,10 +46,22 @@ internal static partial class Program
             complete.Add(new SkinBinding.VertexWeightInput(0, root, .1f)); Expect("DUPLICATE_WEIGHT", () => SkinBinding.Create(mesh, skeleton, complete));
             complete = Enumerable.Range(1, mesh.VertexCount - 1).Select(i => new SkinBinding.VertexWeightInput(i, root, 1f)).ToList(); Expect("UNWEIGHTED_VERTEX", () => SkinBinding.Create(mesh, skeleton, complete));
             Expect("BONE_NOT_FOUND", () => SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, GraphId(), 1f))));
-            string[] extra = Enumerable.Range(0, 4).Select(_ => GraphId()).ToArray();
+            string[] extra = Enumerable.Range(0, 32).Select(_ => GraphId()).ToArray();
             var manyBones = new SkeletonDefinition(new[] { new BoneDefinition(root, "Root", "", new Vec3(), new Vec3(0, .1f, 0)) }.Concat(extra.Select((id, index) => new BoneDefinition(id, "B" + index, root, new Vec3(0, .1f, 0), new Vec3(.1f + index * .01f, .1f, 0)))));
             var tooMany = Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, root, 1f)).ToList();
             tooMany.AddRange(extra.Select(id => new SkinBinding.VertexWeightInput(0, id, .1f))); Expect("INFLUENCE_LIMIT", () => SkinBinding.Create(mesh, manyBones, tooMany));
+        });
+
+        Test("rig and morph capacity retain 257 bones, 18 influences and 262 targets", () =>
+        {
+            var boneIds = Enumerable.Range(0, 257).Select(_ => GraphId()).ToArray();
+            var bones = boneIds.Select((id, i) => new BoneDefinition(id, "B" + i, i == 0 ? "" : boneIds[i - 1], new Vec3(0, i * .01f, 0), new Vec3(0, i * .01f + .01f, 0))).ToArray();
+            var skeleton = new SkeletonDefinition(bones); Equal(257, skeleton.Bones.Count);
+            var mesh = AuthoringFixtures.Panel(1);
+            var weights = Enumerable.Range(0, mesh.VertexCount).SelectMany(v => Enumerable.Range(0, 18).Select(i => new SkinBinding.VertexWeightInput(v, boneIds[i], 1f))).ToArray();
+            var binding = SkinBinding.Create(mesh, skeleton, weights); Equal(18, binding.Weights[0].Count); Near(1f, binding.Weights[0].Sum(item => item.Weight));
+            var targets = Enumerable.Range(0, 262).Select(i => MorphTarget.Create(mesh, GraphId(), "Target" + i, new[] { new MorphDelta(i % mesh.VertexCount, new Vec3(.001f, 0, 0)) })).ToArray();
+            var morphs = MorphSet.Create(mesh, targets); Equal(262, morphs.Targets.Count); var restored = MorphCodec.Read(MorphCodec.Write(morphs), mesh); Equal(262, restored.Targets.Count);
         });
     }
 }

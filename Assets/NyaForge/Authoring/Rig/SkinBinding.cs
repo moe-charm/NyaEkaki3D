@@ -17,7 +17,7 @@ namespace NyaForge.Authoring.Rig
     /// <summary>Rest-mesh binding with deterministic, normalized influences. Pose evaluation is a later module.</summary>
     public sealed class SkinBinding
     {
-        public const int MaxInfluencesPerVertex = 4;
+        public const int MaxInfluencesPerVertex = 32;
         public string MeshTopologyHash { get; }
         public string SkeletonHash { get; }
         public IReadOnlyDictionary<int, IReadOnlyList<VertexWeight>> Weights { get; }
@@ -41,7 +41,7 @@ namespace NyaForge.Authoring.Rig
                 Checks.Finite(item.Weight); Checks.Require(item.Weight > 0 && item.Weight <= 1, "INVALID_WEIGHT", "Weight must be greater than 0 and at most 1.");
                 if (!grouped.TryGetValue(item.VertexIndex, out var list)) grouped[item.VertexIndex] = list = new List<VertexWeightInput>();
                 Checks.Require(list.All(existing => existing.BoneId != item.BoneId), "DUPLICATE_WEIGHT", "A vertex cannot list the same bone twice.");
-                Checks.Require(list.Count < MaxInfluencesPerVertex, "INFLUENCE_LIMIT", "A vertex may use at most four bones.");
+                Checks.Require(list.Count < MaxInfluencesPerVertex, "INFLUENCE_LIMIT", "A vertex may use at most 32 bones.");
                 list.Add(item);
             }
             Checks.Require(grouped.Count == mesh.VertexCount, "UNWEIGHTED_VERTEX", "Every mesh vertex needs at least one positive weight.");

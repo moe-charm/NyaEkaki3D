@@ -4,7 +4,7 @@
 
 `GlbSourceSkinImporter`は一つのmeshと指定skinから、全primitiveの`JOINTS_0..n`/`WEIGHTS_0..n`をsource slotのまま読み、`SourceSkinBinding`へ渡す。setは0から連続し、各JOINTS/WEIGHTSが対応すること、POSITION数との一致、skin slot範囲、primitive間のvertex offsetを検査する。static mesh/morphは既存`GlbImporter`へcloneした属性を渡し、geometry decodeを二重実装しない。
 
-現段階のweight decoderはdense VEC4、JOINTSのUNSIGNED_BYTE/UNSIGNED_SHORT、WEIGHTSのFLOATに限定する。sparse、accessor/view拡張、外部buffer、normalized値、非4要素のattributeは未対応として拒否する。strideは4-byte alignedでbuffer宣言範囲内を検査し、JSON巨大整数を先にintへcastしない。全source値をnativeの4影響/256骨へ黙って切り詰めない。
+現段階のweight decoderはdense VEC4、JOINTSのUNSIGNED_BYTE/UNSIGNED_SHORT、WEIGHTSのFLOATに限定する。sparse、accessor/view拡張、外部buffer、normalized値、非4要素のattributeは未対応として拒否する。strideは4-byte alignedでbuffer宣言範囲内を検査し、JSON巨大整数を先にintへcastしない。全source値をnativeの32影響/512骨へ黙って切り詰めない。
 
 mesh nodeのlocal/world transformはこの候補でgeometryへ追加しない。skin paletteの`jointWorld × inverseBind`は`SourceSkinDeformer`が担当し、skin外のscene transformと出力先座標変換は後段で明示する。複数mesh/instance・異なるskin参照・normalized/sparse weightはI04-B/Cへ残る。
 
@@ -46,7 +46,7 @@ Player検証はVRM0/1でsource payloadと元GLBの一致、再生中の保存、
 
 ## source skin候補
 
-`SourceSkin`はsource node transformsとskin index、元のjoint slot順、任意のskeleton root、一般inverse-bind行列を不変保持する。制作骨格の256骨制限とは独立し、source node予算内の257骨以上も表現する。JOINTS属性の値はこのslotからsource nodeへ引く。配列順をソートしたり、node名から対応を推測しない。
+`SourceSkin`はsource node transformsとskin index、元のjoint slot順、任意のskeleton root、一般inverse-bind行列を不変保持する。制作骨格の512骨制限とは独立し、source node予算内の257骨以上も表現する。JOINTS属性の値はこのslotからsource nodeへ引く。配列順をソートしたり、node名から対応を推測しない。
 
 入力にinverse-bindがある場合は全joint分以上を要求し、余剰accessor entryも保持する。fresh sourceで省略された場合だけidentityを補い、`HasExplicitInverseBindMatrices`で明示値と区別する。これは[glTF skin schema](https://raw.githubusercontent.com/KhronosGroup/glTF/main/specification/2.0/schema/skin.schema.json)に従う。旧nativeで不明なbindをこの省略扱いへ変換してはならない。skeleton rootを指定する場合は全jointの祖先であることを検査する。
 

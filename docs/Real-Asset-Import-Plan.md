@@ -10,9 +10,9 @@
 |---|---|---|
 | ファイル | 3件ともFBX。今回調べた素材フォルダでは実素材GLB/VRMなし | GLB2/VRM、FBX直接取込なし |
 | mesh | アバター20、小物各2 | GLB取込は1mesh |
-| skeleton | 3件とも257骨 | SkeletonDefinition/pose/関連codecは256骨上限 |
-| weights | アバター最大18 deform bone影響/頂点、4超が4,042頂点。小物は最大4/3 | SkinBindingは4、GLBはJOINTS_0/WEIGHTS_0のみ |
-| morph | アバター全mesh合計320キー（Basis除く）、単一mesh最大262、名前の集合317 | MorphSet最大256、POSITION中心 |
+| skeleton | 3件とも257骨 | SkeletonDefinition/pose/関連codecは512骨上限 |
+| weights | アバター最大18 deform bone影響/頂点、4超が4,042頂点。小物は最大4/3 | SkinBindingは32、GLBは連続するJOINTS_n/WEIGHTS_n |
+| morph | アバター全mesh合計320キー（Basis除く）、単一mesh最大262、名前の集合317 | MorphSet最大512、POSITION/NORMAL/TANGENT対応 |
 | transform | アバター20objectで非identity基底。3件とも257骨中255骨のrest matrixが非identity基底 | nodeとinverse-bindのrotation/scaleは未対応 |
 
 数字はBlenderのFBX読込結果。ウェイト数はArmature modifierが参照するdeform boneに一致する頂点groupを対象に数えた。最終GLBのjointセットと同一とは未確認。shapeキーもmeshごとの意味を持ち、同じ名前だから無条件に統合できない。Blender importerの結果を元VRChat環境の挙動やGLB変換後の一致とは扱わない。骨数だけ増やす、meshを結合する、上位4weightに切るだけでは対応完了にならない。

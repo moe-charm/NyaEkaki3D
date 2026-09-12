@@ -47,7 +47,7 @@ namespace NyaForge.Authoring.Rig
                 if (!selected.Contains(vertex)) { foreach (var influence in current.Weights[vertex]) raw.Add(new SkinBinding.VertexWeightInput(vertex, influence.BoneId, influence.Weight)); continue; }
                 var others = current.Weights[vertex].Where(influence => influence.BoneId != boneId).ToArray();
                 bool hasTarget = current.Weights[vertex].Any(influence => influence.BoneId == boneId);
-                if (weight > 0 && !hasTarget) Checks.Require(others.Length < SkinBinding.MaxInfluencesPerVertex, "INFLUENCE_LIMIT", "A vertex may use at most four bones.");
+                if (weight > 0 && !hasTarget) Checks.Require(others.Length < SkinBinding.MaxInfluencesPerVertex, "INFLUENCE_LIMIT", "A vertex may use at most 32 bones.");
                 float otherTotal = others.Sum(influence => influence.Weight);
                 if (weight > 0)
                 {

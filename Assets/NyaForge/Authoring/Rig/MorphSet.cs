@@ -10,7 +10,7 @@ namespace NyaForge.Authoring.Rig
     /// <summary>Immutable sparse morph collection for one mesh topology.</summary>
     public sealed class MorphSet
     {
-        public const int MaxTargets = 256;
+        public const int MaxTargets = 512;
         public string MeshTopologyHash { get; }
         public IReadOnlyList<MorphTarget> Targets { get; }
         public IReadOnlyDictionary<string, MorphTarget> ById { get; }

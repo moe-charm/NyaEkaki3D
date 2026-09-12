@@ -102,25 +102,33 @@ namespace NyaForge.Authoring.Import
             {
                 var primitive = token as JObject; Checks.Require(primitive != null, "INVALID_IMPORT", "GLB primitive is invalid.");
                 var attributes = primitive["attributes"] as JObject; Checks.Require(attributes != null, "INVALID_IMPORT", "GLB primitive attributes are required.");
-                attributes.Remove("JOINTS_0"); attributes.Remove("WEIGHTS_0");
+                foreach (var property in attributes.Properties().Where(p => p.Name.StartsWith("JOINTS_", StringComparison.Ordinal) || p.Name.StartsWith("WEIGHTS_", StringComparison.Ordinal)).ToArray()) property.Remove();
             }
             var baseSource = GlbImporter.ReadDocument(new GlbDocument(staticRoot, document.Bin, document.SourceHash), meshIndex);
             var rawWeights = new List<SkinBinding.VertexWeightInput>(); int vertexOffset = 0;
             for (int p = 0; p < primitives.Count; p++)
             {
                 var primitive = (JObject)primitives[p]; var attributes = primitive["attributes"] as JObject; Checks.Require(attributes != null, "INVALID_IMPORT", "GLB primitive attributes are required.");
-                Checks.Require(attributes["JOINTS_0"] != null && attributes["WEIGHTS_0"] != null, "UNSUPPORTED_FORMAT", "Every skinned primitive needs JOINTS_0 and WEIGHTS_0.");
-                Checks.Require(attributes["JOINTS_1"] == null && attributes["WEIGHTS_1"] == null, "UNSUPPORTED_FORMAT", "Only one four-influence skin set is supported.");
                 int positionCount = AccessorCount(Array(root, "accessors"), IntProperty(attributes, "POSITION", 0, int.MaxValue, "POSITION"));
-                var jointValues = ReadJointVectors(Array(root, "accessors"), Array(root, "bufferViews"), document.Bin, IntProperty(attributes, "JOINTS_0", 0, int.MaxValue, "JOINTS_0"));
-                var weightValues = ReadWeightVectors(Array(root, "accessors"), Array(root, "bufferViews"), document.Bin, IntProperty(attributes, "WEIGHTS_0", 0, int.MaxValue, "WEIGHTS_0"), "weights");
-                Checks.Require(jointValues.Length == positionCount && weightValues.Length == positionCount, "INVALID_IMPORT", "Skin attribute count differs from POSITION.");
+                var jointIds = new SortedDictionary<int, int>(); var weightIds = new SortedDictionary<int, int>();
+                foreach (var property in attributes.Properties())
+                {
+                    if (TrySet(property.Name, "JOINTS_", out int jointSet)) Checks.Require(jointIds.TryAdd(jointSet, IntProperty(attributes, property.Name, 0, int.MaxValue, property.Name)), "INVALID_IMPORT", property.Name + " is repeated.");
+                    if (TrySet(property.Name, "WEIGHTS_", out int weightSet)) Checks.Require(weightIds.TryAdd(weightSet, IntProperty(attributes, property.Name, 0, int.MaxValue, property.Name)), "INVALID_IMPORT", property.Name + " is repeated.");
+                }
+                Checks.Require(jointIds.Count > 0 && jointIds.Count == weightIds.Count && jointIds.Keys.SequenceEqual(weightIds.Keys), "UNSUPPORTED_FORMAT", "JOINTS_n and WEIGHTS_n sets must be paired from zero.");
+                Checks.Require(jointIds.Keys.First() == 0 && jointIds.Keys.SequenceEqual(Enumerable.Range(0, jointIds.Count)), "UNSUPPORTED_FORMAT", "Skin attribute sets must be contiguous from zero.");
+                var sets = jointIds.Keys.Select(set => Tuple.Create(
+                    ReadJointVectors(Array(root, "accessors"), Array(root, "bufferViews"), document.Bin, jointIds[set]),
+                    ReadWeightVectors(Array(root, "accessors"), Array(root, "bufferViews"), document.Bin, weightIds[set], "weights_" + set.ToString(System.Globalization.CultureInfo.InvariantCulture)))).ToArray();
+                foreach (var set in sets) Checks.Require(set.Item1.Length == positionCount && set.Item2.Length == positionCount, "INVALID_IMPORT", "Skin attribute count differs from POSITION.");
                 for (int v = 0; v < positionCount; v++)
-                    for (int i = 0; i < 4; i++)
-                    {
-                        float weight = weightValues[v][i]; Checks.Finite(weight); Checks.Require(weight >= 0f && weight <= 1f, "INVALID_WEIGHT", "WEIGHTS component must be between zero and one.");
-                        if (weight > 0) { Checks.Require(jointValues[v][i] < jointNodes.Length, "INVALID_IMPORT", "Skin joint index is outside the skin."); rawWeights.Add(new SkinBinding.VertexWeightInput(vertexOffset + v, jointToBone.BoneIds[jointValues[v][i]], weight)); }
-                    }
+                    foreach (var set in sets)
+                        for (int i = 0; i < 4; i++)
+                        {
+                            float weight = set.Item2[v][i]; Checks.Finite(weight); Checks.Require(weight >= 0f && weight <= 1f, "INVALID_WEIGHT", "WEIGHTS component must be between zero and one.");
+                            if (weight > 0) { Checks.Require(set.Item1[v][i] < jointNodes.Length, "INVALID_IMPORT", "Skin joint index is outside the skin."); rawWeights.Add(new SkinBinding.VertexWeightInput(vertexOffset + v, jointToBone.BoneIds[set.Item1[v][i]], weight)); }
+                        }
                 vertexOffset += positionCount;
             }
             Checks.Require(vertexOffset == baseSource.Mesh.VertexCount, "INVALID_IMPORT", "Skin vertex count differs from imported mesh.");
@@ -175,7 +183,15 @@ namespace NyaForge.Authoring.Import
 
         static int[][] ReadJointVectors(JArray accessors, JArray views, byte[] bin, int id)
         {
-            var accessor = Accessor(accessors, id, "VEC4", new[] { 5121, 5123 }); Checks.Require(accessor["normalized"] == null || (bool)accessor["normalized"] == false, "UNSUPPORTED_FORMAT", "Normalized JOINTS_0 is not supported."); return ReadIntegerVectors(accessor, views, bin, "joints");
+            var accessor = Accessor(accessors, id, "VEC4", new[] { 5121, 5123 }); Checks.Require(accessor["normalized"] == null || (bool)accessor["normalized"] == false, "UNSUPPORTED_FORMAT", "Normalized JOINTS are not supported."); return ReadIntegerVectors(accessor, views, bin, "joints");
+        }
+
+        static bool TrySet(string name, string prefix, out int index)
+        {
+            index = -1; if (!name.StartsWith(prefix, StringComparison.Ordinal)) return false;
+            string suffix = name.Substring(prefix.Length); Checks.Require(suffix.Length > 0 && suffix.All(char.IsDigit), "INVALID_IMPORT", name + " index is invalid.");
+            long parsed = 0; foreach (char digit in suffix) { parsed = parsed * 10 + (digit - '0'); Checks.Require(parsed <= int.MaxValue, "INVALID_IMPORT", name + " index is out of range."); }
+            index = (int)parsed; return true;
         }
 
         static int[][] ReadIntegerVectors(JObject accessor, JArray views, byte[] bin, string label)

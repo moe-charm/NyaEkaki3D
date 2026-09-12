@@ -29,7 +29,7 @@ namespace NyaForge.Authoring.Rig
     /// <summary>Immutable skeleton rest pose with stable IDs and deterministic content identity.</summary>
     public sealed class SkeletonDefinition
     {
-        public const int MaxBones = 256;
+        public const int MaxBones = 512;
         public IReadOnlyList<BoneDefinition> Bones { get; }
         public IReadOnlyDictionary<string, BoneDefinition> ById { get; }
         public string ContentHash { get; }
@@ -38,7 +38,7 @@ namespace NyaForge.Authoring.Rig
         {
             Checks.Require(bones != null, "INVALID_SKELETON", "Skeleton bones are required.");
             var items = bones.ToArray();
-            Checks.Require(items.Length > 0 && items.Length <= MaxBones, "BUDGET_EXCEEDED", "Skeleton must contain 1 to 256 bones.");
+            Checks.Require(items.Length > 0 && items.Length <= MaxBones, "BUDGET_EXCEEDED", "Skeleton must contain 1 to 512 bones.");
             var byId = new Dictionary<string, BoneDefinition>(StringComparer.Ordinal);
             foreach (var bone in items) Checks.Require(bone != null && byId.TryAdd(bone.BoneId, bone), "DUPLICATE_BONE", "Bone identity must be unique.");
             foreach (var bone in items)
