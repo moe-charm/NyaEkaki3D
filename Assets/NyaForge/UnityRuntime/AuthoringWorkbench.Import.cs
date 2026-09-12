@@ -62,6 +62,7 @@ namespace NyaForge.UnityRuntime
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
             var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph)));
             if (!result.Success) throw new InvalidOperationException(result.Code + ": " + result.Message);
+            CaptureImportedMetadata();
             Refresh(); SetStatus("GLBを取り込みました。" + (imported.Morphs == null ? " morphなし" : " morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12));
         }
 
@@ -78,6 +79,7 @@ namespace NyaForge.UnityRuntime
             }
             edges.Add(new GraphEdge(finalNode, "mesh", bindId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", bindId, "skeleton")); edges.Add(new GraphEdge(skeletonId, "skeleton", poseId, "skeleton")); edges.Add(new GraphEdge(finalNode, "mesh", deformId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", deformId, "skeleton")); edges.Add(new GraphEdge(bindId, "binding", deformId, "binding")); edges.Add(new GraphEdge(poseId, "pose", deformId, "pose")); edges.Add(new GraphEdge(deformId, "mesh", outputId, "mesh"));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId); var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph))); if (!result.Success) throw new InvalidOperationException(result.Code + ": " + result.Message);
+            CaptureImportedMetadata();
             Refresh(); SetStatus("GLB skinを取り込みました。bone " + imported.Skeleton.Bones.Count + " · weight " + imported.Binding.Weights.Count + (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12));
         }
 

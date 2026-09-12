@@ -55,7 +55,7 @@ namespace NyaForge.Authoring
             var token = value["schemaVersion"];
             Checks.Require(token != null && token.Type == JTokenType.Integer, "INVALID_MANIFEST", "Missing or invalid schemaVersion.");
             long version;
-            Checks.Require(long.TryParse(token.ToString(), out version) && (version == 1 || version == 2 || version == 3), "UNSUPPORTED_FORMAT", "Unsupported native project version.");
+            Checks.Require(long.TryParse(token.ToString(), out version) && (version == 1 || version == 2 || version == 3 || version == 4), "UNSUPPORTED_FORMAT", "Unsupported native project version.");
             return (int)version;
         }
         private static void RejectNonData(JToken token)

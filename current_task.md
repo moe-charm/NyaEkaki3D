@@ -10,9 +10,9 @@
 
 ## 最優先: 実装レビューの修正タスク（2026-09-12）
 
-ユーザー依頼「ここまでチェック」「チェック後current_task更新してタスク化」に対応したレビューを起点に修正を進める。詳細な再現条件、対象行、完了条件、証拠は [Rig / VRMレビュー](docs/reviews/2026-09-12-Rig-Vrm-Review.md) を参照する。現在R03が**進行中**、他は未着手。チェックは各タスクの全完了条件を満たしたときだけ付ける。
+ユーザー依頼「ここまでチェック」「チェック後current_task更新してタスク化」に対応したレビューを起点に修正を進める。詳細な再現条件、対象行、完了条件、証拠は [Rig / VRMレビュー](docs/reviews/2026-09-12-Rig-Vrm-Review.md) を参照する。R03はCore/Windows自動検証まで完了し、次はR01。実マウス・実VRMの受入は各自動検証と区別する。
 
-- [ ] **R03 / P1 — 保存全体の成功判定と失敗時の保護（進行中）**。Windows GUIの保存失敗後の未保存表示・終了防止・Save As再試行を修正しPlayer検証済み。manifestとVRM設定を一組で公開・復旧する保存transaction、Core/MCPからの保存を含む整合性保護は未完了。
+- [x] **R03 / P1 — 保存全体の成功判定と失敗時の保護**。schema 4の単一manifestで本体とVRM設定のblob参照を一括公開し、失敗時の旧作品・設定・dirty・versionを保持。Core共通保存service、Windows GUI/MCP handlerの再試行・終了防止・Save As/Openを検証した。外部MCP transport経由のmetadata専用試験と実マウスの受入は未実施。
 - [ ] **R01 / P1 — VRM1 authors配列**。文字列として扱うreaderと誤ったfixtureを修正する。複数作者をimportからsession保存・再読込まで保持し、既存形式の移行も定める。
 - [ ] **R02 / P1 — 同一nodeの複数コライダーの往復**。`nodes:[0,0]`を重複禁止readerで拒否する問題を直す。順序・件数を保持し、VRM0/1のimport→Save→Openを確認する。
 - [ ] **R09 / P2 — VRM1 SpringBoneの既定値**。省略stiffness/dragForceを1.0/0.5にし、明示0と区別する。session再読込でも一致させる。
@@ -25,17 +25,25 @@
 
 検証済み: このレビューでCore **297 passed / 0 failed**を再実行。別fixtureで作者情報拒否、session往復失敗、保存失敗後dirty=False、step2姿勢ずれ、親子gap、chain間衝突混入、貫通、dt=0の進行、null参照例外、省略値の相違を確認した。Player/Bridgeは今回再実行していない。実VRM全体・手動見た目受入も未確認。
 
-再開順: **R03 → R01/R02/R09 → R04/R05/R06/R07/R08**、R10は各修正へ同梱する。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
+再開順: **R01/R02/R09 → R04/R05/R06/R07/R08**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
 
 修正後は、未保持のgravityDir・collider shape値と保存移行を含むVRM入力契約を整え、node→stable BoneId、preview接続へ進む。一般node transform、skin/morph出力、実アバター受入、C1〜C5の全体目標は維持する。
 
-### R03前段: Windows GUIの保存失敗保護（2026-09-12）
+### R03: 作品本体とmetadataの一括公開（2026-09-12）
+
+- `ProjectAttachments`は所有するsession bytesとhashを不変データとして保持し、workspaceのdirty判定へ加える。`ProjectSnapshotCodec`はschema 2/3本体をschema 4 envelopeで包み、設定blob参照を同じmanifestへ保存する。`ProjectStore`の既存writer lock / expectedVersion境界でblobを準備・検証し、manifestを最後に一回だけ置き換え、その後にsaved状態を更新する。
+- 旧schema 1/2/3のsidecarはOpen時に取り込む。schema 4は古いsidecarを参照せず、設定を除去しても復活しない。schema 1は従来どおり別保存先への移行が必要。古いバージョンのNyaForgeはschema 4を開けない。形式と責務の詳細は [metadata snapshots](docs/Project-Metadata-Snapshots.md) を参照。
+- GUI import時点でmetadataをworkspaceへ渡し、GUI/MCPともに共通ProjectStoreで一括保存する。MCP handlerの保存成功でGUIの失敗表示も解除する。個別session内容の不具合R01/R02/R09は残っているので、保存transactionの修正をVRM互換性全体の合格とはしない。
+- Core **303 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3d890be653834863b2859c79e76939a6`。expression/Spring書込み失敗で旧manifest・本体・metadata・dirty・versionを維持、Save As公開失敗と再試行、legacy移行/削除、corrupt blob、未知field、graphの共通save service往復とstale writer拒否を検証。
+- Windows-AtomicMetadata build **PASS**: `Logs/build-player-20260912-132607-475.log`。Authoring suite **PASS**: `Artifacts/Authoring-20260912-132736-efd679b908084601afb033b0e7681dce/report.json`。新規/既存の両方でblob排他ロックによる失敗を起こし、旧設定保持、終了/無確認切替防止、GUI/MCP handler再試行、設定を含むOpenを確認した。終了ボタンが使う判定関数の自動検証であり、実クリック・外部MCP transport・実VRMの手動受入は別途。
+
+### R03前段: Windows GUIの保存失敗保護（履歴・2026-09-12）
 
 - 保存の呼出しと成否判定を`AuthoringWorkbench.Saving.cs`へ分離した。保存全工程の成功をboolで返し、失敗後はWorkbenchの`saveIncomplete`を保持して未保存表示と終了／作品切替の確認を維持する。「保存して終了」は保存成功の明示結果を必須にした。
 - 本体が保存できた時点でGUIの保存先も更新し、付属設定が失敗したSave Asの再試行に正しい保存versionを使う。再試行成功か、ユーザーが確認して作品を切り替えるまで失敗状態を解除しない。
 - `AuthoringWorkbench.SaveFailureVerification.cs`で、専用fixtureのexpression / Spring sidecarを排他ロックして削除失敗を起こした。main保存後にも終了・無確認切替を拒否し、ロック解除後にversion 2へ保存でき、Openも成功することをPlayerで検証した。実マウスクリックではなく終了ボタンが使う判定関数の検証。
 - Windows-SaveFailureGuard build **PASS**: `Logs/build-player-20260912-131616-600.log`。Authoring suite **PASS**: `Artifacts/Authoring-20260912-131645-43dcd4028e8c4f72988dd960d8e5a921/report.json`。専用の`Save failure guard` checkが成功している。本変更はUnityRuntimeのみのためCore/Bridgeの新規実行は行っていない。
-- **残件**: この保護はGUIの終了・再試行に対するもの。本体の`workspace.IsDirty`や既存manifestとsidecarの途中状態を原子的に戻す仕組みではなく、プロセス異常終了やCore/MCP保存の整合性までは解決しない。次は設定のimmutable blob化とmanifestによる一括公開等を検討し、既存sidecarの読込互換・移行、writer lock、Save As、途中失敗の旧作品復旧を共通保存coordinatorで実装する。R03は未完了のまま維持する。
+- **この前段の時点の残件**: GUI終了・再試行だけの保護で、main/sidecarの一括公開は未実装だった。現在は上段のR03 snapshot実装と検証を参照する。
 
 ## 出力予算検証 `forge_validate`（2026-09-12）
 
@@ -158,7 +166,7 @@
 | 3D paint | BVH ray、論理edge/UV連続判定、screen補間、切れた区間の描画、GUI色/mask・仮表示・取消・Undo・保存/出力を実装 |
 | 今後 | 3D複数面/細かなseamの精度と操作、一般Material graph、UV再投影、出力identity更新、Evidence/MCP、rig/weight/morphと全身制作 |
 
-保存はstatic writer schema2、graph writer schema3、reader 1/2/3。Paintは共有画像と部位別の独立画像に対応。材質未割当は不透明preview、標準材質は3alpha modeを選択できる。UV変更時は旧payloadを未解決として保持し、明示rebindで対応を更新する。見た目を保つ再投影ではない。旧mesh-only Bakeは画像を拒否。画像付きmeshは別のSurface Bake profile、単一標準材質はMaterial Bakeを利用。複数材質BakeはGUI/Bridgeまで接続済み。
+保存は設定なしstatic writer schema2、graph writer schema3、metadata付きsnapshot writer schema4、reader 1/2/3/4。Paintは共有画像と部位別の独立画像に対応。材質未割当は不透明preview、標準材質は3alpha modeを選択できる。UV変更時は旧payloadを未解決として保持し、明示rebindで対応を更新する。見た目を保つ再投影ではない。旧mesh-only Bakeは画像を拒否。画像付きmeshは別のSurface Bake profile、単一標準材質はMaterial Bakeを利用。複数材質BakeはGUI/Bridgeまで接続済み。
 
 ## PNG importのWindows実通信
 

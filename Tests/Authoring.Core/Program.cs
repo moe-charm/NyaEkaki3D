@@ -24,6 +24,7 @@ internal static partial class Program
         RunCommandWireGraphTests();
         RunCommandWireContextTests();
         RunProjectSaveServiceTests();
+        RunProjectSnapshotTests();
         RunProjectExportServiceTests();
         RunEmptyProjectTests();
         RunGraphTests();

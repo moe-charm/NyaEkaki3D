@@ -13,6 +13,8 @@ namespace NyaForge.Authoring
         internal readonly List<AuthoringDocument> RedoStack = new List<AuthoringDocument>();
         internal readonly Dictionary<string, CachedCommand> Commands = new Dictionary<string, CachedCommand>();
         internal string SavedStateHash;
+        internal string SavedAttachmentsHash = ProjectAttachments.Empty.ContentHash;
+        public ProjectAttachments Attachments { get; private set; } = ProjectAttachments.Empty;
         internal string SavedDirectory;
         internal bool Executing;
         public string InstanceId { get; private set; }
@@ -22,7 +24,16 @@ namespace NyaForge.Authoring
         public bool CanUndo { get { lock (Gate) return UndoStack.Count > 0; } }
         public bool CanRedo { get { lock (Gate) return RedoStack.Count > 0; } }
         public bool IsExecuting { get { lock (Gate) return Executing; } }
-        public bool IsDirty { get { lock (Gate) return SavedStateHash != Document.StateHash; } }
+        public bool IsDirty { get { lock (Gate) return SavedStateHash != Document.StateHash || SavedAttachmentsHash != Attachments.ContentHash; } }
+        public void SetAttachments(ProjectAttachments attachments)
+        {
+            lock (Gate)
+            {
+                Checks.Require(!Executing, "REENTRANT_SAVE", "Cannot replace metadata during a command transaction.");
+                Checks.Require(attachments != null, "INVALID_ATTACHMENT", "Project metadata is required.");
+                Attachments = attachments;
+            }
+        }
         internal AuthoringWorkspace(AuthoringDocument document) { InstanceId = Guid.NewGuid().ToString("D"); Document = document; Preview = AuthoringPreview.Create(document, null); }
         public static AuthoringWorkspace Create(MeshData mesh, RestTransform transform, string name)
         {

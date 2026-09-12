@@ -8,7 +8,7 @@ Modules: `Domain/` owns immutable project/object data, `Commands/` owns typed op
 
 `AuthoringWorkspace.CreateEmpty()` creates zero objects without a dummy mesh. Its evaluation returns no mesh. `AuthoringOperation.AddMesh(mesh, transform)` adds a sample through the same transaction/history path, so Undo can return to empty. The current static profile supports zero or one object; multiple objects and typed graphs are subsequent work. Empty exports fail with `NO_EXPORTABLE_OBJECT` before creating an output directory.
 
-Native writes now use schema **2**, with an explicit objects array. Schema **1** is read through `LegacyProjectCodec`; saving over a schema 1 manifest returns `MIGRATION_REQUIRED`. Save to a new directory to migrate while preserving the original. State/geometry hashes for legacy single-object data remain comparable. Bake stays at schema 1, independently of the native document schema.
+Native static and graph writes use schema **2** and **3**. Projects with owned metadata use schema **4**, wrapping the original document manifest plus immutable attachment blob references. `ProjectAttachments` owns copied session bytes; `ProjectSnapshotCodec` publishes their references with the document through `ProjectStore`'s single manifest commit. Opening schema 1/2/3 imports legacy VRM sidecars; schema 4 reads only pinned blobs. Metadata removal never revives old sidecars. Schema **1** is read through `LegacyProjectCodec`; saving over it still returns `MIGRATION_REQUIRED`. Save to a new directory to migrate while preserving the original. Bake schemas are independent. See [metadata snapshots](../../../docs/Project-Metadata-Snapshots.md).
 
 ```csharp
 using NyaForge.Authoring;

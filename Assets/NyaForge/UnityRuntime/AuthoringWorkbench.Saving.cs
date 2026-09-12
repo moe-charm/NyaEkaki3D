@@ -7,8 +7,7 @@ namespace NyaForge.UnityRuntime
 {
     public sealed partial class AuthoringWorkbench
     {
-        // ProjectStore tracks the main document only. Until settings join its
-        // transaction, a failed composite save must keep the workbench dirty.
+        // Keep a failed save request visible even when the document was clean.
         bool saveIncomplete;
 
         void SaveProject() { TrySaveProject(); }
@@ -21,11 +20,7 @@ namespace NyaForge.UnityRuntime
                 var directory = Path.GetFullPath(projectPath.value).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                 long expectedVersion = string.Equals(directory, savedDirectory, StringComparison.OrdinalIgnoreCase) ? workspace.SaveVersion : 0;
                 ProjectStore.Save(directory, workspace, expectedVersion);
-                // Remember the committed main-document version even if a later
-                // step fails, so Save As can retry without a false conflict.
                 savedDirectory = directory;
-                VrmExpressionSessionStore.Save(directory, importedVrmSession);
-                VrmSpringSessionStore.Save(directory, importedVrmSpringSession);
                 graphCanvas.SaveLayout();
                 saveIncomplete = false;
                 Refresh();

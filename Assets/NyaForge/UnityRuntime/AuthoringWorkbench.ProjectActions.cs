@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using NyaForge.Authoring;
+using NyaForge.Authoring.Import;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -49,8 +50,10 @@ namespace NyaForge.UnityRuntime
         {
             var directory = Path.GetFullPath(projectPath.value);
             var next = ProjectStore.Open(directory);
-            var expressionSession = VrmExpressionSessionStore.Load(directory);
-            var springSession = VrmSpringSessionStore.Load(directory);
+            var expressionBytes = next.Attachments.Read(ProjectAttachments.Expressions);
+            var springBytes = next.Attachments.Read(ProjectAttachments.Springs);
+            var expressionSession = expressionBytes == null ? null : VrmExpressionSessionCodec.Read(expressionBytes);
+            var springSession = springBytes == null ? null : VrmSpringSessionCodec.Read(springBytes);
             ReplaceWorkspace(next, directory);
             importedVrmSession = expressionSession; Refresh();
             importedVrmSpringSession = springSession; RefreshVrmSpringStatus();
