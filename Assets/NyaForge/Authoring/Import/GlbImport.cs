@@ -48,15 +48,25 @@ namespace NyaForge.Authoring.Import
             return ReadDocument(GlbDocumentReader.Read(bytes), meshIndex);
         }
 
+        /// <summary>Reads a mesh resource and applies the explicitly selected node world frame.</summary>
+        public static ImportedMeshSource Read(byte[] bytes, int meshIndex, SourceAffine instanceWorld)
+        {
+            Checks.Require(instanceWorld != null, "INVALID_IMPORT", "Selected mesh instance transform is required.");
+            return ReadDocument(GlbDocumentReader.Read(bytes), meshIndex, instanceWorld);
+        }
+
         internal static ImportedMeshSource ReadDocument(GlbDocument document) { return ReadDocument(document, 0); }
 
         internal static ImportedMeshSource ReadDocument(GlbDocument document, int meshIndex)
+            => ReadDocument(document, meshIndex, null);
+
+        internal static ImportedMeshSource ReadDocument(GlbDocument document, int meshIndex, SourceAffine instanceWorld)
         {
             Checks.Require(document != null, "INVALID_IMPORT", "GLB document is required.");
-            return Parse(document.Root, document.Bin, document.SourceHash, meshIndex);
+            return Parse(document.Root, document.Bin, document.SourceHash, meshIndex, instanceWorld);
         }
 
-        static ImportedMeshSource Parse(JObject root, byte[] bin, string sourceHash, int meshIndex)
+        static ImportedMeshSource Parse(JObject root, byte[] bin, string sourceHash, int meshIndex, SourceAffine instanceWorld)
         {
             Checks.Require((string)root["asset"]?["version"] == "2.0", "UNSUPPORTED_FORMAT", "GLB asset version must be 2.0.");
             var buffers = Array(root, "buffers"); Checks.Require(buffers.Count == 1, "UNSUPPORTED_FORMAT", "Only one GLB buffer is supported.");
@@ -85,7 +95,13 @@ namespace NyaForge.Authoring.Import
             for (int i = 0; i < parts.Length; i++) { submeshes[i] = parts[i].Indices.Select(index => checked(index + vertexOffset)).ToArray(); vertexOffset += parts[i].Positions.Length; }
             var mesh = new MeshData(positions, normals, tangents, uv0, submeshes);
             MorphSet morphs = ParseMorphs(meshToken, parts, mesh, sourceHash, meshIndex);
+            if (instanceWorld != null)
+            {
+                var transformed = SourceMeshTransform.Apply(mesh, instanceWorld, morphs);
+                mesh = transformed.Mesh; morphs = transformed.Morphs;
+            }
             var warnings = new List<string> { "Imported as " + parts.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " static triangle primitive(s); original glTF scene hierarchy, materials and skin bindings are not retained." };
+            if (instanceWorld != null) warnings.Add("Selected node instance world transform was applied to mesh positions, normals, tangents and POSITION morph deltas.");
             if (morphs != null) warnings.Add("POSITION morph targets were retained; normal/tangent morph deltas are not imported.");
             return new ImportedMeshSource(sourceHash, meshIndex, mesh, morphs, warnings);
         }

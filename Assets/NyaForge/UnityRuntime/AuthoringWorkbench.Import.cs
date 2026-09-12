@@ -74,7 +74,8 @@ namespace NyaForge.UnityRuntime
                 }
                 ImportSkinnedModel(bytes, vrm, meshIndex, skinIndex); return;
             }
-            var imported = GlbImporter.Read(bytes, meshIndex);
+            var instanceWorld = instanceIndex >= 0 ? inventory.Instances[instanceIndex].WorldTransform : null;
+            var imported = instanceWorld == null ? GlbImporter.Read(bytes, meshIndex) : GlbImporter.Read(bytes, meshIndex, instanceWorld);
             string sourceId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
             var nodes = new List<GraphNode> { GraphNode.Source(sourceId, imported.Mesh, new RestTransform(1, new Vec3())) };
             var edges = new List<GraphEdge>(); string finalNode = sourceId;

@@ -42,6 +42,17 @@ internal static partial class Program
             var selected = GlbImporter.Read(bytes, 1); var first = GlbImporter.Read(bytes, 0); Equal(1, selected.MeshIndex); Equal("AccessorySmile", selected.Morphs.Targets[0].Name); True(first.Morphs.Targets[0].TargetId != selected.Morphs.Targets[0].TargetId); Equal(ChecksHashForTest(bytes), selected.SourceHash);
             Expect("INVALID_IMPORT", () => GlbImporter.Read(bytes, -1)); Expect("INVALID_IMPORT", () => GlbImporter.Read(bytes, 2));
         });
+        Test("GLB importer applies a selected node affine frame to geometry and morphs", () =>
+        {
+            var root = JObject.Parse(ReadJsonChunk(BuildGlb()));
+            root["nodes"] = new JArray(new JObject { ["mesh"] = 0, ["translation"] = new JArray(1, 2, 3), ["rotation"] = new JArray(0, 0, Math.Sqrt(.5), Math.Sqrt(.5)), ["scale"] = new JArray(2, 3, 4) });
+            var bytes = ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None));
+            var instance = GlbSceneInventoryReader.Read(bytes).Instances.Single();
+            var selected = GlbImporter.Read(bytes, 0, instance.WorldTransform);
+            Near(1.15f, selected.Mesh.Positions[0].X); Near(1.8f, selected.Mesh.Positions[0].Y);
+            Near(0f, selected.Morphs.Targets[0].Deltas.Single().Value.X); Near(.2f, selected.Morphs.Targets[0].Deltas.Single().Value.Y);
+            True(selected.Warnings.Any(w => w.Contains("world transform", StringComparison.Ordinal)));
+        });
         Test("GLB importer allows an unskinned accessory beside a skinned mesh", () =>
         {
             var root = JObject.Parse(ReadJsonChunk(BuildGlb()));
