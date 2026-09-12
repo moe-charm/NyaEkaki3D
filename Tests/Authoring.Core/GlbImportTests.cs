@@ -77,6 +77,33 @@ internal static partial class Program
             True(imported.Diagnostics.Any(item => item.Code == "EXTENSIONS_PARTIAL" && !item.IsBlocking));
             True(imported.Warnings.Any(item => item.Contains("MATERIALS_NOT_RETAINED", StringComparison.Ordinal)));
         });
+        Test("GLB importer retains bounded PBR material factors for native graph routing", () =>
+        {
+            var root = JObject.Parse(ReadJsonChunk(BuildGlb()));
+            root["materials"] = new JArray(new JObject
+            {
+                ["name"] = "Red lacquer",
+                ["pbrMetallicRoughness"] = new JObject
+                {
+                    ["baseColorFactor"] = new JArray(.5, .25, 1.0, .75),
+                    ["metallicFactor"] = .7,
+                    ["roughnessFactor"] = .2,
+                    ["baseColorTexture"] = new JObject { ["index"] = 0 }
+                },
+                ["emissiveFactor"] = new JArray(.1, .2, .3),
+                ["alphaMode"] = "BLEND",
+                ["alphaCutoff"] = .3
+            });
+            var primitive = (JObject)((JArray)((JObject)((JArray)root["meshes"]!)[0]!) ["primitives"]!)[0]!;
+            primitive["material"] = 0;
+            var imported = GlbImporter.Read(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None)));
+            Equal(1, imported.Materials.Count);
+            var material = imported.Materials[0];
+            Equal(0, material.SubmeshIndex); Equal(0, material.SourceMaterialIndex); Equal("Red lacquer", material.Name); True(material.HasTextureReferences);
+            Near(.214041f, material.Parameters.BaseColor.X); Near(.050876f, material.Parameters.BaseColor.Y); Near(1f, material.Parameters.BaseColor.Z); Near(.75f, material.Parameters.BaseColor.W);
+            Near(.7f, material.Parameters.Metallic); Near(.2f, material.Parameters.Roughness); Near(.1f, material.Parameters.Emission.X); Near(.3f, material.Parameters.Emission.Z);
+            Equal(NyaForge.Authoring.Graph.MaterialAlphaMode.Blend, material.Parameters.AlphaMode); Near(.3f, material.Parameters.AlphaCutoff);
+        });
         Test("GLB importer allows an unskinned accessory beside a skinned mesh", () =>
         {
             var root = JObject.Parse(ReadJsonChunk(BuildGlb()));

@@ -89,6 +89,7 @@ namespace NyaForge.UnityRuntime
                 nodes.Add(GraphNode.MorphSetNode(morphId, imported.Morphs)); nodes.Add(GraphNode.MorphDeformNode(deformId, zeroWeights));
                 edges.Add(new GraphEdge(sourceId, "mesh", deformId, "mesh")); edges.Add(new GraphEdge(morphId, "morphs", deformId, "morphs")); finalNode = deformId;
             }
+            finalNode = AppendImportedMaterials(nodes, edges, finalNode, imported.Mesh.Submeshes.Count, imported.Materials);
             nodes.Add(GraphNode.Output(outputId)); edges.Add(new GraphEdge(finalNode, "mesh", outputId, "mesh"));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
             var diagnostics = imported.Diagnostics.Count == 0 ? null : new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, null, imported.Diagnostics);
@@ -109,7 +110,9 @@ namespace NyaForge.UnityRuntime
                 string morphId = Guid.NewGuid().ToString("D"), morphDeformId = Guid.NewGuid().ToString("D"); var weights = imported.Morphs.Targets.ToDictionary(target => target.TargetId, _ => 0f, StringComparer.Ordinal);
                 nodes.Insert(1, GraphNode.MorphSetNode(morphId, imported.Morphs)); nodes.Insert(2, GraphNode.MorphDeformNode(morphDeformId, weights)); edges.Add(new GraphEdge(sourceId, "mesh", morphDeformId, "mesh")); edges.Add(new GraphEdge(morphId, "morphs", morphDeformId, "morphs")); finalNode = morphDeformId;
             }
-            edges.Add(new GraphEdge(finalNode, "mesh", editId, "mesh")); edges.Add(new GraphEdge(editId, "mesh", bindId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", bindId, "skeleton")); edges.Add(new GraphEdge(skeletonId, "skeleton", poseId, "skeleton")); edges.Add(new GraphEdge(editId, "mesh", deformId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", deformId, "skeleton")); edges.Add(new GraphEdge(bindId, "binding", deformId, "binding")); edges.Add(new GraphEdge(poseId, "pose", deformId, "pose")); edges.Add(new GraphEdge(deformId, "mesh", outputId, "mesh"));
+            edges.Add(new GraphEdge(finalNode, "mesh", editId, "mesh")); edges.Add(new GraphEdge(editId, "mesh", bindId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", bindId, "skeleton")); edges.Add(new GraphEdge(skeletonId, "skeleton", poseId, "skeleton")); edges.Add(new GraphEdge(editId, "mesh", deformId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", deformId, "skeleton")); edges.Add(new GraphEdge(bindId, "binding", deformId, "binding")); edges.Add(new GraphEdge(poseId, "pose", deformId, "pose"));
+            finalNode = AppendImportedMaterials(nodes, edges, deformId, imported.Mesh.Submeshes.Count, imported.Materials);
+            edges.Add(new GraphEdge(finalNode, "mesh", outputId, "mesh"));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
             var sourceCandidate = GlbSourceSkinImporter.Read(bytes, meshIndex, skinIndex);
             var rigSession = ImportedRigSession.Create(imported, vrm, graph.GraphId, skeletonId)

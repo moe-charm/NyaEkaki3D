@@ -15,9 +15,10 @@
 - 最新artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-95fd651be1094560b029f04b72aa1d7c`
 - 実RadDollV3はprivate素材としてのみ取込 smoke に使用し、public repositoryへ同梱していない。
 
-このレビューで残る実装対象は、I04-A/Bの複数mesh・共有mesh/skin/morph参照、I04-Eの材質・未知拡張の完全保持、SIM-02B/SIM-07Aの実SDK/実VRChat受入である。I04-Eの入口として、GLB importerは材質・animation・extensionsRequired/Usedのコード付きdiagnosticsを返し、blocking/partialを区別する回帰を追加した。容量拡張としてnativeは512骨／32 influence／512 morph、GLB取込と拡張GLB出力は全JOINTS_n/WEIGHTS_n setへ対応した。標準SkinnedGeometry出力は受取先互換のため4 influenceを明示拒否する。Coreや合成Bridgeの合格を、実SDK・実VRChatでの受入完了とは扱わない。
+このレビューで残る実装対象は、I04-A/Bの複数mesh・共有mesh/skin/morph参照、I04-Eの材質・未知拡張の完全保持、SIM-02B/SIM-07Aの実SDK/実VRChat受入である。I04-Eの入口として、GLB importerは材質・animation・extensionsRequired/Usedのコード付きdiagnosticsを返し、blocking/partialを区別する回帰を追加した。今回、選択primitiveのmaterial slotと基本PBR係数（baseColorFactorのlinear化、metallic/roughness、emissive、alpha）をnative `StandardMaterial`／`AssignMaterials`へ接続した。画像・sampler・追加拡張は引き続き未保持としてdiagnosticを返す。容量拡張としてnativeは512骨／32 influence／512 morph、GLB取込と拡張GLB出力は全JOINTS_n/WEIGHTS_n setへ対応した。標準SkinnedGeometry出力は受取先互換のため4 influenceを明示拒否する。Coreや合成Bridgeの合格を、実SDK・実VRChatでの受入完了とは扱わない。
 
 複数objectのinspection一覧（activeObjectId、graphId、評価状態、output要約、diagnostics）はCore回帰とPlayer compileで確認済み。GLB取込diagnosticsは`import-diagnostics.nyaforge.json`へschema 4で保存し、再Open後のinspectionと取込後statusへ復元する経路もCoreで確認済み。GUIの詳細report表示はPlayer自動検証まで実装済みで、材質・animation・未知拡張の完全保持は残件。
 
 Windows Playerの再ビルドとAuthoring suiteもPASS（`Logs/build-player-20260913-032941-070.log`, `Builds/ImportDiagnosticsV2/NyaForge.exe`, `Artifacts/Authoring-20260913-032959-ca8fa373b3ef4e56b32c0f6660fe4dcf/report.json`）。
 GUI詳細reportの検証もPASS（`Logs/build-player-20260913-033512-860.log`, `Builds/ImportDiagnosticsUiV2/NyaForge.exe`, `Artifacts/Authoring-20260913-033534-e6ed3ced2eb04b8896208cde5f0f05ab/report.json`）。
+基本PBR材質ルーティング後の再検証もPASS（Core **442 passed / 0 failed**、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-85bc5a3302b94ac8960ee30a095b48da`、`Logs/build-player-20260913-035134-502.log`、`Builds/ImportedMaterialV2/NyaForge.exe`、`Artifacts/Authoring-20260913-035152-40bbaef3c91a4adfbe22ca513f00e432/report.json`）。

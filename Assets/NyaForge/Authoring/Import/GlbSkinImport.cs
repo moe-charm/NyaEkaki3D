@@ -23,11 +23,12 @@ namespace NyaForge.Authoring.Import
         public IReadOnlyDictionary<int, Vec3> SourceNodeOrigins { get; }
         public IReadOnlyList<string> Warnings { get; }
         public IReadOnlyList<GlbImportDiagnostic> Diagnostics { get; }
+        public IReadOnlyList<GlbMaterialSource> Materials { get; }
         public ImportedSourceHierarchy Hierarchy { get; }
         /// <summary>World affine of the selected skinned node instance, when an instance was selected.</summary>
         public SourceAffine InstanceWorldTransform { get; }
 
-        internal ImportedSkinnedMeshSource(string sourceHash, int meshIndex, int skinIndex, MeshData mesh, MorphSet morphs, SkeletonDefinition skeleton, SkinBinding binding, IEnumerable<string> warnings, IDictionary<int, string> nodeToBone, IDictionary<int, Vec3> nodeOrigins, ImportedSourceHierarchy hierarchy, SourceAffine instanceWorldTransform = null, IEnumerable<GlbImportDiagnostic> diagnostics = null)
+        internal ImportedSkinnedMeshSource(string sourceHash, int meshIndex, int skinIndex, MeshData mesh, MorphSet morphs, SkeletonDefinition skeleton, SkinBinding binding, IEnumerable<string> warnings, IDictionary<int, string> nodeToBone, IDictionary<int, Vec3> nodeOrigins, ImportedSourceHierarchy hierarchy, SourceAffine instanceWorldTransform = null, IEnumerable<GlbImportDiagnostic> diagnostics = null, IEnumerable<GlbMaterialSource> materials = null)
         {
             Checks.HashText(sourceHash); Checks.Require(meshIndex >= 0 && skinIndex >= 0 && mesh != null && skeleton != null && binding != null, "INVALID_IMPORT", "Skinned GLB result is incomplete.");
             Checks.Require(binding.MeshTopologyHash == mesh.TopologyHash && binding.SkeletonHash == skeleton.ContentHash, "INVALID_IMPORT", "Skinned GLB identities are inconsistent.");
@@ -40,6 +41,7 @@ namespace NyaForge.Authoring.Import
             InstanceWorldTransform = instanceWorldTransform;
             Warnings = Array.AsReadOnly((warnings ?? Array.Empty<string>()).ToArray());
             Diagnostics = Array.AsReadOnly((diagnostics ?? GlbImportDiagnostics.Empty).ToArray());
+            Materials = Array.AsReadOnly((materials ?? Array.Empty<GlbMaterialSource>()).ToArray());
         }
     }
 
@@ -140,7 +142,7 @@ namespace NyaForge.Authoring.Import
             warnings.AddRange(GlbImportDiagnostics.WarningText(diagnostics));
             warnings.Add("GLB source node TRS/matrix and inverse-bind affine frames are retained in the source-skin package; the authored skeleton publishes portable head/tail data.");
             if (instanceWorldTransform != null) warnings.Add("Selected skinned node instance world transform is retained for display and standard GLB output.");
-            return new ImportedSkinnedMeshSource(document.SourceHash, meshIndex, skinIndex, baseSource.Mesh, baseSource.Morphs, jointToBone.Skeleton, binding, warnings, jointToBone.NodeToBone, jointNodes.ToDictionary(node => node, node => world[node]), hierarchy, instanceWorldTransform, diagnostics);
+            return new ImportedSkinnedMeshSource(document.SourceHash, meshIndex, skinIndex, baseSource.Mesh, baseSource.Morphs, jointToBone.Skeleton, binding, warnings, jointToBone.NodeToBone, jointNodes.ToDictionary(node => node, node => world[node]), hierarchy, instanceWorldTransform, diagnostics, baseSource.Materials);
         }
 
         sealed class SkeletonResult

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json.Linq;
+using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Rig;
 
 namespace NyaForge.Authoring.Import
@@ -20,12 +21,14 @@ namespace NyaForge.Authoring.Import
         public MorphSet Morphs { get; }
         public IReadOnlyList<string> Warnings { get; }
         public IReadOnlyList<GlbImportDiagnostic> Diagnostics { get; }
-        internal ImportedMeshSource(string sourceHash, int meshIndex, MeshData mesh, MorphSet morphs, IEnumerable<string> warnings, IEnumerable<GlbImportDiagnostic> diagnostics = null)
+        public IReadOnlyList<GlbMaterialSource> Materials { get; }
+        internal ImportedMeshSource(string sourceHash, int meshIndex, MeshData mesh, MorphSet morphs, IEnumerable<string> warnings, IEnumerable<GlbImportDiagnostic> diagnostics = null, IEnumerable<GlbMaterialSource> materials = null)
         {
             Checks.HashText(sourceHash); Checks.Require(meshIndex >= 0 && mesh != null, "INVALID_IMPORT", "Imported mesh is required.");
             SourceHash = sourceHash; MeshIndex = meshIndex; Format = "glb.v2"; Mesh = mesh; Morphs = morphs;
             Warnings = Array.AsReadOnly((warnings ?? Array.Empty<string>()).ToArray());
             Diagnostics = Array.AsReadOnly((diagnostics ?? GlbImportDiagnostics.Empty).ToArray());
+            Materials = Array.AsReadOnly((materials ?? Array.Empty<GlbMaterialSource>()).ToArray());
         }
     }
 
@@ -83,7 +86,8 @@ namespace NyaForge.Authoring.Import
             if (root["skins"] is JArray && ((JArray)root["skins"]).Count > 0)
                 Checks.Require(!MeshHasSkin(root, meshIndex), "UNSUPPORTED_FORMAT", "Selected GLB mesh has skin bindings; use the skinned importer.");
             var primitives = Array(meshToken, "primitives"); Checks.Require(primitives.Count > 0 && primitives.Count <= AuthoringLimits.MaxSubmeshes, "BUDGET_EXCEEDED", "GLB primitive count exceeds the submesh budget.");
-            var parts = primitives.Select(token => { var primitive = token as JObject; Checks.Require(primitive != null, "INVALID_IMPORT", "GLB primitive is invalid."); return ReadPrimitive(primitive, accessors, views, bin); }).ToArray();
+            int materialCount = root["materials"] is JArray materialArray ? materialArray.Count : 0;
+            var parts = primitives.Select(token => { var primitive = token as JObject; Checks.Require(primitive != null, "INVALID_IMPORT", "GLB primitive is invalid."); return ReadPrimitive(primitive, accessors, views, bin, materialCount); }).ToArray();
             bool hasNormals = AttributePresence(parts, p => p.Normals.Length > 0, "NORMAL");
             bool hasTangents = AttributePresence(parts, p => p.Tangents.Length > 0, "TANGENT");
             bool hasUv0 = AttributePresence(parts, p => p.Uv0.Length > 0, "TEXCOORD_0");
@@ -104,11 +108,12 @@ namespace NyaForge.Authoring.Import
                 mesh = transformed.Mesh; morphs = transformed.Morphs;
             }
             var diagnostics = GlbImportDiagnostics.ForMesh(root, meshToken);
-            var warnings = new List<string> { "Imported as " + parts.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " static triangle primitive(s); original glTF scene hierarchy, materials and skin bindings are not retained." };
+            var materials = GlbMaterialSourceReader.Read(root, meshToken, parts.Select(part => part.MaterialIndex).ToArray());
+            var warnings = new List<string> { "Imported as " + parts.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " static triangle primitive(s); original glTF scene hierarchy, texture/image resources and skin bindings are not retained. Basic PBR material factors are retained when a primitive material is present." };
             warnings.AddRange(GlbImportDiagnostics.WarningText(diagnostics));
             if (instanceWorld != null) warnings.Add("Selected node instance world transform was applied to mesh positions, normals, tangents and POSITION morph deltas.");
             if (unsupportedNormalMorph || unsupportedTangentMorph) warnings.Add("POSITION morph targets were retained; normal/tangent morph deltas are not imported because the base mesh lacks the matching attribute.");
-            return new ImportedMeshSource(sourceHash, meshIndex, mesh, morphs, warnings, diagnostics);
+            return new ImportedMeshSource(sourceHash, meshIndex, mesh, morphs, warnings, diagnostics, materials);
         }
 
         static bool MeshHasSkin(JObject root, int meshIndex)
@@ -126,10 +131,10 @@ namespace NyaForge.Authoring.Import
 
         sealed class PrimitiveData
         {
-            public Vec3[] Positions; public Vec3[] Normals; public Vec4[] Tangents; public Vec2[] Uv0; public int[] Indices; public Vec3[][] MorphDeltas; public Vec3[][] MorphNormalDeltas; public Vec3[][] MorphTangentDeltas;
+            public Vec3[] Positions; public Vec3[] Normals; public Vec4[] Tangents; public Vec2[] Uv0; public int[] Indices; public Vec3[][] MorphDeltas; public Vec3[][] MorphNormalDeltas; public Vec3[][] MorphTangentDeltas; public int MaterialIndex;
         }
 
-        static PrimitiveData ReadPrimitive(JObject primitive, JArray accessors, JArray views, byte[] bin)
+        static PrimitiveData ReadPrimitive(JObject primitive, JArray accessors, JArray views, byte[] bin, int materialCount)
         {
             Checks.Require(primitive != null, "INVALID_IMPORT", "GLB primitive is invalid.");
             Checks.Require(primitive["mode"] == null || Int(primitive, "mode", 4, 4) == 4, "UNSUPPORTED_FORMAT", "Only triangle primitives are supported.");
@@ -152,7 +157,8 @@ namespace NyaForge.Authoring.Import
                 if (target["NORMAL"] != null) { normalMorphs[i] = Vec3Accessor(accessors, views, bin, Int(target, "NORMAL", 0, accessors.Count - 1), "morph normal"); Checks.Require(normalMorphs[i].Length == positions.Length, "INVALID_IMPORT", "Morph NORMAL count must match the primitive base mesh."); }
                 if (target["TANGENT"] != null) { tangentMorphs[i] = Vec3Accessor(accessors, views, bin, Int(target, "TANGENT", 0, accessors.Count - 1), "morph tangent"); Checks.Require(tangentMorphs[i].Length == positions.Length, "INVALID_IMPORT", "Morph TANGENT count must match the primitive base mesh."); }
             }
-            return new PrimitiveData { Positions = positions, Normals = normals, Tangents = tangents, Uv0 = uv0, Indices = indices, MorphDeltas = morphs, MorphNormalDeltas = normalMorphs, MorphTangentDeltas = tangentMorphs };
+            int materialIndex = primitive["material"] == null ? -1 : Int(primitive, "material", 0, Math.Max(0, materialCount - 1));
+            return new PrimitiveData { Positions = positions, Normals = normals, Tangents = tangents, Uv0 = uv0, Indices = indices, MorphDeltas = morphs, MorphNormalDeltas = normalMorphs, MorphTangentDeltas = tangentMorphs, MaterialIndex = materialIndex };
         }
 
         static bool AttributePresence(PrimitiveData[] parts, Func<PrimitiveData, bool> selector, string name)
