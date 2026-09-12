@@ -5,6 +5,7 @@ using NyaForge.Authoring;
 using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Rig;
+using NyaForge.Authoring.Paint;
 using Newtonsoft.Json.Linq;
 
 internal static partial class Program
@@ -108,6 +109,22 @@ internal static partial class Program
             var imported = GlbImporter.Read(bytes);
             Equal(1, imported.Morphs.Targets[0].NormalDeltas.Count); Equal(1, imported.Morphs.Targets[0].TangentDeltas.Count);
             Near(.2f, imported.Morphs.Targets[0].NormalDeltas[0].Y); Near(.1f, imported.Morphs.Targets[0].TangentDeltas[0].Y);
+        });
+
+        Test("GLB export preserves standard PBR material and embedded base color", () =>
+        {
+            var mesh = AuthoringFixtures.Panel(1);
+            var image = new PaintImage(2, 1, new Rgba32(255, 0, 128, 255));
+            var parameters = new MaterialParameters(new Vec4(.25f, .5f, .75f, .8f), .3f, .7f, new Vec3(.1f, .2f, .3f), MaterialAlphaMode.Cutout, .4f);
+            var material = new GraphMaterialValue(parameters, new GraphImageValue(image, "", "fixture-domain"));
+            var bytes = GlbWriter.Build(new[] { new GlbExportService.MeshObject { Mesh = mesh, Material = material, Name = "pbr" } }, null, GlbExportProfile.StaticGeometry);
+            var json = JObject.Parse(ReadJsonChunk(bytes));
+            True(json["materials"] is JArray && ((JArray)json["materials"]).Count == 1);
+            True(json["images"] is JArray && ((JArray)json["images"]).Count == 1);
+            Equal("MASK", (string)json["materials"]![0]!["alphaMode"]!);
+            var imported = GlbImporter.Read(bytes);
+            Equal(1, imported.Materials.Count); Equal(.3f, imported.Materials[0].Parameters.Metallic); Equal(.7f, imported.Materials[0].Parameters.Roughness);
+            True(imported.Materials[0].HasEmbeddedBaseColorImage); True(imported.Materials[0].CopyBaseColorImageBytes().Length > 8);
         });
     }
 }

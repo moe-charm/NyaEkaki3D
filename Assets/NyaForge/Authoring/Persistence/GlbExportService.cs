@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Rig;
+using NyaForge.Authoring.Paint;
 
 namespace NyaForge.Authoring
 {
@@ -92,6 +93,9 @@ namespace NyaForge.Authoring
             public IReadOnlyDictionary<string, float> MorphWeights;
             public string Name;
             public SourceAffine Affine;
+            public GraphMaterialValue Material;
+            public GraphImageValue BaseColor;
+            public IReadOnlyDictionary<int, MaterialSlotBinding> SlotMaterials;
         }
 
         internal sealed class SkinnedObject
@@ -107,7 +111,8 @@ namespace NyaForge.Authoring
             var evaluation = item.EvaluateGraph();
             Checks.Require(evaluation.IsComplete && evaluation.Output != null && evaluation.Output.Mesh != null,
                 "GRAPH_INCOMPLETE", "Static GLB export requires a complete renderable graph.");
-            return new MeshObject { Mesh = evaluation.Output.Mesh, Transform = evaluation.Output.Transform, Name = item.ObjectId };
+            return new MeshObject { Mesh = evaluation.Output.Mesh, Transform = evaluation.Output.Transform, Name = item.ObjectId,
+                Material = evaluation.Output.Material, BaseColor = evaluation.Output.BaseColor, SlotMaterials = evaluation.Output.SlotMaterials };
         }
 
         static SkinnedObject BuildSkinnedObject(AuthoringObject item, SourceAffine instanceWorldTransform, GlbExportProfile profile)
@@ -152,7 +157,8 @@ namespace NyaForge.Authoring
             if (morphs != null) foreach (var pair in weights) Checks.Require(morphs.ById.ContainsKey(pair.Key), "GLB_MORPH_UNRESOLVED", "Morph weight references an unknown target.");
             return new SkinnedObject
             {
-                Mesh = new MeshObject { Mesh = authoredOutput, Transform = evaluation.Output.Transform, Morphs = morphs, MorphWeights = weights, Name = item.ObjectId, Affine = instanceWorldTransform },
+                Mesh = new MeshObject { Mesh = authoredOutput, Transform = evaluation.Output.Transform, Morphs = morphs, MorphWeights = weights, Name = item.ObjectId, Affine = instanceWorldTransform,
+                    Material = evaluation.Output.Material, BaseColor = evaluation.Output.BaseColor, SlotMaterials = evaluation.Output.SlotMaterials },
                 Skeleton = skeleton, Binding = binding, Pose = pose
             };
         }
@@ -198,9 +204,57 @@ namespace NyaForge.Authoring
             void Align() { while (stream.Length % 4 != 0) stream.WriteByte(0); }
         }
 
+        sealed class MaterialRegistry
+        {
+            readonly BinaryBuffer binary; readonly JArray views, materials, images, textures;
+            readonly Dictionary<string, int> materialIds = new Dictionary<string, int>(StringComparer.Ordinal);
+            readonly Dictionary<string, int> imageIds = new Dictionary<string, int>(StringComparer.Ordinal);
+            public MaterialRegistry(BinaryBuffer binary, JArray views, JArray materials, JArray images, JArray textures)
+            { this.binary = binary; this.views = views; this.materials = materials; this.images = images; this.textures = textures; }
+
+            public int Get(GraphMaterialValue material, GraphImageValue fallbackImage)
+            {
+                if (material == null && fallbackImage == null) return -1;
+                var parameters = material == null ? MaterialParameters.Default : material.Parameters;
+                var image = material?.BaseColor ?? fallbackImage;
+                string key = parameters.ContentHash + ":" + (image?.ImageHash ?? "");
+                if (materialIds.TryGetValue(key, out var existing)) return existing;
+                var json = new JObject { ["name"] = "NyaForgeMaterial-" + materials.Count.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    ["pbrMetallicRoughness"] = new JObject {
+                        ["baseColorFactor"] = new JArray(LinearToSrgb(parameters.BaseColor.X), LinearToSrgb(parameters.BaseColor.Y), LinearToSrgb(parameters.BaseColor.Z), parameters.BaseColor.W),
+                        ["metallicFactor"] = parameters.Metallic, ["roughnessFactor"] = parameters.Roughness } };
+                var pbr = (JObject)json["pbrMetallicRoughness"];
+                if (image != null)
+                {
+                    int imageIndex = AddImage(image);
+                    pbr["baseColorTexture"] = new JObject { ["index"] = imageIndex };
+                }
+                if (parameters.Emission.X != 0f || parameters.Emission.Y != 0f || parameters.Emission.Z != 0f)
+                    json["emissiveFactor"] = new JArray(parameters.Emission.X, parameters.Emission.Y, parameters.Emission.Z);
+                if (parameters.AlphaMode == MaterialAlphaMode.Cutout) { json["alphaMode"] = "MASK"; json["alphaCutoff"] = parameters.AlphaCutoff; }
+                else if (parameters.AlphaMode == MaterialAlphaMode.Blend) json["alphaMode"] = "BLEND";
+                int id = materials.Count; materials.Add(json); materialIds.Add(key, id); return id;
+            }
+
+            int AddImage(GraphImageValue image)
+            {
+                if (imageIds.TryGetValue(image.ImageHash, out var existing)) return existing;
+                byte[] png = PaintPng.Encode(image.Image);
+                int offset = binary.Write(writer => writer.Write(png));
+                int view = AddRawView(views, offset, png.Length);
+                int imageId = images.Count; images.Add(new JObject { ["bufferView"] = view, ["mimeType"] = "image/png" });
+                textures.Add(new JObject { ["source"] = imageId }); imageIds.Add(image.ImageHash, imageId); return imageId;
+            }
+        }
+
+        static float LinearToSrgb(float value)
+        { return value <= .0031308f ? value * 12.92f : 1.055f * (float)Math.Pow(value, 1f / 2.4f) - .055f; }
+
         public static byte[] Build(GlbExportService.MeshObject[] objects, GlbExportService.SkinnedObject skinned, GlbExportProfile profile)
         {
             var binary = new BinaryBuffer(); var views = new JArray(); var accessors = new JArray(); var meshes = new JArray(); var nodes = new JArray(); var skins = new JArray(); var sceneNodes = new JArray();
+            var materials = new JArray(); var images = new JArray(); var textures = new JArray();
+            var materialRegistry = new MaterialRegistry(binary, views, materials, images, textures);
             for (int i = 0; i < objects.Length; i++)
             {
                 var item = objects[i]; var meshObject = item; var mesh = item.Mesh; var primitiveTemplates = new JArray();
@@ -234,11 +288,6 @@ namespace NyaForge.Authoring
                         }
                         morphTargets.Add(targetJson);
                     }
-                // NyaForge currently has no material assignment in the standard
-                // interchange boundary, so combine submesh index streams into one
-                // primitive while retaining the shared vertex domain.
-                var allIndices = mesh.Submeshes.SelectMany(values => values).ToArray();
-                int indices = AddIndices(binary, views, accessors, allIndices);
                 var attrs = new JObject { ["POSITION"] = position };
                 if (normal >= 0) attrs["NORMAL"] = normal; if (tangent >= 0) attrs["TANGENT"] = tangent; if (uv >= 0) attrs["TEXCOORD_0"] = uv;
                 if (joints >= 0)
@@ -253,9 +302,28 @@ namespace NyaForge.Authoring
                         }
                     }
                 }
-                var primitive = new JObject { ["attributes"] = attrs, ["indices"] = indices, ["mode"] = 4 };
-                if (morphTargets.Count > 0) primitive["targets"] = morphTargets.DeepClone();
-                primitiveTemplates.Add(primitive);
+                // Preserve material slots when the graph assigned them. Geometry
+                // without appearance data keeps the historical single primitive.
+                if (meshObject.SlotMaterials != null)
+                {
+                    for (int slot = 0; slot < mesh.Submeshes.Count; slot++)
+                    {
+                        var primitive = new JObject { ["attributes"] = attrs.DeepClone(), ["indices"] = AddIndices(binary, views, accessors, mesh.Submeshes[slot]), ["mode"] = 4 };
+                        if (meshObject.SlotMaterials.TryGetValue(slot, out var binding)) primitive["material"] = materialRegistry.Get(binding.Material, null);
+                        if (morphTargets.Count > 0) primitive["targets"] = morphTargets.DeepClone();
+                        primitiveTemplates.Add(primitive);
+                    }
+                }
+                else
+                {
+                    var allIndices = mesh.Submeshes.SelectMany(values => values).ToArray();
+                    int indices = AddIndices(binary, views, accessors, allIndices);
+                    var primitive = new JObject { ["attributes"] = attrs, ["indices"] = indices, ["mode"] = 4 };
+                    var materialIndex = materialRegistry.Get(meshObject.Material, meshObject.BaseColor);
+                    if (materialIndex >= 0) primitive["material"] = materialIndex;
+                    if (morphTargets.Count > 0) primitive["targets"] = morphTargets.DeepClone();
+                    primitiveTemplates.Add(primitive);
+                }
                 var meshJson = new JObject { ["primitives"] = primitiveTemplates };
                 if (meshObject.Morphs != null)
                 {
@@ -275,6 +343,8 @@ namespace NyaForge.Authoring
             }
             var root = new JObject { ["asset"] = new JObject { ["version"] = "2.0", ["generator"] = "NyaForge" }, ["scene"] = 0, ["scenes"] = new JArray(new JObject { ["nodes"] = sceneNodes }), ["nodes"] = nodes, ["meshes"] = meshes, ["buffers"] = new JArray(new JObject { ["byteLength"] = binary.ToArray().Length }), ["bufferViews"] = views, ["accessors"] = accessors };
             if (skins.Count > 0) root["skins"] = skins;
+            if (materials.Count > 0) root["materials"] = materials;
+            if (images.Count > 0) { root["images"] = images; root["textures"] = textures; }
             byte[] json = PadJson(System.Text.Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), 0x20); byte[] bin = binary.ToArray();
             using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream))
             {
@@ -349,6 +419,7 @@ namespace NyaForge.Authoring
         static int AddVec4(BinaryBuffer binary, JArray views, JArray accessors, IReadOnlyList<Vec4> values, int target)
         { int offset = binary.Write(writer => { foreach (var value in values) { writer.Write(value.X); writer.Write(value.Y); writer.Write(value.Z); writer.Write(value.W); } }); return AddAccessor(accessors, AddView(views, offset, checked(values.Count * 16), target), 5126, values.Count, "VEC4", false, null, null); }
         static int AddView(JArray views, int offset, int length, int target) { int id = views.Count; views.Add(new JObject { ["buffer"] = 0, ["byteOffset"] = offset, ["byteLength"] = length, ["target"] = target }); return id; }
+        static int AddRawView(JArray views, int offset, int length) { int id = views.Count; views.Add(new JObject { ["buffer"] = 0, ["byteOffset"] = offset, ["byteLength"] = length }); return id; }
         static int AddAccessor(JArray accessors, int view, int component, int count, string type, bool normalized, JArray min, JArray max)
         { int id = accessors.Count; var value = new JObject { ["bufferView"] = view, ["componentType"] = component, ["count"] = count, ["type"] = type }; if (normalized) value["normalized"] = true; if (min != null) value["min"] = min; if (max != null) value["max"] = max; accessors.Add(value); return id; }
         static byte[] PadJson(byte[] bytes, byte pad) { int length = (bytes.Length + 3) / 4 * 4; var result = new byte[length]; Buffer.BlockCopy(bytes, 0, result, 0, bytes.Length); for (int i = bytes.Length; i < result.Length; i++) result[i] = pad; return result; }
