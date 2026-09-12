@@ -53,6 +53,16 @@ internal static partial class Program
             Near(0f, selected.Morphs.Targets[0].Deltas.Single().Value.X); Near(.2f, selected.Morphs.Targets[0].Deltas.Single().Value.Y);
             True(selected.Warnings.Any(w => w.Contains("world transform", StringComparison.Ordinal)));
         });
+        Test("GLB importer reports normal and tangent morph loss explicitly", () =>
+        {
+            var root = JObject.Parse(ReadJsonChunk(BuildGlb()));
+            var primitive = (JObject)((JArray)root["meshes"]![0]!["primitives"]!)[0]!;
+            var target = (JObject)((JArray)primitive["targets"]!)[0]!;
+            target["NORMAL"] = 2; target["TANGENT"] = 2;
+            var bytes = ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None));
+            var imported = GlbImporter.Read(bytes);
+            True(imported.Morphs != null && imported.Warnings.Any(w => w.Contains("normal/tangent morph", StringComparison.Ordinal)));
+        });
         Test("GLB importer allows an unskinned accessory beside a skinned mesh", () =>
         {
             var root = JObject.Parse(ReadJsonChunk(BuildGlb()));
