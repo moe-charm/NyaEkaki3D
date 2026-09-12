@@ -191,7 +191,9 @@ namespace NyaForge.Authoring.Import
         {
             var accessor = Accessor(accessors, id, "VEC4", new[] { 5121, 5123, 5126 });
             int type = IntProperty(accessor, "componentType", 0, int.MaxValue, "componentType");
-            bool normalized = accessor["normalized"] != null && (bool)accessor["normalized"];
+            var normalizedToken = accessor["normalized"];
+            Checks.Require(normalizedToken == null || normalizedToken.Type == Newtonsoft.Json.Linq.JTokenType.Boolean, "INVALID_IMPORT", label + " normalized must be a boolean.");
+            bool normalized = normalizedToken != null && (bool)normalizedToken;
             Checks.Require(type == 5126 ? !normalized : normalized, "UNSUPPORTED_FORMAT", label + " integer weights must be normalized (float weights must not be normalized).");
             int width = type == 5121 ? 1 : type == 5123 ? 2 : 4;
             int count = Count(accessor, AuthoringLimits.MaxVertices), viewId = IntProperty(accessor, "bufferView", 0, views.Count - 1, "bufferView");
