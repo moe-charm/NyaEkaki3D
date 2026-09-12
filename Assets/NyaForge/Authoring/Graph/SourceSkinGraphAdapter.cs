@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NyaForge.Authoring.Import;
+using NyaForge.Authoring.Rig;
 
 namespace NyaForge.Authoring.Graph
 {
@@ -18,6 +19,15 @@ namespace NyaForge.Authoring.Graph
             Checks.Require(input.Polygon == null, "EDIT_MODE_UNSUPPORTED", "Source skin cannot deform a polygon editing value.");
             var mesh = SourceSkinDeformer.Apply(input.Mesh, skin, binding, posedJointWorld);
             return input.WithMesh(mesh);
+        }
+
+        public static GraphMeshValue Apply(GraphMeshValue input, ImportedRigSession session,
+            AuthoringGraph graph, PoseSet authoredPose)
+        {
+            Checks.Require(session != null && session.SourceSkin != null && session.SourceSkinBinding != null,
+                "IMPORT_SOURCE_SKIN_MISSING", "A complete source skin session is required.");
+            return Apply(input, session.SourceSkin, session.SourceSkinBinding,
+                SourceSkinPosePalette.Build(session, graph, authoredPose));
         }
     }
 }
