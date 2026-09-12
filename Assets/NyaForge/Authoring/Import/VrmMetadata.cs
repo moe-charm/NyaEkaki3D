@@ -6,22 +6,41 @@ using Newtonsoft.Json.Linq;
 
 namespace NyaForge.Authoring.Import
 {
+    /// <summary>Bounded VRM expression inventory. Binding payloads stay in the source adapter until a morph/material adapter exists.</summary>
+    public sealed class VrmExpression
+    {
+        public string Name { get; }
+        public string Preset { get; }
+        public bool IsCustom { get; }
+        public int MorphTargetBindCount { get; }
+        public int MaterialBindCount { get; }
+
+        internal VrmExpression(string name, string preset, bool isCustom, int morphTargetBindCount, int materialBindCount)
+        {
+            Checks.Name(name); Checks.Require(morphTargetBindCount >= 0 && materialBindCount >= 0, "INVALID_VRM", "VRM expression bind count is invalid.");
+            Name = name; Preset = preset ?? ""; IsCustom = isCustom; MorphTargetBindCount = morphTargetBindCount; MaterialBindCount = materialBindCount;
+        }
+    }
+
     /// <summary>Small, source-pinned VRM identity and humanoid mapping independent of UniVRM.</summary>
     public sealed class VrmMetadata
     {
+        public const int MaxExpressions = 256;
         public string SourceHash { get; }
         public string Format { get; }
         public string SpecVersion { get; }
         public string Title { get; }
         public string Author { get; }
         public IReadOnlyDictionary<string, int> HumanoidNodes { get; }
+        public IReadOnlyList<VrmExpression> Expressions { get; }
         public IReadOnlyList<string> Warnings { get; }
 
-        internal VrmMetadata(string sourceHash, string format, string specVersion, string title, string author, IDictionary<string, int> humanoidNodes, IEnumerable<string> warnings)
+        internal VrmMetadata(string sourceHash, string format, string specVersion, string title, string author, IDictionary<string, int> humanoidNodes, IEnumerable<VrmExpression> expressions, IEnumerable<string> warnings)
         {
             Checks.HashText(sourceHash); Checks.Name(format); Checks.Name(specVersion); Checks.Require(humanoidNodes != null, "INVALID_VRM", "Humanoid mapping is required.");
             SourceHash = sourceHash; Format = format; SpecVersion = specVersion; Title = title ?? ""; Author = author ?? "";
-            HumanoidNodes = new ReadOnlyDictionary<string, int>(new Dictionary<string, int>(humanoidNodes, StringComparer.Ordinal)); Warnings = Array.AsReadOnly((warnings ?? Array.Empty<string>()).ToArray());
+            var expressionValues = (expressions ?? Array.Empty<VrmExpression>()).ToArray(); Checks.Require(expressionValues.Length <= MaxExpressions, "BUDGET_EXCEEDED", "VRM expression count exceeds capacity.");
+            Expressions = Array.AsReadOnly(expressionValues); HumanoidNodes = new ReadOnlyDictionary<string, int>(new Dictionary<string, int>(humanoidNodes, StringComparer.Ordinal)); Warnings = Array.AsReadOnly((warnings ?? Array.Empty<string>()).ToArray());
         }
     }
 
@@ -49,8 +68,9 @@ namespace NyaForge.Authoring.Import
             string spec = StringProperty(extension, "specVersion", 64, "specVersion"); Checks.Require(spec == "1.0", "UNSUPPORTED_FORMAT", "Only VRM 1.0 metadata is supported.");
             var meta = extension["meta"] as JObject; Checks.Require(meta != null, "INVALID_VRM", "VRMC_vrm meta is required.");
             var map = ParseModernHumanoid(document.Root, extension["humanoid"] as JObject);
-            var warnings = new List<string> { "VRM 1.0 metadata was read; expressions, look-at, spring bones and material conversion remain separate adapters." };
-            return new VrmMetadata(document.SourceHash, "vrm1", spec, OptionalString(meta, "name", 256), OptionalString(meta, "authors", 256), map, warnings);
+            var expressions = ParseModernExpressions(extension);
+            var warnings = new List<string> { "VRM 1.0 identity, humanoid and expression inventory were read; expression application, look-at, spring bones and material conversion remain separate adapters." };
+            return new VrmMetadata(document.SourceHash, "vrm1", spec, OptionalString(meta, "name", 256), OptionalString(meta, "authors", 256), map, expressions, warnings);
         }
 
         static VrmMetadata ParseLegacy(GlbDocument document, JObject extension)
@@ -58,8 +78,51 @@ namespace NyaForge.Authoring.Import
             string spec = OptionalString(extension, "specVersion", 64); Checks.Require(spec == "0.0" || spec == "0.0.0" || spec == "", "UNSUPPORTED_FORMAT", "Only VRM 0.x metadata is supported.");
             var meta = extension["meta"] as JObject; Checks.Require(meta != null, "INVALID_VRM", "VRM meta is required.");
             var map = ParseLegacyHumanoid(document.Root, extension["humanoid"] as JObject);
-            var warnings = new List<string> { "VRM 0.x metadata was read; VRM 1.0 conversion and expressions/spring bones remain separate adapters." };
-            return new VrmMetadata(document.SourceHash, "vrm0", spec == "" ? "0.0" : spec, OptionalString(meta, "title", 256), OptionalString(meta, "author", 256), map, warnings);
+            var expressions = ParseLegacyExpressions(extension);
+            var warnings = new List<string> { "VRM 0.x identity, humanoid and expression inventory were read; VRM 1.0 conversion, expression application and spring bones remain separate adapters." };
+            return new VrmMetadata(document.SourceHash, "vrm0", spec == "" ? "0.0" : spec, OptionalString(meta, "title", 256), OptionalString(meta, "author", 256), map, expressions, warnings);
+        }
+
+        static IReadOnlyList<VrmExpression> ParseModernExpressions(JObject extension)
+        {
+            var owner = extension["expressions"] as JObject; if (owner == null) return System.Array.Empty<VrmExpression>();
+            var result = new List<VrmExpression>(); var names = new HashSet<string>(StringComparer.Ordinal);
+            ParseModernExpressionGroup(owner["preset"] as JObject, false, result, names);
+            ParseModernExpressionGroup(owner["custom"] as JObject, true, result, names);
+            Checks.Require(result.Count <= VrmMetadata.MaxExpressions, "BUDGET_EXCEEDED", "VRM expression count exceeds capacity."); return result.AsReadOnly();
+        }
+
+        static void ParseModernExpressionGroup(JObject group, bool custom, IList<VrmExpression> result, ISet<string> names)
+        {
+            if (group == null) return;
+            foreach (var property in group.Properties())
+            {
+                var value = property.Value as JObject; Checks.Require(value != null, "INVALID_VRM", "VRM expression entry is invalid.");
+                string name = StringPropertyName(property.Name, "expression name"); Checks.Require(names.Add(name), "INVALID_VRM", "VRM expression name repeats.");
+                result.Add(new VrmExpression(name, custom ? "" : name, custom, BindCount(value, "morphTargetBinds"), BindCount(value, "materialColorBinds")));
+            }
+        }
+
+        static IReadOnlyList<VrmExpression> ParseLegacyExpressions(JObject extension)
+        {
+            var master = extension["blendShapeMaster"] as JObject; if (master == null) return System.Array.Empty<VrmExpression>();
+            var groups = master["blendShapeGroups"] as JArray; Checks.Require(groups != null, "INVALID_VRM", "VRM blendShapeGroups is invalid.");
+            Checks.Require(groups.Count <= VrmMetadata.MaxExpressions, "BUDGET_EXCEEDED", "VRM expression count exceeds capacity.");
+            var result = new List<VrmExpression>(); var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var token in groups)
+            {
+                var value = token as JObject; Checks.Require(value != null, "INVALID_VRM", "VRM blendShapeGroup is invalid.");
+                string preset = OptionalString(value, "presetName", 128); string name = OptionalString(value, "name", 128); if (name.Length == 0) name = preset;
+                Checks.Require(name.Length > 0, "INVALID_VRM", "VRM blendShapeGroup needs a name or presetName."); Checks.Require(names.Add(name), "INVALID_VRM", "VRM expression name repeats.");
+                result.Add(new VrmExpression(name, preset, preset.Length == 0, BindCount(value, "binds"), BindCount(value, "materialValues")));
+            }
+            return result.AsReadOnly();
+        }
+
+        static int BindCount(JObject owner, string property)
+        {
+            var value = owner[property]; if (value == null || value.Type == JTokenType.Null) return 0;
+            var array = value as JArray; Checks.Require(array != null && array.Count <= VrmMetadata.MaxExpressions, "INVALID_VRM", "VRM expression bind list is invalid: " + property); return array.Count;
         }
 
         static IDictionary<string, int> ParseModernHumanoid(JObject root, JObject humanoid)
@@ -83,5 +146,6 @@ namespace NyaForge.Authoring.Import
         static int IntProperty(JObject owner, string property, int minimum, int maximum, string label) { var token = owner[property]; Checks.Require(token != null && token.Type == JTokenType.Integer, "INVALID_VRM", label + " is invalid."); int value = (int)token; Checks.Require(value >= minimum && value <= maximum, "INVALID_VRM", label + " is out of range."); return value; }
         static string StringProperty(JObject owner, string property, int maximum, string label) { var token = owner[property]; Checks.Require(token != null && token.Type == JTokenType.String && !string.IsNullOrWhiteSpace((string)token) && ((string)token).Length <= maximum, "INVALID_VRM", label + " is invalid."); return (string)token; }
         static string OptionalString(JObject owner, string property, int maximum) { var token = owner[property]; if (token == null || token.Type == JTokenType.Null) return ""; Checks.Require(token.Type == JTokenType.String && ((string)token).Length <= maximum, "INVALID_VRM", "VRM text property is invalid: " + property); return (string)token; }
+        static string StringPropertyName(string name, string label) { Checks.Require(!string.IsNullOrWhiteSpace(name) && name.Length <= 128 && name.IndexOf('\0') < 0, "INVALID_VRM", label + " is invalid."); return name; }
     }
 }

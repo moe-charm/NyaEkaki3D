@@ -22,7 +22,7 @@ namespace NyaForge.UnityRuntime
         {
             modelImportPanel = new Foldout { text = "GLBモデルを取り込む", value = false, name = "model-import" };
             modelImportStatus = new Label { name = "model-import-status" }; modelImportStatus.style.whiteSpace = WhiteSpace.Normal; modelImportPanel.Add(modelImportStatus);
-            modelImportPanel.Add(new Label("Windows先行。GLB v2のbounded triangle mesh、POSITION morph、translation-only skinを取り込みます。FBX/VRM metadataや回転つきskinは対応範囲外です。"));
+            modelImportPanel.Add(new Label("Windows先行。GLB v2のbounded triangle mesh、POSITION morph、translation-only skinを取り込みます。VRMはidentity・humanoid・expression inventoryを読みます。FBX、VRM表情の適用、回転つきskinは対応範囲外です。"));
             modelImportPanel.Add(Button("GLBを選ぶ", () => { if (!modelPickerOpen) StartCoroutine(PickModel()); }, "model-import-browse"));
             modelImportPath = new TextField("ファイルパス") { name = "model-import-path" }; modelImportPath.style.flexDirection = FlexDirection.Column; modelImportPanel.Add(modelImportPath);
             modelImportPanel.Add(Button("このGLBを新規graphへ取り込む", () => Try(() => ImportModel(modelImportPath.value)), "model-import-apply"));
@@ -59,7 +59,7 @@ namespace NyaForge.UnityRuntime
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
             var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph)));
             if (!result.Success) throw new InvalidOperationException(result.Code + ": " + result.Message);
-            Refresh(); SetStatus("GLBを取り込みました。" + (imported.Morphs == null ? " morphなし" : " morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title) + " · source " + imported.SourceHash.Substring(0, 12));
+            Refresh(); SetStatus("GLBを取り込みました。" + (imported.Morphs == null ? " morphなし" : " morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count) + " · source " + imported.SourceHash.Substring(0, 12));
         }
 
         void ImportSkinnedModel(byte[] bytes, VrmMetadata vrm)
@@ -74,7 +74,7 @@ namespace NyaForge.UnityRuntime
             }
             edges.Add(new GraphEdge(finalNode, "mesh", bindId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", bindId, "skeleton")); edges.Add(new GraphEdge(skeletonId, "skeleton", poseId, "skeleton")); edges.Add(new GraphEdge(finalNode, "mesh", deformId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", deformId, "skeleton")); edges.Add(new GraphEdge(bindId, "binding", deformId, "binding")); edges.Add(new GraphEdge(poseId, "pose", deformId, "pose")); edges.Add(new GraphEdge(deformId, "mesh", outputId, "mesh"));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId); var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph))); if (!result.Success) throw new InvalidOperationException(result.Code + ": " + result.Message);
-            Refresh(); SetStatus("GLB skinを取り込みました。bone " + imported.Skeleton.Bones.Count + " · weight " + imported.Binding.Weights.Count + (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count) + " · source " + imported.SourceHash.Substring(0, 12));
+            Refresh(); SetStatus("GLB skinを取り込みました。bone " + imported.Skeleton.Bones.Count + " · weight " + imported.Binding.Weights.Count + (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count) + " · source " + imported.SourceHash.Substring(0, 12));
         }
 
         IEnumerator PickModel()

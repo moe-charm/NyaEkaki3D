@@ -69,6 +69,13 @@
 - Core **291 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-eb7fc75824464221943c9207fe446012`。VRM 1.0／0.x mapping、source identity、未対応versionと欠落extension拒否を確認。
 - Windows-VrmMetadata Player build / Authoring suite **PASS**: `Logs/build-player-20260912-115103-670.log`、`Artifacts/Authoring-20260912-115128-ad0dc9697de74b4798fb64c9633adfe4/report.json`。標準fixtureの起動・描画・GUI回帰を目視した。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-115200-239-6157d093ce40429f85b7a9745da4db30/bridge-report.json`。実VRMファイル、humanoid姿勢、expression/springの受け取り先は未確認。
 
+### VRM expression inventory境界（2026-09-12）
+
+- `VrmExpression` と `VrmMetadata.Expressions` を追加。VRM 1.0 `expressions.preset/custom` と VRM 0.x `blendShapeMaster.blendShapeGroups` から、名前、preset/custom区分、morph/material bind件数だけを最大256件まで読む。source内のbindをNyaForgeのmorph/materialへ自動適用する処理はまだ持たない。
+- GUIのモデル取り込みstatusにVRM expression件数を表示し、対応範囲ラベルをidentity・humanoid・expression inventoryまで更新した。
+- Core **291 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-26953d296bb74bd1a44480faeaa939b3`。VRM 1.0／0.xテストでexpression名称、preset/custom区分、morph/material bind件数を確認した。
+- Windows-VrmExpressions Player build / Authoring suite **PASS**: `Logs/build-player-20260912-115915-345.log`、`Artifacts/Authoring-20260912-115941-fe34fb0e48c749fe9b2d7d2701d315d8/report.json`。標準fixtureの起動・描画・既存GUI回帰を目視した。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-120017-323-9b0849f34ded4f3db2c762fe93bcd6da/bridge-report.json`。実VRMファイルの表情適用、MToon、spring、look-at、一般transformは未確認・未対応のまま。
+
 - `Authoring.Rig` を独立モジュールとして追加。`SkeletonDefinition` はcanonical UUIDのbone、親子階層、head/tailのrest座標を不変データとして保持し、循環・欠落親・重複IDを公開前に拒否する。
 - `SkinBinding` はmeshのtopology hashとskeleton hashを固定し、全頂点に1〜4本の明示boneを要求して、重みを降順・決定的順序で正規化する。同一boneの重複、未知bone、未weight、上限超過を拒否する。
 - `PoseTransform` と `SkinDeformer` を追加。bone headを基準にしたrest-relative affine poseを適用し、最大4 influenceの位置を線形ブレンドする。mesh topology hash / skeleton hash / 全bone poseを毎回照合し、normal・tangent・UVは元mesh所有のまま保持する。
