@@ -8,7 +8,7 @@
 
 version 1で導入した`ImportedRigSessionCodec`の基本JSONは上記identityと対応列を持つ。node列はnode番号、humanoid列はordinal name順で決定的に書く。最大256骨・256semantic、UUID/hash形式、重複node/boneId/semantic、未知field、UTF-8、JSON深さ・末尾データを検査する。
 
-`ProjectAttachments.Rig`（`imported-rig-session.nyaforge.json`）を3つ目の許可されたattachmentとして追加する。schema 4 envelopeは維持し、expression/Spring/rigの最大3件を同じmanifestで一括公開する。writer lock、保存version、失敗時の旧snapshot保持を共用する。旧schemaの外部sidecar探索対象は従来のexpression/Springだけで、rig名の任意ファイルは取り込まない。
+`ProjectAttachments.Rig`（`imported-rig-session.nyaforge.json`）を許可されたattachmentとして追加した。schema 4 envelopeは維持し、expression/Spring/rig/PhysBones targetの最大4件を同じmanifestで一括公開する。writer lock、保存version、失敗時の旧snapshot保持を共用する。旧schemaの外部sidecar探索対象は従来のexpression/Springに加えて型付きのPhysBones targetだけで、rig名の任意ファイルは取り込まない。
 
 このattachmentを持つ作品は、rig名を知らない旧NyaForgeでは開けない。既存作品に対応表がなければ、勝手に骨名から復元しない。必要なら元ファイルから再取込する。
 
@@ -16,7 +16,7 @@ version 1で導入した`ImportedRigSessionCodec`の基本JSONは上記identity�
 
 GLB skin取込は、実際に作ったgraph/skeleton nodeのIDでsessionを構築し、command成功後に所有するmetadataへ追加する。VRMがないGLBでもnode対応を保存する。静的mesh取込では古いrig sessionを継承しない。
 
-Openは3種類のpayloadをdecodeし、rigとexpression/Springが同じsource hashを指すか確認してからworkspaceを切り替える。壊れたpayloadやsource不一致では現在の作品を置き換えない。
+Openは最大4種類のpayloadをdecodeし、rigとexpression/Springが同じsource hashを指すか確認してからworkspaceを切り替える。PhysBones targetはskeleton hashと共通asset hashを別途検査する。壊れたpayloadやsource不一致では現在の作品を置き換えない。
 
 骨格編集は許可する。`Resolve`は対象graph/node、skeleton hash、全boneIdの対応を検査する。変わった骨格や削除済みnodeへ古いmapを適用しない。取込パネルに更新が必要と表示し、Undoで元の骨格へ戻れば同じmapが再び有効となる。stale状態を保存しても作品自体は開け、map利用時の検査と表示を維持する。
 

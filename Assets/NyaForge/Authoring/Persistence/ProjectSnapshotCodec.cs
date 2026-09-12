@@ -53,7 +53,7 @@ namespace NyaForge.Authoring
             {
                 // Import old sidecars once. Schema 4 never consults these mutable
                 // files, including after an attachment has been removed.
-                foreach (string name in new[] { ProjectAttachments.Expressions, ProjectAttachments.Springs })
+                foreach (string name in new[] { ProjectAttachments.Expressions, ProjectAttachments.Springs, ProjectAttachments.PhysBones })
                 {
                     string path = Path.Combine(directory, name);
                     if (File.Exists(path)) values.Add(name, Storage.ReadBounded(path, AuthoringLimits.MaxBlobBytes));

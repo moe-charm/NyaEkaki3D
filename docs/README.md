@@ -15,7 +15,7 @@
 | [一時source骨格](Imported-Preview-Rig.md) | 通常nodeの実行骨格化、skin姿勢との往復、必要祖先と予算 |
 | [VRM0 subtree展開](VRM0-Spring-Expansion.md) | source順の全子孫・仮想末端と実行接続の境界 |
 | [全source階層](Imported-Source-Hierarchy.md) | rig session v3、非joint node・children順の保持、旧版移行 |
-| [取込骨対応の保存](Imported-Rig-Sessions.md) | rig sessionと3件の一括保存、骨格編集時のstale検出とUndo復帰 |
+| [取込骨対応の保存](Imported-Rig-Sessions.md) | rig session・PhysBones targetを含む4件の一括保存、骨格編集時のstale検出とUndo復帰 |
 | [取込骨対応](Imported-Bone-Mapping.md) | source nodeとstable BoneId、VRM humanoid対応、永続化の残件 |
 | [2026-09-12 Rig / VRMレビュー](reviews/2026-09-12-Rig-Vrm-Review.md) | bb1d89cの再現不具合、修正タスクR01〜R10の完了条件と検証の限界 |
 | [VRM Spring詳細](VRM-Spring-Details.md) | 重力方向と形状、Spring session v3、旧設定の不明値移行 |

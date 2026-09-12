@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
+using NyaForge.Authoring.Simulation;
 using Newtonsoft.Json.Linq;
 
 internal static partial class Program
@@ -31,6 +32,15 @@ internal static partial class Program
             ProjectSaveService.Save(loaded, new ProjectSaveRequest(loaded.InstanceId, loaded.Document.DocumentId, loaded.Document.DocumentRevision, directory, 1));
             Expect("SAVE_CONFLICT", () => ProjectStore.Save(directory, stale, 1));
             Equal(w.Attachments.ContentHash, ProjectStore.Open(directory).Attachments.ContentHash);
+        });
+
+        Test("PhysBones target attachment survives schema 4 snapshot Open", () =>
+        {
+            var skeleton = BuildPhysBonesSkeleton(out var rootId, out _, out _);
+            var chain = new PhysBonesChain("tail", rootId, new[] { rootId }, PhysBonesEndpointMode.Auto, "", null, PhysBonesMultiChildType.Ignore, null, null, null, PhysBonesParameters.Default, PhysBonesInteraction.Default, null);
+            var profile = new PhysBonesTargetProfile("vrchat.physbones", "sdk", "package", skeleton.ContentHash, "", new[] { chain });
+            var bytes = PhysBonesTargetCodec.Write(profile); var w = Fresh(); w.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]> { [ProjectAttachments.PhysBones] = bytes })); string directory = Dir("snapshot-physbones"); ProjectStore.Save(directory, w, 0);
+            var opened = ProjectStore.Open(directory); var restored = opened.Attachments.Read(ProjectAttachments.PhysBones); True(bytes.SequenceEqual(restored)); Equal(profile.ContentHash, PhysBonesTargetCodec.Read(restored).ContentHash); False(opened.IsDirty); Equal(4, ProjectAttachments.MaxCount);
         });
 
         foreach (string failedName in new[] { ProjectAttachments.Expressions, ProjectAttachments.Springs, ProjectAttachments.Rig })

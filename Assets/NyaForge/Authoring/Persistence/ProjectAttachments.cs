@@ -10,7 +10,8 @@ namespace NyaForge.Authoring
     public sealed class ProjectAttachments
     {
         public const string Expressions = "vrm-expression-session.nyaforge.json";
-        public const int MaxCount = 3;
+        public const int MaxCount = 4;
+        public const string PhysBones = "physbones-target.nyaforge.bin";
         public const string Rig = "imported-rig-session.nyaforge.json";
         public const string Springs = "vrm-spring-session.nyaforge.json";
         public static readonly ProjectAttachments Empty = new ProjectAttachments(new Dictionary<string, byte[]>());
@@ -20,7 +21,7 @@ namespace NyaForge.Authoring
 
         public ProjectAttachments(IDictionary<string, byte[]> source)
         {
-            Checks.Require(source != null && source.Count <= MaxCount, "INVALID_ATTACHMENT", "Expected at most three owned import metadata attachments.");
+            Checks.Require(source != null && source.Count <= MaxCount, "INVALID_ATTACHMENT", "Expected at most four owned project attachments.");
             values = new Dictionary<string, byte[]>(StringComparer.Ordinal);
             var hashes = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var item in source.OrderBy(p => p.Key, StringComparer.Ordinal))
@@ -47,7 +48,7 @@ namespace NyaForge.Authoring
 
         internal static void ValidateName(string name)
         {
-            Checks.Require(name == Expressions || name == Springs || name == Rig, "INVALID_ATTACHMENT", "Unknown project attachment name.");
+            Checks.Require(name == Expressions || name == Springs || name == Rig || name == PhysBones, "INVALID_ATTACHMENT", "Unknown project attachment name.");
         }
     }
 }
