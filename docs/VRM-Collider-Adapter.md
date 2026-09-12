@@ -4,7 +4,7 @@
 
 ## 座標契約
 
-現在のGLB importerは元のglTF座標を保持し、source nodeはtranslation-only。VRM1のoffset/tailはそのnode-local座標として使う。VRM0の拡張offsetは `(x,y,-z)` に変換してから使う。
+現在のGLB importerは元のglTF座標を保持し、source nodeは一般affine（TRS/matrix）を保持する。VRM1のoffset/tailはそのnode-local座標として使う。VRM0の拡張offsetは `(x,y,-z)` に変換してから使う。
 
 根拠: UniVRMの [VRMExporter](https://github.com/vrm-c/UniVRM/blob/master/Packages/VRM/Runtime/IO/VRMExporter.cs) は標準VRM0出力の反転軸をZと定義し、[VRMSpringUtility](https://github.com/vrm-c/UniVRM/blob/master/Packages/VRM/Runtime/SpringBone/VRMSpringUtility.cs) は拡張offsetを変換せず保存する。2026-09-12確認。この2点から、元glTF座標を保持する本importerではoffsetのZ反転が必要と判断した。移行用の非標準ReverseX出力を自動判別する仕組みはない。
 

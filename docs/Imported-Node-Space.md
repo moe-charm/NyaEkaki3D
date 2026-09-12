@@ -1,6 +1,6 @@
 # 元node座標と骨格座標の変換
 
-更新: 2026-09-12。I03の座標変換基盤。対象は現行GLB skin importerのtranslation-only profileである。
+更新: 2026-09-13。I03の座標変換基盤。対象は現行GLB skin importerのsource affine profileである。
 
 ## 保存する原点
 

@@ -22,7 +22,7 @@ namespace NyaForge.UnityRuntime
         {
             modelImportPanel = new Foldout { text = "GLBモデルを取り込む", value = false, name = "model-import" };
             modelImportStatus = new Label { name = "model-import-status" }; modelImportStatus.style.whiteSpace = WhiteSpace.Normal; modelImportPanel.Add(modelImportStatus);
-            var importHelp = new Label("GLB / VRMを取り込みます。候補を確認してnode instance（-1ならmesh / skin resource）を選べます。nodeを選ぶと、そのmeshとskinの対応を使います。対応するVRM0・VRM1では揺れをプレビューできます。現在は選択した1メッシュ・平行移動だけの骨格に対応し、FBXの直接読込や回転・拡縮を含む骨格は未対応です。");
+            var importHelp = new Label("GLB / VRMを取り込みます。候補を確認してnode instance（-1ならmesh / skin resource）を選べます。nodeを選ぶと、そのmeshとskinの対応を使います。対応するVRM0・VRM1では揺れをプレビューできます。選択した1メッシュを取り込み、骨のTRS・行列とinverse-bindはsource原本へ保持します。FBXの直接読込は未対応です。");
             importHelp.style.whiteSpace = WhiteSpace.Normal; modelImportPanel.Add(importHelp);
             BuildVrmSpringStatus(modelImportPanel);
             BuildPhysBonesStatus(modelImportPanel);

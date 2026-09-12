@@ -39,9 +39,9 @@ namespace NyaForge.Authoring.Import
     }
 
     /// <summary>
-    /// Imports the deliberately narrow translation-only GLB skin profile. It keeps one mesh,
-    /// all of its triangle primitives, one skin and four-or-fewer influences per vertex.
-    /// General node rotation/scale, multiple skins and VRM metadata belong to later adapters.
+    /// Imports one mesh and one skin while retaining the source node TRS/matrix and inverse-bind
+    /// frames in the companion source-skin package. The authored skeleton still exposes the
+    /// portable head/tail representation, while deformation uses the full source affine data.
     /// </summary>
     public static class GlbSkinImporter
     {
@@ -79,9 +79,10 @@ namespace NyaForge.Authoring.Import
             var jointNodes = joints.Select(token => IntToken(token, 0, nodes.Count - 1, "skin joint")).ToArray();
             Checks.Require(jointNodes.Distinct().Count() == jointNodes.Length, "INVALID_SKELETON", "GLB skin repeats a joint node.");
             var parentByNode = ReadParents(nodes);
-            var hierarchy = ImportedSourceHierarchy.FromTranslations(Enumerable.Range(0, nodes.Count).Select(i => parentByNode.TryGetValue(i, out var parent) ? parent : -1).ToArray(), nodes.Select(ReadLocalTranslation).ToArray(), nodes.Select(n => (IReadOnlyList<int>)((JArray)n["children"] ?? new JArray()).Select(c => (int)c).ToArray()).ToArray());
-            var world = hierarchy.Origins.ToArray();
-            var jointToBone = BuildSkeleton(document.SourceHash, skin, nodes, joints, jointNodes, parentByNode, world, document.Bin, root);
+            var sourceNodes = GlbNodeTransformReader.Read(nodes, document.SourceHash);
+            var hierarchy = sourceNodes.Hierarchy;
+            var world = sourceNodes.World.Select(frame => frame.TransformPoint(new Vec3())).ToArray();
+            var jointToBone = BuildSkeleton(document.SourceHash, skin, nodes, joints, jointNodes, parentByNode, world, document);
 
             // Reuse the static mesh adapter after removing only skin attributes from a cloned JSON tree.
             // This keeps geometry/morph parsing in one module and preserves the original source hash.
@@ -114,7 +115,7 @@ namespace NyaForge.Authoring.Import
             }
             Checks.Require(vertexOffset == baseSource.Mesh.VertexCount, "INVALID_IMPORT", "Skin vertex count differs from imported mesh.");
             var binding = SkinBinding.Create(baseSource.Mesh, jointToBone.Skeleton, rawWeights);
-            var warnings = new List<string>(baseSource.Warnings) { "GLB skin weights were imported into a translation-only rest skeleton; inverse-bind rotation and scale are outside this adapter." };
+            var warnings = new List<string>(baseSource.Warnings) { "GLB source node TRS/matrix and inverse-bind affine frames are retained in the source-skin package; the authored skeleton publishes portable head/tail data." };
             return new ImportedSkinnedMeshSource(document.SourceHash, meshIndex, skinIndex, baseSource.Mesh, baseSource.Morphs, jointToBone.Skeleton, binding, warnings, jointToBone.NodeToBone, jointNodes.ToDictionary(node => node, node => world[node]), hierarchy);
         }
 
@@ -123,15 +124,15 @@ namespace NyaForge.Authoring.Import
             public SkeletonDefinition Skeleton; public string[] BoneIds; public Dictionary<int, string> NodeToBone;
         }
 
-        static SkeletonResult BuildSkeleton(string sourceHash, JObject skin, JArray nodes, JArray joints, int[] jointNodes, Dictionary<int, int> parentByNode, Vec3[] world, byte[] bin, JObject root)
+        static SkeletonResult BuildSkeleton(string sourceHash, JObject skin, JArray nodes, JArray joints, int[] jointNodes, Dictionary<int, int> parentByNode, Vec3[] world, GlbDocument document)
         {
             var ids = jointNodes.ToDictionary(node => node, node => StableId(sourceHash + ":bone:" + node.ToString(System.Globalization.CultureInfo.InvariantCulture)));
             Vec3[] heads = jointNodes.Select(node => world[node]).ToArray();
             var inverseToken = skin["inverseBindMatrices"]; if (inverseToken != null)
             {
-                var matrices = ReadFloatVectors(Array(root, "accessors"), Array(root, "bufferViews"), bin, IntToken(inverseToken, 0, int.MaxValue, "inverseBindMatrices"), "MAT4", "inverse bind matrix");
+                var matrices = GlbMatrixAccessorReader.Read(document, GlbMatrixAccessorReader.Integer(inverseToken, 0, int.MaxValue, "inverseBindMatrices"));
                 Checks.Require(matrices.Length == jointNodes.Length, "INVALID_IMPORT", "Inverse bind matrix count differs from joints.");
-                for (int i = 0; i < matrices.Length; i++) { ValidateTranslationMatrix(matrices[i], "inverse bind matrix"); heads[i] = new Vec3(-matrices[i][12], -matrices[i][13], -matrices[i][14]); }
+                for (int i = 0; i < matrices.Length; i++) heads[i] = matrices[i].Inverse().TransformPoint(new Vec3());
             }
             var jointParents = ImportedJointHierarchy.ResolveParents(jointNodes, parentByNode);
             var bones = new List<BoneDefinition>(jointNodes.Length);
@@ -161,18 +162,6 @@ namespace NyaForge.Authoring.Import
             return result;
         }
 
-        static Vec3 ReadLocalTranslation(JToken token)
-        {
-            var node = token as JObject; Checks.Require(node != null, "INVALID_IMPORT", "GLB node is invalid.");
-            Checks.Require(!(node["matrix"] != null && (node["translation"] != null || node["rotation"] != null || node["scale"] != null)), "UNSUPPORTED_FORMAT", "GLB node cannot mix matrix and TRS transforms.");
-            if (node["matrix"] != null) { var matrix = Numbers(node["matrix"], 16, "node matrix"); ValidateTranslationMatrix(matrix, "node matrix"); return new Vec3(matrix[12], matrix[13], matrix[14]); }
-            if (node["rotation"] != null) { var rotation = Numbers(node["rotation"], 4, "node rotation"); Checks.Require(Math.Abs(rotation[0]) < 1e-5 && Math.Abs(rotation[1]) < 1e-5 && Math.Abs(rotation[2]) < 1e-5 && Math.Abs(rotation[3] - 1) < 1e-5, "UNSUPPORTED_FORMAT", "Only identity node rotation is supported."); }
-            if (node["scale"] != null) { var scale = Numbers(node["scale"], 3, "node scale"); Checks.Require(Math.Abs(scale[0] - 1) < 1e-5 && Math.Abs(scale[1] - 1) < 1e-5 && Math.Abs(scale[2] - 1) < 1e-5, "UNSUPPORTED_FORMAT", "Only unit node scale is supported."); }
-            var translation = node["translation"]; if (translation == null) return new Vec3(); var values = Numbers(translation, 3, "node translation"); return new Vec3(values[0], values[1], values[2]);
-        }
-
-
-
         static int[][] ReadJointVectors(JArray accessors, JArray views, byte[] bin, int id)
         {
             var accessor = Accessor(accessors, id, "VEC4", new[] { 5121, 5123 }); Checks.Require(accessor["normalized"] == null || (bool)accessor["normalized"] == false, "UNSUPPORTED_FORMAT", "Normalized JOINTS_0 is not supported."); return ReadIntegerVectors(accessor, views, bin, "joints");
@@ -183,12 +172,6 @@ namespace NyaForge.Authoring.Import
             int count = Count(accessor, AuthoringLimits.MaxVertices), viewId = IntProperty(accessor, "bufferView", 0, views.Count - 1, "bufferView"), viewOffset = IntOptional((JObject)views[viewId], "byteOffset"), accessorOffset = IntOptional(accessor, "byteOffset"); var view = (JObject)views[viewId]; int type = IntProperty(accessor, "componentType", 0, int.MaxValue, "componentType"), width = type == 5121 ? 1 : 2, stride = view["byteStride"] == null ? width * 4 : IntProperty(view, "byteStride", width * 4, 4096, "byteStride");
             ValidateRange(viewOffset, accessorOffset, stride, count, width * 4, IntProperty(view, "byteLength", 0, bin.Length, "byteLength"), bin.Length, label); var result = new int[count][];
             for (int i = 0; i < count; i++) { result[i] = new int[4]; for (int c = 0; c < 4; c++) { int offset = viewOffset + accessorOffset + i * stride + c * width; result[i][c] = width == 1 ? bin[offset] : BitConverter.ToUInt16(bin, offset); } } return result;
-        }
-
-        static float[][] ReadFloatVectors(JArray accessors, JArray views, byte[] bin, int id, string type, string label)
-        {
-            var accessor = Accessor(accessors, id, type, new[] { 5126 }); int components = type == "VEC4" ? 4 : type == "MAT4" ? 16 : 0; int count = Count(accessor, AuthoringLimits.MaxVertices); int viewId = IntProperty(accessor, "bufferView", 0, views.Count - 1, "bufferView"); var view = (JObject)views[viewId]; int viewOffset = IntOptional(view, "byteOffset"), accessorOffset = IntOptional(accessor, "byteOffset"), stride = view["byteStride"] == null ? components * 4 : IntProperty(view, "byteStride", components * 4, 4096, "byteStride"); ValidateRange(viewOffset, accessorOffset, stride, count, components * 4, IntProperty(view, "byteLength", 0, bin.Length, "byteLength"), bin.Length, label);
-            var result = new float[count][]; for (int i = 0; i < count; i++) { result[i] = new float[components]; for (int c = 0; c < components; c++) { result[i][c] = BitConverter.ToSingle(bin, viewOffset + accessorOffset + i * stride + c * 4); Checks.Finite(result[i][c]); } } return result;
         }
 
         static float[][] ReadWeightVectors(JArray accessors, JArray views, byte[] bin, int id, string label)
@@ -218,17 +201,9 @@ namespace NyaForge.Authoring.Import
             return result;
         }
 
-        static void ValidateTranslationMatrix(float[] m, string label)
-        {
-            Checks.Require(m.Length == 16, "INVALID_IMPORT", label + " must contain 16 values.");
-            int[] identity = { 0, 5, 10, 15 }; for (int i = 0; i < 16; i++) if (!identity.Contains(i) && i != 12 && i != 13 && i != 14) Checks.Require(Math.Abs(m[i]) < 1e-5, "UNSUPPORTED_FORMAT", "Only translation " + label + " is supported.");
-            foreach (int i in identity) Checks.Require(Math.Abs(m[i] - 1) < 1e-5, "UNSUPPORTED_FORMAT", "Only unit-scale " + label + " is supported.");
-        }
-
         static void ValidateRange(int viewOffset, int accessorOffset, int stride, int count, int elementBytes, int viewLength, int binLength, string label)
         { long start = (long)viewOffset + accessorOffset, end = start + (long)(count - 1) * stride + elementBytes; Checks.Require(start >= 0 && end <= binLength && end <= (long)viewOffset + viewLength, "INVALID_IMPORT", label + " accessor exceeds its bufferView."); }
         static double DistanceSquared(Vec3 a, Vec3 b) { double x = a.X - b.X, y = a.Y - b.Y, z = a.Z - b.Z; return x * x + y * y + z * z; }
-        static float[] Numbers(JToken token, int count, string label) { var array = token as JArray; Checks.Require(array != null && array.Count == count, "INVALID_IMPORT", label + " must have " + count + " values."); var result = array.Select(v => { Checks.Require(v.Type == JTokenType.Float || v.Type == JTokenType.Integer, "INVALID_IMPORT", label + " contains a non-number."); float value = (float)v; Checks.Finite(value); return value; }).ToArray(); return result; }
         static JArray Array(JObject owner, string property) { var value = owner[property] as JArray; Checks.Require(value != null, "INVALID_IMPORT", "GLB property is missing: " + property); return value; }
         static int IntToken(JToken token, int minimum, int maximum, string label) { Checks.Require(token != null && token.Type == JTokenType.Integer, "INVALID_IMPORT", label + " is invalid."); int value = (int)token; Checks.Require(value >= minimum && value <= maximum, "INVALID_IMPORT", label + " is out of range."); return value; }
         static int IntProperty(JObject owner, string property, int minimum, int maximum, string label) { return IntToken(owner[property], minimum, maximum, label); }

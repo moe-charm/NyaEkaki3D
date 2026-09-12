@@ -30,7 +30,7 @@ namespace NyaForge.UnityRuntime
             springRebuild = Button("現在の設定で再構築", () => Try(RebuildSpringPlayback), "spring-rebuild");
             springStep = Button("1固定step進む", () => Try(StepSpringPlayback), "spring-step");
             panel.Add(springPlay); panel.Add(springPause); panel.Add(springReset); panel.Add(springRebuild); panel.Add(springStep);
-            var help = new Label("表示だけのプレビューです。保存・出力には編集中の姿勢を使います。編集・作品切替でリセットします。一般のnode回転・scaleの取込は未対応です。");
+            var help = new Label("表示だけのプレビューです。保存・出力には編集中の姿勢を使います。編集・作品切替でリセットします。source nodeの一般TRSは保持され、揺れ表示へ反映されます。");
             help.style.whiteSpace = WhiteSpace.Normal; panel.Add(help); parent.Add(panel);
         }
 

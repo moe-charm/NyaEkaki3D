@@ -56,7 +56,7 @@ internal static partial class Program
                 root => root["accessors"][0]["normalized"] = true,
                 root => root["bufferViews"][0]["byteLength"] = 200,
                 root => root["bufferViews"][0]["buffer"] = 1,
-                root => root["bufferViews"][0]["byteStride"] = 64,
+                root => root["bufferViews"][0]["byteStride"] = 60,
                 root => root["buffers"][0]["byteLength"] = 100,
                 root => root["skins"][0]["inverseBindMatrices"] = JValue.CreateNull(),
                 root => root["skins"][0]["joints"] = new JArray(1000000000000L),

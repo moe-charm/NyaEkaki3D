@@ -2,7 +2,7 @@
 
 `Vrm0SpringExpansion`は元node階層を展開する純粋なadapterで、skin jointへの対応付けや再生状態を所有しない。公開Resolveはsource hash・graph・skeletonを検査し、rig sessionのHierarchyを使用する。旧sessionの階層不明は再取込の診断とし、投影済みの骨階層から代用しない。
 
-translation-only / unit-scaleの取込profileに対し、root順と元children順で全子孫を深さ優先に展開する。各nodeの先端は最初の子の原点。葉は親→葉の方向へsource空間で0.07m延ばした仮想先端（TailNodeIndex=-1）を持つ。通常nodeも省略しない。rootの設定値はその子孫へ継承する。重力はこの段階ではraw値のまま保持する。
+source affineを保持する取込profileに対し、root順と元children順で全子孫を深さ優先に展開する。各nodeの先端は最初の子の原点。葉は親→葉の方向へsource空間で0.07m延ばした仮想先端（TailNodeIndex=-1）を持つ。通常nodeも省略しない。rootの設定値はその子孫へ継承する。重力はこの段階ではraw値のまま保持する。
 
 根拠: [UniVRM SpringBoneSystem.SetupRecursive](https://raw.githubusercontent.com/vrm-c/UniVRM/master/Packages/VRM/Runtime/SpringBone/Logic/SpringBoneSystem.cs)（2026-09-12確認）。この参照実装の分岐/末端選択に基づくが、一般scaleや全runtimeの挙動一致を意味しない。
 

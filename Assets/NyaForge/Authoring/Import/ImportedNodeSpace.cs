@@ -3,7 +3,7 @@ using NyaForge.Authoring.Rig;
 
 namespace NyaForge.Authoring.Import
 {
-    /// <summary>Transforms source-local points for the translation-only import profile into posed avatar space.</summary>
+    /// <summary>Transforms source-local points from retained source rest space into posed avatar space.</summary>
     public sealed class ImportedNodeSpace
     {
         readonly ImportedRigSession session;

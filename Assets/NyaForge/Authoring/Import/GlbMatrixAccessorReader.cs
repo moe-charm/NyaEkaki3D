@@ -34,8 +34,9 @@ namespace NyaForge.Authoring.Import
             int viewIndex = Integer(accessor["bufferView"], 0, views.Count - 1, "Matrix bufferView");
             var view = views[viewIndex] as JObject;
             Checks.Require(view != null, "INVALID_IMPORT", "Matrix bufferView must be an object.");
-            // byteStride is for vertex attributes; inverse-bind matrices are tightly packed.
-            Checks.Require(view["byteStride"] == null && view["target"] == null, "INVALID_IMPORT", "Inverse-bind bufferView cannot declare vertex stride or target.");
+            // Some exporters annotate IBM storage with a target and/or an explicit stride.
+            // These are storage hints, not a change to the MAT4 element layout, so retain
+            // them while validating the actual element width and row spacing below.
             Checks.Require(view["extensions"] == null, "UNSUPPORTED_FORMAT", "Matrix bufferView extensions require a dedicated adapter.");
             Integer(view["buffer"], 0, 0, "Matrix buffer");
             var buffers = document.Root["buffers"] as JArray;
@@ -47,8 +48,9 @@ namespace NyaForge.Authoring.Import
                 "INVALID_IMPORT", "Embedded buffer length differs from BIN payload.");
             int viewOffset = Offset(view), accessorOffset = Offset(accessor);
             int viewLength = Integer(view["byteLength"], 1, AuthoringLimits.MaxGlbImportBytes, "View length");
-            Checks.Require(accessorOffset % 4 == 0 && ((long)viewOffset + accessorOffset) % 4 == 0 &&
-                (long)viewOffset + viewLength <= bufferLength && (long)accessorOffset + (long)count * 64 <= viewLength,
+            int stride = view["byteStride"] == null ? 64 : Integer(view["byteStride"], 64, 4096, "Matrix byteStride");
+            Checks.Require(stride % 4 == 0 && accessorOffset % 4 == 0 && ((long)viewOffset + accessorOffset) % 4 == 0 &&
+                (long)viewOffset + viewLength <= bufferLength && (long)accessorOffset + (long)(count - 1) * stride + 64 <= viewLength,
                 "INVALID_IMPORT", "Matrix data is misaligned or extends beyond its declared buffer range.");
             var result = new SourceAffine[count];
             using (var stream = new MemoryStream(document.Bin, false))
@@ -60,6 +62,7 @@ namespace NyaForge.Authoring.Import
                     var matrix = new double[16];
                     for (int j = 0; j < matrix.Length; j++) matrix[j] = reader.ReadSingle();
                     result[i] = new SourceAffine(matrix);
+                    if (i + 1 < count) stream.Position += stride - 64;
                 }
             }
             return result;

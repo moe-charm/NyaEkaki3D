@@ -18,12 +18,20 @@ internal static partial class Program
             Equal(3, result.Mesh.VertexCount); Equal(1, result.Mesh.Submeshes.Count); Equal(2, result.Skeleton.Bones.Count); Equal(3, result.Binding.Weights.Count);
             var child = result.Skeleton.Bones.Single(b => b.Name == "Child"); Equal("Root", result.Skeleton.Bones.Single(b => b.Name == "Root").Name); Equal(result.Skeleton.Bones.Single(b => b.Name == "Root").BoneId, child.ParentBoneId);
             Near(.5f, result.Binding.Weights[1].Single(w => w.BoneId == child.BoneId).Weight); Near(1f, result.Binding.Weights[2].Sum(w => w.Weight));
-            True(result.Warnings.Any(w => w.Contains("translation-only", StringComparison.Ordinal)));
+            True(result.Warnings.Any(w => w.Contains("affine", StringComparison.Ordinal)));
         });
 
-        Test("GLB skin importer rejects rotations rather than losing rest transforms", () =>
+        Test("GLB skin importer accepts general node TRS without dropping source frames", () =>
         {
-            var bytes = BuildSkinnedGlb(); var root = JObject.Parse(ReadJsonChunk(bytes)); ((JObject)root["nodes"]![0]!)!["rotation"] = new JArray(0, 0, .1, .995); Expect("UNSUPPORTED_FORMAT", () => GlbSkinImporter.Read(ReplaceJsonChunk(bytes, root.ToString(Newtonsoft.Json.Formatting.None))));
+            var bytes = BuildSkinnedGlb(); var root = JObject.Parse(ReadJsonChunk(bytes));
+            ((JObject)root["nodes"]![0]!)!["rotation"] = new JArray(0, 0, Math.Sqrt(.5), Math.Sqrt(.5));
+            ((JObject)root["nodes"]![0]!)!["scale"] = new JArray(2, 3, 4);
+            var changed = ReplaceJsonChunk(bytes, root.ToString(Newtonsoft.Json.Formatting.None));
+            var result = GlbSkinImporter.Read(changed);
+            True(result.Warnings.Any(w => w.Contains("affine", StringComparison.Ordinal)));
+            var source = GlbSourceSkinImporter.Read(changed);
+            SpringPointNear(new Vec3(0, 0, 0), source.Skin.Nodes.World[0].TransformPoint(new Vec3()));
+            SpringPointNear(new Vec3(-.3f, .0f, 0), source.Skin.Nodes.World[1].TransformPoint(new Vec3()));
         });
         Test("GLB skin importer selects a mesh and skin by source index", () =>
         {

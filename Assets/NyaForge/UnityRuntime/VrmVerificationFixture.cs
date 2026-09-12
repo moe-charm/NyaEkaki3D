@@ -38,7 +38,7 @@ namespace NyaForge.UnityRuntime
                     ["bones"] = new JArray(0), ["center"] = 0, ["stiffiness"] = 1, ["gravityPower"] = .2,
                     ["gravityDir"] = new JObject { ["x"] = 1, ["y"] = 0, ["z"] = 0 } }) };
 
-            if (invalidSkin) json["nodes"][1]["scale"] = new JArray(2, 1, 1);
+            if (invalidSkin) json["nodes"][1]["scale"] = new JArray(0, 1, 1);
             return BuildGlbContainer(Encoding.UTF8.GetBytes(json.ToString(Newtonsoft.Json.Formatting.None)), bin.ToArray());
         }
     }

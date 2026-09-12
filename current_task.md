@@ -1166,3 +1166,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthori
 - `ClearSpringPlayback`でsource-skin投影cache keyを無効化し、transient spring meshから通常graph表示へ戻すとき同じevaluation hashでも再投影するよう修正した。
 - Windows Player **PASS / 74 checks**（`Builds/ResetCache/NyaForge.exe`, `Logs/build-all-20260913-014541-107.log`, `Artifacts/Authoring-20260913-014601-ad53de01f4a34333926580298d3f1c36/report.json`）。VRM1/VRM0で再生→reset後のsource-skin表示がbaselineへ戻る回帰を確認した。
 - Unity Bridge **PASS**（Unity 2022.3.22f1, `Artifacts/BridgeReceiver-20260913-014712-999-fcdbade261d64afe917d7e3c338f925a/bridge-report.json`）。
+
+## 一般TRS / inverse-bind取込の拡張 2026-09-13
+
+- `GlbSkinImporter`のskinned GLB入口をtranslation-onlyからsource affine対応へ更新した。`GlbNodeTransformReader`のnode TRS/matrixをそのまま階層へ接続し、inverse-bindは`GlbMatrixAccessorReader`で一般4x4 affineとして読み、逆行列の原点からportable skeletonのHeadを求める。source skin側のNYFS/NYSPは従来どおりlocal/world、bind、normal/tangent変換に使う。
+- IBM accessorの有効な`byteStride`とstorage `target`を拒否せず、MAT4 element幅64 bytes、4-byte alignment、範囲、strideを検証する。stride 64の標準出力と不正stride 60を回帰した。
+- GUIの説明、Import README、Model Interchange、Source Affine、node hierarchyの記述を現行能力へ更新した。FBX直接取込、複数mesh結合、未知拡張・材質・animationの完全保持、標準VRM出力、実VRChat受入は未完了。
+- Core **426 passed / 0 failed** (`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`、artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0a39624ef96840098816b23f58061815`)。追加回帰は一般node TRSを保持したskinned取込、source matrix accessorのstride互換性と不正stride拒否。実RadDollV3の再取込は未実施で、下記のPlayer/Bridge回帰のみ実施した。
+- Windows Player / Bridge再回帰: Player build `Logs/build-player-20260913-015653-885.log` (`Builds/GeneralTrs/NyaForge.exe`)、Authoring **PASS / 74 checks** (`Artifacts/Authoring-20260913-015713-d25dd1013a9548e5adfe804ffba7a74b/report.json`)、Bridge **PASS** (`Artifacts/BridgeReceiver-20260913-015746-828-dbeb9bd2b7fb4c7dad00c00267f5792d/bridge-report.json`)。一般TRS対応後も既存GUI・保存・Bake・Bridge回帰は通過した。invalid fixtureは有効なnon-unit scaleを拒否テストに使わないよう、特異scale 0へ更新した。

@@ -24,7 +24,7 @@ POSITION morph差分にはtranslationを加えない。鏡映でTopologyHashが�
 
 属性なしは空のまま維持する。tangentあり/normalなしは正しい直交化を保証できないため未対応として拒否。平行normal/tangentなど変換後に方向が確定できない場合も拒否し、部分的な結果を返さない。normal/tangent morphは既存MorphSetで表現できず、本処理の対応範囲に含まない。
 
-これは全頂点共通の座標変換であり、jointごとのweight混合ではない。一般skinは別途bind/pose paletteとdeformerを接続する。既存translation-only importerをまだ解除しない。回帰は解析値、鏡映往復、UV/面順/ID保持、morph適用との可換性、stale入力と退化方向の拒否を確認する。
+これは全頂点共通の座標変換であり、jointごとのweight混合ではない。一般skinは別途bind/pose paletteとdeformerを接続する。GLB skin importerは一般node TRS/matrixとinverse-bindをsource skinへ接続する。回帰は解析値、鏡映往復、UV/面順/ID保持、morph適用との可換性、stale入力と退化方向の拒否を確認する。
 
 ## 完全source skinの保存payload
 
@@ -54,9 +54,9 @@ Player検証はVRM0/1でsource payloadと元GLBの一致、再生中の保存、
 
 `GlbSourceSkinReader.Read(bytes, skinIndex)`で指定skinを読取可能。全source node transformsを読み、source hash一致を検査して候補へ接続する。複数skinを個別に指定できるが、複数meshの制作projectへの取込を意味しない。
 
-`GlbMatrixAccessorReader`はembedded BINのdense FLOAT/MAT4をdecodeする。buffer/view/accessorの宣言範囲をlong演算で検査し、4byte alignmentとBIN padding最大3byteを確認してからlittle-endian floatを読む。joint数以上のaccessor entryをすべて保持。正規化FLOAT、vertex stride/target付きview、不正参照・型・明示nullを拒否する。sparse、外部buffer、対象accessor/view/skinの拡張は現段階では未対応として拒否し、黙って解釈を省かない。JSON数値は範囲確認前にintへcastしない。
+`GlbMatrixAccessorReader`はembedded BINのdense FLOAT/MAT4をdecodeする。buffer/view/accessorの宣言範囲をlong演算で検査し、4byte alignmentとBIN padding最大3byteを確認してからlittle-endian floatを読む。joint数以上のaccessor entryをすべて保持。正規化FLOAT、不正なstride・参照・型・明示nullを拒否する。sparse、外部buffer、対象accessor/view/skinの拡張は現段階では未対応として拒否し、黙って解釈を省かない。JSON数値は範囲確認前にintへcastしない。
 
-実装範囲は候補型・dense accessor decodeと数値検証、NYFS/NYSP native codec、rig session v4/v5、skinned GUIのsource payload接続まで。既存translation-only graph表示の制限を解除する証拠ではない。readerはglTF全体のvalidatorではなく、材質や必須未知拡張等の文書全体の検証はI04-Eに残る。
+実装範囲は候補型・dense accessor decodeと数値検証、NYFS/NYSP native codec、rig session v4/v5、一般affineを含むskinned GUIのsource payload接続まで。readerはglTF全体のvalidatorではなく、材質や必須未知拡張等の文書全体の検証はI04-Eに残る。
 
 `SourceAffine`はUnityに依存しない不変のcolumn-major 4×4行列。TRSの合成はT×R×S、`parent.Compose(local)`はparent×local。doubleで計算し、公開するVec3/Vec4はfinite float範囲を検査して返す。入力配列はコピーし、公開配列もコピーする。
 
@@ -76,7 +76,7 @@ Player検証はVRM0/1でsource payloadと元GLBの一致、再生中の保存、
 1. **実装済み**: `GlbNodeTransformReader`がnode JSONのTRS/matrixをdecodeし、混在・配列長・型を検査する。`SourceNodeTransforms`がsource木の親合成を反復処理で行い、local/worldの両方を保持する。詳細は下段。
 2. **実装済み**: `GlbSourceSkinImporter`が全dense JOINTS/WEIGHTS setをslot順の`SourceSkinBinding`へ渡し、`SourceSkinDeformer`がbind相殺とpose paletteを計算する。`SourceSkinPackageCodec`とrig session v5が行列・bind・元weightを保存する。
 3. **一部接続済み / 次に実装**: `SourceSkinGraphAdapter`が評価済み`GraphMeshValue`のSkinDeform前入力へsource paletteを適用し、`SourceSkinPosePalette`がsessionのauthored poseからsource joint worldを生成する。Workbenchは取込直後とspring playbackでこの表示値を使い、edit stageの値・domain・RestTransform・属性・topologyを保持する。Core/Playerでrest・動的pose・Save/Open・再利用mesh/object・失敗保護を確認済み。次は複数mesh/instance/skin、複数SkinDeform/一般deform graph、normal・tangentと失敗時原子性を検証する。
-4. 複数mesh/instance/skin、normalized/sparse weight、未知拡張・材質・animationの保持はI04-B〜Eへ残す。既存translation-only作品を新source情報ありと捏造せず、能力表示は実装済み範囲だけを示す。
+4. 複数mesh/instance/skin、normalized/sparse weight、未知拡張・材質・animationの保持はI04-B〜Eへ残す。旧native作品を新source情報ありと捏造せず、能力表示は実装済み範囲だけを示す。
 
 Core回帰は非一様TRSと親子合成の解析値、joint global×inverse-bind、point/vectorの差、shear/鏡映の逆変換、normal/tangent直交性、入力独立性、不正matrix/quaternion/方向、小さいscaleの往復を含む。実行結果はcurrent_taskへ記録。一般GLBの取込・実素材受入の証拠とは区別する。
 
