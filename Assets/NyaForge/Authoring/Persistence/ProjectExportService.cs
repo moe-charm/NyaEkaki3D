@@ -27,6 +27,7 @@ namespace NyaForge.Authoring
                 Checks.Require(workspace.Document.DocumentRevision==revision,"REVISION_CONFLICT","Document changed before export.");
                 Checks.Require(!workspace.Document.IsEmpty,"NO_EXPORTABLE_OBJECT","Add a mesh before exporting.");
                 Checks.Require(workspace.Preview.IsComplete && !workspace.Preview.IsStale,"GRAPH_INCOMPLETE","Export requires complete current evaluation.");
+                ValidateAttachmentReferences(workspace.Document);
                 if (RequiresNativeProjectExport(workspace.Document))
                 {
                     string nativePath = AuthoringProjectExportService.Export(workspace, instance, document, revision, directory);
@@ -55,6 +56,22 @@ namespace NyaForge.Authoring
                 node.TypeId == Graph.BuiltinNodes.Pose || node.TypeId == Graph.BuiltinNodes.SkinDeform ||
                 node.TypeId == Graph.BuiltinNodes.MorphSet || node.TypeId == Graph.BuiltinNodes.MorphDeform ||
                 node.TypeId == Graph.BuiltinNodes.Attachment));
+        }
+
+        /// <summary>Rejects unresolved attachment targets before any export directory is created.</summary>
+        public static void ValidateAttachmentReferences(AuthoringDocument document)
+        {
+            if (document == null) return;
+            foreach (var item in document.Objects)
+            {
+                if (item.IsStaticProfile || item.Graph == null) continue;
+                foreach (var node in item.Graph.Nodes.Values.Where(node => node.TypeId == Graph.BuiltinNodes.Attachment))
+                {
+                    var target = document.Objects.FirstOrDefault(candidate => candidate.ObjectId == node.AttachmentTargetObjectId);
+                    Checks.Require(target != null && !target.IsStaticProfile, "ATTACHMENT_TARGET_MISSING", "Attachment target object is not present in this document.");
+                    Checks.Require(target.ObjectId != item.ObjectId, "ATTACHMENT_TARGET_SELF", "An accessory cannot attach to itself.");
+                }
+            }
         }
     }
 }

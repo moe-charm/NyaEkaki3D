@@ -19,6 +19,7 @@ namespace NyaForge.Authoring
                 Checks.Require(!workspace.Document.IsEmpty, "NO_EXPORTABLE_OBJECT", "Add a mesh before exporting.");
                 Checks.Require(!workspace.Document.Objects[0].IsStaticProfile, "GRAPH_PROFILE_REQUIRED", "Native feature export requires a graph project.");
                 Checks.Require(workspace.Preview.IsComplete && !workspace.Preview.IsStale, "GRAPH_INCOMPLETE", "Export requires complete current evaluation.");
+                ProjectExportService.ValidateAttachmentReferences(workspace.Document);
                 Checks.Require(!Directory.Exists(directory) && !File.Exists(directory), "EXPORT_DESTINATION_EXISTS", "Export destination already exists.");
 
                 var detached = new AuthoringWorkspace(workspace.Document);
