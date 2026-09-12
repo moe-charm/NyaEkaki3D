@@ -6,7 +6,7 @@
 
 - **I04-C / GLB予算分離**: GLB/VRMの取込・標準GLB出力は128 MiB、1 mesh 200,000頂点までを専用予算で検査する。native blobの16 MiB予算は維持し、実素材を通すための拡張を他形式へ波及させない。
 - **I04-C / 編集済みskin出力**: `SkinnedGeometry` profileは単一graphのrest pose・identity transform・4 influenceを対象に、`SkinnedGeometryExtended` profileは最大32 influenceを全JOINTS_n/WEIGHTS_n setで保持し、どちらもトポロジー不変の`EditMesh`頂点編集をGLBへ出力する。任意pose、非ゼロmorph変形、未対応nodeは二重適用を避けて拒否する。
-- **I04-E / 取込診断**: `ImportedMeshSource.Diagnostics` / `ImportedSkinnedMeshSource.Diagnostics` に材質、アニメーション、extensionsRequired、extensionsUsedをコード付きで保持し、既存Warningsにも同じコードを表示する。`import-diagnostics.nyaforge.json` attachmentへgraphId単位で保存し、MCP graph inspectionと取込後statusへ公開する経路まで実装済み。Core 440件でsnapshot往復とblocking/partialの区別を回帰した。依存資源を含む完全な材質・animation・未知拡張の保存、GUIの詳細reportパネルは未完了。
+- **I04-E / 取込診断**: `ImportedMeshSource.Diagnostics` / `ImportedSkinnedMeshSource.Diagnostics` に材質、アニメーション、extensionsRequired、extensionsUsedをコード付きで保持し、既存Warningsにも同じコードを表示する。`import-diagnostics.nyaforge.json` attachmentへgraphId単位で保存し、MCP graph inspection・取込後status・GUI詳細パネルへ公開する経路まで実装済み。Core 440件とWindows Playerでsnapshot往復、active graph表示、blocking/partialの区別を回帰した。依存資源を含む完全な材質・animation・未知拡張の保存は未完了。
 - **I04-C / 拡張GLB回帰**: `GlbExportService.ExportSkinnedExtended`とWorkbenchの「拡張GLB（全weight保持）」ボタンを追加。8 influence fixtureをGLB writer→`GlbSkinImporter`で往復し、全weight set・骨数・正規化合計を確認した。Windows Player `Builds/ExtendedGlbV1/NyaForge.exe` と Authoring suiteもPASS。
 - **保存往復回帰**: serialized skin bindingを再正規化せずfloat32値を保持するよう修正し、4 influenceのbyte identity回帰を追加。実RadDollV3 `RadDollV3_VRM.vrm`（private ZIP内、45,341,584 bytes、body 129,348 vertices、171 bones）を読み取り専用に選択取込し、ProjectStore Save/Open後のdocument state hash一致を確認した。private素材はpublic repoへ同梱しない。
 - **active object編集経路**: Workbenchのグラフ、表示投影、材質、paint、rig、morph、UV、MCPを`Document.ActiveObject`基準へ統一し、複数対象で切替後の頂点編集が非active graphを変更しないPlayer回帰を追加した。非active objectは従来どおり読み取り専用backdropとして扱う。
@@ -34,7 +34,7 @@ reflection型解決は`VrcPhysBonesReflectionResolver`へ分離し、assembly-qu
 | [ ] I04-B / P1 **継続** | 複数mesh/instance/skin、source→制作ID対応 | `GlbSceneInventoryReader`でmesh/primitive数、node instance、skin joint参照、node world transformを元indexのまま候補化し、候補確認・node instance選択GUIを追加した。native documentは最大64 objectのactive object方式へ拡張し、`object.select`、graph object追加、Save/Open、Workbench対象切替を検証済み。非active objectは読み取り専用の背面表示とFrame対象にでき、複数object package出力も追加した。GLB取込はgraph projectへ新objectとして追加する。複数graph objectのrig sessionをgraph IDで保存・active objectへ再選択する経路を追加済み。残りはmesh結合、同名morph/共有mesh・skin参照と実素材受入。 |
 | [ ] I04-C / P1 **継続** | rig/weight/morph容量とcodec/hash/表示/出力 | nativeは512骨・32 influence・512 morphへ拡張し、257骨・18weight・単一mesh262morphの削減なし往復、GLB全JOINTS_n/WEIGHTS_n取込、`SkinnedGeometryExtended`出力を回帰済み。標準SkinnedGeometryは互換上4 influenceを明示拒否する。実GLB受取先・VRChat側確認が残る |
 | [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
-| [ ] I04-E / P1 **継続** | 機能report、材質/animation/VRM意味情報/未知拡張の保持とGUI/MCP | GLB importerへコード付きdiagnostics（材質、animation、extensionsRequired/Used）を追加し、blocking/partialをCoreで回帰済み。必須未知拡張の拒否、依存資源込みopaque保持、既知VRM内の未保持field、GUI/MCP表示は残件 |
+| [ ] I04-E / P1 **継続** | 機能report、材質/animation/VRM意味情報/未知拡張の保持とGUI/MCP | GLB importerのコード付きdiagnosticsをnative attachmentへ保存し、MCP graph inspection・取込後status・GUI詳細パネルで表示。必須未知拡張の拒否、依存資源込みopaque保持、既知VRM内の未保持fieldが残件 |
 | [ ] T04 / P2 | 時間超過・性能受入 | 0.25秒超frameで停止する現行動作の扱い、frame時間/GC/メモリを実測し方針と回帰を定める |
 | [ ] T05 / P1 | Windows実素材・実操作と受取側 | 必要なI04後に取込・pose/揺れ・保存/Open・終了・DPI/文字欠け・出力を実確認。build/input hash/手順/結果を記録 |
 | [ ] T06 / P2 | 外部MCP metadata保存受入 | 内部handlerと区別し、transport経由で保存/Open・失敗保護・再試行を確認 |
@@ -1251,3 +1251,9 @@ Coreの容量回帰で257骨・18 influence・262 morphのnative codec往復を�
 - `import-diagnostics.nyaforge.json` attachment（schema 4）を追加し、graphIdごとにsourceHash、mesh／skin locator、blocking／partialの`GlbImportDiagnostic`を保存する。既存attachmentと同じblob hash・writer lock・失敗時旧snapshot保持を使い、元GLBを再読込せず診断を復元する。
 - `forge_graph_inspect`のactive graph詳細と全object summaryへ`importDiagnostics`を追加。Core **440 passed / 0 failed** (`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-cc0694a0273146b9a32dd79cdf99be7f`)、snapshot／inspection往復を回帰した。
 - Windows Player **PASS** (`Logs/build-player-20260913-032941-070.log`, `Builds/ImportDiagnosticsV2/NyaForge.exe`)、Authoring suite **PASS** (`Artifacts/Authoring-20260913-032959-ca8fa373b3ef4e56b32c0f6660fe4dcf/report.json`)。取込後status表示、Graph inspection一覧、診断attachment復元を含むPlayerで確認した。
+
+## GLB診断のGUI詳細表示（2026-09-13）
+
+- `取込診断（保存済み）` foldoutをGLB取込パネルへ追加。保存済みrecord数、保持不可／一部保持の件数、active graphを表示し、各graphのsource hash・mesh／skin locator・診断のseverity／code／path／messageを確認できる。attachmentが壊れていても作品を置き換えず、読込エラーを同じ領域へ表示する。
+- Windows Player **PASS** (`Logs/build-player-20260913-033512-860.log`, `Builds/ImportDiagnosticsUiV2/NyaForge.exe`)、Authoring suite **PASS** (`Artifacts/Authoring-20260913-033534-e6ed3ced2eb04b8896208cde5f0f05ab/report.json`)。合成した保存済みdiagnosticsをGUIへ注入し、summary・active locator・詳細labelの表示を自動検証した。
+- GUIは保持結果の確認導線であり、材質・animation・未知拡張を依存資源ごとnativeへ完全保存する機能や、実モデルを使った目視受入を含まない。

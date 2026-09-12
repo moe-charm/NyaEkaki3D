@@ -85,6 +85,7 @@ namespace NyaForge.UnityRuntime
                     VerifyCommandLineModelImport(arguments[modelImportIndex + 1], output, checks);
                 AddSample(1);
                 Check(!workspace.Document.IsEmpty && workspace.CanUndo && projection.Points.Length > 0, "Sample did not use the command path");
+                VerifyImportDiagnosticsPanel(checks);
                 bool replaced = false;
                 ConfirmReplace(() => replaced = true);
                 Check(confirmRow.resolvedStyle.display != UnityEngine.UIElements.DisplayStyle.None, "Unsaved guard missing");

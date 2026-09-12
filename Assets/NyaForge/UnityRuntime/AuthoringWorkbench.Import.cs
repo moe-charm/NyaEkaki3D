@@ -27,6 +27,7 @@ namespace NyaForge.UnityRuntime
             BuildVrmSpringStatus(modelImportPanel);
             BuildPhysBonesStatus(modelImportPanel);
             BuildImportedRigStatus(modelImportPanel);
+            BuildModelImportDiagnostics(modelImportPanel);
             modelImportPanel.Add(Button("GLBを選ぶ", () => { if (!modelPickerOpen) StartCoroutine(PickModel()); }, "model-import-browse"));
             modelImportPath = new TextField("ファイルパス") { name = "model-import-path" }; modelImportPath.style.flexDirection = FlexDirection.Column; modelImportPanel.Add(modelImportPath);
             BuildModelImportSelection(modelImportPanel);
@@ -38,6 +39,7 @@ namespace NyaForge.UnityRuntime
         {
             if (modelImportPanel == null) return;
             RefreshImportedRigStatus();
+            RefreshImportedGlbDiagnostics();
             bool ready = workspace != null && (workspace.Document.IsEmpty || !workspace.Document.ActiveObject.IsStaticProfile);
             modelImportPanel.Q<Button>("model-import-apply").SetEnabled(ready);
             modelImportStatus.text = ready ? (workspace.Document.IsEmpty ? "空の制作projectへ取り込めます。" : "現在のgraph projectへ新しい制作対象として追加できます。") + "元ファイルはコピーせず、meshをnative graphへ取り込みます。" : "graph projectへ追加できます。static projectへは追加できません。既存作品は置き換えません。";
