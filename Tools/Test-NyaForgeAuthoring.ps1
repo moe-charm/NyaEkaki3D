@@ -6,6 +6,7 @@ param(
     [string]$ReopenProject,
     [switch]$DensePaint,
     [switch]$SecondaryMotionMcp,
+    [switch]$GlbExportMcp,
     [string]$McpProbe,
     [string]$ImportModel,
     [ValidateRange(30,900)][int]$TimeoutSeconds = 120
@@ -27,6 +28,7 @@ if ($SecondaryMotionMcp) {
     if (-not $McpProbe) { throw 'SecondaryMotionMcp requires -McpProbe.' }
     $arguments += '--authoring-secondary-mcp'
 }
+if ($GlbExportMcp) { $arguments += '--authoring-glb-export-mcp' }
 if ($ReopenProject) {
     $reopenPath = (Resolve-Path -LiteralPath $ReopenProject).Path
     $arguments += @('--authoring-reopen-project', ('"{0}"' -f $reopenPath))

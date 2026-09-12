@@ -6,6 +6,7 @@ using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Rig;
 using NyaForge.Authoring.Paint;
+using NyaForge.Authoring.Inspection;
 using Newtonsoft.Json.Linq;
 
 internal static partial class Program
@@ -125,6 +126,17 @@ internal static partial class Program
             var imported = GlbImporter.Read(bytes);
             Equal(1, imported.Materials.Count); Equal(.3f, imported.Materials[0].Parameters.Metallic); Equal(.7f, imported.Materials[0].Parameters.Roughness);
             True(imported.Materials[0].HasEmbeddedBaseColorImage); True(imported.Materials[0].CopyBaseColorImageBytes().Length > 8);
+        });
+
+        Test("MCP GLB export request is revision pinned and profile strict", () =>
+        {
+            string instance = Guid.NewGuid().ToString("D"), document = Guid.NewGuid().ToString("D"), export = Guid.NewGuid().ToString("D");
+            var payload = new JObject { ["version"] = 1, ["requestId"] = Guid.NewGuid().ToString("D"), ["expectedInstanceId"] = instance, ["method"] = "export_glb",
+                ["export"] = new JObject { ["documentId"] = document, ["expectedRevision"] = 7, ["directory"] = "C:/project", ["exportId"] = export, ["profile"] = "skinned_extended" } };
+            var request = AuthoringIpcRequest.Parse(System.Text.Encoding.UTF8.GetBytes(payload.ToString(Newtonsoft.Json.Formatting.None)));
+            Equal("export_glb", request.Method); Equal(GlbExportProfile.SkinnedGeometryExtended, request.GlbExport.Profile); Equal(7L, request.GlbExport.ExpectedRevision);
+            payload["export"]!["profile"] = "unknown";
+            Expect("INVALID_GLB_EXPORT_REQUEST", () => AuthoringIpcRequest.Parse(System.Text.Encoding.UTF8.GetBytes(payload.ToString(Newtonsoft.Json.Formatting.None))));
         });
     }
 }

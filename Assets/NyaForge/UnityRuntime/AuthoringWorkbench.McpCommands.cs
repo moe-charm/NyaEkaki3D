@@ -10,6 +10,7 @@ namespace NyaForge.UnityRuntime
             if(request.Method=="faces_inspect") return request.Faces.ReadFaces(workspace,pipeInstance);
             if(request.Method=="validate") return AuthoringValidationReader.Read(workspace,pipeInstance,request.Validation);
             if(request.Method=="export") return ExportMcpProject(request.Export);
+            if(request.Method=="export_glb") return ExportMcpGlb(request.GlbExport);
             if(request.Method=="save_project") return SaveMcpProject(request.Save);
             if(request.Method=="get_state") { var state=AuthoringReadService.Read(workspace,pipeInstance,request.Method);state["saveTarget"]=McpSaveTarget();return state; }
             if(request.Method=="capture") return CaptureMcpEvidence();

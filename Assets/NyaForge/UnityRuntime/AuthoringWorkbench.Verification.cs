@@ -59,10 +59,16 @@ namespace NyaForge.UnityRuntime
             if(failure==null && probeIndex>=0 && probeIndex+1<arguments.Length)
             {
                 bool secondary=Array.IndexOf(arguments,"--authoring-secondary-mcp")>=0;
+                bool glbExport=Array.IndexOf(arguments,"--authoring-glb-export-mcp")>=0;
                 if(secondary)
                 {
                     yield return VerifyExternalMcp(arguments[probeIndex+1],output,error=>failure=error,false,true);
                     if(failure==null) checks.Add("External MCP client -> sidecar -> live Player: secondary-motion state/play/pause/rebuild/fixed-step/reset and authored-state preservation");
+                }
+                else if(glbExport)
+                {
+                    yield return VerifyExternalMcp(arguments[probeIndex+1],output,error=>failure=error,false,false,true);
+                    if(failure==null) checks.Add("External MCP client -> sidecar -> live Player: revision-pinned standard GLB export and replay destination protection");
                 }
                 else
                 {

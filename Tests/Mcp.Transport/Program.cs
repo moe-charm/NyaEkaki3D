@@ -4,6 +4,7 @@ using System.Text.Json;
 using NyaForge.Mcp;
 
 if(args.Length>0 && (args[0]=="--player-state" || args[0]=="--player-create")) { await PlayerStateVerification.RunAsync(args);return; }
+if(args.Length>0 && args[0]=="--player-glb-export") { await PlayerGlbExportVerification.RunAsync(args);return; }
 if(args.Length>0 && args[0]=="--player-secondary")
 {
     if(args.Length!=5) throw new ArgumentException("Expected --player-secondary instance document revision stateHash");

@@ -6,7 +6,7 @@ namespace NyaForge.UnityRuntime
 {
     public sealed partial class AuthoringWorkbench
     {
-        IEnumerator VerifyExternalMcp(string probe,string output,Action<string> completed,bool create=false,bool secondary=false)
+        IEnumerator VerifyExternalMcp(string probe,string output,Action<string> completed,bool create=false,bool secondary=false,bool glbExport=false)
         {
             Process process=null;string failure=null;
             var previousWorkspace=workspace;string previousPath=savedDirectory;
@@ -27,7 +27,7 @@ namespace NyaForge.UnityRuntime
                     }
                     else ReplaceWorkspace(create ? NyaForge.Authoring.AuthoringWorkspace.CreateEmpty() : NyaForge.Authoring.AuthoringWorkspace.CreateFixture(),null);
                     projectPath.SetValueWithoutNotify(Path.Combine(output,create ? "mcp-created-native" : "mcp-static-native"));
-                    if(secondary && !TrySaveProject()) throw new InvalidOperationException("Secondary-motion MCP fixture could not be saved before the probe");
+                    if((secondary || glbExport) && !TrySaveProject()) throw new InvalidOperationException("MCP fixture could not be saved before the probe");
                     if(create)
                     {
                         Directory.CreateDirectory(projectPath.value);
@@ -37,7 +37,7 @@ namespace NyaForge.UnityRuntime
                     pipeInstance=workspace.InstanceId;authoringPipe=new Platform.AuthoringPipeServer(pipeInstance);
                     process=Process.Start(new ProcessStartInfo
                     {
-                        FileName="dotnet",Arguments="\""+probe+"\" "+(secondary ? "--player-secondary " : (create ? "--player-create " : "--player-state "))+pipeInstance+" "+workspace.Document.DocumentId+" "+workspace.Document.DocumentRevision+" "+workspace.Document.StateHash,
+                        FileName="dotnet",Arguments="\""+probe+"\" "+(secondary ? "--player-secondary " : (glbExport ? "--player-glb-export " : (create ? "--player-create " : "--player-state ")))+pipeInstance+" "+workspace.Document.DocumentId+" "+workspace.Document.DocumentRevision+" "+workspace.Document.StateHash,
                         UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true
                     });
                 }
@@ -57,7 +57,12 @@ namespace NyaForge.UnityRuntime
                         {
                             var reopened=NyaForge.Authoring.ProjectStore.Open(projectPath.value);
                             if(reopened.Document.StateHash!=workspace.Document.StateHash || workspace.IsDirty || savedDirectory!=McpSaveDirectory()) failure="MCP native save/reopen or GUI saved-directory differs";
-                            if(!create && !secondary)
+                            if(glbExport)
+                            {
+                                var glbs=Directory.GetFiles(Path.Combine(projectPath.value,"exports"),"model.glb",SearchOption.AllDirectories);
+                                if(glbs.Length!=1 || BitConverter.ToUInt32(File.ReadAllBytes(glbs[0]),0)!=0x46546c67) failure="MCP GLB export missing or invalid";
+                            }
+                            else if(!create && !secondary)
                             {
                                 var manifests=Directory.GetFiles(Path.Combine(projectPath.value,"exports"),NyaForge.Authoring.BakeStore.ManifestName,SearchOption.AllDirectories);
                                 if(manifests.Length!=1 || NyaForge.Authoring.BakeStore.Read(manifests[0]).MeshContentHash!=workspace.Evaluate().ContentHash) failure="MCP export readback differs from current mesh";
