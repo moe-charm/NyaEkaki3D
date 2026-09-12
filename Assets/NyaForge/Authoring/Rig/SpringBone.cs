@@ -18,23 +18,27 @@ namespace NyaForge.Authoring.Rig
         public float DragForce { get; }
         public Vec3? RestTailOffset { get; }
         public Vec3? RestHeadOffset { get; }
+        public SpringIntegrationMode IntegrationMode { get; }
 
-        public SpringBoneJointSettings(string boneId, float hitRadius, float stiffness, float gravityPower, Vec3 gravityDirection, float dragForce, Vec3? restTailOffset = null, Vec3? restHeadOffset = null)
+        public SpringBoneJointSettings(string boneId, float hitRadius, float stiffness, float gravityPower, Vec3 gravityDirection, float dragForce, Vec3? restTailOffset = null, Vec3? restHeadOffset = null, SpringIntegrationMode integrationMode = SpringIntegrationMode.Authoring)
         {
             Checks.Id(boneId); Checks.Finite(hitRadius); Checks.Finite(stiffness); Checks.Finite(gravityPower); Checks.Finite(gravityDirection); Checks.Finite(dragForce);
             Checks.Require(hitRadius >= 0f && hitRadius <= 10f, "INVALID_SPRING", "Spring hit radius must be between 0 and 10.");
-            Checks.Require(stiffness >= 0f && stiffness <= 1f, "INVALID_SPRING", "Spring stiffness must be between 0 and 1.");
+            Checks.Require(integrationMode == SpringIntegrationMode.Authoring || integrationMode == SpringIntegrationMode.VrmReference, "INVALID_SPRING", "Unknown Spring integration mode.");
+            Checks.Require(stiffness >= 0f && (integrationMode == SpringIntegrationMode.VrmReference || stiffness <= 1f), "INVALID_SPRING", "Spring stiffness is outside the selected integration mode.");
+            IntegrationMode = integrationMode;
             Checks.Require(gravityPower >= 0f && gravityPower <= 1000f, "INVALID_SPRING", "Spring gravity power must be between 0 and 1000.");
             Checks.Require(dragForce >= 0f && dragForce <= 1f, "INVALID_SPRING", "Spring drag force must be between 0 and 1.");
             Checks.Require(LengthSquared(gravityDirection) > 1e-12f || gravityPower == 0f, "INVALID_SPRING", "A nonzero gravity direction is required when gravity is enabled.");
             if (restHeadOffset.HasValue) Checks.Finite(restHeadOffset.Value);
             if (restTailOffset.HasValue) SpringJointTarget.Validate(restTailOffset.Value - (restHeadOffset ?? new Vec3()));
             RestTailOffset = restTailOffset; RestHeadOffset = restHeadOffset;
-            BoneId = boneId; HitRadius = hitRadius; Stiffness = stiffness; GravityPower = gravityPower; GravityDirection = NormalizeOrZero(gravityDirection); DragForce = dragForce;
+            BoneId = boneId; HitRadius = hitRadius; Stiffness = stiffness; GravityPower = gravityPower; GravityDirection = integrationMode == SpringIntegrationMode.VrmReference ? gravityDirection : NormalizeOrZero(gravityDirection); DragForce = dragForce;
         }
 
         internal void Write(BinaryWriter writer)
         {
+            writer.Write((int)IntegrationMode);
             writer.Write(BoneId); writer.Write(Checks.Canonical(HitRadius)); writer.Write(Checks.Canonical(Stiffness)); writer.Write(Checks.Canonical(GravityPower));
             writer.Write(Checks.Canonical(GravityDirection.X)); writer.Write(Checks.Canonical(GravityDirection.Y)); writer.Write(Checks.Canonical(GravityDirection.Z)); writer.Write(Checks.Canonical(DragForce));
             writer.Write(RestHeadOffset.HasValue);
@@ -102,7 +106,7 @@ namespace NyaForge.Authoring.Rig
             Name = name; Joints = Array.AsReadOnly(jointValues); ColliderGroupIndices = Array.AsReadOnly(groupValues);
             using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream, Encoding.UTF8))
             {
-                writer.Write(3); writer.Write(Name); writer.Write(Joints.Count); foreach (var joint in Joints) joint.Write(writer);
+                writer.Write(4); writer.Write(Name); writer.Write(Joints.Count); foreach (var joint in Joints) joint.Write(writer);
                 writer.Write(ColliderGroupIndices.Count); foreach (var index in ColliderGroupIndices) writer.Write(index);
                 ContentHash = Checks.Hash(stream.ToArray());
             }
@@ -174,7 +178,7 @@ namespace NyaForge.Authoring.Rig
                 Vec3 head = SpringJointTarget.HeadPosition(joint, bonePose.Transform), targetTail = SpringJointTarget.Position(bone, joint, bonePose.Transform);
                 Vec3 oldTail = previous.CurrentTails[joint.BoneId], olderTail = previous.PreviousTails[joint.BoneId];
                 float length = Distance(targetTail, head);
-                Vec3 candidate = deltaTime == 0 ? oldTail : SpringTimeIntegration.Predict(joint, oldTail, olderTail, targetTail, deltaTime, previous.PreviousDeltaTime);
+                Vec3 candidate = deltaTime == 0 ? oldTail : SpringTimeIntegration.Predict(joint, oldTail, olderTail, targetTail, deltaTime, previous.PreviousDeltaTime, head);
                 candidate = SpringConstraintSolver.Solve(head, candidate, length, targetTail - head, joint.HitRadius, valid.CollidersByBone[joint.BoneId]);
                 nextTails.Add(joint.BoneId, candidate);
                 Vec3 currentDirection = targetTail - head, desiredDirection = candidate - head;

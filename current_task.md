@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。最新チェック対象 `023d1cf`。Coreを再実行し334件合格。追加レビューでR11（骨階層の欠落）を再現し、R12（失敗した取込の表示先行更新）をコード上で確認した。R11は中間nodeを通る骨階層保持を修正し、Core338件合格。R12は取込候補と公開を分離し、Windows自動検証まで完了。I03-Aのcollider座標adapterを追加し、center履歴追従を追加し、明示先端の計算を追加し、VRM1 chain解決を追加し、明示回転中心を追加し、最新Coreは347件合格。過去のR01〜R10は各記録の自動検証範囲で完了、実素材・実操作の受入は未完了。
+更新: 2026-09-12。最新チェック対象 `023d1cf`。Coreを再実行し334件合格。追加レビューでR11（骨階層の欠落）を再現し、R12（失敗した取込の表示先行更新）をコード上で確認した。R11は中間nodeを通る骨階層保持を修正し、Core338件合格。R12は取込候補と公開を分離し、Windows自動検証まで完了。I03-Aのcollider座標adapterを追加し、center履歴追従を追加し、明示先端の計算を追加し、VRM1 chain解決を追加し、明示回転中心を追加し、VRM1実行用chainを追加し、最新Coreは348件合格。過去のR01〜R10は各記録の自動検証範囲で完了、実素材・実操作の受入は未完了。
 
 ## 開発の入口
 
@@ -21,6 +21,14 @@
 - [ ] **A01 — Windows実素材・実操作受入**。利用可能なローカルモデルで取込・保存/Open・姿勢・揺れ・文字サイズと欠け・保存して終了を確認する。外部MCP transportのmetadata保存も別項目で検証する。完了条件: build名、入力、確認手順、結果、未対応事項の記録。素材はprivate/追跡除外を維持。
 
 現在の証拠: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
+
+### I03-B: VRM1実行chainと参考時間式（2026-09-12）
+
+- `Vrm1SpringRuntimeAdapter`がtopology解決を共用し、元head/tail原点をCoreの明示offsetへ変換する。radiusへ一様scaleを適用し、stiffness>1も保持。重力情報不足・未対応scale・予算超過は拒否する。
+- `VrmSpringIntegration`へVRM参考式の時間計算を分離し、既存Authoring modeは維持。modeはchain hash version4へ含む。VRM modeのdragはstep単位で、再生controllerでは固定stepを管理する。native/session schemaは変更しない。
+- Core **348 passed / 0 failed**: `Logs/core-vrm-runtime-chain.txt`、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0706310605cb42df84fd619b3aed785f`。参考式の解析値、元重力ベクトル・stiffness25保持、session→実行chain→12stepの中心固定/Pose/State一致を確認。
+- Windows-VrmRuntimeChain build **PASS**: `Logs/build-player-20260912-151110-601.log`。Core adapter/計算変更のためPlayer GUI suiteは今回再実行していない。実モデル受入は未実施。
+- [実行chain・時間契約](docs/VRM-Spring-Dynamics.md)。次はcenter/固定step/失敗時状態を所有するcontrollerとVRM0展開。I03-B全体、I03-CのGUI、一般node transform、実素材受入は未完了。参考アルゴリズムと全runtimeの挙動同一性を保証しない。
 
 ### I03-B前段: 元node原点を回転中心に保持（2026-09-12）
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Import;
@@ -31,6 +32,17 @@ internal static partial class Program
             Near(25, resolved[0].Pairs[0].Settings.Stiffness);
             SpringPointNear(new Vec3(.3f, 0, 0), resolved[0].Pairs[0].SourceHeadOrigin);
             SpringPointNear(new Vec3(.3f, 2, 0), resolved[0].Pairs[0].SourceTailOrigin);
+            var pose = PoseSet.Create(skeleton, skeleton.Bones.Select(b => new BonePose(b.BoneId, PoseTransform.FromTranslation(b.Head))));
+            var executable = Vrm1SpringRuntimeAdapter.CreateChains(input, rig, graph, pose);
+            Equal(1, executable[0].Joints.Count); Near(25, executable[0].Joints[0].Stiffness);
+            True(executable[0].Joints[0].IntegrationMode == SpringIntegrationMode.VrmReference);
+            var state = SpringBoneSimulator.CreateInitialState(skeleton, pose, executable);
+            for (int i = 0; i < 12; i++)
+            {
+                var step = SpringBoneSimulator.Step(skeleton, pose, executable, null, state, 1f / 60f); state = step.State;
+                SpringPointNear(new Vec3(.3f, 0, 0), step.Pose.ByBoneId[RootBone].Transform.TransformPoint(new Vec3(.3f, 0, 0)));
+                SpringPointNear(state.CurrentTails[RootBone], step.Pose.ByBoneId[RootBone].Transform.TransformPoint(new Vec3(.3f, 2, 0)));
+            }
             var three = Vrm1SpringChainResolver.Resolve(Session(Chain(new[] { 0, 1, 2 })), rig, graph);
             Equal(2, three[0].Pairs.Count); Equal(ChildBone, three[0].Pairs[1].HeadBoneId);
             Expect("DUPLICATE_SPRING_JOINT", () => Vrm1SpringChainResolver.Resolve(Session(Chain(new[] { 0, 2 }), Chain(new[] { 1, 2 })), rig, graph));

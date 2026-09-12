@@ -7,6 +7,14 @@ internal static partial class Program
     static void RunSpringTimeTests()
     {
         RunSpringCenterTests();
+        Test("VRM reference forces retain source units and per-step drag", () =>
+        {
+            var joint = new SpringBoneJointSettings(ChildBone, 0, 25, 2, new Vec3(2, -3, 4), .25f, integrationMode: SpringIntegrationMode.VrmReference);
+            var predicted = SpringTimeIntegration.Predict(joint, new Vec3(1, 2, 3), new Vec3(.5f, 1, 2), new Vec3(0, 2, 0), .02f, .01f, new Vec3());
+            SpringPointNear(new Vec3(1.455f, 3.13f, 3.91f), predicted);
+            SpringPointNear(new Vec3(2, -3, 4), joint.GravityDirection);
+            Expect("INVALID_SPRING", () => new SpringBoneJointSettings(ChildBone, 0, 25, 2, new Vec3(0, -1, 0), .25f));
+        });
         Test("Spring variable-step inertia and gravity match elapsed time", () =>
         {
             var joint = new SpringBoneJointSettings(ChildBone, 0, 0, 8, new Vec3(1, 0, 0), 0);
