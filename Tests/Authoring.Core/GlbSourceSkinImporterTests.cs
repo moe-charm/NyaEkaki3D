@@ -40,6 +40,12 @@ internal static partial class Program
             Near(.5f, source.Binding.Weights[1].Single(weight => weight.JointSlot == 0).Weight);
             Near(.5f, skin.Binding.Weights[1].First(weight => weight.BoneId != skin.Binding.Weights[0][0].BoneId).Weight);
         });
+        Test("GLB skin importers reject negative weight components before filtering", () =>
+        {
+            var bytes = BuildSkinnedGlb(false, false, true);
+            Expect("INVALID_WEIGHT", () => GlbSourceSkinImporter.Read(bytes));
+            Expect("INVALID_WEIGHT", () => GlbSkinImporter.Read(bytes));
+        });
         Test("GLB source skin importer finds paired JOINTS_1 and WEIGHTS_1", () =>
         {
             var bytes = BuildSkinnedGlb(); var root=JObject.Parse(ReadJsonChunk(bytes));

@@ -88,7 +88,11 @@ namespace NyaForge.Authoring.Import
                 for (int vertex = 0; vertex < count; vertex++)
                     foreach (var set in sets.Values)
                         for (int component = 0; component < 4; component++)
-                            if (set.Item2[vertex][component] > 0) result.Add(new SourceSkinWeight(vertexOffset + vertex, set.Item1[vertex][component], set.Item2[vertex][component]));
+                        {
+                            float weight = set.Item2[vertex][component];
+                            Checks.Finite(weight); Checks.Require(weight >= 0f && weight <= 1f, "INVALID_WEIGHT", "WEIGHTS component must be between zero and one.");
+                            if (weight > 0) result.Add(new SourceSkinWeight(vertexOffset + vertex, set.Item1[vertex][component], weight));
+                        }
                 vertexOffset += count;
             }
             Checks.Require(vertexOffset == mesh.VertexCount, "INVALID_IMPORT", "Skin attributes do not cover the imported mesh vertices.");

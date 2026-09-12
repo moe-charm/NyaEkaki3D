@@ -36,7 +36,7 @@ internal static partial class Program
         });
     }
 
-    static byte[] BuildSkinnedGlb(bool joints16 = false, bool normalizedWeights = false)
+    static byte[] BuildSkinnedGlb(bool joints16 = false, bool normalizedWeights = false, bool negativeWeights = false)
     {
         using (var bin = new MemoryStream()) using (var b = new BinaryWriter(bin))
         {
@@ -48,7 +48,9 @@ internal static partial class Program
                 if (!joints16) b.Write(row);
                 else foreach (byte value in row) b.Write((ushort)value);
             }
-            if (normalizedWeights)
+            if (negativeWeights)
+                foreach (var row in new[] { new[] { -.5f, 0f, 0f, 0f }, new[] { .5f, .5f, 0f, 0f }, new[] { 0f, 1f, 0f, 0f } }) foreach (float value in row) b.Write(value);
+            else if (normalizedWeights)
                 foreach (var row in new[] { new byte[] { 255, 0, 0, 0 }, new byte[] { 128, 128, 0, 0 }, new byte[] { 0, 255, 0, 0 } }) b.Write(row);
             else
                 foreach (var row in new[] { new[] { 1f, 0f, 0f, 0f }, new[] { .5f, .5f, 0f, 0f }, new[] { 0f, 1f, 0f, 0f } }) foreach (float value in row) b.Write(value);
