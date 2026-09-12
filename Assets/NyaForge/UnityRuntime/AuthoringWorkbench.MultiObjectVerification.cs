@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
+using UnityEngine.UIElements;
 
 namespace NyaForge.UnityRuntime
 {
@@ -21,6 +22,9 @@ namespace NyaForge.UnityRuntime
                 CreatePlaneGraph();
                 Check(workspace.Document.Objects.Count == 2 && objectProjection.EntryCount == 1, "Multiple graph objects were not published to the display");
                 Check(objectProjection.FramingPoints.Any(), "Inactive graph object has no framing points");
+                var activeId = workspace.Document.ActiveObjectId;
+                var activeButton = root.Q<Button>("object-select-" + activeId);
+                Check(activeButton != null && activeButton.text.Length < activeId.Length && activeButton.tooltip.EndsWith(activeId, StringComparison.Ordinal), "Object selector text is not readable without losing the full identity");
                 var directory = Path.Combine(output, "multi-object-display");
                 projectPath.SetValueWithoutNotify(directory); SaveProject(); OpenProject();
                 Check(workspace.Document.Objects.Count == 2 && objectProjection.EntryCount == 1, "Multiple graph objects were not restored on Open");
