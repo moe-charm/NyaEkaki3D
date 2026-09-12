@@ -11,8 +11,8 @@
 
 ## 検証
 
-- Core: **427 passed / 0 failed** (`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`)
-- 最新artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-6d414fbe38fc4dfba05cfc0dac9f06be`
+- Core: **433 passed / 0 failed** (`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`)
+- 最新artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f131624ff01f41dabd6b454d993de94f`
 - 実RadDollV3はprivate素材としてのみ取込 smoke に使用し、public repositoryへ同梱していない。
 
-このレビューで残る実装対象は、I04-A/Bの複数mesh・共有mesh/skin/morph参照・複数SkinDeform、I04-Eのnormal/tangent morph・材質・未知拡張、SIM-02B/SIM-07Aの実SDK/実VRChat受入である。Coreや合成Bridgeの合格を、実SDK・実VRChatでの受入完了とは扱わない。
+このレビューで残る実装対象は、I04-A/Bの複数mesh・共有mesh/skin/morph参照・複数SkinDeform、I04-Eの材質・未知拡張、SIM-02B/SIM-07Aの実SDK/実VRChat受入である。容量拡張としてnativeは512骨／32 influence／512 morph、GLB取込は全JOINTS_n/WEIGHTS_n setへ対応した。標準SkinnedGeometry出力は受取先互換のため4 influenceを明示拒否し、拡張出力profileは残件。Coreや合成Bridgeの合格を、実SDK・実VRChatでの受入完了とは扱わない。
