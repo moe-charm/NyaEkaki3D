@@ -74,6 +74,18 @@ internal static partial class Program
             var movedSession = ImportedRigSession.Create(imported, null, movedGraph.GraphId, skeletonId).WithSourceSkin(source.Skin, source.Binding);
             var movedProjected = SourceSkinGraphAdapter.ApplyToEvaluation(movedEvaluation, movedGraph, movedSession);
             True(movedProjected.Mesh.ContentHash != projected.Mesh.ContentHash);
+
+            string secondDeformId = Guid.NewGuid().ToString("D"), secondOutputId = Guid.NewGuid().ToString("D");
+            var multiGraph = new AuthoringGraph(Guid.NewGuid().ToString("D"),
+                graph.Nodes.Values.Concat(new[] { GraphNode.SkinDeformNode(secondDeformId), GraphNode.Output(secondOutputId) }),
+                graph.Edges.Concat(new[] {
+                    new GraphEdge(meshId, "mesh", secondDeformId, "mesh"), new GraphEdge(skeletonId, "skeleton", secondDeformId, "skeleton"),
+                    new GraphEdge(bindId, "binding", secondDeformId, "binding"), new GraphEdge(poseId, "pose", secondDeformId, "pose"),
+                    new GraphEdge(secondDeformId, "mesh", secondOutputId, "mesh") }), secondOutputId);
+            var multiEvaluation = GraphEvaluator.Evaluate(multiGraph); True(multiEvaluation.IsComplete);
+            var multiSession = ImportedRigSession.Create(imported, null, multiGraph.GraphId, skeletonId).WithSourceSkin(source.Skin, source.Binding);
+            var multiProjected = SourceSkinGraphAdapter.ApplyToEvaluation(multiEvaluation, multiGraph, multiSession);
+            Equal(multiEvaluation.Output.DomainId, multiProjected.DomainId); True(multiProjected.Mesh != null);
         });
     }
 }

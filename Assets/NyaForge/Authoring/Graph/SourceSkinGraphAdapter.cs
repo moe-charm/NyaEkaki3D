@@ -36,14 +36,24 @@ namespace NyaForge.Authoring.Graph
             Checks.Require(session.SourceSkin != null && session.SourceSkinBinding != null,
                 "IMPORT_SOURCE_SKIN_MISSING", "A complete source skin session is required.");
             var deformNodes = graph.Nodes.Values.Where(node => node.TypeId == BuiltinNodes.SkinDeform).ToArray();
-            Checks.Require(deformNodes.Length == 1, "IMPORT_GRAPH_UNSUPPORTED", "Source skin display needs exactly one SkinDeform node.");
-            var deform = deformNodes[0];
-            Checks.Require(evaluation.MeshInputs.TryGetValue(deform.NodeId, out var input) && input != null,
-                "INPUT_UNRESOLVED", "The authored SkinDeform mesh input is unavailable.");
-            var poseEdge = graph.Edges.SingleOrDefault(edge => edge.ToNode == deform.NodeId && edge.ToPort == "pose");
-            GraphPoseValue pose = null;
-            Checks.Require(poseEdge != null && evaluation.PoseOutputs.TryGetValue(poseEdge.FromNode, out pose),
-                "INPUT_UNRESOLVED", "The authored SkinDeform pose input is unavailable.");
+            Checks.Require(deformNodes.Length > 0, "IMPORT_GRAPH_UNSUPPORTED", "Source skin display needs a SkinDeform node.");
+            GraphPoseValue pose = null; string skeletonHash = null; string poseHash = null;
+            foreach (var deform in deformNodes)
+            {
+                Checks.Require(evaluation.MeshInputs.TryGetValue(deform.NodeId, out var input) && input != null,
+                    "INPUT_UNRESOLVED", "The authored SkinDeform mesh input is unavailable.");
+                var skeletonEdge = graph.Edges.SingleOrDefault(edge => edge.ToNode == deform.NodeId && edge.ToPort == "skeleton");
+                GraphSkeletonValue skeleton = null;
+                Checks.Require(skeletonEdge != null && evaluation.SkeletonOutputs.TryGetValue(skeletonEdge.FromNode, out skeleton),
+                    "INPUT_UNRESOLVED", "The authored SkinDeform skeleton input is unavailable.");
+                var poseEdge = graph.Edges.SingleOrDefault(edge => edge.ToNode == deform.NodeId && edge.ToPort == "pose");
+                GraphPoseValue candidatePose = null;
+                Checks.Require(poseEdge != null && evaluation.PoseOutputs.TryGetValue(poseEdge.FromNode, out candidatePose),
+                    "INPUT_UNRESOLVED", "The authored SkinDeform pose input is unavailable.");
+                if (pose == null) { pose = candidatePose; skeletonHash = skeleton.Skeleton.ContentHash; poseHash = pose.Pose.ContentHash; }
+                else Checks.Require(skeletonHash == skeleton.Skeleton.ContentHash && poseHash == candidatePose.Pose.ContentHash,
+                    "IMPORT_GRAPH_UNSUPPORTED", "Multiple SkinDeform nodes must share one skeleton and pose for source skin display.");
+            }
             // Apply the source palette to the complete authored output.  This preserves
             // edits made after SkinDeform (EditMesh, morph and material graph stages).
             return Apply(evaluation.Output, session, graph, pose.Pose);
