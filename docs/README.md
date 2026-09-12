@@ -5,6 +5,7 @@
 | 文書 | 役割 |
 |---|---|
 | [current_task.md](../current_task.md) | 現在の作業、直近の完了事項、次に着手する範囲 |
+| [揺れ・布adapter計画](Secondary-Motion-Plan.md) | PhysBones優先、MagicaCloth2任意評価、SIM-01〜07と完了条件 |
 | [source affine基盤](Source-Affine.md) | 行列・法線/接線・数値検査とnode/保存接続の次工程 |
 | [モデル交換仕様](Model-Interchange-Spec.md) | 取込・情報保持・native正本・出力・モジュール分割とI04完了条件 |
 | [実素材の取込調査](Real-Asset-Import-Plan.md) | T03の観測条件、現在の容量/変換対応との差、private証拠の場所 |

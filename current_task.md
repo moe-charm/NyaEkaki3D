@@ -25,6 +25,20 @@
 
 ## 完了した前提と残る境界
 
+### ボーンの追加フィードバック: SIMタスク（2026-09-12）
+
+[揺れ・布adapter計画](docs/Secondary-Motion-Plan.md)へ採用方針・依存・完了条件を整理した。**PhysBones優先、MagicaCloth2は任意adapter**。タスク化のみで導入/実装はまだ行っていない。直近はI04-Aの保存接続を継続する。
+
+- [ ] SIM-01 / P1: 共通データ・交換可能な計算adapter・版付き保存。I04-Aの保存/ID契約へ接続。
+- [ ] SIM-02 / P1: PhysBones DTO・Unity Bridge・target別loss report。
+- [ ] SIM-03 / P1: GUI/MCPの設定・再構築・reset・一定時間再生・連続撮影とbackend証拠。
+- [ ] SIM-04 / P2: C2でMagicaCloth2 BoneClothの髪束1本を任意評価。未導入buildも維持。
+- [ ] SIM-05 / P2: C3でMeshClothの固定領域・morph重複拒否と性能を評価。
+- [ ] SIM-06 / P2: BoneSpringとMagica対応Unityアプリ用出力。
+- [ ] SIM-07 / P1: C2〜C5でtarget別受入。VRChat内確認と他simulatorのプレビューを区別。I03-B/T04/T05と接続。
+
+### 既存工程
+
 - [x] **T01**: 全source node階層と元children順をrig session v3へ保存。v1/v2は階層不明を維持。
 - [x] **T02**: VRM0 subtree/一時骨格/実行所有者/共通再生GUIを対応profileで接続。両形式のPlayer handler往復合格。
 - [x] **T03**: ローカルFBX3件を読取調査。アバター20mesh、全3件257骨、アバター最大18deform bone影響/頂点・単一mesh262morphを確認。生データはprivate。変換・実importの成功はまだ確認していない。
