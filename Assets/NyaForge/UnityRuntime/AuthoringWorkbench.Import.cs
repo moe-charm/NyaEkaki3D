@@ -24,6 +24,7 @@ namespace NyaForge.UnityRuntime
             modelImportStatus = new Label { name = "model-import-status" }; modelImportStatus.style.whiteSpace = WhiteSpace.Normal; modelImportPanel.Add(modelImportStatus);
             modelImportPanel.Add(new Label("Windows先行。GLB v2のbounded triangle mesh、POSITION morph、translation-only skinを取り込みます。VRMはidentity・humanoid・expression・SpringBone inventoryを読みます。FBX、VRM表情の適用、SpringBoneシミュレーション、回転つきskinは対応範囲外です。"));
             BuildVrmSpringStatus(modelImportPanel);
+            BuildImportedRigStatus(modelImportPanel);
             modelImportPanel.Add(Button("GLBを選ぶ", () => { if (!modelPickerOpen) StartCoroutine(PickModel()); }, "model-import-browse"));
             modelImportPath = new TextField("ファイルパス") { name = "model-import-path" }; modelImportPath.style.flexDirection = FlexDirection.Column; modelImportPanel.Add(modelImportPath);
             modelImportPanel.Add(Button("このGLBを新規graphへ取り込む", () => Try(() => ImportModel(modelImportPath.value)), "model-import-apply"));
@@ -33,6 +34,7 @@ namespace NyaForge.UnityRuntime
         void RefreshModelImport()
         {
             if (modelImportPanel == null) return;
+            RefreshImportedRigStatus();
             bool ready = workspace != null && workspace.Document.IsEmpty;
             modelImportPanel.Q<Button>("model-import-apply").SetEnabled(ready);
             modelImportStatus.text = ready ? "空の制作projectへ取り込めます。元ファイルはコピーせず、meshをnative graphへ取り込みます。" : "取り込みは空の制作projectで実行してください。既存作品は置き換えません。";
@@ -62,6 +64,7 @@ namespace NyaForge.UnityRuntime
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
             var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph)));
             if (!result.Success) throw new InvalidOperationException(result.Code + ": " + result.Message);
+            importedRigSession = null;
             CaptureImportedMetadata();
             Refresh(); SetStatus("GLBを取り込みました。" + (imported.Morphs == null ? " morphなし" : " morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12));
         }
@@ -78,7 +81,10 @@ namespace NyaForge.UnityRuntime
                 nodes.Insert(1, GraphNode.MorphSetNode(morphId, imported.Morphs)); nodes.Insert(2, GraphNode.MorphDeformNode(morphDeformId, weights)); edges.Add(new GraphEdge(sourceId, "mesh", morphDeformId, "mesh")); edges.Add(new GraphEdge(morphId, "morphs", morphDeformId, "morphs")); finalNode = morphDeformId;
             }
             edges.Add(new GraphEdge(finalNode, "mesh", bindId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", bindId, "skeleton")); edges.Add(new GraphEdge(skeletonId, "skeleton", poseId, "skeleton")); edges.Add(new GraphEdge(finalNode, "mesh", deformId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", deformId, "skeleton")); edges.Add(new GraphEdge(bindId, "binding", deformId, "binding")); edges.Add(new GraphEdge(poseId, "pose", deformId, "pose")); edges.Add(new GraphEdge(deformId, "mesh", outputId, "mesh"));
-            var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId); var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph))); if (!result.Success) throw new InvalidOperationException(result.Code + ": " + result.Message);
+            var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
+            var rigSession = ImportedRigSession.Create(imported, vrm, graph.GraphId, skeletonId);
+            var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph))); if (!result.Success) throw new InvalidOperationException(result.Code + ": " + result.Message);
+            importedRigSession = rigSession;
             CaptureImportedMetadata();
             Refresh(); SetStatus("GLB skinを取り込みました。bone " + imported.Skeleton.Bones.Count + " · weight " + imported.Binding.Weights.Count + (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12));
         }

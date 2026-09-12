@@ -25,6 +25,7 @@ internal static partial class Program
 
     static void RunImportedBoneMapTests()
     {
+        RunImportedRigSessionTests();
         foreach (bool legacy in new[] { false, true })
             Test("VRM humanoid maps source nodes, not names or skin slots: " + legacy, () =>
             {

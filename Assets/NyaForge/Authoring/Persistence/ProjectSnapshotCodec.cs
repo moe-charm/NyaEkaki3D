@@ -38,7 +38,7 @@ namespace NyaForge.Authoring
             {
                 Document(root);
                 var entries = (JArray)root["attachments"];
-                Checks.Require(entries.Count <= 2, "BUDGET_EXCEEDED", "Too many metadata attachments.");
+                Checks.Require(entries.Count <= ProjectAttachments.MaxCount, "BUDGET_EXCEEDED", "Too many metadata attachments.");
                 foreach (var token in entries)
                 {
                     var entry = token as JObject;

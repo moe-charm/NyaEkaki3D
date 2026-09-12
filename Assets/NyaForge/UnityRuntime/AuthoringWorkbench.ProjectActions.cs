@@ -35,6 +35,7 @@ namespace NyaForge.UnityRuntime
             catch { projection.PreviewNodeId = oldStage; throw; }
             activeEditContext = null;
             selectedFaces.Clear(); faceMode.SetValueWithoutNotify(false);
+            importedRigSession = null;
             ClearImportedVrmExpressions();
             ClearImportedVrmSpring();
             workspace = next; commands = new AuthoringCommandService(workspace);
@@ -50,11 +51,16 @@ namespace NyaForge.UnityRuntime
         {
             var directory = Path.GetFullPath(projectPath.value);
             var next = ProjectStore.Open(directory);
+            var rigBytes = next.Attachments.Read(ProjectAttachments.Rig);
+            var rigSession = rigBytes == null ? null : ImportedRigSessionCodec.Read(rigBytes);
             var expressionBytes = next.Attachments.Read(ProjectAttachments.Expressions);
             var springBytes = next.Attachments.Read(ProjectAttachments.Springs);
             var expressionSession = expressionBytes == null ? null : VrmExpressionSessionCodec.Read(expressionBytes);
             var springSession = springBytes == null ? null : VrmSpringSessionCodec.Read(springBytes);
+            if (rigSession != null && expressionSession != null) rigSession.ValidateSource(expressionSession.SourceHash);
+            if (rigSession != null && springSession != null) rigSession.ValidateSource(springSession.SourceHash);
             ReplaceWorkspace(next, directory);
+            importedRigSession = rigSession;
             importedVrmSession = expressionSession; Refresh();
             importedVrmSpringSession = springSession; RefreshVrmSpringStatus();
         }

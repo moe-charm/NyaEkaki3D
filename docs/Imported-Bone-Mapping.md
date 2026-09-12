@@ -14,7 +14,7 @@ glTF node番号とskinのjoint slotは異なる。たとえば`skin.joints=[1,2]
 
 ## 保存と未対応範囲
 
-現時点のBoneMapとHumanoidBindingは取込結果のCore情報で、native projectへの保存・Open復元には未接続。元のskeletonをcodecで往復した場合、保持中の対応表をhash検査して再利用できることはテストしたが、これは対応表自体の永続化の証拠ではない。
+後続の [ImportedRigSession](Imported-Rig-Sessions.md) がnode/humanoid対応をgraphと同じsnapshotへ保存する。Open後にsource/skeleton hashを検査してBoneMapを復元する。骨格編集でstaleになった対応表は自動更新せず、GUIへ表示する。
 
 既存のNYRS骨格形式と骨ID生成方法は変更していない。一般node回転・scale、複数skin、skin外のSpring node、sphere/capsule詳細値・gravityDirの保持、runtime preview接続も別段階である。対応表だけを追加して実VRM全体を読めるようになったとは扱わない。
 

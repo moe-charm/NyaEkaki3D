@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01〜R10は下記のCore/Windows自動検証範囲で完了。実素材・実操作受入は独立して未完了。最新のCoreは328件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
+更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01〜R10は下記のCore/Windows自動検証範囲で完了。実素材・実操作受入は独立して未完了。最新のCoreは330件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
 
 ## 開発の入口
 
@@ -25,7 +25,7 @@
 
 検証済み: このレビューでCore **297 passed / 0 failed**を再実行。別fixtureで作者情報拒否、session往復失敗、保存失敗後dirty=False、step2姿勢ずれ、親子gap、chain間衝突混入、貫通、dt=0の進行、null参照例外、省略値の相違を確認した。Player/Bridgeは今回再実行していない。実VRM全体・手動見た目受入も未確認。
 
-再開順: **I02 mapping永続化 → I03 runtime接続**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
+再開順: **I03 runtime接続（座標・時間adapterから）**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
 
 ### 実行単位と完了判定
 
@@ -38,6 +38,15 @@
 状況照合時点では未修正だったR01/R02/R09を、下記の実装と自動検証で更新した。チェック済みは自動検証範囲であり、実素材と実マウスによる受入は別タスクのまま維持する。
 
 修正後は、未保持のgravityDir・collider shape値と保存移行を含むVRM入力契約を整え、node→stable BoneId、preview接続へ進む。一般node transform、skin/morph出力、実アバター受入、C1〜C5の全体目標は維持する。
+
+### I02: 取込骨対応のsnapshot保存（2026-09-12）
+
+- `ImportedRigSession` / Codec v1へsource/skeleton hash、GraphId/SkeletonNodeId、node/BoneIdとhumanoid対応を保存する責務を分離。許可attachmentにrigを追加して最大3件とし、既存の単一manifest公開・失敗保護を共用する。
+- GUI skin取込でsessionを所有し、Open前にsource整合性を確認する。骨格変更時は取込パネルへstaleを表示し、対応解決を拒否する。Undoで元骨格へ戻れば対応も再び有効になる。静的mesh取込は古いrig情報を継承しない。
+- Core **330 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-427a087e42fc48f997e750c19f00a55f`。session/native往復、source/graph/skeleton不一致拒否、未知field/重複拒否、rig blob失敗時の旧snapshot維持と再試行を確認。
+- 契約は [取込骨対応の保存](docs/Imported-Rig-Sessions.md)。旧NyaForgeはrig attachment付き作品を開けない。元ファイルのない旧作品から対応を推測しない。I03の一般node/center/collider座標・時間変換とpreview接続は未完了。
+
+- Windows-RigSession build **PASS**: `Logs/build-player-20260912-142438-076.log`。Authoring suite **PASS**: `Artifacts/Authoring-20260912-142507-e3f1bb9d5e044c76978b7b06987b1176/report.json`。同一VRM0/1のmapping復元、骨格編集時stale表示、Undo復帰、rigを含む3種類のblob失敗保護とGUI/MCP handler再試行を確認。実マウス・実アバター受入は未実施。
 
 ### I01: Spring詳細を欠落なく保存（2026-09-12）
 
@@ -58,7 +67,7 @@
 ### 次の実装単位: VRM入力契約とpreview接続
 
 - [x] **I01 — Spring入力の詳細保持（対応profileの自動検証完了）**。gravityDirとsphere/capsuleのoffset・radius・tailをtyped metadataへ保持する。旧sessionは不明値を捏造せず、移行方針と再取込の必要性を定める。Core solverのsphere対応とVRM capsule対応は区別する。
-- [ ] **I02 — 骨対応の保存**。ImportedBoneMap/humanoid bindingをnative保存へつなぎ、同一snapshotで保存・Openできるようにする。source/skeleton hashとnode参照を検査し、骨格編集時のstaleを明示する。
+- [x] **I02 — 骨対応の保存（Core/Windows自動検証完了）**。ImportedBoneMap/humanoid bindingをnative保存へつなぎ、同一snapshotで保存・Openできるようにする。source/skeleton hashとnode参照を検査し、骨格編集時のstaleを明示する。
 - [ ] **I03 — runtime preview**。VRM node→BoneId、centerとcollider座標系、VRM設定の時間的意味をadapterで変換する。未対応node/shapeを黙って除外しない。Workbenchの再生・停止・リセットは保存/Undoとは分離して接続する。
 
 ### VRM骨対応adapterと修正範囲の照合（2026-09-12）

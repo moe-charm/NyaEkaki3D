@@ -10,7 +10,7 @@ namespace NyaForge.UnityRuntime
     {
         void VerifySaveFailureGuard(string output, List<string> checks)
         {
-            foreach (string sidecar in new[] { ProjectAttachments.Expressions, ProjectAttachments.Springs })
+            foreach (string sidecar in new[] { ProjectAttachments.Expressions, ProjectAttachments.Springs, ProjectAttachments.Rig })
             foreach (bool existing in new[] { false, true })
             {
                 ReplaceWorkspace(AuthoringWorkspace.CreateFixture(), null);
@@ -62,7 +62,7 @@ namespace NyaForge.UnityRuntime
                 Check(nodes.Count == 3 && nodes[0] == 0 && nodes[1] == 0 && nodes[2] == 2, "Workbench lost repeated collider nodes");
                 Check(importedVrmSpringSession.SpringBones[0].Joints[0].Stiffness == 1 && importedVrmSpringSession.SpringBones[0].Joints[0].DragForce == .5f, "Workbench lost Spring settings");
             }
-            checks.Add("Atomic metadata snapshots: expression/Spring blob IO failures preserve old manifest/settings and dirty/version, deny exit/replacement, and permit GUI/MCP-handler retry/reopen");
+            checks.Add("Atomic metadata snapshots: expression/Spring/rig blob IO failures preserve old manifest/settings and dirty/version, deny exit/replacement, and permit GUI/MCP-handler retry/reopen");
             checks.Add("VRM metadata: ordered multiple authors, repeated/mixed collider nodes and Spring values survive Workbench Save/Open");
         }
 
@@ -72,8 +72,13 @@ namespace NyaForge.UnityRuntime
             var spring = (JObject)expression.DeepClone(); spring.Remove("expressions");
             spring["colliderGroups"] = new JArray(new JObject { ["node"] = -1, ["colliderCount"] = 3, ["nodes"] = new JArray(0, 0, 2) });
             spring["springBones"] = new JArray(new JObject { ["name"] = "tail", ["centerNode"] = -1, ["rootBoneNodes"] = new JArray(), ["colliderGroupIndices"] = new JArray(0), ["joints"] = new JArray(new JObject { ["node"] = 1, ["hitRadius"] = 0, ["stiffness"] = 1, ["gravityPower"] = 0, ["dragForce"] = .5 }) });
+            var rig = new JObject { ["version"] = 1, ["sourceHash"] = new string('0', 64), ["skeletonHash"] = new string('0', 64),
+                ["graphId"] = title == "old" ? "00000000-0000-0000-0000-000000000001" : "00000000-0000-0000-0000-000000000002",
+                ["skeletonNodeId"] = "00000000-0000-0000-0000-000000000003",
+                ["nodes"] = new JArray(new JObject { ["node"] = 0, ["boneId"] = "00000000-0000-0000-0000-000000000004" }), ["humanoid"] = new JArray() };
             return new ProjectAttachments(new Dictionary<string, byte[]>
             {
+                [ProjectAttachments.Rig] = Encoding.UTF8.GetBytes(rig.ToString()),
                 [ProjectAttachments.Expressions] = Encoding.UTF8.GetBytes(expression.ToString()),
                 [ProjectAttachments.Springs] = Encoding.UTF8.GetBytes(spring.ToString())
             });

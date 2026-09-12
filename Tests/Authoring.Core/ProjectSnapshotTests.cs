@@ -12,7 +12,8 @@ internal static partial class Program
     static ProjectAttachments SnapshotMetadata(string suffix) => new ProjectAttachments(new Dictionary<string, byte[]>
     {
         [ProjectAttachments.Expressions] = Encoding.UTF8.GetBytes("expression-" + suffix),
-        [ProjectAttachments.Springs] = Encoding.UTF8.GetBytes("spring-" + suffix)
+        [ProjectAttachments.Springs] = Encoding.UTF8.GetBytes("spring-" + suffix),
+        [ProjectAttachments.Rig] = Encoding.UTF8.GetBytes("rig-" + suffix)
     });
 
     static void RunProjectSnapshotTests()
@@ -32,7 +33,7 @@ internal static partial class Program
             Equal(w.Attachments.ContentHash, ProjectStore.Open(directory).Attachments.ContentHash);
         });
 
-        foreach (string failedName in new[] { ProjectAttachments.Expressions, ProjectAttachments.Springs })
+        foreach (string failedName in new[] { ProjectAttachments.Expressions, ProjectAttachments.Springs, ProjectAttachments.Rig })
             Test("snapshot failed blob preserves old document and metadata: " + failedName, () =>
             {
                 string directory = Dir("snapshot-" + failedName); var w = Fresh();

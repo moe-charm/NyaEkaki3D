@@ -6,6 +6,7 @@
 |---|---|
 | [current_task.md](../current_task.md) | 現在の作業、直近の完了事項、次に着手する範囲 |
 | [Rig / VRM修正後の検証範囲](reviews/2026-09-12-Repair-Coverage.md) | 正式回帰とPlayer検査の対応、未確認経路と手動受入の区別 |
+| [取込骨対応の保存](Imported-Rig-Sessions.md) | rig sessionと3件の一括保存、骨格編集時のstale検出とUndo復帰 |
 | [取込骨対応](Imported-Bone-Mapping.md) | source nodeとstable BoneId、VRM humanoid対応、永続化の残件 |
 | [2026-09-12 Rig / VRMレビュー](reviews/2026-09-12-Rig-Vrm-Review.md) | bb1d89cの再現不具合、修正タスクR01〜R10の完了条件と検証の限界 |
 | [VRM Spring詳細](VRM-Spring-Details.md) | 重力方向と形状、Spring session v3、旧設定の不明値移行 |

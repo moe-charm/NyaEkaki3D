@@ -2,6 +2,8 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring;
+using NyaForge.Authoring.Graph;
+using NyaForge.Authoring.Rig;
 
 namespace NyaForge.UnityRuntime
 {
@@ -30,6 +32,17 @@ namespace NyaForge.UnityRuntime
                 Check(!HasUnsaved && workspace.Document.EditSourceHash == graphHash, "Imported VRM graph changed on Open");
                 Check(workspace.Attachments.ContentHash == metadataHash, "Imported VRM settings changed on Open");
                 Check(importedVrmSession.SourceHash == sourceHash && importedVrmSpringSession.SourceHash == sourceHash, "Imported VRM source identity was lost");
+                Check(importedRigSession != null && importedRigSession.SourceHash == sourceHash, "Imported rig mapping was lost");
+                var graph = workspace.Document.Objects[0].Graph;
+                var humanoid = importedRigSession.ResolveHumanoid(graph);
+                Check(humanoid["hips"] == importedRigSession.NodeToBone[0], "Humanoid mapping changed on Open");
+                var skeletonNode = graph.Nodes[importedRigSession.SkeletonNodeId];
+                var moved = SkeletonEditing.MoveBone(skeletonNode.Skeleton, humanoid["hips"], new Vec3(.01f, 0, 0), new Vec3(.01f, 0, 0));
+                Execute(AuthoringOperation.ReplaceGraph(graph.ReplaceNode(GraphNode.SkeletonNode(skeletonNode.NodeId, moved))));
+                Check(importedRigStatus.text.Contains("IMPORT_SKELETON_CHANGED"), "Edited skeleton did not report stale mapping");
+                Execute(AuthoringOperation.Undo());
+                importedRigSession.Resolve(workspace.Document.Objects[0].Graph);
+                Check(!importedRigStatus.text.Contains("IMPORT_SKELETON_CHANGED"), "Undo did not restore mapping status");
                 Check(importedVrmSession.Expressions.Count == 1 && importedVrmSession.Expressions[0].Weights.Values.Single() == .5f, "Imported VRM morph expression was lost");
                 var nodes = importedVrmSpringSession.ColliderGroups[0].ColliderNodeIndices;
                 Check(importedVrmSpringSession.HasCompleteDetails, "Imported VRM lost detailed Spring geometry");
