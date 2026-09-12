@@ -6,6 +6,10 @@
 
 同一skeleton hashの複数skinned meshとobjectごとのinstance affineを一つのGLBへ出力する追加実装も含む。実RadDollV3のprivate smokeはWindows PlayerとUnity BridgeでPASSしたが、実VRChat SDK/実アバター/VRChat内動作の受入とは分ける。残件は異なるskeleton結合、共有mesh/skin/morph参照、完全な材質・animation保持、実SDK受け取りである。
 
+## source skin downstream evaluation (`SourceSkinOverrideV1`)
+
+source skin projectionを`SkinDeform`ノード位置のmesh overrideとして再評価する実装へ更新した。最終出力へsource skinを後掛けしないため、非rest poseでの二重変形を避けながら、SkinDeform後のEditMesh/Morph/材質/Outputを保持する。Core **459 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-bae7e375d86048a78ee5450d8cdeb43a`）、Windows Playerの実RadDollV3 smokeとUnity BridgeもPASS。通常評価のstale snapshot拒否は維持し、source projectionでのみ同一domainのEditMesh snapshotを差し替え出力へ再基準化する。
+
 ## 最新実装追記（同一skeletonの複数mesh GLB出力）
 
 `ExportSkinned`／`ExportSkinnedExtended`は、同一skeleton hashを共有する複数graph objectを一つのGLBへ出力できるようになった。meshごとのprimitiveとnodeを保持しつつskinは共有し、異なるskeletonや複数objectへのinstance affine指定は明示的に拒否する。Core 459件、Windows Player、Unity Bridgeで合成2mesh往復を確認した。異なるskeletonの結合、共有mesh／morph参照、実VRChat SDK受入は引き続き未完了。
@@ -27,7 +31,7 @@
 | 指摘 | 現行対応 | 回帰・境界 |
 | --- | --- | --- |
 | 16bit `JOINTS_n` の2バイト幅誤読 | `GlbSourceSkinImporter` が `row[i * 2] \| row[i * 2 + 1] << 8` で読取る | 8bit/16bit同値、全dense set、負weight拒否をCoreで確認。sparse weightは未対応 |
-| source skin後の下流編集消失 | `SourceSkinGraphAdapter.ApplyToEvaluation` が最終graph outputへsource paletteを適用 | EditMeshを含むsource skin graph回帰をCoreで確認。同一skeleton／poseを共有する複数 `SkinDeform` 同時評価も回帰済み |
+| source skin後の下流編集消失 | `SourceSkinGraphAdapter.ApplyToEvaluation` が `SkinDeform` 出力をsource paletteで差し替え、下流graphを再評価 | 非rest pose＋SkinDeform後EditMesh、同一skeleton／poseを共有する複数 `SkinDeform` 同時評価をCoreで確認 |
 | PhysBones packageのsource不足 | target packageへ `secondary-motion.nyaforge.bin` を同梱し、receiverがprofile hashで検証 | package往復・改ざん・source hash不一致をCore/Bridgeで確認。実SDK受入は未実施 |
 | skin付きGLBと同居する静的小物の拒否 | `GlbImporter.MeshHasSkin(root, meshIndex)` が選択meshだけを判定 | 同居fixtureで小物取込とskin mesh拒否をCoreで確認。同一skeleton hashの複数meshはshared skin出力へ対応、共有mesh／morph参照は未対応 |
 

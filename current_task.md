@@ -6,6 +6,12 @@ Core **459 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/N
 
 残る受入境界は、異なるskeletonの結合、共有mesh/skin/morph参照、完全な材質・animation保持、実VRChat SDK/実アバター/VRChat内のPhysBones動作、実マウス/DPI差。次のタスクはこの境界を混ぜず、共有参照の仕様化または実SDK版固定の受け取り検証へ進める。
 
+## 2026-09-13 source skin downstream evaluation (`SourceSkinOverrideV1`)
+
+source skin表示を、評価済みの最終出力へ後掛けする経路から、`SkinDeform`ノード出力をsource paletteで差し替えて通常のgraph評価を再実行する経路へ変更した。これによりSkinDeform後のEditMesh、Morph、材質、Outputが同じ順序で評価され、非rest poseで編集差分が二重変形されない。通常評価のstale EditMesh保護は維持し、source projection時だけ同一domainの編集snapshotを現在の差し替えmeshへ再基準化する。
+
+Core **459 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-bae7e375d86048a78ee5450d8cdeb43a`）。非rest pose＋SkinDeform後EditMeshのsource projection回帰を追加。Windows Player `Builds/SourceSkinOverrideV1/NyaForge.exe` のAuthoring suiteは実RadDollV3 private temp素材でPASS（`Artifacts/Authoring-20260913-072229-179ff5fd12ab4d18926fe2029b293dd9/report.json`）。同Player成果物のUnity 2022.3.22f1 BridgeもPASS（`Artifacts/BridgeReceiver-20260913-072338-010-fc41053f0aa542e6a35dbaf0f0a0176b/bridge-report.json`）。
+
 ## 2026-09-13 GLB候補選択Dropdown
 
 GLB/VRM取込パネルの数値index入力を通常画面では折りたたみ、候補確認後にmesh resource・skin resource・node instanceを名前付きDropdownから選べるようにした。既存のIntegerFieldは自動検証と互換操作のため内部保持し、Dropdown選択を同じindex契約へ同期する。node instanceを選んだ場合は、従来どおりそのmesh／skin／配置を優先する。候補確認前の未確定状態は明示し、推測選択はしない。

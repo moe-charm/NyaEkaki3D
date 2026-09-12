@@ -100,6 +100,22 @@ namespace NyaForge.Authoring.Graph
     {
         public static GraphEvaluation Evaluate(AuthoringGraph graph)
         {
+            return Evaluate(graph, null);
+        }
+
+        /// <summary>Evaluates a graph while replacing selected mesh-producing node outputs.</summary>
+        /// <remarks>
+        /// Overrides are intentionally applied after the node inputs have been resolved and
+        /// validated. This lets import adapters replace a SkinDeform result while preserving
+        /// every downstream edit, morph, material and output node in the ordinary evaluator.
+        /// </remarks>
+        public static GraphEvaluation Evaluate(AuthoringGraph graph, IReadOnlyDictionary<string, GraphMeshValue> meshOverrides)
+        {
+            return Evaluate(graph, meshOverrides, false);
+        }
+
+        internal static GraphEvaluation Evaluate(AuthoringGraph graph, IReadOnlyDictionary<string, GraphMeshValue> meshOverrides, bool rebaseEditSnapshots)
+        {
             if (graph == null) throw new ArgumentNullException(nameof(graph));
             var order = GraphValidator.Order(graph);
             var outputs = new Dictionary<string, GraphMeshValue>();
@@ -148,7 +164,15 @@ namespace NyaForge.Authoring.Graph
                     Checks.Require(input?.Material==null && input?.SlotMaterials==null || node.TypeId==BuiltinNodes.Output || node.TypeId==BuiltinNodes.AssignMaterial || node.TypeId==BuiltinNodes.AssignMaterials,
                         "MATERIAL_ORDER_UNSUPPORTED","Place material assignment after geometry and Paint inputs.");
                     Checks.Require(input==null || input.Mesh!=null || node.TypeId==BuiltinNodes.PolygonEdit || node.TypeId==BuiltinNodes.Output && imageInput==null,"NO_RENDERABLE_FACES","Create a face before using this node.");
-                    if (node.TypeId == BuiltinNodes.MeshSource)
+                    if (meshOverrides != null && meshOverrides.TryGetValue(id, out var overrideValue))
+                    {
+                        Checks.Require(node.TypeId == BuiltinNodes.SkinDeform, "INVALID_OVERRIDE", "Mesh overrides are only supported for SkinDeform nodes.");
+                        Checks.Require(overrideValue != null && overrideValue.Mesh != null, "INVALID_OVERRIDE", "A mesh override must be renderable.");
+                        Checks.Require(input == null || input.Transform.Scale == overrideValue.Transform.Scale && input.DomainId == overrideValue.DomainId,
+                            "INVALID_OVERRIDE", "A mesh override must retain the input transform and domain.");
+                        outputs[id] = overrideValue;
+                    }
+                    else if (node.TypeId == BuiltinNodes.MeshSource)
                         outputs[id] = GraphMeshValue.Source(id, node.SourceMesh, node.Transform);
                     else if (node.TypeId == BuiltinNodes.PolygonSource)
                     {
@@ -211,7 +235,7 @@ namespace NyaForge.Authoring.Graph
                             outputs[id] = new GraphMeshValue(render?.Mesh, input.Transform, input.DomainId, node.SourcePolygon, render);
                         }
                     }
-                    else if (node.TypeId == BuiltinNodes.EditMesh) outputs[id] = ApplyEdit(node, input);
+                    else if (node.TypeId == BuiltinNodes.EditMesh) outputs[id] = ApplyEdit(node, input, rebaseEditSnapshots);
                 }
                 catch (AuthoringException error) { diagnostics.Add(new GraphDiagnostic(id, error.Code, error.Message)); }
             }
@@ -221,12 +245,16 @@ namespace NyaForge.Authoring.Graph
             return new GraphEvaluation(output, outputs, inputs, diagnostics, images, materials, skeletons, bindings, poses, morphSets);
         }
 
-        static GraphMeshValue ApplyEdit(GraphNode node, GraphMeshValue input)
+        static GraphMeshValue ApplyEdit(GraphNode node, GraphMeshValue input, bool rebaseEditSnapshot = false)
         {
             if (!node.Enabled || node.Offsets.Count == 0) return input;
             Checks.Require(input.Polygon == null, "EDIT_MODE_UNSUPPORTED", "Polygon data requires stable-ID editing; render-index offsets cannot modify it.");
             Checks.Require(node.ExpectedDomain == input.DomainId, "EDIT_DOMAIN_CHANGED", "Edit payload belongs to a different element domain.");
-            Checks.Require(node.ExpectedInputSnapshot == input.SnapshotHash, "EDIT_INPUT_CHANGED", "Upstream geometry changed; rebase or keep the previous source.");
+            // A source-skin projection intentionally replaces the upstream SkinDeform
+            // value. Its stable topology/domain is unchanged, so the authored offsets
+            // remain valid even though the snapshot hash necessarily changes.
+            if (!rebaseEditSnapshot)
+                Checks.Require(node.ExpectedInputSnapshot == input.SnapshotHash, "EDIT_INPUT_CHANGED", "Upstream geometry changed; rebase or keep the previous source.");
             var positions = input.Mesh.Positions.ToArray();
             foreach (var pair in node.Offsets)
             {

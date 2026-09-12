@@ -75,6 +75,27 @@ internal static partial class Program
             var movedProjected = SourceSkinGraphAdapter.ApplyToEvaluation(movedEvaluation, movedGraph, movedSession);
             True(movedProjected.Mesh.ContentHash != projected.Mesh.ContentHash);
 
+            // A downstream EditMesh must consume the source-skinned replacement at the
+            // SkinDeform position. Applying source skin to the already edited final output
+            // would transform this offset a second time and lose the authored edit order.
+            string postEditId = Guid.NewGuid().ToString("D"), postOutputId = Guid.NewGuid().ToString("D");
+            var postNodes = movedGraph.Nodes.Values.Where(node => node.NodeId != outputId)
+                .Concat(new[] { GraphNode.Edit(postEditId), GraphNode.Output(postOutputId) }).ToArray();
+            var postEdges = movedGraph.Edges.Where(edge => edge.ToNode != outputId)
+                .Concat(new[] { new GraphEdge(deformId, "mesh", postEditId, "mesh"), new GraphEdge(postEditId, "mesh", postOutputId, "mesh") }).ToArray();
+            var postGraph = new AuthoringGraph(movedGraph.GraphId, postNodes, postEdges, postOutputId);
+            var postBase = GraphEvaluator.Evaluate(postGraph); True(postBase.IsComplete);
+            var postInput = postBase.MeshInputs[postEditId];
+            var postEdited = postGraph.ReplaceNode(GraphNode.Edit(postEditId, true,
+                new System.Collections.Generic.Dictionary<int, Vec3> { [2] = new Vec3(.05f, 0, 0) },
+                postInput.SnapshotHash, postInput.DomainId));
+            var postEvaluation = GraphEvaluator.Evaluate(postEdited); True(postEvaluation.IsComplete);
+            var postSession = ImportedRigSession.Create(imported, null, postEdited.GraphId, skeletonId).WithSourceSkin(source.Skin, source.Binding);
+            var postProjected = SourceSkinGraphAdapter.ApplyToEvaluation(postEvaluation, postEdited, postSession);
+            var sourceBeforeEdit = SourceSkinGraphAdapter.Apply(postEvaluation.MeshInputs[deformId], postSession, postEdited, moved);
+            Near(sourceBeforeEdit.Mesh.Positions[2].X + .05f, postProjected.Mesh.Positions[2].X);
+            Near(sourceBeforeEdit.Mesh.Positions[2].Y, postProjected.Mesh.Positions[2].Y);
+
             string secondDeformId = Guid.NewGuid().ToString("D"), secondOutputId = Guid.NewGuid().ToString("D");
             var multiGraph = new AuthoringGraph(Guid.NewGuid().ToString("D"),
                 graph.Nodes.Values.Concat(new[] { GraphNode.SkinDeformNode(secondDeformId), GraphNode.Output(secondOutputId) }),

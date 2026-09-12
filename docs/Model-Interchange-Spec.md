@@ -160,7 +160,7 @@ I04-Eのreport設計はAと同時に進め、完全取込の公開にはA〜Eの
 
 ### 同一skeletonの複数mesh（2026-09-13）
 
-`SkinnedGeometry`／`SkinnedGeometryExtended`は、同一skeleton hashを共有する複数graph objectをmeshごとのprimitive/nodeとして出力し、一つのshared skinを参照できる。graph objectごとの `ImportedRigSession.MeshInstanceTransform` はnodeごとのmatrixへ保持する。異なるskeletonの結合、共有mesh／morph参照の完全保持は未対応である。
+`SkinnedGeometry`／`SkinnedGeometryExtended`は、同一skeleton hashを共有する複数graph objectをmeshごとのprimitive/nodeとして出力し、一つのshared skinを参照できる。graph objectごとの `ImportedRigSession.MeshInstanceTransform` はnodeごとのmatrixへ保持する。source skinの表示は`SkinDeform`ノード位置をsource paletteで差し替えてから下流graphを再評価し、SkinDeform後のEditMesh/Morph/材質を保持する。異なるskeletonの結合、共有mesh／morph参照の完全保持は未対応である。
 
 `GlbExportService` はnative制作データを変更せず、明示的な2 profileで標準glTF 2.0 GLBを生成する。
 

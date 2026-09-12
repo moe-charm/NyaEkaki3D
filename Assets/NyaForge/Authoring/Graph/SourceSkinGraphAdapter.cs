@@ -38,6 +38,7 @@ namespace NyaForge.Authoring.Graph
             var deformNodes = graph.Nodes.Values.Where(node => node.TypeId == BuiltinNodes.SkinDeform).ToArray();
             Checks.Require(deformNodes.Length > 0, "IMPORT_GRAPH_UNSUPPORTED", "Source skin display needs a SkinDeform node.");
             GraphPoseValue pose = null; string skeletonHash = null; string poseHash = null;
+            var overrides = new Dictionary<string, GraphMeshValue>(System.StringComparer.Ordinal);
             foreach (var deform in deformNodes)
             {
                 Checks.Require(evaluation.MeshInputs.TryGetValue(deform.NodeId, out var input) && input != null,
@@ -53,10 +54,15 @@ namespace NyaForge.Authoring.Graph
                 if (pose == null) { pose = candidatePose; skeletonHash = skeleton.Skeleton.ContentHash; poseHash = pose.Pose.ContentHash; }
                 else Checks.Require(skeletonHash == skeleton.Skeleton.ContentHash && poseHash == candidatePose.Pose.ContentHash,
                     "IMPORT_GRAPH_UNSUPPORTED", "Multiple SkinDeform nodes must share one skeleton and pose for source skin display.");
+                overrides[deform.NodeId] = Apply(input, session, graph, candidatePose.Pose);
             }
-            // Apply the source palette to the complete authored output.  This preserves
-            // edits made after SkinDeform (EditMesh, morph and material graph stages).
-            return Apply(evaluation.Output, session, graph, pose.Pose);
+            // Replace each authored SkinDeform output, then run the ordinary graph evaluator
+            // again. Downstream EditMesh/Morph/Material nodes therefore see the source-skinned
+            // mesh in the same order as the authored graph and cannot be overwritten by a late
+            // display correction.
+            var projected = GraphEvaluator.Evaluate(graph, overrides, true);
+            Checks.Require(projected.IsComplete, "IMPORT_GRAPH_UNSUPPORTED", "Source skin display could not evaluate the downstream graph: " + string.Join("; ", projected.Diagnostics.Select(item => item.NodeId + "=" + item.Code + ":" + item.Message)));
+            return projected.Output;
         }
 
         public static GraphMeshValue Apply(GraphMeshValue input, ImportedRigSession session,
