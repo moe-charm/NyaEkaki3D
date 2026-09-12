@@ -68,7 +68,7 @@ namespace NyaForge.Authoring
                         if (projection is IGraphAuthoringProjection graphProjection) prepared = graphProjection.PrepareGraph(candidate, preview);
                         else
                         {
-                            Checks.Require(candidate.IsEmpty || candidate.Objects[0].IsStaticProfile, "GRAPH_PROJECTION_REQUIRED", "This view cannot display graph authoring state.");
+                            Checks.Require(candidate.IsEmpty || candidate.ActiveObject.IsStaticProfile, "GRAPH_PROJECTION_REQUIRED", "This view cannot display graph authoring state.");
                             prepared = projection.Prepare(candidate, evaluated);
                         }
                         Checks.Require(prepared != null,"PROJECTION_FAILED","Projection did not prepare resources."); prepared.Commit();
@@ -121,10 +121,14 @@ namespace NyaForge.Authoring
                     writer.Write(operation.Kind);
                     if (operation.Kind == "graph.replace") writer.Write(GraphContentIdentity.Hash(operation.Graph));
                     operation.WriteGraphFingerprint(writer);
-                    if (operation.Kind == "object.add_mesh")
+                    if (operation.Kind == "object.add_mesh" || operation.Kind == "object.select")
                     {
-                        writer.Write(operation.NewObjectId); writer.Write(operation.Mesh.ContentHash);
-                        writer.Write(Checks.Canonical(operation.Transform.Scale)); MeshBinary.Write(writer, operation.Transform.Translation);
+                        writer.Write(operation.NewObjectId);
+                        if (operation.Kind == "object.add_mesh")
+                        {
+                            writer.Write(operation.Mesh.ContentHash);
+                            writer.Write(Checks.Canonical(operation.Transform.Scale)); MeshBinary.Write(writer, operation.Transform.Translation);
+                        }
                     }
                     writer.Write(operation.Enabled); MeshBinary.Write(writer,operation.Delta); writer.Write(operation.VertexIds.Count); foreach (int index in operation.VertexIds) writer.Write(index);
                 }

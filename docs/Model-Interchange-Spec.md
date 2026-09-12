@@ -87,12 +87,12 @@ flowchart LR
 
 ### 複数mesh・identity
 
-- 取込候補は複数meshとmesh instanceを表現する。制作側も複数対象を保持できるようにし、最初のobjectだけを暗黙に採用しない。
+- 取込候補は複数meshとmesh instanceを表現する。制作側も複数objectを保持し、`object.select`でactive objectを明示する。旧形式の1object documentは同じ意味で読める。active objectを一度に編集することと、複数objectを同時表示・結合出力することは別の完了条件とする。
 - sourceHashに加えnode/mesh/primitive/skin/target indexのlocatorを持つ。名前は表示用でidentityにしない。異なるmeshの同名morphは独立target。
 - 一つのmeshを複数nodeが参照する場合、共有assetとinstance変換を区別する。同じskeletonを使うmeshもskin/bindの差を保持する。
 - 頂点の分割・並べ替え・結合には明示的な対応表が必要。元indexをUnityの表示頂点indexと同一視しない。
 - 再取込でsourceHashが変わった場合、既存IDへの対応は別途検証する。名前一致や新hashからのID再生成をそのまま既存assetの更新成功としない。
-- I04-Bはimporterだけでなく、Objects[0]を前提とする選択・評価・保存・pose・GUI/MCP・出力を監査する。既存1object作品の互換を保つ。
+- I04-Bはimporterだけでなく、単一objectを前提とする選択・評価・保存・pose・GUI/MCP・出力を監査する。native documentは複数objectとactive objectを保持し、既存1object作品のschema/hash互換を保つ。
 
 ### weight・morph・材質・animation
 
@@ -134,16 +134,16 @@ flowchart LR
 
 ## 8. 現在地点と実装順
 
-コード照合対象は現行main。GLB importは一回の制作操作で一つの明示候補を公開し、translation-only、4weight、256骨/256morphの範囲で扱う。`GlbSceneInventoryReader`は複数mesh/instance/skinを元indexで保持し、Workbenchはnode instance indexを指定した場合にそのnodeのmesh／skin対応を採用する。skinを持たないnode instanceは静的meshとして扱い、GLB全体に別skinがあることだけを理由にskinned importへ回さない。取込source nodeは最大4096、一時実行骨は最大256。nativeの材質/rig機能が進んでいても、任意の外部モデルを完全に取り込める段階ではない。
+コード照合対象は現行main。GLB importは一回の制作操作で一つの明示候補をgraph objectとして公開し、translation-only、4weight、256骨/256morphの範囲で扱う。`GlbSceneInventoryReader`は複数mesh/instance/skinを元indexで保持し、Workbenchはnode instance indexを指定した場合にそのnodeのmesh／skin対応を採用する。skinを持たないnode instanceは静的meshとして扱い、GLB全体に別skinがあることだけを理由にskinned importへ回さない。native documentは最大64 objectのactive object方式で、`object.select`とSave/Openを提供する。取込source nodeは最大4096、一時実行骨は最大256。nativeの材質/rig機能が進んでいても、任意の外部モデルを完全に取り込める段階ではない。
 
-現行readerには本仕様をまだ満たさない箇所もある。`GlbImport`は材質・静的scene構造・NORMAL/TANGENT morphを保持せず警告し、追加UV等も全属性を取り込まない。`GlbSceneInventoryReader`は複数mesh/instance/skinの参照とnode world transformを候補化し、`GlbImporter.Read(bytes, meshIndex)` / `GlbSkinImporter.Read(bytes, meshIndex, skinIndex)` / `GlbSourceSkinImporter.Read(bytes, meshIndex, skinIndex)` とWorkbenchの選択GUIは選択した一候補を読み取るが、geometry/skinを複数制作対象へ公開する機構ではない。未知の `extensionsRequired` を網羅して拒否する処理、任意のVRM meta/利用条件/未知拡張を依存込みで保管する機構も未実装。これらはI04-B/Eの解消対象で、現在の取込成功を本仕様の完全保持成功と称しない。容量監査には16MiB/blob・100,000頂点・32submesh等の予算も含める。
+現行readerには本仕様をまだ満たさない箇所もある。`GlbImport`は材質・静的scene構造・NORMAL/TANGENT morphを保持せず警告し、追加UV等も全属性を取り込まない。`GlbSceneInventoryReader`は複数mesh/instance/skinの参照とnode world transformを候補化し、`GlbImporter.Read(bytes, meshIndex)` / `GlbSkinImporter.Read(bytes, meshIndex, skinIndex)` / `GlbSourceSkinImporter.Read(bytes, meshIndex, skinIndex)` とWorkbenchの選択GUIは選択した候補を一つずつnative objectへ公開できる。複数objectの同時表示・結合出力、同名morph/共有参照、複数SkinDeformの同時評価は未実装。未知の `extensionsRequired` を網羅して拒否する処理、任意のVRM meta/利用条件/未知拡張を依存込みで保管する機構も未実装。これらはI04-B/Eの解消対象で、現在の取込成功を本仕様の完全保持成功と称しない。容量監査には16MiB/blob・100,000頂点・32submesh等の予算も含める。
 
 T03の読取調査は完了。実素材要求には20mesh、257骨、18weight/頂点、単一mesh262morphがあり、一般基底も必要。[観測条件と限界](Real-Asset-Import-Plan.md)を参照。これらは最低限の検証入力であり、新しい一律上限値そのものではない。
 
 | 順 / ID | 次の成果物・完了条件 |
 |---|---|
 | 1 / I04-A | source affine数値モジュールと単体回帰。現行translation経路を維持し、一般node/IBM/方向変換を検証。新情報のnative移行設計を同梱 |
-| 2 / I04-B | `GlbSceneInventoryReader`で複数mesh/instance/skinの候補とsource mappingを保持済み。次は候補から制作対象を公開し、全経路の単一object前提を解消、同名target・共有参照・保存/Openを検証 |
+| 2 / I04-B | `GlbSceneInventoryReader`で複数mesh/instance/skinの候補とsource mappingを保持し、active object方式で候補を複数制作対象へ公開、選択・保存/Openを検証済み。次は同時表示・結合出力、同名target・共有参照・複数SkinDeformの同時評価を検証 |
 | 3 / I04-C | 257骨/18weight/262target以上を保持する容量・codec・hash・表示/出力契約。固定予算とbyte/メモリ予算を一緒に決め、削減なしの往復と超過診断を検証 |
 | 4 / I04-D | FBXの標準Bridge入力経路と能力表示。任意Blender adapterは別モジュール。変換前後比較、取消、依存未導入時の診断、原本保護を検証 |
 | 5 / I04-E | 取込機能report、材質/animation/VRM意味情報/未知拡張の保持契約とGUI/MCP。既知拡張の未対応内部フィールドも含め、未対応を完全成功としない。opaque保持は依存資源・index失効も検証 |

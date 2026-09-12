@@ -43,6 +43,11 @@ namespace NyaForge.Authoring
             return new AuthoringOperation("object.add_mesh", Array.Empty<int>(), new Vec3(), false)
             { Mesh = mesh, Transform = transform, NewObjectId = Guid.NewGuid().ToString("D") };
         }
+        public static AuthoringOperation SelectObject(string objectId)
+        {
+            Checks.Id(objectId);
+            return new AuthoringOperation("object.select", Array.Empty<int>(), new Vec3(), false) { NewObjectId = objectId };
+        }
     }
     public sealed class CommandResult
     {

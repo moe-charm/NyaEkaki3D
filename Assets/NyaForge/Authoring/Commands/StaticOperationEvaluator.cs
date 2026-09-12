@@ -7,8 +7,8 @@ namespace NyaForge.Authoring
     {
         internal static AuthoringDocument Apply(AuthoringDocument before, AuthoringOperation operation, long revision)
         {
-            if (operation.Kind == "object.add_mesh")
-                return before.AddMesh(operation.NewObjectId, operation.Mesh, operation.Transform, revision);
+            if (operation.Kind == "object.add_mesh") return before.AddMesh(operation.NewObjectId, operation.Mesh, operation.Transform, revision);
+            if (operation.Kind == "object.select") return before.SelectObject(operation.NewObjectId, revision);
             Checks.Require(!before.IsEmpty, "NO_EDITABLE_OBJECT", "Add a mesh before editing.");
             var offsets = new Dictionary<int, Vec3>(before.Offsets);
             bool enabled = before.LayerEnabled;

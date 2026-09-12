@@ -77,6 +77,7 @@ namespace NyaForge.Authoring
             WriteCutPathFingerprint(writer);
             if (UvTransform != null) { writer.Write(Checks.Canonical(UvTransform.Translation.X)); writer.Write(Checks.Canonical(UvTransform.Translation.Y)); writer.Write(Checks.Canonical(UvTransform.Degrees)); writer.Write(Checks.Canonical(UvTransform.Scale)); }
             if (Kind == "object.add_graph") { writer.Write(NewObjectId); writer.Write(GraphContentIdentity.Hash(Graph)); }
+            if (Kind == "object.select") writer.Write(NewObjectId);
             if (Node != null) writer.Write(GraphContentIdentity.Hash(new AuthoringGraph(Node.NodeId, new[] { Node }, Array.Empty<GraphEdge>(), "")));
             if (Edge != null) { writer.Write(Edge.FromNode); writer.Write(Edge.FromPort); writer.Write(Edge.ToNode); writer.Write(Edge.ToPort); }
             writer.Write(NodeId ?? ""); writer.Write(Port ?? "");

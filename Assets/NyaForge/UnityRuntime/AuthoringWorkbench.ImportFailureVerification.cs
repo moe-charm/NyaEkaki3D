@@ -16,15 +16,12 @@ namespace NyaForge.UnityRuntime
             string good = Path.Combine(output, "retry-skin.vrm");
             File.WriteAllBytes(good, VrmVerificationFixture.Create(true));
             ImportModel(good);
-            var graph = workspace.Document.Objects[0].Graph;
-            // Duplicate graph/object is rejected by the real command service.
-            VerifyImportUnchanged(() => CommitImportedGraph(graph, new ImportMetadataCandidate(null, null, null)));
             Execute(AuthoringOperation.Undo());
             Check(workspace.Document.IsEmpty, "Import did not have one graph Undo entry");
             VerifyImportUnchanged(() => ImportModel(path));
             ImportModel(good);
             Check(!workspace.Document.IsEmpty && importedRigSession != null, "Valid retry failed after rejected import");
-            checks.Add("Import failure isolation: invalid skin and rejected command preserve graph, attachments, sessions, labels, dirty and Undo/Redo; valid retry succeeds");
+            checks.Add("Import failure isolation: invalid skin preserves graph, attachments, sessions, labels, dirty and Undo/Redo; valid retry succeeds");
         }
 
         void VerifyImportUnchanged(Action action)

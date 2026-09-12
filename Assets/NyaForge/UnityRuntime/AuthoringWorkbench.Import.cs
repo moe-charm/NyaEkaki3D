@@ -30,7 +30,7 @@ namespace NyaForge.UnityRuntime
             modelImportPanel.Add(Button("GLBを選ぶ", () => { if (!modelPickerOpen) StartCoroutine(PickModel()); }, "model-import-browse"));
             modelImportPath = new TextField("ファイルパス") { name = "model-import-path" }; modelImportPath.style.flexDirection = FlexDirection.Column; modelImportPanel.Add(modelImportPath);
             BuildModelImportSelection(modelImportPanel);
-            modelImportPanel.Add(Button("このGLBを新規graphへ取り込む", () => Try(() => ImportModel(modelImportPath.value)), "model-import-apply"));
+            modelImportPanel.Add(Button("このGLBをgraph objectへ取り込む", () => Try(() => ImportModel(modelImportPath.value)), "model-import-apply"));
             parent.Add(modelImportPanel);
         }
 
@@ -38,14 +38,14 @@ namespace NyaForge.UnityRuntime
         {
             if (modelImportPanel == null) return;
             RefreshImportedRigStatus();
-            bool ready = workspace != null && workspace.Document.IsEmpty;
+            bool ready = workspace != null && (workspace.Document.IsEmpty || !workspace.Document.ActiveObject.IsStaticProfile);
             modelImportPanel.Q<Button>("model-import-apply").SetEnabled(ready);
-            modelImportStatus.text = ready ? "空の制作projectへ取り込めます。元ファイルはコピーせず、meshをnative graphへ取り込みます。" : "取り込みは空の制作projectで実行してください。既存作品は置き換えません。";
+            modelImportStatus.text = ready ? (workspace.Document.IsEmpty ? "空の制作projectへ取り込めます。" : "現在のgraph projectへ新しい制作対象として追加できます。") + "元ファイルはコピーせず、meshをnative graphへ取り込みます。" : "graph projectへ追加できます。static projectへは追加できません。既存作品は置き換えません。";
         }
 
         void ImportModel(string path)
         {
-            if (workspace == null || !workspace.Document.IsEmpty) throw new InvalidOperationException("GLB取り込みは空の制作projectで実行してください。");
+            if (workspace == null || (!workspace.Document.IsEmpty && workspace.Document.ActiveObject.IsStaticProfile)) throw new InvalidOperationException("GLB取り込みは空またはgraph projectで実行してください。");
             if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("GLBファイルを選択してください。");
             var bytes = File.ReadAllBytes(Path.GetFullPath(path));
             VrmMetadata vrm = VrmMetadataReader.ContainsVrm(bytes) ? VrmMetadataReader.Read(bytes) : null;

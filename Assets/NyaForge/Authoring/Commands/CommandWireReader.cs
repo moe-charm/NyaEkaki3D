@@ -52,6 +52,8 @@ namespace NyaForge.Authoring
                     Shape(o,"kind context vertexIds delta");return AuthoringOperation.TranslateGraphVertices(ReadContext(o["context"]),Ids(o["vertexIds"]),Vector(o["delta"]));
                 case "object.add_graph":
                     Shape(o,"kind newObjectId graph");return AuthoringOperation.AddGraph(ReadGraph(o["graph"]),Text(o,"newObjectId"));
+                case "object.select":
+                    Shape(o,"kind objectId");return AuthoringOperation.SelectObject(Text(o,"objectId"));
                 case "graph.node.add":
                     Shape(o,"kind node");return AuthoringOperation.AddNode(ReadNode(o["node"]));
                 case "graph.node.update":

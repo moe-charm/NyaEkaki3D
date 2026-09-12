@@ -49,6 +49,7 @@ internal static partial class Program
         RunGraphIdentityCacheTests();
         RunGraphDocumentTests();
         RunGraphProjectTests();
+        RunMultiObjectTests();
         RunGraphCommandTests();
         RunGraphNodeCommandTests();
         RunGraphBakeTests();

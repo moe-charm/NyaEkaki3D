@@ -30,20 +30,26 @@ namespace NyaForge.UnityRuntime
         {
             var attachments = candidate.Attachments;
             SecondaryMotionAsset secondary = BuildImportedSecondaryMotion(graph, candidate.Rig, candidate.Springs);
+            var existing = workspace.Attachments;
+            var owned = new Dictionary<string, byte[]>();
+            foreach (var name in existing.Hashes.Keys) owned[name] = existing.Read(name);
+            foreach (var name in attachments.Hashes.Keys) owned[name] = attachments.Read(name);
             if (secondary != null)
             {
-                var owned = new Dictionary<string, byte[]>(); foreach (var name in attachments.Hashes.Keys) owned[name] = attachments.Read(name);
                 owned[ProjectAttachments.SecondaryMotion] = SecondaryMotionCodec.Write(secondary);
-                attachments = new ProjectAttachments(owned);
             }
+            attachments = new ProjectAttachments(owned);
             var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph)), projection);
             if (!result.Success) throw new InvalidOperationException(result.Code + ": " + result.Message);
             workspace.SetAttachments(attachments);
-            importedRigSession = candidate.Rig;
-            importedVrmSession = candidate.Expressions;
-            importedVrmSpringSession = candidate.Springs;
-            importedSecondaryMotionDocument = secondary == null ? null : SecondaryMotionCodec.ReadDocument(SecondaryMotionCodec.Write(secondary));
-            importedSecondaryMotionAsset = secondary;
+            if (candidate.Rig != null) importedRigSession = candidate.Rig;
+            if (candidate.Expressions != null) importedVrmSession = candidate.Expressions;
+            if (candidate.Springs != null) importedVrmSpringSession = candidate.Springs;
+            if (secondary != null)
+            {
+                importedSecondaryMotionDocument = SecondaryMotionCodec.ReadDocument(SecondaryMotionCodec.Write(secondary));
+                importedSecondaryMotionAsset = secondary;
+            }
             RefreshVrmSpringStatus();
         }
 

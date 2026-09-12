@@ -8,12 +8,10 @@ namespace NyaForge.Authoring
         internal static AuthoringDocument Apply(AuthoringDocument before, AuthoringOperation op, long revision)
         {
             if (op.Kind == "object.add_graph")
-            {
-                Checks.Require(before.IsEmpty, "OBJECT_LIMIT", "Create an empty project before adding a graph object.");
-                return new AuthoringDocument(before.DocumentId, before.Name, revision, new AuthoringObject(op.NewObjectId, op.Graph));
-            }
+                return before.AddGraph(op.NewObjectId, op.Graph, revision);
+            if (op.Kind == "object.select") return before.SelectObject(op.NewObjectId, revision);
             Checks.Require(!before.IsEmpty, "NO_EDITABLE_OBJECT", "Add a graph object first.");
-            var graph = before.Objects[0].Graph;
+            var graph = before.ActiveObject.Graph;
             var nodes = graph.Nodes.Values.AsEnumerable(); var edges = graph.Edges.AsEnumerable(); string output = graph.OutputNodeId;
             switch (op.Kind)
             {

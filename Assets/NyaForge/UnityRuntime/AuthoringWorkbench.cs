@@ -114,6 +114,7 @@ namespace NyaForge.UnityRuntime
             fixtures.Add(Button("プレート追加 ×1", () => AddSample(1), "fixture-1"));
             fixtures.Add(Button("プレート追加 ×100", () => AddSample(100), "fixture-100"));
             metrics = new Label { name = "authoring-metrics" }; side.Add(metrics);
+            BuildObjectSelection(side);
             side.Add(Button("メッシュ全体を表示", Frame, "authoring-frame"));
             side.Add(new Label("2  形状を編集"));
             BuildGraphEditing(side);
@@ -277,6 +278,7 @@ namespace NyaForge.UnityRuntime
             if (workspace == null) return;
             if (springPlayback != null && (workspace != springWorkspace || workspace.Document.StateHash != springDocumentHash || workspace.Attachments.ContentHash != springMetadataHash)) ClearSpringPlayback(true);
             RefreshGraphEditing();
+            RefreshObjectSelection();
             RefreshSourceSkinDisplayProjection();
             graphCanvas.Bind(workspace, operations => Execute(operations), node => Try(() => SelectEditStage(editStageIds.IndexOf(node))));
             var displayed = DisplayedGraphValue();

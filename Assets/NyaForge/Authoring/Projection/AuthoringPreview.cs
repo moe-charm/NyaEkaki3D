@@ -17,8 +17,8 @@ namespace NyaForge.Authoring
         {
             var result = new AuthoringPreview { DocumentRevision = doc.DocumentRevision, ObjectId = doc.ObjectId };
             if (doc.IsEmpty) return result;
-            result.Evaluation = doc.Objects[0].EvaluateGraph();
-            if (doc.Objects[0].IsStaticProfile && !result.Evaluation.IsComplete)
+            result.Evaluation = doc.ActiveObject.EvaluateGraph();
+            if (doc.ActiveObject.IsStaticProfile && !result.Evaluation.IsComplete)
             {
                 var failure = result.Evaluation.Diagnostics[0];
                 throw new AuthoringException(failure.Code, failure.Message);
