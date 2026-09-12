@@ -19,11 +19,13 @@ namespace NyaForge.Authoring.Import
         public MeshData Mesh { get; }
         public MorphSet Morphs { get; }
         public IReadOnlyList<string> Warnings { get; }
-        internal ImportedMeshSource(string sourceHash, int meshIndex, MeshData mesh, MorphSet morphs, IEnumerable<string> warnings)
+        public IReadOnlyList<GlbImportDiagnostic> Diagnostics { get; }
+        internal ImportedMeshSource(string sourceHash, int meshIndex, MeshData mesh, MorphSet morphs, IEnumerable<string> warnings, IEnumerable<GlbImportDiagnostic> diagnostics = null)
         {
             Checks.HashText(sourceHash); Checks.Require(meshIndex >= 0 && mesh != null, "INVALID_IMPORT", "Imported mesh is required.");
             SourceHash = sourceHash; MeshIndex = meshIndex; Format = "glb.v2"; Mesh = mesh; Morphs = morphs;
             Warnings = Array.AsReadOnly((warnings ?? Array.Empty<string>()).ToArray());
+            Diagnostics = Array.AsReadOnly((diagnostics ?? GlbImportDiagnostics.Empty).ToArray());
         }
     }
 
@@ -101,10 +103,12 @@ namespace NyaForge.Authoring.Import
                 var transformed = SourceMeshTransform.Apply(mesh, instanceWorld, morphs);
                 mesh = transformed.Mesh; morphs = transformed.Morphs;
             }
+            var diagnostics = GlbImportDiagnostics.ForMesh(root, meshToken);
             var warnings = new List<string> { "Imported as " + parts.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " static triangle primitive(s); original glTF scene hierarchy, materials and skin bindings are not retained." };
+            warnings.AddRange(GlbImportDiagnostics.WarningText(diagnostics));
             if (instanceWorld != null) warnings.Add("Selected node instance world transform was applied to mesh positions, normals, tangents and POSITION morph deltas.");
             if (unsupportedNormalMorph || unsupportedTangentMorph) warnings.Add("POSITION morph targets were retained; normal/tangent morph deltas are not imported because the base mesh lacks the matching attribute.");
-            return new ImportedMeshSource(sourceHash, meshIndex, mesh, morphs, warnings);
+            return new ImportedMeshSource(sourceHash, meshIndex, mesh, morphs, warnings, diagnostics);
         }
 
         static bool MeshHasSkin(JObject root, int meshIndex)
