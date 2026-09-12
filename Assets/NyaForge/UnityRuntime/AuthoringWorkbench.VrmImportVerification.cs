@@ -12,6 +12,17 @@ namespace NyaForge.UnityRuntime
         void VerifyVrmImportRoundtrip(string output, List<string> checks)
         {
             VerifyImportFailureIsolation(output, checks);
+            string selectionDirectory = Path.Combine(output, "mesh-selection"); Directory.CreateDirectory(selectionDirectory);
+            string selectionPath = Path.Combine(selectionDirectory, "multi-mesh.vrm"); File.WriteAllBytes(selectionPath, VrmVerificationFixture.CreateMultiMeshSelection());
+            ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null);
+            modelImportMeshIndex.SetValueWithoutNotify(1); modelImportSkinIndex.SetValueWithoutNotify(0);
+            InspectModelSelection(selectionPath);
+            Check(modelImportSelectionStatus.text.Contains("mesh 1") && modelImportSelectionStatus.text.Contains("skins 1"), "Mesh selection inventory was not shown in the import GUI");
+            ImportModel(selectionPath);
+            Check(importedRigSession != null && importedRigSession.SourceSkin != null && importedRigSession.SourceSkinBinding != null, "Selected multi-mesh skin import did not retain source payload");
+            Check(workspace.Document.Objects[0].Graph.Nodes.Values.Any(node => node.SourceMesh != null && node.SourceMesh.TopologyHash == importedRigSession.SourceSkinBinding.MeshTopologyHash), "Selected mesh graph was not created");
+            modelImportMeshIndex.SetValueWithoutNotify(0); modelImportSkinIndex.SetValueWithoutNotify(0);
+            checks.Add("GLB import GUI: candidate inventory inspection and explicit mesh/skin selection for a multi-mesh fixture");
             foreach (bool legacy in new[] { false, true })
             {
                 string directory = Path.Combine(output, legacy ? "vrm0-import" : "vrm1-import");

@@ -43,6 +43,19 @@ namespace NyaForge.UnityRuntime
         }
     }
 
+    internal static byte[] CreateMultiMeshSelection()
+    {
+        var original = Create(false);
+        int jsonLength = BitConverter.ToInt32(original, 12), binHeader = 20 + jsonLength, binLength = BitConverter.ToInt32(original, binHeader);
+        var root = JObject.Parse(Encoding.UTF8.GetString(original, 20, jsonLength).TrimEnd(' ', '\0', '\n', '\r', '\t'));
+        root.Remove("extensions");
+        var meshes = (JArray)root["meshes"]; var second = (JObject)meshes[0].DeepClone();
+        second["extras"] = new JObject { ["targetNames"] = new JArray("AccessorySmile") }; meshes.Add(second);
+        ((JArray)root["nodes"]).Add(new JObject { ["name"] = "Accessory", ["mesh"] = 1, ["skin"] = 0 });
+        var bin = new byte[binLength]; Buffer.BlockCopy(original, binHeader + 8, bin, 0, binLength);
+        return BuildGlbContainer(Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), bin);
+    }
+
     static void WriteIdentity(BinaryWriter writer) { for (int i = 0; i < 16; i++) writer.Write(i == 0 || i == 5 || i == 10 || i == 15 ? 1f : 0f); }
     static void WriteTranslationInverse(BinaryWriter writer, float y) { for (int i = 0; i < 16; i++) writer.Write(i == 0 || i == 5 || i == 10 || i == 15 ? 1f : i == 13 ? -y : 0f); }
 

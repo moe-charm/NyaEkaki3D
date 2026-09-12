@@ -25,6 +25,15 @@ internal static partial class Program
         {
             var bytes = BuildSkinnedGlb(); var root = JObject.Parse(ReadJsonChunk(bytes)); ((JObject)root["nodes"]![0]!)!["rotation"] = new JArray(0, 0, .1, .995); Expect("UNSUPPORTED_FORMAT", () => GlbSkinImporter.Read(ReplaceJsonChunk(bytes, root.ToString(Newtonsoft.Json.Formatting.None))));
         });
+        Test("GLB skin importer selects a mesh and skin by source index", () =>
+        {
+            var root = JObject.Parse(ReadJsonChunk(BuildSkinnedGlb())); var meshes = (JArray)root["meshes"]!; meshes.Add(meshes[0]!.DeepClone());
+            ((JArray)root["nodes"]!).Add(new JObject { ["name"] = "Accessory", ["mesh"] = 1, ["skin"] = 0 });
+            var bytes = ReplaceJsonChunk(BuildSkinnedGlb(), root.ToString(Newtonsoft.Json.Formatting.None));
+            Expect("UNSUPPORTED_FORMAT", () => GlbSkinImporter.Read(bytes));
+            var selected = GlbSkinImporter.Read(bytes, 1, 0); Equal(1, selected.MeshIndex); Equal(0, selected.SkinIndex); Equal(3, selected.Mesh.VertexCount); Equal(3, selected.Binding.Weights.Count);
+            Expect("INVALID_IMPORT", () => GlbSkinImporter.Read(bytes, 2, 0)); Expect("INVALID_IMPORT", () => GlbSkinImporter.Read(bytes, 1, 1));
+        });
     }
 
     static byte[] BuildSkinnedGlb()

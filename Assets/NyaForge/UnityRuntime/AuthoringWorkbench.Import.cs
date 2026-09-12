@@ -22,12 +22,13 @@ namespace NyaForge.UnityRuntime
         {
             modelImportPanel = new Foldout { text = "GLBモデルを取り込む", value = false, name = "model-import" };
             modelImportStatus = new Label { name = "model-import-status" }; modelImportStatus.style.whiteSpace = WhiteSpace.Normal; modelImportPanel.Add(modelImportStatus);
-            var importHelp = new Label("GLB / VRMを取り込みます。対応するVRM0・VRM1では揺れをプレビューできます。現在は1メッシュ・平行移動だけの骨格に対応し、FBXの直接読込や回転・拡縮を含む骨格は未対応です。");
+            var importHelp = new Label("GLB / VRMを取り込みます。候補を確認してmesh / skin indexを選べます。対応するVRM0・VRM1では揺れをプレビューできます。現在は選択した1メッシュ・平行移動だけの骨格に対応し、FBXの直接読込や回転・拡縮を含む骨格は未対応です。");
             importHelp.style.whiteSpace = WhiteSpace.Normal; modelImportPanel.Add(importHelp);
             BuildVrmSpringStatus(modelImportPanel);
             BuildImportedRigStatus(modelImportPanel);
             modelImportPanel.Add(Button("GLBを選ぶ", () => { if (!modelPickerOpen) StartCoroutine(PickModel()); }, "model-import-browse"));
             modelImportPath = new TextField("ファイルパス") { name = "model-import-path" }; modelImportPath.style.flexDirection = FlexDirection.Column; modelImportPanel.Add(modelImportPath);
+            BuildModelImportSelection(modelImportPanel);
             modelImportPanel.Add(Button("このGLBを新規graphへ取り込む", () => Try(() => ImportModel(modelImportPath.value)), "model-import-apply"));
             parent.Add(modelImportPanel);
         }
@@ -47,8 +48,15 @@ namespace NyaForge.UnityRuntime
             if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("GLBファイルを選択してください。");
             var bytes = File.ReadAllBytes(Path.GetFullPath(path));
             VrmMetadata vrm = VrmMetadataReader.ContainsVrm(bytes) ? VrmMetadataReader.Read(bytes) : null;
-            if (GlbSkinImporter.ContainsSkin(bytes)) { ImportSkinnedModel(bytes, vrm); return; }
-            var imported = GlbImporter.Read(bytes);
+            var inventory = GlbSceneInventoryReader.Read(bytes);
+            int meshIndex = SelectedModelMeshIndex, skinIndex = SelectedModelSkinIndex;
+            if (meshIndex < 0 || meshIndex >= inventory.Meshes.Count) throw new InvalidOperationException("mesh index が範囲外です。候補を確認してください。");
+            if (inventory.Skins.Count > 0)
+            {
+                if (skinIndex < 0 || skinIndex >= inventory.Skins.Count) throw new InvalidOperationException("skin index が範囲外です。候補を確認してください。");
+                ImportSkinnedModel(bytes, vrm, meshIndex, skinIndex); return;
+            }
+            var imported = GlbImporter.Read(bytes, meshIndex);
             string sourceId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
             var nodes = new List<GraphNode> { GraphNode.Source(sourceId, imported.Mesh, new RestTransform(1, new Vec3())) };
             var edges = new List<GraphEdge>(); string finalNode = sourceId;
@@ -62,12 +70,12 @@ namespace NyaForge.UnityRuntime
             nodes.Add(GraphNode.Output(outputId)); edges.Add(new GraphEdge(finalNode, "mesh", outputId, "mesh"));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
             CommitImportedGraph(graph, new ImportMetadataCandidate(null, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm));
-            Refresh(); SetStatus("GLBを取り込みました。" + (imported.Morphs == null ? " morphなし" : " morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12));
+            Refresh(); SetStatus("GLBを取り込みました。mesh " + meshIndex + " · " + (imported.Morphs == null ? " morphなし" : " morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12));
         }
 
-        void ImportSkinnedModel(byte[] bytes, VrmMetadata vrm)
+        void ImportSkinnedModel(byte[] bytes, VrmMetadata vrm, int meshIndex, int skinIndex)
         {
-            var imported = GlbSkinImporter.Read(bytes); string sourceId = Guid.NewGuid().ToString("D"), skeletonId = Guid.NewGuid().ToString("D"), bindId = Guid.NewGuid().ToString("D"), poseId = Guid.NewGuid().ToString("D"), deformId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
+            var imported = GlbSkinImporter.Read(bytes, meshIndex, skinIndex); string sourceId = Guid.NewGuid().ToString("D"), skeletonId = Guid.NewGuid().ToString("D"), bindId = Guid.NewGuid().ToString("D"), poseId = Guid.NewGuid().ToString("D"), deformId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
             var nodes = new List<GraphNode> { GraphNode.Source(sourceId, imported.Mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, imported.Skeleton), GraphNode.SkinBindNode(bindId, imported.Binding), GraphNode.PoseNode(poseId, PoseSet.Create(imported.Skeleton, imported.Skeleton.Bones.Select(b => new BonePose(b.BoneId, PoseTransform.FromTranslation(b.Head))))), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) };
             var edges = new List<GraphEdge>(); string finalNode = sourceId;
             if (imported.Morphs != null)
@@ -77,11 +85,11 @@ namespace NyaForge.UnityRuntime
             }
             edges.Add(new GraphEdge(finalNode, "mesh", bindId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", bindId, "skeleton")); edges.Add(new GraphEdge(skeletonId, "skeleton", poseId, "skeleton")); edges.Add(new GraphEdge(finalNode, "mesh", deformId, "mesh")); edges.Add(new GraphEdge(skeletonId, "skeleton", deformId, "skeleton")); edges.Add(new GraphEdge(bindId, "binding", deformId, "binding")); edges.Add(new GraphEdge(poseId, "pose", deformId, "pose")); edges.Add(new GraphEdge(deformId, "mesh", outputId, "mesh"));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
-            var sourceCandidate = GlbSourceSkinImporter.Read(bytes);
+            var sourceCandidate = GlbSourceSkinImporter.Read(bytes, meshIndex, skinIndex);
             var rigSession = ImportedRigSession.Create(imported, vrm, graph.GraphId, skeletonId)
                 .WithSourceSkin(sourceCandidate.Skin, sourceCandidate.Binding);
             CommitImportedGraph(graph, new ImportMetadataCandidate(rigSession, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm));
-            Refresh(); SetStatus("GLB skinを取り込みました。bone " + imported.Skeleton.Bones.Count + " · weight " + imported.Binding.Weights.Count + (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12));
+            Refresh(); SetStatus("GLB skinを取り込みました。mesh " + meshIndex + " · skin " + skinIndex + " · bone " + imported.Skeleton.Bones.Count + " · weight " + imported.Binding.Weights.Count + (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12));
         }
 
         IEnumerator PickModel()

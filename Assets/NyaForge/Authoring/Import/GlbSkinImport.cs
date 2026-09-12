@@ -12,6 +12,8 @@ namespace NyaForge.Authoring.Import
     public sealed class ImportedSkinnedMeshSource
     {
         public string SourceHash { get; }
+        public int MeshIndex { get; }
+        public int SkinIndex { get; }
         public string Format { get; }
         public MeshData Mesh { get; }
         public MorphSet Morphs { get; }
@@ -22,11 +24,11 @@ namespace NyaForge.Authoring.Import
         public IReadOnlyList<string> Warnings { get; }
         public ImportedSourceHierarchy Hierarchy { get; }
 
-        internal ImportedSkinnedMeshSource(string sourceHash, MeshData mesh, MorphSet morphs, SkeletonDefinition skeleton, SkinBinding binding, IEnumerable<string> warnings, IDictionary<int, string> nodeToBone, IDictionary<int, Vec3> nodeOrigins, ImportedSourceHierarchy hierarchy)
+        internal ImportedSkinnedMeshSource(string sourceHash, int meshIndex, int skinIndex, MeshData mesh, MorphSet morphs, SkeletonDefinition skeleton, SkinBinding binding, IEnumerable<string> warnings, IDictionary<int, string> nodeToBone, IDictionary<int, Vec3> nodeOrigins, ImportedSourceHierarchy hierarchy)
         {
-            Checks.HashText(sourceHash); Checks.Require(mesh != null && skeleton != null && binding != null, "INVALID_IMPORT", "Skinned GLB result is incomplete.");
+            Checks.HashText(sourceHash); Checks.Require(meshIndex >= 0 && skinIndex >= 0 && mesh != null && skeleton != null && binding != null, "INVALID_IMPORT", "Skinned GLB result is incomplete.");
             Checks.Require(binding.MeshTopologyHash == mesh.TopologyHash && binding.SkeletonHash == skeleton.ContentHash, "INVALID_IMPORT", "Skinned GLB identities are inconsistent.");
-            SourceHash = sourceHash; Format = "glb.v2.skin.v1"; Mesh = mesh; Morphs = morphs; Skeleton = skeleton; Binding = binding;
+            SourceHash = sourceHash; MeshIndex = meshIndex; SkinIndex = skinIndex; Format = "glb.v2.skin.v1"; Mesh = mesh; Morphs = morphs; Skeleton = skeleton; Binding = binding;
             BoneMap = new ImportedBoneMap(sourceHash, skeleton, nodeToBone);
             Checks.Require(nodeOrigins != null && nodeOrigins.Count == nodeToBone.Count && nodeToBone.Keys.All(nodeOrigins.ContainsKey), "INVALID_IMPORT", "Source node origins must cover imported joints.");
             foreach (var origin in nodeOrigins.Values) Checks.Finite(origin);
@@ -53,17 +55,25 @@ namespace NyaForge.Authoring.Import
         public static ImportedSkinnedMeshSource Read(byte[] bytes)
         {
             var document = GlbDocumentReader.Read(bytes);
-            return Parse(document);
+            var meshes = Array(document.Root, "meshes"); var skins = Array(document.Root, "skins");
+            Checks.Require(meshes.Count == 1 && skins.Count == 1, "UNSUPPORTED_FORMAT", "Import one mesh and one skin at a time; select both explicitly for a multi-resource GLB.");
+            return Parse(document, 0, 0);
         }
 
-        static ImportedSkinnedMeshSource Parse(GlbDocument document)
+        /// <summary>Reads one mesh and one skin by source index, retaining the source hash and slot order.</summary>
+        public static ImportedSkinnedMeshSource Read(byte[] bytes, int meshIndex, int skinIndex)
+        {
+            return Parse(GlbDocumentReader.Read(bytes), meshIndex, skinIndex);
+        }
+
+        static ImportedSkinnedMeshSource Parse(GlbDocument document, int meshIndex, int skinIndex)
         {
             var root = document.Root;
-            var meshes = Array(root, "meshes"); Checks.Require(meshes.Count == 1, "UNSUPPORTED_FORMAT", "Import one mesh at a time.");
-            var meshToken = meshes[0] as JObject; Checks.Require(meshToken != null, "INVALID_IMPORT", "GLB mesh is invalid.");
+            var meshes = Array(root, "meshes"); Checks.Require(meshIndex >= 0 && meshIndex < meshes.Count, "INVALID_IMPORT", "Selected GLB mesh index is out of range.");
+            var meshToken = meshes[meshIndex] as JObject; Checks.Require(meshToken != null, "INVALID_IMPORT", "GLB mesh is invalid.");
             var primitives = Array(meshToken, "primitives"); Checks.Require(primitives.Count > 0 && primitives.Count <= AuthoringLimits.MaxSubmeshes, "BUDGET_EXCEEDED", "GLB primitive count exceeds the submesh budget.");
-            var skins = Array(root, "skins"); Checks.Require(skins.Count == 1, "UNSUPPORTED_FORMAT", "A skinned import requires exactly one GLB skin.");
-            var skin = skins[0] as JObject; Checks.Require(skin != null, "INVALID_IMPORT", "GLB skin is invalid.");
+            var skins = Array(root, "skins"); Checks.Require(skinIndex >= 0 && skinIndex < skins.Count, "INVALID_IMPORT", "Selected GLB skin index is out of range.");
+            var skin = skins[skinIndex] as JObject; Checks.Require(skin != null, "INVALID_IMPORT", "GLB skin is invalid.");
             var nodes = Array(root, "nodes");
             var joints = Array(skin, "joints"); Checks.Require(joints.Count > 0 && joints.Count <= SkeletonDefinition.MaxBones, "BUDGET_EXCEEDED", "GLB joint count exceeds the skeleton budget.");
             var jointNodes = joints.Select(token => IntToken(token, 0, nodes.Count - 1, "skin joint")).ToArray();
@@ -76,14 +86,14 @@ namespace NyaForge.Authoring.Import
             // Reuse the static mesh adapter after removing only skin attributes from a cloned JSON tree.
             // This keeps geometry/morph parsing in one module and preserves the original source hash.
             var staticRoot = (JObject)root.DeepClone(); staticRoot.Remove("skins");
-            var staticMeshes = (JArray)staticRoot["meshes"]; var staticMesh = (JObject)staticMeshes[0];
+            var staticMeshes = (JArray)staticRoot["meshes"]; var staticMesh = (JObject)staticMeshes[meshIndex];
             foreach (var token in (JArray)staticMesh["primitives"])
             {
                 var primitive = token as JObject; Checks.Require(primitive != null, "INVALID_IMPORT", "GLB primitive is invalid.");
                 var attributes = primitive["attributes"] as JObject; Checks.Require(attributes != null, "INVALID_IMPORT", "GLB primitive attributes are required.");
                 attributes.Remove("JOINTS_0"); attributes.Remove("WEIGHTS_0");
             }
-            var baseSource = GlbImporter.ReadDocument(new GlbDocument(staticRoot, document.Bin, document.SourceHash));
+            var baseSource = GlbImporter.ReadDocument(new GlbDocument(staticRoot, document.Bin, document.SourceHash), meshIndex);
             var rawWeights = new List<SkinBinding.VertexWeightInput>(); int vertexOffset = 0;
             for (int p = 0; p < primitives.Count; p++)
             {
@@ -101,7 +111,7 @@ namespace NyaForge.Authoring.Import
             Checks.Require(vertexOffset == baseSource.Mesh.VertexCount, "INVALID_IMPORT", "Skin vertex count differs from imported mesh.");
             var binding = SkinBinding.Create(baseSource.Mesh, jointToBone.Skeleton, rawWeights);
             var warnings = new List<string>(baseSource.Warnings) { "GLB skin weights were imported into a translation-only rest skeleton; inverse-bind rotation and scale are outside this adapter." };
-            return new ImportedSkinnedMeshSource(document.SourceHash, baseSource.Mesh, baseSource.Morphs, jointToBone.Skeleton, binding, warnings, jointToBone.NodeToBone, jointNodes.ToDictionary(node => node, node => world[node]), hierarchy);
+            return new ImportedSkinnedMeshSource(document.SourceHash, meshIndex, skinIndex, baseSource.Mesh, baseSource.Morphs, jointToBone.Skeleton, binding, warnings, jointToBone.NodeToBone, jointNodes.ToDictionary(node => node, node => world[node]), hierarchy);
         }
 
         sealed class SkeletonResult
