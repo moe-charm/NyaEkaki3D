@@ -15,7 +15,7 @@ namespace NyaForge.Authoring.Import
             return (int)value;
         }
 
-        static int Offset(JObject owner) => owner["byteOffset"] == null ? 0 : Integer(owner["byteOffset"], 0, AuthoringLimits.MaxBlobBytes, "byteOffset");
+        static int Offset(JObject owner) => owner["byteOffset"] == null ? 0 : Integer(owner["byteOffset"], 0, AuthoringLimits.MaxGlbImportBytes, "byteOffset");
 
         internal static SourceAffine[] Read(GlbDocument document, int accessorIndex)
         {
@@ -28,7 +28,7 @@ namespace NyaForge.Authoring.Import
                 "INVALID_IMPORT", "FLOAT matrices cannot be normalized.");
             Checks.Require(accessor["sparse"] == null, "UNSUPPORTED_FORMAT", "Sparse inverse-bind accessors are not supported yet.");
             Checks.Require(accessor["extensions"] == null, "UNSUPPORTED_FORMAT", "Matrix accessor extensions require a dedicated adapter.");
-            int count = Integer(accessor["count"], 1, AuthoringLimits.MaxBlobBytes / 64, "Matrix count");
+            int count = Integer(accessor["count"], 1, AuthoringLimits.MaxGlbImportBytes / 64, "Matrix count");
             var views = document.Root["bufferViews"] as JArray;
             Checks.Require(views != null, "INVALID_IMPORT", "Matrix accessor requires bufferViews.");
             int viewIndex = Integer(accessor["bufferView"], 0, views.Count - 1, "Matrix bufferView");
@@ -42,11 +42,11 @@ namespace NyaForge.Authoring.Import
             Checks.Require(buffers != null && buffers.Count > 0 && buffers[0] is JObject, "INVALID_IMPORT", "Missing embedded GLB buffer.");
             var buffer = (JObject)buffers[0];
             Checks.Require(buffer["uri"] == null && buffer["extensions"] == null, "UNSUPPORTED_FORMAT", "Matrix reader requires the embedded GLB buffer.");
-            int bufferLength = Integer(buffer["byteLength"], 1, AuthoringLimits.MaxBlobBytes, "Buffer length");
+            int bufferLength = Integer(buffer["byteLength"], 1, AuthoringLimits.MaxGlbImportBytes, "Buffer length");
             Checks.Require(bufferLength <= document.Bin.Length && document.Bin.Length - bufferLength <= 3,
                 "INVALID_IMPORT", "Embedded buffer length differs from BIN payload.");
             int viewOffset = Offset(view), accessorOffset = Offset(accessor);
-            int viewLength = Integer(view["byteLength"], 1, AuthoringLimits.MaxBlobBytes, "View length");
+            int viewLength = Integer(view["byteLength"], 1, AuthoringLimits.MaxGlbImportBytes, "View length");
             Checks.Require(accessorOffset % 4 == 0 && ((long)viewOffset + accessorOffset) % 4 == 0 &&
                 (long)viewOffset + viewLength <= bufferLength && (long)accessorOffset + (long)count * 64 <= viewLength,
                 "INVALID_IMPORT", "Matrix data is misaligned or extends beyond its declared buffer range.");

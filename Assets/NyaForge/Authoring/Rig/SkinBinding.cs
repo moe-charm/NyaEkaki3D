@@ -74,8 +74,14 @@ namespace NyaForge.Authoring.Rig
             {
                 float total = pair.Value.Sum(v => v.Weight);
                 Checks.Require(total > 0 && float.IsFinite(total), "INVALID_WEIGHT", "Serialized vertex weights must be finite and positive.");
-                normalized[pair.Key] = Array.AsReadOnly(pair.Value.OrderByDescending(v => v.Weight).ThenBy(v => v.BoneId, StringComparer.Ordinal)
-                    .Select(v => new VertexWeight(v.VertexIndex, v.BoneId, v.Weight / total)).ToArray());
+                // Serialized bindings already contain canonical, normalized float32 values.
+                // Re-normalizing them here changes the low bits for large/multi-influence
+                // bindings and makes a save/open cycle produce a different project hash.
+                Checks.Require(Math.Abs(total - 1f) <= 1e-4f, "INVALID_WEIGHT", "Serialized vertex weights must sum to one.");
+                var ordered = pair.Value.OrderByDescending(v => v.Weight).ThenBy(v => v.BoneId, StringComparer.Ordinal).ToArray();
+                Checks.Require(pair.Value.Select((v, i) => v.BoneId == ordered[i].BoneId && v.Weight == ordered[i].Weight).All(v => v), "INVALID_SKIN", "Serialized influences are not canonical.");
+                normalized[pair.Key] = Array.AsReadOnly(pair.Value
+                    .Select(v => new VertexWeight(v.VertexIndex, v.BoneId, v.Weight)).ToArray());
             }
             return new SkinBinding(meshTopologyHash, skeletonHash, normalized);
         }
@@ -85,8 +91,22 @@ namespace NyaForge.Authoring.Rig
             Checks.Require(mesh != null && skeleton != null, "INVALID_SKIN", "Mesh and skeleton are required.");
             Checks.Require(MeshTopologyHash == mesh.TopologyHash, "SKIN_TOPOLOGY_CHANGED", "Binding belongs to another mesh topology.");
             Checks.Require(SkeletonHash == skeleton.ContentHash, "SKIN_SKELETON_CHANGED", "Binding belongs to another skeleton.");
+            foreach (var pair in Weights)
+            {
+                Checks.Require(pair.Key >= 0 && pair.Key < mesh.VertexCount, "INVALID_VERTEX", "Weight vertex is outside the mesh domain.");
+                Checks.Require(pair.Value != null && pair.Value.Count > 0 && pair.Value.Count <= MaxInfluencesPerVertex, "UNWEIGHTED_VERTEX", "Every mesh vertex needs at least one positive weight.");
+                foreach (var weight in pair.Value)
+                {
+                    Checks.Require(weight != null && weight.VertexIndex == pair.Key, "INVALID_SKIN", "Serialized weight vertex does not match its record.");
+                    Checks.Require(skeleton.ById.ContainsKey(weight.BoneId), "BONE_NOT_FOUND", "Weight references an unknown bone.");
+                }
+            }
             var raw = Weights.OrderBy(p => p.Key).SelectMany(pair => pair.Value.Select(v => new VertexWeightInput(pair.Key, v.BoneId, v.Weight)));
-            return Create(mesh, skeleton, raw);
+            // ValidateFor must preserve the serialized float32 values. Calling Create
+            // would normalize an already-normalized binding a second time.
+            var validated = FromSerialized(MeshTopologyHash, SkeletonHash, raw);
+            Checks.Require(validated.Weights.Count == mesh.VertexCount, "UNWEIGHTED_VERTEX", "Every mesh vertex needs at least one positive weight.");
+            return validated;
         }
 
         public sealed class VertexWeightInput

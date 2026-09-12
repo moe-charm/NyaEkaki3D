@@ -102,12 +102,15 @@ namespace NyaForge.Authoring
             Checks.Require(source.Transform.Scale == 1f && source.Transform.Translation.X == 0f && source.Transform.Translation.Y == 0f && source.Transform.Translation.Z == 0f,
                 "GLB_SKIN_TRANSFORM", "Skinned GLB export requires an identity source transform.");
             var authoredOutput = evaluation.Output.Mesh;
-            Checks.Require(authoredOutput.ContentHash == source.SourceMesh.ContentHash, "GLB_SKIN_EDIT_UNSUPPORTED", "Skinned GLB export refuses authored geometry edits; use static GLB or native project export.");
-            var allowed = new HashSet<string>(new[] { BuiltinNodes.MeshSource, BuiltinNodes.MorphSet, BuiltinNodes.MorphDeform, BuiltinNodes.Skeleton, BuiltinNodes.SkinBind, BuiltinNodes.Pose, BuiltinNodes.SkinDeform, BuiltinNodes.Output }, StringComparer.Ordinal);
+            Checks.Require(evaluation.Output.Transform.Scale == 1f && evaluation.Output.Transform.Translation.X == 0f && evaluation.Output.Transform.Translation.Y == 0f && evaluation.Output.Transform.Translation.Z == 0f,
+                "GLB_SKIN_TRANSFORM", "Skinned GLB export requires an identity output transform.");
+            var allowed = new HashSet<string>(new[] { BuiltinNodes.MeshSource, BuiltinNodes.EditMesh, BuiltinNodes.MorphSet, BuiltinNodes.MorphDeform, BuiltinNodes.Skeleton, BuiltinNodes.SkinBind, BuiltinNodes.Pose, BuiltinNodes.SkinDeform, BuiltinNodes.Output }, StringComparer.Ordinal);
             Checks.Require(graph.Nodes.Values.All(node => allowed.Contains(node.TypeId)), "GLB_SKIN_GRAPH", "Skinned GLB export does not guess unsupported graph nodes.");
-            var binding = bindingNodes[0].Binding.ValidateFor(source.SourceMesh, skeleton);
             var morphNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.MorphSet && node.Morphs != null);
             var morphDeform = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.MorphDeform);
+            var weights = morphDeform?.MorphWeights ?? new Dictionary<string, float>(StringComparer.Ordinal);
+            Checks.Require(weights.Count == 0 || weights.Values.All(value => value == 0f), "GLB_MORPH_EDIT_UNSUPPORTED", "Skinned GLB export requires morph weights to be zero; bake a posed morph into static GLB or native project export.");
+            var binding = bindingNodes[0].Binding.ValidateFor(authoredOutput, skeleton);
             MorphSet morphs = morphNode == null ? null : morphNode.Morphs.ValidateFor(source.SourceMesh);
             var pose = poseNodes.Length == 0 ? DefaultPose(skeleton) : poseNodes[0].Pose.ValidateFor(skeleton);
             foreach (var bone in skeleton.Bones)
@@ -116,12 +119,11 @@ namespace NyaForge.Authoring
                 Checks.Require(value.XAxis.X == 1f && value.XAxis.Y == 0f && value.XAxis.Z == 0f && value.YAxis.X == 0f && value.YAxis.Y == 1f && value.YAxis.Z == 0f && value.ZAxis.X == 0f && value.ZAxis.Y == 0f && value.ZAxis.Z == 1f && value.Translation.X == bone.Head.X && value.Translation.Y == bone.Head.Y && value.Translation.Z == bone.Head.Z,
                     "GLB_SKIN_POSE_UNSUPPORTED", "Skinned GLB export currently supports the rest pose only.");
             }
-            var weights = morphDeform?.MorphWeights ?? new Dictionary<string, float>(StringComparer.Ordinal);
             if (morphs == null) Checks.Require(weights.Count == 0, "GLB_MORPH_UNRESOLVED", "Morph weights require a retained morph set.");
             if (morphs != null) foreach (var pair in weights) Checks.Require(morphs.ById.ContainsKey(pair.Key), "GLB_MORPH_UNRESOLVED", "Morph weight references an unknown target.");
             return new SkinnedObject
             {
-                Mesh = new MeshObject { Mesh = source.SourceMesh, Transform = source.Transform, Morphs = morphs, MorphWeights = weights, Name = item.ObjectId },
+                Mesh = new MeshObject { Mesh = authoredOutput, Transform = evaluation.Output.Transform, Morphs = morphs, MorphWeights = weights, Name = item.ObjectId },
                 Skeleton = skeleton, Binding = binding, Pose = pose
             };
         }
@@ -137,7 +139,7 @@ namespace NyaForge.Authoring
             {
                 Directory.CreateDirectory(staging);
                 byte[] bytes = GlbWriter.Build(objects, skinned, profile);
-                Checks.Require(bytes.Length <= AuthoringLimits.MaxBlobBytes, "BUDGET_EXCEEDED", "GLB output exceeds the 16 MiB budget.");
+                Checks.Require(bytes.Length <= AuthoringLimits.MaxGlbExportBytes, "BUDGET_EXCEEDED", "GLB output exceeds the 128 MiB budget.");
                 string path = Path.Combine(staging, FileName); File.WriteAllBytes(path, bytes);
                 string parent = Path.GetDirectoryName(directory); if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent); Directory.Move(staging, directory);
                 return Path.Combine(directory, FileName);

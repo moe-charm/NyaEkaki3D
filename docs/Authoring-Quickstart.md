@@ -53,13 +53,15 @@ Rigを試すときは、空の制作projectでgraph上部の **＋ Rigサンプ�
 2. 制作フォルダの `exports/bake-日時-ID/mesh.nyaforge-bake.json` が入口です。同じフォルダの `blobs/` も一緒に保持してください。
 3. 受け取り側UnityへCoreと[Unity Bridge](../UnityBridge/README.md)を入れ、出力manifestを読み込みます。
 
+標準GLBは出力プロファイルを分けています。**標準GLB（表示形状）** は評価済みの見た目だけ、**標準GLB（skin/morph保持）** はrest pose・identity transform・4 influenceの骨とPOSITION morphを出力します。後者はトポロジー不変のEditMesh頂点編集を保持しますが、任意poseや非ゼロmorph変形は拒否します。GLB/VRMの入出力予算は128 MiB・1 mesh 200,000頂点で、native保存の16 MiB blob予算とは別です。
+
 出力対象は1つのstatic meshです。頂点、UV0、法線、接線、submeshと単位を保持し、Bridgeがメートル座標へ一度だけ変換してMesh/Material/Prefabを作ります。現在は法線と接線を保持する方針なので、大きい頂点編集後の陰影品質は別途調整が必要です。
 
 ## 現在の範囲
 
 実装済み: 空project、typed graph、Plane/EditMesh/Polygon/Mirror/UV/Paint/Material、頂点・面編集、Undo/Redo、schema 3 native保存、画像付きBake、Rig skeleton/skin binding/pose/skin-deform、weight paint、Unity Bridgeでの受け取り。
 
-未実装: 実アバターの制作編集、RadDollV3等のFBX/VRM/BLEND import、humanoid自動配置、標準VRM export、編集済みskinの標準GLB変換、実マウスでの手動見た目受入。標準GLBは表示形状profileと、rest pose・未編集source限定のskin/morph profileをGUIから選べます。今回の往復検証はVRChat内の動作検証ではありません。
+未実装: 実アバターの制作編集、RadDollV3等のFBX/VRM/BLEND import、humanoid自動配置、標準VRM export、任意pose/morphのskin変換、実マウスでの手動見た目受入。標準GLBは表示形状profileと、rest pose・トポロジー不変の頂点編集まで対応するskin/morph profileをGUIから選べます。今回の往復検証はVRChat内の動作検証ではありません。
 
 ## 検証の再実行
 

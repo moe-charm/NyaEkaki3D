@@ -29,7 +29,7 @@ namespace NyaForge.Authoring.Import
 
         internal static GlbDocument Read(byte[] bytes)
         {
-            Checks.Require(bytes != null && bytes.Length >= 20 && bytes.Length <= AuthoringLimits.MaxBlobBytes, "INVALID_IMPORT", "GLB must fit the 16 MiB import budget.");
+            Checks.Require(bytes != null && bytes.Length >= 20 && bytes.Length <= AuthoringLimits.MaxGlbImportBytes, "INVALID_IMPORT", "GLB must fit the 128 MiB import budget.");
             string sourceHash = Checks.Hash(bytes);
             try
             {

@@ -50,7 +50,11 @@ namespace NyaForge.Authoring
 
     public static class AuthoringLimits
     {
-        public const int MaxVertices = 100000;
+        public const int MaxVertices = 200000;
+        // GLB/VRM files commonly include textures and several skinned meshes. Keep
+        // their container budget separate from the 16 MiB native blob budget.
+        public const int MaxGlbImportBytes = 128 * 1024 * 1024;
+        public const int MaxGlbExportBytes = 128 * 1024 * 1024;
         public const int MaxIndices = 600000;
         public const int MaxSubmeshes = 32;
         public const int MaxManifestBytes = 65536;

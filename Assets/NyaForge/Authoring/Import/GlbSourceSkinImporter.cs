@@ -44,7 +44,7 @@ namespace NyaForge.Authoring.Import
             Checks.Require(meshIndex >= 0 && meshIndex < meshes.Count && meshes[meshIndex] is JObject, "INVALID_IMPORT", "Source skin mesh index is out of range.");
             var buffers = Array(root, "buffers"); Checks.Require(buffers.Count == 1 && buffers[0] is JObject, "UNSUPPORTED_FORMAT", "Source skin candidate requires one embedded buffer.");
             var buffer = (JObject)buffers[0]; Checks.Require(buffer["uri"] == null && buffer["extensions"] == null, "UNSUPPORTED_FORMAT", "Source skin candidate requires the embedded GLB buffer.");
-            int bufferLength = Integer(buffer["byteLength"], 1, AuthoringLimits.MaxBlobBytes, "buffer byteLength");
+            int bufferLength = Integer(buffer["byteLength"], 1, AuthoringLimits.MaxGlbImportBytes, "buffer byteLength");
             Checks.Require(bufferLength <= document.Bin.Length && document.Bin.Length - bufferLength <= 3, "INVALID_IMPORT", "GLB buffer length differs from BIN payload.");
             var skins = Array(root, "skins"); Checks.Require(skinIndex >= 0 && skinIndex < skins.Count, "INVALID_IMPORT", "Source skin index is missing.");
             var skin = GlbSourceSkinReader.Read(document, GlbNodeTransformReader.Read(root["nodes"] as JArray, document.SourceHash), skinIndex);
@@ -129,7 +129,7 @@ namespace NyaForge.Authoring.Import
             Checks.Require(view["extensions"] == null, "UNSUPPORTED_FORMAT", label + " bufferView extensions require a dedicated adapter.");
             Checks.Require(Integer(view["buffer"], 0, 0, label + " buffer") == 0, "INVALID_IMPORT", label + " buffer reference is invalid.");
             int viewOffset = OptionalInteger(view["byteOffset"], label + " view offset"), accessorOffset = OptionalInteger(accessor["byteOffset"], label + " accessor offset");
-            int stride = view["byteStride"] == null ? elementBytes : Integer(view["byteStride"], elementBytes, 252, label + " stride"); int viewLength = Integer(view["byteLength"], 1, AuthoringLimits.MaxBlobBytes, label + " view length");
+            int stride = view["byteStride"] == null ? elementBytes : Integer(view["byteStride"], elementBytes, 252, label + " stride"); int viewLength = Integer(view["byteLength"], 1, AuthoringLimits.MaxGlbImportBytes, label + " view length");
             int component = Integer(accessor["componentType"], 0, int.MaxValue, label + " componentType"); int componentWidth = (component == 5121 || component == 5126) ? 1 : 2;
             Checks.Require(stride % 4 == 0 && accessorOffset % componentWidth == 0 && ((long)viewOffset + accessorOffset) % 4 == 0 && (long)viewOffset + viewLength <= bufferLength &&
                 (long)accessorOffset + (long)(expected - 1) * stride + elementBytes <= viewLength, "INVALID_IMPORT", label + " range or alignment is invalid.");
@@ -141,7 +141,7 @@ namespace NyaForge.Authoring.Import
         { Checks.Require(id >= 0 && id < accessors.Count, "INVALID_IMPORT", label + " accessor is out of range."); var value = accessors[id] as JObject; Checks.Require(value != null && (string)value["type"] == type, "UNSUPPORTED_FORMAT", label + " accessor type is unsupported."); int component = Integer(value["componentType"], 0, int.MaxValue, label + " componentType"); Checks.Require(components.Contains(component), "UNSUPPORTED_FORMAT", label + " componentType is unsupported."); return value; }
         static int Integer(JToken token, int min, int max, string label)
         { Checks.Require(token != null && token.Type == JTokenType.Integer, "INVALID_IMPORT", label + " must be an integer."); double value = (double)token; Checks.Require(value >= min && value <= max, "INVALID_IMPORT", label + " is out of range."); return (int)value; }
-        static int OptionalInteger(JToken token, string label) => token == null ? 0 : Integer(token, 0, AuthoringLimits.MaxBlobBytes, label);
+        static int OptionalInteger(JToken token, string label) => token == null ? 0 : Integer(token, 0, AuthoringLimits.MaxGlbImportBytes, label);
         static JArray Array(JObject owner, string name) { var value = owner[name] as JArray; Checks.Require(value != null, "INVALID_IMPORT", "GLB property is missing: " + name); return value; }
     }
 }
