@@ -14,6 +14,20 @@
 
 ビューワーでは生成済みのパックと確認セットを開けます。制作画面の **GLBモデルを取り込む** を開くと、Windowsのファイル選択からGLB/VRMを選び、候補のmesh・skin・node instanceを確認して制作対象へ追加できます。skin付きの取り込みはrest poseのEditMesh段から頂点編集を始められます。FBX・BLEND・Unity prefabの直接取り込みは未実装です。
 
+実素材を用意せず取込経路だけを確認する場合は、リポジトリの公開fixtureを生成できます。PowerShellで次を実行すると、静的mesh 0と2骨skinned mesh 1を含む小さなGLBが `Artifacts/NyaForgeGlbFixture/clothing-fixture.glb` に作られます。
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\New-NyaForgeGlbFixture.ps1
+```
+
+Playerのビルド後は、候補選択からEditMesh編集、Save/Open、標準skinned GLB出力、再取込までを一周できます。
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthoring.ps1 -BuildName UiNarrowStatusV2 -Width 800 -Height 600 -ImportModel .\Artifacts\NyaForgeGlbFixture\clothing-fixture.glb
+```
+
+このfixture検証は取込と保存経路の自動確認であり、実アバターの見た目・実マウス操作・VRChat内の動作確認ではありません。
+
 ## 起動と編集
 
 最新の開発ビルドの場所は [current_task.md](../current_task.md) を参照してください。下記の標準配置と異なるBuilds内の名前で保存している場合があります。

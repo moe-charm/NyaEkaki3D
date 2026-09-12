@@ -10,6 +10,8 @@
 
 ### 直近の実装カード（2026-09-13）
 
+- **T06 / 公開GLB取込スモーク**: privateアバターに依存せずWindows取込経路を再現できる `Tools/New-NyaForgeGlbFixture.ps1` を追加した。静的mesh 0と2骨skinned mesh 1、PBR赤材質を含む小さなGLBを生成し、`Tools/Test-NyaForgeAuthoring.ps1 -ImportModel` で候補確認→mesh 1取込→EditMesh頂点編集→native Save/Open→標準skinned GLB出力→再取込を実行。Player `Builds/UiNarrowStatusV2/NyaForge.exe` の800x600 report `Artifacts/Authoring-20260913-052931-1a491563b9374f8dbbf19fd14d4298b5/report.json` がPASS、Unity 2022.3.22f1 Bridgeも `Artifacts/BridgeReceiver-20260913-053019-067-4cc5e17e55284e64b2364188415e7b09/bridge-report.json` でPASS。fixture生成後にGLB宣言長・JSON chunk・mesh/skin属性を検証済み。実マウス操作、任意実素材、実VRChat受入は別境界として残る。
+
 - **T05 / Windows UI可読性**: 制作対象の長いGUIDは先頭8文字をボタンへ表示し、完全なobject identityはツールチップへ残して横方向の文字欠けを避けた。ステータス欄を狭い画面でも1行に固定し、表示更新でviewportが縮む問題を防いだ。ステータス全文もtooltipへ保持する。Player `Builds/UiNarrowStatusV2/NyaForge.exe` の800x600 Authoring suite（report `Artifacts/Authoring-20260913-052112-6c8f4cfef1e1407c9e807eaa5ba711eb/report.json`）と1600x1000 suite（report `Artifacts/Authoring-20260913-052214-0691af25c0ad410183470d1c5c8fb86e/report.json`）が合格。Unity 2022.3.22f1 BridgeもV1で合格（`Artifacts/BridgeReceiver-20260913-051636-908-559437b2ca5d48779a1f89f38eadcc7d/bridge-report.json`）。実マウス・DPI差・実VRChat受入は別境界として残る。
 
 - **I04-E / 必須拡張ガード**: 完全なadapterがない `extensionsRequired` はGLB/VRM取込前に `UNSUPPORTED_EXTENSION` で拒否し、`extensionsUsed` は従来どおり partial 診断として保持する。Core 446件、Windows Authoring suite（Player `Builds/RequiredExtensionGuardV1/NyaForge.exe`、report `Artifacts/Authoring-20260913-045811-6f323347842b4d548e95a60aebd4700b/report.json`）合格。
