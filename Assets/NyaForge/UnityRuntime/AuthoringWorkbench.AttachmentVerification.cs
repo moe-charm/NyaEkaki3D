@@ -6,6 +6,7 @@ using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Rig;
+using UnityEngine.UIElements;
 
 namespace NyaForge.UnityRuntime
 {
@@ -35,9 +36,12 @@ namespace NyaForge.UnityRuntime
                 workspace.SetAttachments(new ProjectAttachments(owned));
                 CreateChokerGraph();
                 var accessory = workspace.Document.ActiveObject;
+                Check(root.Q<Foldout>("object-attachment") != null && root.Q<DropdownField>("object-attachment-target") != null && root.Q<DropdownField>("object-attachment-bone") != null,
+                    "Attachment GUI controls were not built");
                 var attachment = GraphNode.AttachmentNode(Guid.NewGuid().ToString("D"), targetObjectId, boneId, skeleton.ContentHash, new Vec3());
                 Execute(AuthoringOperation.AddNode(attachment));
                 Refresh();
+                Check(attachmentTarget.choices.Count == 1 && attachmentBone.choices.Count == 1, "Attachment GUI did not expose the resolved target and BoneId");
                 var expectedRoot = new UnityEngine.Vector3(bone.Head.X, bone.Head.Y, bone.Head.Z);
                 Check(UnityEngine.Vector3.Distance(projection.DisplayObject.transform.position, expectedRoot) < 1e-5f, "Accessory root did not resolve to the target bone rest position");
                 var initialRotation = projection.DisplayObject.transform.localRotation;

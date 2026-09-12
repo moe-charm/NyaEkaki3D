@@ -1,3 +1,9 @@
+## 2026-09-13 attachment GUI verification
+
+装着ノードの制作導線を、GUIの実コントロールまで検証できるようにした。Authoring suiteは対象`object-attachment` foldout、対象graph objectのDropdown、stable BoneId Dropdownの存在を確認し、解決済みtarget/BoneIdが選択肢へ表示されることを回帰する。既存のroot pose追従、native Save/Open、未解決target拒否、標準GLBのmetadata loss guardも同じPlayerで継続確認した。
+
+Core **454 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-fbf4a508696c4b35b50231014cc07f6a`）。Windows Player `Builds/AttachmentV9/NyaForge.exe` のAuthoring suite **PASS**（report `Artifacts/Authoring-20260913-062610-55a5b5cacad344b98de2791138163e89/report.json`、800x600）。GUIがstable IDを表示することを確認したが、実マウス/DPI差・実アバターの自動fit/貫通・実VRChat SDK受け入れは別境界として残る。
+
 ## 2026-09-13 GLB attachment loss guard
 
 標準GLBにはNyaForgeのobject attachmentを表す共通フィールドがないため、装着ノードを含む作品のGLB出力を続行するとBoneId・target object・offsetが失われる。`GlbExportService`は装着ノードを検出した時点で`GLB_ATTACHMENT_METADATA_UNSUPPORTED`を返し、出力先を作らずnative project exportを案内する。single/multi-objectのnative routingと未解決target拒否は前カードの契約を維持する。
