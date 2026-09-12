@@ -8,7 +8,11 @@
 
 `JointMatrix(slot, jointWorld)`はjointWorld×inverseBindを返す。出力はsource worldへ写す行列で、mesh node変換をさらに掛けない。描画先のlocal空間への変換、weight混合、normal/tangent処理は後段adapterが所有する。world行列は呼出側が同じsource座標系で渡す契約であり、任意pose配列のsource identity検証は今後のscene adapterで行う。
 
-実装範囲は候補型と数値検証まで。GLB accessorのdecode、native codec、一般skinのGUI取込はまだ接続していない。既存translation-only制限を解除する証拠ではない。
+`GlbSourceSkinReader.Read(bytes, skinIndex)`で指定skinを読取可能。全source node transformsを読み、source hash一致を検査して候補へ接続する。複数skinを個別に指定できるが、複数meshの制作projectへの取込を意味しない。
+
+`GlbMatrixAccessorReader`はembedded BINのdense FLOAT/MAT4をdecodeする。buffer/view/accessorの宣言範囲をlong演算で検査し、4byte alignmentとBIN padding最大3byteを確認してからlittle-endian floatを読む。joint数以上のaccessor entryをすべて保持。正規化FLOAT、vertex stride/target付きview、不正参照・型・明示nullを拒否する。sparse、外部buffer、対象accessor/view/skinの拡張は現段階では未対応として拒否し、黙って解釈を省かない。JSON数値は範囲確認前にintへcastしない。
+
+実装範囲は候補型・dense accessor decodeと数値検証まで。native codec、一般skinのGUI取込はまだ接続していない。既存translation-only制限を解除する証拠ではない。readerはglTF全体のvalidatorではなく、材質や必須未知拡張等の文書全体の検証はI04-Eに残る。
 
 `SourceAffine`はUnityに依存しない不変のcolumn-major 4×4行列。TRSの合成はT×R×S、`parent.Compose(local)`はparent×local。doubleで計算し、公開するVec3/Vec4はfinite float範囲を検査して返す。入力配列はコピーし、公開配列もコピーする。
 

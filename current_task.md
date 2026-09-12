@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。I04-Aの数値基盤、node読取・階層合成、一般inverse-bindを保持するSourceSkin候補型を追加。次はGLBのmatrix accessor読取と保存への接続。VRM0/1の対応profileはGUI接続とPlayer handler検証済み。直近Core369件合格、任意の実モデル取込・実操作・性能の受入は未完了。
+更新: 2026-09-12。I04-Aの数値基盤、node読取・階層合成、SourceSkin候補とGLB dense inverse-bind読取を追加。次は完全なsource変換/bindの保存と旧形式移行への接続。VRM0/1の対応profileはGUI接続とPlayer handler検証済み。直近Core371件合格、任意の実モデル取込・実操作・性能の受入は未完了。
 
 ## 開発の入口
 
@@ -14,7 +14,7 @@
 
 | 状態 / ID | 実行する作業 | 完了条件・依存 |
 |---|---|---|
-| [ ] I04-A / P1 **次に実装** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 回転/scale/鏡映/階層/元原点とbindの差の数値回帰、旧translation/native移行契約。SourceAffine、node decode/階層合成、SourceSkin候補型は追加済み。次はmatrix accessor decodeと保存への接続 |
+| [ ] I04-A / P1 **次に実装** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 回転/scale/鏡映/階層/元原点とbindの差の数値回帰、旧translation/native移行契約。SourceAffine、node decode/階層合成、SourceSkinとdense matrix decodeは追加済み。次は完全transform/bind保存と旧形式移行。sparse decodeも未対応 |
 | [ ] I04-B / P1 | 複数mesh/instance/skin、source→制作ID対応 | Objects[0]前提も監査。全対象・同名morph・共有参照を編集/保存/Openで保持。Aの変換契約に依存 |
 | [ ] I04-C / P1 | rig/weight/morph容量とcodec/hash/表示/出力 | 257骨・18weight・単一mesh262morph以上の入力を削減なしで往復。byte/メモリ予算と超過時の拒否を同時に決める |
 | [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
@@ -33,6 +33,9 @@
 - [ ] **I04 / C0〜C5**: 任意モデル取込と制作/出力の製品全体は未完了。skin/morph出力・受取側確認などを [開発計画](docs/Development-Plan.md) から省かない。
 
 ## 直近の証拠
+
+- GLB source skin reader: Core **371 passed / 0 failed** (`Logs/core-glb-source-skin.txt`)。実GLB containerのoffset付き一般bind、余剰entry、複数skin指定、省略identity、不正範囲/型/参照・sparse/外部buffer拒否を確認。native/geometry adapterは未接続。
+- Windows-GlbSourceSkin build **PASS** (`Logs/build-player-20260912-164909-392.log`)。Core reader追加のためPlayer GUI suiteは再実行していない。
 
 - SourceSkin候補型: Core **369 passed / 0 failed** (`Logs/core-source-skin.txt`)。slot順・入力不変・余剰bind保持・回転/非一様scale/鏡映のbind相殺・省略identity・257骨・不正root/slotを確認。GLB decoder/native接続は未完了。
 - Windows-SourceSkin build **PASS** (`Logs/build-player-20260912-164501-118.log`)。今回の変更は独立したCore候補型のためPlayer GUI suiteは再実行していない。

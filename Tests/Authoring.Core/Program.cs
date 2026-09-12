@@ -20,6 +20,7 @@ internal static partial class Program
         RunVrm0SpringPreviewTests();
         RunSourceAffineTests();
         RunSourceSkinTests();
+        RunGlbSourceSkinTests();
         RunGlbNodeTransformTests();
         RunFaceInspectionTests();
         RunPolygonWireTests();
