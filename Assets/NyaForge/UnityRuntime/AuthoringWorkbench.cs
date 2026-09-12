@@ -166,7 +166,7 @@ namespace NyaForge.UnityRuntime
             side.Add(Button("標準GLB（表示形状）", ExportGlbStatic, "authoring-export-glb-static"));
             side.Add(Button("標準GLB（skin/morph保持）", ExportGlbSkinned, "authoring-export-glb-skinned"));
             side.Add(Button("拡張GLB（全weight保持）", ExportGlbSkinnedExtended, "authoring-export-glb-skinned-extended"));
-            side.Add(new Label("Unity用出力はnative機能を保持します。標準GLBは互換用4 influence、拡張GLBは全weightを出力します。"));
+            side.Add(new Label("Unity用出力はnative機能を保持します。装着情報を含む作品はnative projectへ出力されます。標準GLBは互換用4 influence、拡張GLBは全weightを出力します。"));
             confirmRow = new VisualElement { name = "authoring-confirm" }; confirmRow.style.display = DisplayStyle.None; side.Add(confirmRow);
             status = new Label { name = "authoring-status" }; status.AddToClassList("status");
             // Keep the footer from growing when a long diagnostic is reported on a

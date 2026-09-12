@@ -29,5 +29,22 @@ internal static partial class Program
             True(reopened.Preview.Evaluation.MorphSetOutputs.ContainsKey(morphId));
             Equal(before, workspace.Document.StateHash); Equal(revision, workspace.Document.DocumentRevision); Equal(dirty, workspace.IsDirty);
         });
+        Test("accessory attachment export preserves the binding in a native project package", () =>
+        {
+            string planeId = GraphId(), attachmentId = GraphId(), outputId = GraphId();
+            string targetObjectId = GraphId(), boneId = GraphId(), skeletonHash = Checks.Hash(new byte[] { 4, 2, 0 });
+            var graph = new NyaForge.Authoring.Graph.AuthoringGraph(GraphId(), new[] {
+                NyaForge.Authoring.Graph.GraphNode.Plane(planeId),
+                NyaForge.Authoring.Graph.GraphNode.AttachmentNode(attachmentId, targetObjectId, boneId, skeletonHash, new Vec3(.01f, 0, -.02f)),
+                NyaForge.Authoring.Graph.GraphNode.Output(outputId) },
+                new[] { new NyaForge.Authoring.Graph.GraphEdge(planeId, "mesh", outputId, "mesh") }, outputId);
+            var workspace = AuthoringWorkspace.CreateEmpty(); Ok(Execute(workspace, AuthoringOperation.AddGraph(graph)));
+            var result = ProjectExportService.Export(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision,
+                Path.Combine(Root, "attachment-native-export-" + System.Guid.NewGuid().ToString("N")));
+            Equal(ProjectExportKind.AuthoringProject, result.Kind);
+            var reopened = ProjectStore.Open(Path.GetDirectoryName(result.ManifestPath));
+            var restored = reopened.Document.ActiveObject.Graph.Nodes[attachmentId];
+            Equal(targetObjectId, restored.AttachmentTargetObjectId); Equal(boneId, restored.AttachmentBoneId); Near(-.02f, restored.AttachmentOffset.Z);
+        });
     }
 }

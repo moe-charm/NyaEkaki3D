@@ -51,7 +51,8 @@ namespace NyaForge.Authoring
             return document.Objects.Any(item => !item.IsStaticProfile && item.Graph.Nodes.Values.Any(node =>
                 node.TypeId == Graph.BuiltinNodes.Skeleton || node.TypeId == Graph.BuiltinNodes.SkinBind ||
                 node.TypeId == Graph.BuiltinNodes.Pose || node.TypeId == Graph.BuiltinNodes.SkinDeform ||
-                node.TypeId == Graph.BuiltinNodes.MorphSet || node.TypeId == Graph.BuiltinNodes.MorphDeform));
+                node.TypeId == Graph.BuiltinNodes.MorphSet || node.TypeId == Graph.BuiltinNodes.MorphDeform ||
+                node.TypeId == Graph.BuiltinNodes.Attachment));
         }
     }
 }
