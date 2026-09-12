@@ -83,6 +83,7 @@ namespace NyaForge.Authoring
                 Checks.Require(workspace.Document.DocumentId == document, "DOCUMENT_CHANGED", "Export targets another document.");
                 Checks.Require(workspace.Document.DocumentRevision == revision, "REVISION_CONFLICT", "Document changed before export.");
                 Checks.Require(workspace.Document.Objects.Count > 1, "MULTI_OBJECT_REQUIRED", "Use the single-object export for a document with one object.");
+                Checks.Require(!ProjectExportService.RequiresNativeProjectExport(workspace.Document), "ATTACHMENT_NATIVE_EXPORT_REQUIRED", "This document contains metadata that requires a native project export.");
                 Checks.Require(!Directory.Exists(directory) && !File.Exists(directory), "EXPORT_DESTINATION_EXISTS", "Export destination already exists.");
 
                 string staging = directory + ".staging-" + Guid.NewGuid().ToString("N");

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using NyaForge.Authoring;
 internal static partial class Program
 {
@@ -45,6 +46,24 @@ internal static partial class Program
             var reopened = ProjectStore.Open(Path.GetDirectoryName(result.ManifestPath));
             var restored = reopened.Document.ActiveObject.Graph.Nodes[attachmentId];
             Equal(targetObjectId, restored.AttachmentTargetObjectId); Equal(boneId, restored.AttachmentBoneId); Near(-.02f, restored.AttachmentOffset.Z);
+        });
+        Test("multi-object attachment export keeps both graph objects in one native package", () =>
+        {
+            string targetPlane, targetEdit; var target = PlaneGraph(out targetPlane, out targetEdit);
+            var workspace = AuthoringWorkspace.CreateEmpty(); Ok(Execute(workspace, AuthoringOperation.AddGraph(target)));
+            string targetObjectId = workspace.Document.ActiveObject.ObjectId;
+            string accessoryPlane, accessoryEdit; var accessory = PlaneGraph(out accessoryPlane, out accessoryEdit);
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(accessory)));
+            string attachmentId = GraphId(), boneId = GraphId(), skeletonHash = Checks.Hash(new byte[] { 1, 9, 9 });
+            Ok(Execute(workspace, AuthoringOperation.AddNode(NyaForge.Authoring.Graph.GraphNode.AttachmentNode(attachmentId, targetObjectId, boneId, skeletonHash, new Vec3(.02f, 0, 0))))) ;
+            string directory = Path.Combine(Root, "multi-attachment-native-" + System.Guid.NewGuid().ToString("N"));
+            var result = ProjectExportService.Export(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory);
+            Equal(ProjectExportKind.AuthoringProject, result.Kind);
+            var reopened = ProjectStore.Open(Path.GetDirectoryName(result.ManifestPath));
+            Equal(2, reopened.Document.Objects.Count);
+            var restored = reopened.Document.Objects.Single(item => item.ObjectId == workspace.Document.ActiveObject.ObjectId).Graph.Nodes[attachmentId];
+            Equal(targetObjectId, restored.AttachmentTargetObjectId); Equal(boneId, restored.AttachmentBoneId);
+            Expect("ATTACHMENT_NATIVE_EXPORT_REQUIRED", () => MultiObjectExportService.Export(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, Path.Combine(Root, "multi-attachment-bake-" + System.Guid.NewGuid().ToString("N"))));
         });
     }
 }

@@ -88,7 +88,7 @@ namespace NyaForge.UnityRuntime
         void Export() => Try(() =>
         {
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "bake-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            if (workspace.Document.Objects.Count > 1)
+            if (workspace.Document.Objects.Count > 1 && !ProjectExportService.RequiresNativeProjectExport(workspace.Document))
             {
                 string manifest = MultiObjectExportService.Export(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory).ManifestPath;
                 SetStatus("Unity用に複数対象を書き出しました: " + manifest);

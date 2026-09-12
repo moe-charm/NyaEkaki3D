@@ -2,7 +2,7 @@
 
 監査で、装着ノードだけを含むgraphが通常のMesh/Surface Bakeへ誤ルーティングされると、GLB等の標準交換形式では表現できない装着メタデータが失われる経路を確認した。`ProjectExportService`が`object.attachment`を含むgraphをfeature-preserving native projectへ送るよう修正し、再読込後のtarget object・stable BoneId・offsetを回帰した。
 
-Core **452 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ed7c7e7e2e27485fb6c098314c91365f`）。Windows Player `Builds/AttachmentV4/NyaForge.exe` のAuthoring suiteもPASS（report `Artifacts/Authoring-20260913-061130-3bcb6d5caea043b58baad0ebd04ec5e1/report.json`）。標準GLBはattachment metadataを表現しないため、小物の位置情報を保持したい場合はnative project exportを使用する。この境界をGUI/MCPの出力案内へ明示した。
+Core **453 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2bfd2ee87d724e9795b6719040690e93`）。Windows Player `Builds/AttachmentV5/NyaForge.exe` のAuthoring suiteもPASS（report `Artifacts/Authoring-20260913-061501-1a4a3261fdd8468092c19d4647c674ec/report.json`）。標準GLBはattachment metadataを表現しないため、小物の位置情報を保持したい場合はnative project exportを使用する。この境界をGUI/MCPの出力案内へ明示した。
 ## 2026-09-13 object.attachment follow-up
 
 前回のボーンフィードバックを受け、チョーカーなどの小物を明示したavatarのstable `BoneId`へ装着する経路を実装した。graphへ`object.attachment`ノードを追加し、`targetObjectId`、`boneId`、`skeletonHash`、bone-local rest offset（メートル）を型付き・ハッシュ付きで保存する。GUIの「小物をボーンへ装着」は対象graphとBoneIdを選択して設定でき、名前推測・自動fit・貫通修正は行わない。MCPの`graph.node.add/update`でも同じpayloadを使える。

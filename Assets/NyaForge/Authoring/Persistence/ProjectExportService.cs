@@ -46,8 +46,10 @@ namespace NyaForge.Authoring
             }
         }
 
-        static bool RequiresNativeProjectExport(AuthoringDocument document)
+        /// <summary>Returns true when a standard Bake cannot preserve the graph's typed metadata.</summary>
+        public static bool RequiresNativeProjectExport(AuthoringDocument document)
         {
+            if (document == null) return false;
             return document.Objects.Any(item => !item.IsStaticProfile && item.Graph.Nodes.Values.Any(node =>
                 node.TypeId == Graph.BuiltinNodes.Skeleton || node.TypeId == Graph.BuiltinNodes.SkinBind ||
                 node.TypeId == Graph.BuiltinNodes.Pose || node.TypeId == Graph.BuiltinNodes.SkinDeform ||
