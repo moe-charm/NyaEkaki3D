@@ -62,7 +62,7 @@ namespace NyaForge.Authoring.Inspection
                 var output = workspace.Preview?.Output;
                 if (evaluation == null || !workspace.Preview.IsComplete || output == null || output.Mesh == null)
                 {
-                    return Result(workspace, request, limits, "unknown", checks, null, null, null, null, null,
+                    return Result(workspace, request, limits, "unknown", checks, null, null, null, null, null, null,
                         new JArray("Final output is incomplete or has no renderable mesh."));
                 }
 
@@ -77,11 +77,43 @@ namespace NyaForge.Authoring.Inspection
                 AddBound(checks, "triangles", triangles, limits.Triangles, "Triangles");
                 AddBound(checks, "materials", materials, limits.Materials, "Materials");
                 AddBound(checks, "maxTextureDimension", maxTexture, limits.TextureDimension, "Largest texture dimension");
-                checks.Add(new JObject { ["name"] = "bones", ["status"] = "unknown", ["reason"] = "No skin binding is present in the current authoring profile." });
+                var skin = SummarizeSkin(evaluation);
+                if (!skin.HasBinding)
+                {
+                    checks.Add(new JObject { ["name"] = "bones", ["status"] = "unknown", ["reason"] = "No evaluated skin binding is present in the current authoring profile." });
+                    checks.Add(new JObject { ["name"] = "maxInfluences", ["status"] = "unknown", ["reason"] = "No evaluated skin binding is present in the current authoring profile." });
+                }
+                else
+                {
+                    AddBound(checks, "bones", skin.Bones, NyaForge.Authoring.Rig.SkeletonDefinition.MaxBones, "Skeleton bones (authoring capacity)");
+                    AddBound(checks, "maxInfluences", skin.MaxInfluences, NyaForge.Authoring.Rig.SkinBinding.MaxInfluencesPerVertex, "Maximum vertex influences (authoring capacity)");
+                }
                 checks.Add(new JObject { ["name"] = "fit", ["status"] = "unknown", ["reason"] = "Avatar fit and pose deformation are not part of this static profile." });
                 string status = checks.OfType<JObject>().Any(c => (string)c["status"] == "fail") ? "fail" : "pass";
-                return Result(workspace, request, limits, status, checks, triangles, output.Mesh.VertexCount, materials, textures, maxTexture, new JArray());
+                return Result(workspace, request, limits, status, checks, triangles, output.Mesh.VertexCount, materials, textures, maxTexture, skin, new JArray());
             }
+        }
+
+        sealed class SkinSummary
+        {
+            public bool HasBinding;
+            public int Bones;
+            public int MaxInfluences;
+        }
+
+        static SkinSummary SummarizeSkin(GraphEvaluation evaluation)
+        {
+            var result = new SkinSummary();
+            if (evaluation == null || evaluation.SkinBindingOutputs == null || evaluation.SkinBindingOutputs.Count == 0) return result;
+            result.HasBinding = true;
+            result.MaxInfluences = evaluation.SkinBindingOutputs.Values
+                .SelectMany(value => value.Binding.Weights.Values)
+                .Select(weights => weights == null ? 0 : weights.Count)
+                .DefaultIfEmpty(0).Max();
+            result.Bones = evaluation.SkeletonOutputs == null
+                ? 0
+                : evaluation.SkeletonOutputs.Values.Select(value => value.Skeleton.Bones.Count).DefaultIfEmpty(0).Max();
+            return result;
         }
 
         static IEnumerable<PaintImage> Images(GraphMeshValue output)
@@ -99,7 +131,7 @@ namespace NyaForge.Authoring.Inspection
         }
 
         static JObject Result(AuthoringWorkspace workspace, AuthoringValidationRequest request, Limits limits, string status, JArray checks,
-            int? triangles, int? vertices, int? materials, int? textures, int? maxTexture, JArray warnings)
+            int? triangles, int? vertices, int? materials, int? textures, int? maxTexture, SkinSummary skin, JArray warnings)
         {
             var metrics = new JObject();
             if (triangles.HasValue) metrics["triangles"] = triangles.Value;
@@ -107,6 +139,11 @@ namespace NyaForge.Authoring.Inspection
             if (materials.HasValue) metrics["materials"] = materials.Value;
             if (textures.HasValue) metrics["textures"] = textures.Value;
             if (maxTexture.HasValue) metrics["maxTextureDimension"] = maxTexture.Value;
+            if (skin != null && skin.HasBinding)
+            {
+                metrics["bones"] = skin.Bones;
+                metrics["maxInfluences"] = skin.MaxInfluences;
+            }
             return new JObject
             {
                 ["success"] = true,

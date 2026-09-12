@@ -1,3 +1,7 @@
+# 2026-09-13 authoring validation skin capacity
+
+The read-only output check now reports evaluated skin capacity for skinned graphs. It derives bone count and maximum per-vertex influence from `SkeletonOutputs` and `SkinBindingOutputs`, checks them against the NyaForge authoring capacities of 512 bones and 32 influences, and keeps static graphs and avatar fit as `unknown` where the evidence is unavailable. Core passed **464 / 0** (`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-506128b4bbdd40fdb7f585c4774280d3`).
+
 # 2026-09-13 GLB skeleton/morph conformance
 
 The GLB writer now creates a `NyaForgeSkeletonRoot` when an exported rig has multiple parentless bones, so the skin's `skeleton` property reaches every joint root. Morph `POSITION` accessors now include the glTF-required `min` and `max` bounds, including material-slot primitives. Core passed **463 / 0** (`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f891479b2fe344a1a8935eb6974232c6`). Windows Player `Builds/MorphBoundsV1/NyaForge.exe` passed the 800x600 Authoring suite (`Artifacts/Authoring-20260913-084200-71702ef26aa14b9389f34352f292694a/report.json`), and the Unity **2022.3.22f1** synthetic Bridge receiver passed (`Artifacts/BridgeReceiver-20260913-084245-214-4bdf3a3c031a/bridge-report.json`). This is format and synthetic receiver evidence; it is not real VRChat SDK or in-avatar acceptance.

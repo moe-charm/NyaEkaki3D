@@ -1,3 +1,7 @@
+# 2026-09-13 authoring validation skin capacity
+
+「出力チェック」でスキン付きgraphの骨数と頂点あたり最大influenceが常にunknownになる境界を修正した。評価済みの`SkinBindingOutputs`／`SkeletonOutputs`から実値を集計し、NyaForgeのauthoring容量（512骨／32 influence）へ明示判定する。skin bindingが無い静的graphは従来どおりunknown、`fit`は実アバター受入を含むためunknownのままとする。Core **464 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-506128b4bbdd40fdb7f585c4774280d3`）。
+
 # 2026-09-13 GLB skeleton/morph conformance
 
 GLB出力の仕様穴を追加で閉じた。複数の親なしboneを持つskinned出力では `NyaForgeSkeletonRoot` を生成し、skinの `skeleton` から全joint rootへ到達できる共通祖先を出力する。morphの `POSITION` accessorにはglTF必須の `min/max` を付け、slot primitive側も同じ規則に揃えた。新しいCore回帰を含め **463 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f891479b2fe344a1a8935eb6974232c6`）。

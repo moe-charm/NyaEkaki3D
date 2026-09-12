@@ -3,6 +3,7 @@ using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Inspection;
+using NyaForge.Authoring.Rig;
 using NyaForge.Authoring.Topology;
 using Newtonsoft.Json.Linq;
 
@@ -32,6 +33,38 @@ internal static partial class Program
             var request = AuthoringValidationRequest.Read(new JObject { ["documentId"] = workspace.Document.DocumentId, ["expectedRevision"] = workspace.Document.DocumentRevision, ["profile"] = "mobile" });
             var result = AuthoringValidationReader.Read(workspace, workspace.InstanceId, request);
             Equal("fail", (string)result["status"]); Equal(2, (int)result["metrics"]["materials"]); Equal("fail", (string)result["checks"].Children<JObject>().Single(c => (string)c["name"] == "materials")["status"]);
+        });
+
+        Test("validation reports evaluated skin capacity instead of unknown", () =>
+        {
+            var mesh = AuthoringFixtures.Panel(1);
+            string root = GraphId(), child = GraphId(), skeletonNode = GraphId(), source = GraphId(), bindingNode = GraphId(), poseNode = GraphId(), deform = GraphId(), output = GraphId();
+            var skeleton = new SkeletonDefinition(new[]
+            {
+                new BoneDefinition(root, "Root", "", new Vec3(), new Vec3(0, .1f, 0)),
+                new BoneDefinition(child, "Child", root, new Vec3(0, .1f, 0), new Vec3(0, .2f, 0))
+            });
+            var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount).SelectMany(i => new[]
+            {
+                new SkinBinding.VertexWeightInput(i, root, .25f),
+                new SkinBinding.VertexWeightInput(i, child, .75f)
+            }));
+            var pose = PoseSet.Create(skeleton, skeleton.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head))));
+            var graph = new AuthoringGraph(GraphId(),
+                new[] { GraphNode.Source(source, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonNode, skeleton), GraphNode.SkinBindNode(bindingNode, binding), GraphNode.PoseNode(poseNode, pose), GraphNode.SkinDeformNode(deform), GraphNode.Output(output) },
+                new[]
+                {
+                    new GraphEdge(source, "mesh", bindingNode, "mesh"), new GraphEdge(skeletonNode, "skeleton", bindingNode, "skeleton"),
+                    new GraphEdge(skeletonNode, "skeleton", poseNode, "skeleton"), new GraphEdge(source, "mesh", deform, "mesh"),
+                    new GraphEdge(skeletonNode, "skeleton", deform, "skeleton"), new GraphEdge(bindingNode, "binding", deform, "binding"),
+                    new GraphEdge(poseNode, "pose", deform, "pose"), new GraphEdge(deform, "mesh", output, "mesh")
+                }, output);
+            var workspace = AuthoringWorkspace.CreateEmpty(); Ok(new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph))));
+            var request = AuthoringValidationRequest.Read(new JObject { ["documentId"] = workspace.Document.DocumentId, ["expectedRevision"] = workspace.Document.DocumentRevision, ["profile"] = "pc" });
+            var result = AuthoringValidationReader.Read(workspace, workspace.InstanceId, request);
+            Equal("pass", (string)result["status"]); Equal(2, (int)result["metrics"]["bones"]); Equal(2, (int)result["metrics"]["maxInfluences"]);
+            Equal("pass", (string)result["checks"].Children<JObject>().Single(c => (string)c["name"] == "bones")["status"]);
+            Equal("pass", (string)result["checks"].Children<JObject>().Single(c => (string)c["name"] == "maxInfluences")["status"]);
         });
 
         Test("validation rejects a stale revision", () =>
