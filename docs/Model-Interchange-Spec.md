@@ -136,14 +136,14 @@ flowchart LR
 
 コード照合対象は `4abd9d9` と取込説明の修正。GLB importは1mesh/1skin、translation-only、4weight、256骨/256morph。取込source nodeは最大4096、一時実行骨は最大256。nativeの材質/rig機能が進んでいても、任意の外部モデルを完全に取り込める段階ではない。
 
-現行readerには本仕様をまだ満たさない箇所もある。`GlbImport`は材質・静的scene構造・NORMAL/TANGENT morphを保持せず警告し、追加UV等も全属性を取り込まない。未知の `extensionsRequired` を網羅して拒否する処理、任意のVRM meta/利用条件/未知拡張を依存込みで保管する機構も未実装。これらはI04-Eの解消対象で、現在の取込成功を本仕様の完全保持成功と称しない。容量監査には16MiB/blob・100,000頂点・32submesh等の予算も含める。
+現行readerには本仕様をまだ満たさない箇所もある。`GlbImport`は材質・静的scene構造・NORMAL/TANGENT morphを保持せず警告し、追加UV等も全属性を取り込まない。`GlbSceneInventoryReader`は複数mesh/instance/skinの参照とnode world transformを候補化するが、geometry/skinを複数制作対象へ公開する機構ではない。未知の `extensionsRequired` を網羅して拒否する処理、任意のVRM meta/利用条件/未知拡張を依存込みで保管する機構も未実装。これらはI04-B/Eの解消対象で、現在の取込成功を本仕様の完全保持成功と称しない。容量監査には16MiB/blob・100,000頂点・32submesh等の予算も含める。
 
 T03の読取調査は完了。実素材要求には20mesh、257骨、18weight/頂点、単一mesh262morphがあり、一般基底も必要。[観測条件と限界](Real-Asset-Import-Plan.md)を参照。これらは最低限の検証入力であり、新しい一律上限値そのものではない。
 
 | 順 / ID | 次の成果物・完了条件 |
 |---|---|
 | 1 / I04-A | source affine数値モジュールと単体回帰。現行translation経路を維持し、一般node/IBM/方向変換を検証。新情報のnative移行設計を同梱 |
-| 2 / I04-B | 複数mesh/instance/skinの候補と制作対象、source mapping。全経路の単一object前提を解消し、同名target・共有参照・保存/Openを検証 |
+| 2 / I04-B | `GlbSceneInventoryReader`で複数mesh/instance/skinの候補とsource mappingを保持済み。次は候補から制作対象を公開し、全経路の単一object前提を解消、同名target・共有参照・保存/Openを検証 |
 | 3 / I04-C | 257骨/18weight/262target以上を保持する容量・codec・hash・表示/出力契約。固定予算とbyte/メモリ予算を一緒に決め、削減なしの往復と超過診断を検証 |
 | 4 / I04-D | FBXの標準Bridge入力経路と能力表示。任意Blender adapterは別モジュール。変換前後比較、取消、依存未導入時の診断、原本保護を検証 |
 | 5 / I04-E | 取込機能report、材質/animation/VRM意味情報/未知拡張の保持契約とGUI/MCP。既知拡張の未対応内部フィールドも含め、未対応を完全成功としない。opaque保持は依存資源・index失効も検証 |
