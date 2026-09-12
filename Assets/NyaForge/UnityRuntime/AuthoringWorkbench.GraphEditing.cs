@@ -13,7 +13,7 @@ namespace NyaForge.UnityRuntime
         Label editStageInfo;
         readonly List<string> editStageIds = new List<string>();
         GraphEditContext activeEditContext;
-        bool IsGraph => workspace != null && !workspace.Document.IsEmpty && !workspace.Document.Objects[0].IsStaticProfile;
+        bool IsGraph => workspace != null && !workspace.Document.IsEmpty && !workspace.Document.ActiveObject.IsStaticProfile;
 
         void BuildGraphEditing(VisualElement side)
         {
@@ -36,7 +36,7 @@ namespace NyaForge.UnityRuntime
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), new[] { GraphNode.Plane(plane), GraphNode.Edit(edit), GraphNode.Output(output) },
                 new[] { new GraphEdge(plane, "mesh", edit, "mesh"), new GraphEdge(edit, "mesh", output, "mesh") }, output);
             Execute(AuthoringOperation.AddGraph(graph));
-            if (IsGraph && workspace.Document.Objects[0].Graph.GraphId == graph.GraphId)
+            if (IsGraph && workspace.Document.ActiveObject.Graph.GraphId == graph.GraphId)
             {
                 SelectEditStage(editStageIds.IndexOf(edit)); Frame();
             }
@@ -50,7 +50,7 @@ namespace NyaForge.UnityRuntime
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), new[] { GraphNode.Polygon(source, polygon, new RestTransform(1, new Vec3())), GraphNode.PolygonEdit(edit), GraphNode.Output(output) },
                 new[] { new GraphEdge(source, "mesh", edit, "mesh"), new GraphEdge(edit, "mesh", output, "mesh") }, output);
             Execute(AuthoringOperation.AddGraph(graph));
-            if (IsGraph && workspace.Document.Objects[0].Graph.GraphId == graph.GraphId) { SelectEditStage(editStageIds.IndexOf(edit)); Frame(); }
+            if (IsGraph && workspace.Document.ActiveObject.Graph.GraphId == graph.GraphId) { SelectEditStage(editStageIds.IndexOf(edit)); Frame(); }
         }
 
         void SelectEditStage(int index)
@@ -77,7 +77,7 @@ namespace NyaForge.UnityRuntime
             editStageIds.Clear(); editStageIds.Add("");
             var labels = new List<string> { "最終出力（確認）" };
             if (IsGraph)
-                foreach (var node in workspace.Document.Objects[0].Graph.Nodes.Values.OrderBy(n => n.NodeId, StringComparer.Ordinal))
+                foreach (var node in workspace.Document.ActiveObject.Graph.Nodes.Values.OrderBy(n => n.NodeId, StringComparer.Ordinal))
                     if ((node.TypeId == BuiltinNodes.EditMesh || node.TypeId == BuiltinNodes.PolygonEdit) && BuiltinNodes.Find(node) != null)
                     { editStageIds.Add(node.NodeId); labels.Add((node.TypeId == BuiltinNodes.PolygonEdit ? "PolygonEdit" : "EditMesh") + " · " + node.NodeId.Substring(0, 8)); }
             int index = editStageIds.IndexOf(projection.PreviewNodeId);
@@ -98,7 +98,7 @@ namespace NyaForge.UnityRuntime
             {
                 try
                 {
-                    var graph = workspace.Document.Objects[0].Graph;
+                    var graph = workspace.Document.ActiveObject.Graph;
                     var value = DisplayedGraphValue();
                     if (value == null) throw new InvalidOperationException("編集段が未解決です。接続または上流の変更を確認してください。");
                     activeEditContext = GraphEditing.Context(graph, projection.PreviewNodeId);

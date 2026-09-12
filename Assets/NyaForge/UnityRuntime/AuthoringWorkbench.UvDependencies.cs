@@ -16,7 +16,7 @@ namespace NyaForge.UnityRuntime
         void RefreshUvDependencies()
         {
             var affected = activeEditContext == null ? new string[0] :
-                PaintDependencies.DownstreamImages(workspace.Document.Objects[0].Graph,activeEditContext.NodeId).ToArray();
+                PaintDependencies.DownstreamImages(workspace.Document.ActiveObject.Graph,activeEditContext.NodeId).ToArray();
             uvPaintDependencies.style.display = affected.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
             uvPaintDependencies.text = affected.Length == 0 ? "" :
                 "UV変更の影響候補: " + affected.Length + "個の保存済みPaint（" +

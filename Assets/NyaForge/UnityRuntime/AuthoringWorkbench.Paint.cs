@@ -45,7 +45,7 @@ namespace NyaForge.UnityRuntime
             {
                 CancelSurfaceStroke();
                 if (!float.IsFinite(paintOpacity.value) || paintOpacity.value < 0 || paintOpacity.value > 1) throw new InvalidOperationException("不透明度は0〜1で指定してください。");
-                var graph=workspace.Document.Objects[0].Graph;
+                var graph=workspace.Document.ActiveObject.Graph;
                 strokeLayerContext=null;
                 if(graph.Nodes[selectedPaint].LayerStack!=null) { strokeLayerContext=LayerEditing.Context(graph,selectedPaint);strokeLayerId=selectedPaintLayer; }
                 else strokeContext = PaintEditing.Context(graph,selectedPaint);
@@ -61,7 +61,7 @@ namespace NyaForge.UnityRuntime
         }
         void AddPaintToOutput()
         {
-            var graph = workspace.Document.Objects[0].Graph;
+            var graph = workspace.Document.ActiveObject.Graph;
             string id = Guid.NewGuid().ToString("D");
             var route=OutputSurfaceConnections.Resolve(graph);if(route==null) throw new InvalidOperationException("最終出力の接続を確認してください。");
             var mesh=route.Geometry;
@@ -70,7 +70,7 @@ namespace NyaForge.UnityRuntime
         }
         void RefreshPaint()
         {
-            var graph = IsGraph ? workspace.Document.Objects[0].Graph : null;
+            var graph = IsGraph ? workspace.Document.ActiveObject.Graph : null;
             addPaint.SetEnabled(graph != null && workspace.Preview.IsComplete && workspace.Preview.Output?.Polygon?.Faces.Count > 0 && workspace.Preview.Output.BaseColor == null && workspace.Preview.Output.SlotMaterials==null);
             RefreshSlotPaint();
             paintIds.Clear();

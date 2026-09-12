@@ -31,7 +31,7 @@ namespace NyaForge.UnityRuntime
             title.RegisterCallback<PointerUpEvent>(e => { if (dragging) SaveLayout(); dragging = false; title.ReleasePointer(e.pointerId); });
             title.RegisterCallback<PointerCaptureOutEvent>(_ => { if (dragging) SaveLayout(); dragging = false; });
             card.RegisterCallback<GeometryChangedEvent>(_ => wires.MarkDirtyRepaint());
-            bool editable = !workspace.Document.Objects[0].IsStaticProfile;
+            bool editable = !workspace.Document.ActiveObject.IsStaticProfile;
             var definition = BuiltinNodes.Find(node);
             if (definition != null)
             {

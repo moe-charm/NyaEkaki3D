@@ -26,9 +26,9 @@ namespace NyaForge.UnityRuntime
             materialPanel=new Foldout { text="材質",value=false,name="material-panel" };parent.Add(materialPanel);
             addMaterial=Button("材質を追加（画像を引継ぐ）",()=>Try(()=>
             {
-                var graph=workspace.Document.Objects[0].Graph;string id=Guid.NewGuid().ToString("D");
+                var graph=workspace.Document.ActiveObject.Graph;string id=Guid.NewGuid().ToString("D");
                 Execute(AuthoringOperation.ReplaceGraph(OutputSurfaceConnections.AddMaterial(graph,id,Guid.NewGuid().ToString("D"))));
-                if(workspace.Document.Objects[0].Graph.Nodes.ContainsKey(id)) selectedMaterial=id;
+                if(workspace.Document.ActiveObject.Graph.Nodes.ContainsKey(id)) selectedMaterial=id;
                 SelectEditStage(0);RefreshMaterials();
             }),"material-add");materialPanel.Add(addMaterial);
             materialChoice=new DropdownField("編集する材質",new List<string>{"なし"},0);materialChoice.style.flexDirection=FlexDirection.Column;materialPanel.Add(materialChoice);
@@ -67,7 +67,7 @@ namespace NyaForge.UnityRuntime
         }
         void ApplyMaterial()
         {
-            var graph=workspace.Document.Objects[0].Graph;
+            var graph=workspace.Document.ActiveObject.Graph;
             if(loadedMaterial==null || !graph.Nodes.TryGetValue(selectedMaterial,out var node) || node.Material?.ContentHash!=loadedMaterial.ContentHash)
                 throw new InvalidOperationException("材質が更新されました。選び直してから編集してください。");
             var tint=materialTint.value==loadedTint ? new Vec3(loadedMaterial.BaseColor.X,loadedMaterial.BaseColor.Y,loadedMaterial.BaseColor.Z) : MaterialLinear(materialTint.value);
@@ -85,7 +85,7 @@ namespace NyaForge.UnityRuntime
         {
             if(materialPanel==null) return;
             RefreshMaterialSlots();
-            var graph=IsGraph ? workspace.Document.Objects[0].Graph : null;var route=OutputSurfaceConnections.Resolve(graph);
+            var graph=IsGraph ? workspace.Document.ActiveObject.Graph : null;var route=OutputSurfaceConnections.Resolve(graph);
             addMaterial.SetEnabled(route!=null && route.MaterialNodeId=="" && workspace.Preview.IsComplete && workspace.Preview.Output?.Mesh!=null);
             materialIds.Clear();if(graph!=null) materialIds.AddRange(graph.Nodes.Values.Where(n=>n.Material!=null).Select(n=>n.NodeId).OrderBy(id=>id,StringComparer.Ordinal));
             if(!materialIds.Contains(selectedMaterial)) selectedMaterial=route?.MaterialNodeId!="" && materialIds.Contains(route?.MaterialNodeId) ? route.MaterialNodeId : materialIds.FirstOrDefault() ?? "";

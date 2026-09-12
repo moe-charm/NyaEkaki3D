@@ -24,7 +24,7 @@ namespace NyaForge.UnityRuntime
             migratePaint=Button("レイヤー編集へ移行",()=>Try(()=>
             {
                 string id=Guid.NewGuid().ToString("D");
-                Execute(AuthoringOperation.MigratePaintLayers(PaintEditing.Context(workspace.Document.Objects[0].Graph,selectedPaint),id));
+                Execute(AuthoringOperation.MigratePaintLayers(PaintEditing.Context(workspace.Document.ActiveObject.Graph,selectedPaint),id));
                 selectedPaintLayer=id;RefreshPaint();
             }),"migrate-paint-layers");parent.Add(migratePaint);
             layerPanel=new Foldout { text="レイヤー",value=true,name="paint-layers" };parent.Add(layerPanel);
@@ -35,7 +35,7 @@ namespace NyaForge.UnityRuntime
             });
             layerPanel.Add(Button("透明レイヤーを追加",()=>Try(()=>
             {
-                var node=workspace.Document.Objects[0].Graph.Nodes[selectedPaint];string id=Guid.NewGuid().ToString("D");
+                var node=workspace.Document.ActiveObject.Graph.Nodes[selectedPaint];string id=Guid.NewGuid().ToString("D");
                 EditLayer(PaintLayerChange.Add(new PaintLayer(id,"レイヤー "+(node.LayerStack.Layers.Count+1),new PaintImage(node.PaintWidth,node.PaintHeight,new Rgba32())),node.LayerStack.Layers.Count));
                 selectedPaintLayer=id;RefreshPaint();
             }),"paint-layer-add"));
@@ -56,7 +56,7 @@ namespace NyaForge.UnityRuntime
         void EditLayer(PaintLayerChange change)
         {
             paintCanvas.CancelStroke();
-            Execute(AuthoringOperation.EditPaintLayers(LayerEditing.Context(workspace.Document.Objects[0].Graph,selectedPaint),change));
+            Execute(AuthoringOperation.EditPaintLayers(LayerEditing.Context(workspace.Document.ActiveObject.Graph,selectedPaint),change));
         }
         PaintImage RefreshPaintLayers(GraphNode node,GraphImageValue value)
         {

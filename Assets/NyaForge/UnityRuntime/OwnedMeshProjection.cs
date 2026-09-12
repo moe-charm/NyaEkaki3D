@@ -56,7 +56,7 @@ namespace NyaForge.UnityRuntime
 
         public IPreparedProjection PrepareGraph(AuthoringDocument document, AuthoringPreview preview)
         {
-            if (PreviewNodeId != "" && !document.IsEmpty && !document.Objects[0].IsStaticProfile)
+            if (PreviewNodeId != "" && !document.IsEmpty && !document.ActiveObject.IsStaticProfile)
             {
                 NyaForge.Authoring.Graph.GraphMeshValue stage = null;
                 preview.Evaluation?.MeshOutputs.TryGetValue(PreviewNodeId, out stage);

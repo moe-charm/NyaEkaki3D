@@ -31,7 +31,7 @@ namespace NyaForge.UnityRuntime
             paintRebindPanel.style.display = unresolved ? DisplayStyle.Flex : DisplayStyle.None;
             if (unresolved)
             {
-                try { reviewedPaintBinding = PaintRebinding.Context(workspace.Document.Objects[0].Graph, node.NodeId); }
+                try { reviewedPaintBinding = PaintRebinding.Context(workspace.Document.ActiveObject.Graph, node.NodeId); }
                 catch (AuthoringException) { /* Missing/unsupported input must stay unresolved. */ }
                 paintRebindInfo.text = reviewedPaintBinding == null ?
                     "旧画像は保存されています。先に上流のメッシュとUVの問題を解決してください。" :

@@ -28,13 +28,13 @@ namespace NyaForge.UnityRuntime
         }
         void ImportPaintImage(string path)
         {
-            paintCanvas.CancelStroke();var node=workspace.Document.Objects[0].Graph.Nodes[selectedPaint];
+            paintCanvas.CancelStroke();var node=workspace.Document.ActiveObject.Graph.Nodes[selectedPaint];
             var image=PaintPngImporter.Read(path);
             string name=Path.GetFileNameWithoutExtension(path);
             if(string.IsNullOrWhiteSpace(name) || name.Length>128) name="取り込み画像";
             string id=Guid.NewGuid().ToString("D");
             EditLayer(PaintLayerImport.Prepare(image,node.PaintWidth,node.PaintHeight,fitImportedImage.value,id,name,node.LayerStack.Layers.Count));
-            if(!workspace.Document.Objects[0].Graph.Nodes[selectedPaint].LayerStack.Layers.Any(l=>l.Id==id)) return;
+            if(!workspace.Document.ActiveObject.Graph.Nodes[selectedPaint].LayerStack.Layers.Any(l=>l.Id==id)) return;
             selectedPaintLayer=id;RefreshPaint();
         }
         IEnumerator PickPaintImage()

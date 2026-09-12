@@ -80,7 +80,7 @@ namespace NyaForge.UnityRuntime
         {
             bindingNode = null; mesh = null; skeleton = null;
             if (workspace == null || workspace.Document.IsEmpty) return false;
-            var graph = workspace.Document.Objects[0].Graph;
+            var graph = workspace.Document.ActiveObject.Graph;
             bindingNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);
             if (bindingNode == null) return false;
             if (!workspace.Preview.Evaluation.MeshInputs.TryGetValue(bindingNode.NodeId, out var meshValue) || meshValue.Mesh == null) return false;
@@ -170,7 +170,7 @@ namespace NyaForge.UnityRuntime
         {
             poseNode = null; skeleton = null;
             if (workspace == null || workspace.Document.IsEmpty) return false;
-            var graph = workspace.Document.Objects[0].Graph;
+            var graph = workspace.Document.ActiveObject.Graph;
             poseNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.Pose && node.Pose != null);
             if (poseNode == null) return false;
             string poseNodeId = poseNode.NodeId;
@@ -198,7 +198,7 @@ namespace NyaForge.UnityRuntime
                 if (!TryResolveRig(out bindingNode, out mesh, out skeleton)) throw new InvalidOperationException("skin-bind nodeからskeletonを解決できません。");
                 string boneId = SelectedBoneId(); if (boneId == "") throw new InvalidOperationException("対象boneを選択してください。");
                 var changed = SkeletonEditing.MoveBone(skeleton, boneId, new Vec3(rigMoveX.value / 1000, rigMoveY.value / 1000, rigMoveZ.value / 1000), new Vec3(rigMoveX.value / 1000, rigMoveY.value / 1000, rigMoveZ.value / 1000));
-                var graph = workspace.Document.Objects[0].Graph; string bindingId = bindingNode.NodeId;
+                var graph = workspace.Document.ActiveObject.Graph; string bindingId = bindingNode.NodeId;
                 var edge = graph.Edges.FirstOrDefault(item => item.ToNode == bindingId && item.ToPort == "skeleton");
                 if (edge == null || !graph.Nodes.TryGetValue(edge.FromNode, out var skeletonNode)) throw new InvalidOperationException("skeleton nodeが見つかりません。");
                 Execute(AuthoringOperation.UpdateNode(GraphNode.SkeletonNode(skeletonNode.NodeId, changed)));

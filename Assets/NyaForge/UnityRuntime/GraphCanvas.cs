@@ -20,7 +20,7 @@ namespace NyaForge.UnityRuntime
         Action<AuthoringOperation[]> submit;
         Action<string> edit;
         string binding, sourceNode, sourcePort;
-        AuthoringGraph Graph => workspace.Document.IsEmpty ? null : workspace.Document.Objects[0].Graph;
+        AuthoringGraph Graph => workspace.Document.IsEmpty ? null : workspace.Document.ActiveObject.Graph;
 
         public GraphCanvas()
         {
@@ -54,7 +54,7 @@ namespace NyaForge.UnityRuntime
             string key = value.InstanceId + ":" + value.Document.StateHash;
             if (key == binding) return;
             binding = key; sourceNode = sourcePort = null; cards.Clear(); ports.Clear();
-            toolbar.SetEnabled(value.Document.IsEmpty || !value.Document.Objects[0].IsStaticProfile);
+            toolbar.SetEnabled(value.Document.IsEmpty || !value.Document.ActiveObject.IsStaticProfile);
             var graph = Graph;
             world.style.height = Math.Max(1600, ((graph?.Nodes.Count ?? 0) + 5) / 6 * 540 + 600);
             if (graph != null)
@@ -69,7 +69,7 @@ namespace NyaForge.UnityRuntime
         void ShowState()
         {
             message.text = sourceNode != null ? "接続先の入力ポートをクリックしてください。" :
-                workspace.Document.IsEmpty ? "ノードを追加して始めます。" : workspace.Document.Objects[0].IsStaticProfile ? "プレートは確認表示です。新しい空プロジェクトからノードを追加できます。" :
+                workspace.Document.IsEmpty ? "ノードを追加して始めます。" : workspace.Document.ActiveObject.IsStaticProfile ? "プレートは確認表示です。新しい空プロジェクトからノードを追加できます。" :
                 "出力 → 入力で接続。見出しをドラッグで移動。 " + (workspace.Preview.IsComplete ? "評価完了" : "評価未完了");
             if (layoutWarning != null) message.text += "\n" + layoutWarning;
         }

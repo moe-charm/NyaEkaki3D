@@ -38,7 +38,7 @@ namespace NyaForge.UnityRuntime
             maskBrush.style.flexDirection=FlexDirection.Column;parent.Add(maskBrush);
             maskBrush.RegisterValueChangedCallback(_=> { paintCanvas.CancelStroke();CancelSurfaceStroke(); });
         }
-        PaintLayer CurrentPaintLayer()=>workspace.Document.Objects[0].Graph.Nodes[selectedPaint].LayerStack.Layers.Single(l=>l.Id==selectedPaintLayer);
+        PaintLayer CurrentPaintLayer()=>workspace.Document.ActiveObject.Graph.Nodes[selectedPaint].LayerStack.Layers.Single(l=>l.Id==selectedPaintLayer);
         PaintImage RefreshPaintMask(PaintLayer layer)
         {
             layerDetails.SetEnabled(layer!=null);layerName.SetValueWithoutNotify(layer?.Name ?? "");

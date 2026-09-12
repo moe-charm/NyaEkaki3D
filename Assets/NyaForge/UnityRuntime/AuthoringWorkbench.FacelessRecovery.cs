@@ -20,7 +20,7 @@ namespace NyaForge.UnityRuntime
             facelessRecoveryNode=null;
             if(IsGraph && !workspace.Preview.IsComplete)
             {
-                var graph=workspace.Document.Objects[0].Graph;
+                var graph=workspace.Document.ActiveObject.Graph;
                 facelessRecoveryNode=editStageIds.FirstOrDefault(id=>graph.Nodes.TryGetValue(id,out var node) && node.TypeId==BuiltinNodes.PolygonEdit &&
                     workspace.Preview.Evaluation.MeshOutputs.TryGetValue(id,out var value) && value.Polygon?.Faces.Count==0);
             }

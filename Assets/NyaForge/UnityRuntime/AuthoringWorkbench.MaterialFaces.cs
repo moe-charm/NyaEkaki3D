@@ -26,7 +26,7 @@ namespace NyaForge.UnityRuntime
         void AssignMaterialFaces(bool create)
         {
             if(activeEditContext==null || selectedFaces.Count==0) throw new InvalidOperationException("PolygonEditで面を選択してください。");
-            CancelMaterialGesture();var graph=workspace.Document.Objects[0].Graph;var bindings=workspace.Preview.Output.SlotMaterials;
+            CancelMaterialGesture();var graph=workspace.Document.ActiveObject.Graph;var bindings=workspace.Preview.Output.SlotMaterials;
             int slot=selectedMaterialSlot;
             if(create)
             {

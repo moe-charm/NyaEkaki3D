@@ -76,7 +76,7 @@ namespace NyaForge.UnityRuntime
         {
             CancelSurfaceStroke();
             bool wasEnabled=surfacePaintMode.value;
-            var graph=IsGraph ? workspace.Document.Objects[0].Graph : null;
+            var graph=IsGraph ? workspace.Document.ActiveObject.Graph : null;
             bool enabled=node?.LayerStack!=null && node.LayerStack.Layers.Count>0 && workspace.Preview.IsComplete &&
                 (OutputSurfaceConnections.Resolve(graph)?.ImageNodeId==selectedPaint || OutputSurfaceConnections.ImageSlots(graph,selectedPaint).Count>0);
             surfacePaintMode.SetEnabled(enabled);
@@ -91,7 +91,7 @@ namespace NyaForge.UnityRuntime
             var prepared=ReadySurface();if(prepared==null) return;
             if(!float.IsFinite(paintOpacity.value) || paintOpacity.value<0 || paintOpacity.value>1) throw new InvalidOperationException("筆の強さは0〜1で指定してください。");
             if(!float.IsFinite(paintRadius.value) || paintRadius.value<.5f || paintRadius.value>512) throw new InvalidOperationException("半径は0.5〜512pxで指定してください。");
-            var graph=workspace.Document.Objects[0].Graph;
+            var graph=workspace.Document.ActiveObject.Graph;
             var output=workspace.Preview.Output;
             surfacePaintSlots=output.SlotMaterials==null ? null : OutputSurfaceConnections.ImageSlots(graph,selectedPaint).ToArray();
             var slotMap=output.PolygonRendering?.MaterialSlotMap ?? Enumerable.Range(0,output.Mesh.Submeshes.Count).ToArray();

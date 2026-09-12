@@ -7,6 +7,7 @@
 - **I04-C / GLB予算分離**: GLB/VRMの取込・標準GLB出力は128 MiB、1 mesh 200,000頂点までを専用予算で検査する。native blobの16 MiB予算は維持し、実素材を通すための拡張を他形式へ波及させない。
 - **I04-C / 編集済みskin標準出力**: `SkinnedGeometry` profileは単一graphのrest pose・identity transform・4 influenceを対象に、トポロジー不変の`EditMesh`頂点編集を保持してGLBへ出力する。任意pose、非ゼロmorph変形、未対応nodeは二重適用を避けて拒否する。
 - **保存往復回帰**: serialized skin bindingを再正規化せずfloat32値を保持するよう修正し、4 influenceのbyte identity回帰を追加。実RadDollV3 `RadDollV3_VRM.vrm`（private ZIP内、45,341,584 bytes、body 129,348 vertices、171 bones）を読み取り専用に選択取込し、ProjectStore Save/Open後のdocument state hash一致を確認した。private素材はpublic repoへ同梱しない。
+- **active object編集経路**: Workbenchのグラフ、表示投影、材質、paint、rig、morph、UV、MCPを`Document.ActiveObject`基準へ統一し、複数対象で切替後の頂点編集が非active graphを変更しないPlayer回帰を追加した。非active objectは従来どおり読み取り専用backdropとして扱う。
 
 ## 開発の入口
 
@@ -82,6 +83,7 @@ SIM-02Bのbinding validationは実装済み。次は対象SDKの版・完全修�
 ## 直近の証拠
 
 - GLB/VRM実素材・標準GLB回帰: Core **423 passed / 0 failed**（`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`、artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-5528c95e7dfb4ca7a5d87b3556a447bd`）。16bit JOINTS、選択mesh単位のskin判定、編集済みrest-pose skin出力、4 influence serialized bindingのbyte identityを確認。privateのRadDollV3 VRMを読み取り専用に監査し、全10 mesh/skin pair（body 129,348 vertices、171 bones）を取込、ProjectStore Save/Open後のstate hash一致を確認した。private素材はpublic repoへ同梱していない。
+- Active-object編集回帰: Windows Player **PASS**（`Logs/build-all-20260913-004333-596.log`、`Builds/Windows-ActiveObject1/NyaForge.exe`）、Authoring **PASS**（`Artifacts/Authoring-20260913-004356-d55db89466a9437db514dadad265b285/report.json`）。2つのgraph objectをSave/Openし、active objectを切り替えて頂点編集した結果、対象以外のgraph hashが不変であること、backdrop表示切替・Frameが維持されることを確認。Unity Bridge **PASS**（`Artifacts/BridgeReceiver-20260913-004426-425-63f6bf9efce640a09bb50dc67064bc3d/bridge-report.json`）。
 - Windows Player **PASS**: `Logs/build-all-20260913-003858-381.log`、`Builds/Windows-GlbProfiles6/NyaForge.exe`（`NYAFORGE_PLAYER_OK`）。Authoring **PASS**: `Artifacts/Authoring-20260913-003917-d47bd96805f14dc38ae049172c9aea12/report.json`。Unity Bridge **PASS**: `Artifacts/BridgeReceiver-20260913-003948-609-589ce9c598e347dd99e6061fbd3f6e2e/bridge-report.json`。
 
 - Multi-object authoring foundation: Core **413 passed / 0 failed** (`Logs/core-multi-object-foundation-v6.txt`、temporary output `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-1b7178a1a74946b6b3fb680843792dcd`)。graph/staticの2 object追加・active選択・`object.select`・state hash・Save/Open・active object評価と、複数static objectでの編集保持を確認。最終Windows Player build **PASS** (`Logs/build-player-20260912-230432-122.log`、`Builds/Windows-MultiObjectBackdrop/NyaForge.exe`)。Player Authoring **PASS** (`Artifacts/Authoring-20260912-230451-673c5685904b451e91b19f0f469888e3/report.json`)、Bridge **PASS** (`Artifacts/BridgeReceiver-20260912-230523-234-756d4f789c794e14bae97eb3c343130f/bridge-report.json`)。非active objectの読み取り専用backdrop、表示切替、Frame、Save/Openを検証した。これはactive objectを一度に編集する基盤の証拠で、結合出力、共有参照、実素材、実操作・画像目視、実VRChat受入を含まない。

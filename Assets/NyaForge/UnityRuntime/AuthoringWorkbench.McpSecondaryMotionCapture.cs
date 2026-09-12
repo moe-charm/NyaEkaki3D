@@ -96,7 +96,7 @@ namespace NyaForge.UnityRuntime
         GraphMeshValue CurrentSpringPlaybackValue()
         {
             if (springPlayback == null || workspace == null) throw new InvalidOperationException("Secondary-motion preview is unavailable.");
-            var graph = workspace.Document.Objects[0].Graph;
+            var graph = workspace.Document.ActiveObject.Graph;
             var evaluation = GraphEvaluator.Evaluate(graph.ReplaceNode(GraphNode.PoseNode(springPoseNode, springPlayback.Pose)));
             if (!evaluation.IsComplete) throw new InvalidOperationException("揺れ姿勢のgraph評価に失敗しました。");
             return SourceSkinDisplayValue(evaluation, graph) ?? evaluation.Output;

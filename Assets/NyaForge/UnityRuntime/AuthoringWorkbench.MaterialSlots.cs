@@ -16,7 +16,7 @@ namespace NyaForge.UnityRuntime
         void BuildMaterialSlots()
         {
             enableMaterialSlots=Button("部位別の材質編集を有効にする",()=>Try(()=>
-                Execute(AuthoringOperation.ReplaceGraph(MaterialSlotEditing.ConvertOutput(workspace.Document.Objects[0].Graph)))),"material-slots-enable");
+                Execute(AuthoringOperation.ReplaceGraph(MaterialSlotEditing.ConvertOutput(workspace.Document.ActiveObject.Graph)))),"material-slots-enable");
             materialPanel.Add(enableMaterialSlots);
             materialSlotChoice=new DropdownField("材質を分ける部位",new List<string>{"なし"},0) { name="material-slot-choice" };
             materialSlotChoice.style.flexDirection=FlexDirection.Column;materialPanel.Add(materialSlotChoice);
@@ -25,14 +25,14 @@ namespace NyaForge.UnityRuntime
                 CancelMaterialGesture();
                 if(materialSlotChoice.index<0 || materialSlotChoice.index>=visibleMaterialSlots.Count) return;
                 selectedMaterialSlot=visibleMaterialSlots[materialSlotChoice.index];
-                selectedMaterial=OutputSurfaceConnections.Resolve(workspace.Document.Objects[0].Graph,selectedMaterialSlot)?.MaterialNodeId ?? "";
+                selectedMaterial=OutputSurfaceConnections.Resolve(workspace.Document.ActiveObject.Graph,selectedMaterialSlot)?.MaterialNodeId ?? "";
                 RefreshMaterials();RefreshPaint();
             });
             independentMaterial=Button("この部位の材質を複製して分ける",()=>Try(()=>
             {
                 string id=Guid.NewGuid().ToString("D");
-                Execute(AuthoringOperation.ReplaceGraph(MaterialSlotEditing.MakeIndependent(workspace.Document.Objects[0].Graph,selectedMaterialSlot,id)));
-                if(workspace.Document.Objects[0].Graph.Nodes.ContainsKey(id)) selectedMaterial=id;
+                Execute(AuthoringOperation.ReplaceGraph(MaterialSlotEditing.MakeIndependent(workspace.Document.ActiveObject.Graph,selectedMaterialSlot,id)));
+                if(workspace.Document.ActiveObject.Graph.Nodes.ContainsKey(id)) selectedMaterial=id;
                 SelectEditStage(0);RefreshMaterials();
             }),"material-slot-independent");materialPanel.Add(independentMaterial);
             BuildMaterialFaces();

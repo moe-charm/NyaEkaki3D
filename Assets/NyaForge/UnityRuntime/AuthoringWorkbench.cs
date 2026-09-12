@@ -288,7 +288,7 @@ namespace NyaForge.UnityRuntime
             graphCanvas.Bind(workspace, operations => Execute(operations), node => Try(() => SelectEditStage(editStageIds.IndexOf(node))));
             var displayed = DisplayedGraphValue();
             var data = displayed?.Mesh;
-            bool staticProfile = !workspace.Document.IsEmpty && workspace.Document.Objects[0].IsStaticProfile;
+            bool staticProfile = !workspace.Document.IsEmpty && workspace.Document.ActiveObject.IsStaticProfile;
             emptyHint.style.display = data == null ? DisplayStyle.Flex : DisplayStyle.None;
             emptyHint.text = displayed?.Polygon?.Faces.Count==0 ? "点を置いて、最初の面を作れます" : workspace.Document.IsEmpty ? "空のプロジェクト\n右の「プレート追加」から形を作れます" : "グラフの評価が未完了です\n接続とノードを確認してください";
             metrics.text = displayed?.Polygon?.Faces.Count==0 ? displayed.Polygon.Vertices.Count+" 編集点 / 面なし" : data == null ? (workspace.Document.IsEmpty ? "空のプロジェクト — 形を追加して始める" : "評価未完了 — 表示できる結果がありません") : data.VertexCount + " 頂点 / " + data.TriangleCount + " △\n単位: m  ·  元scale: " + displayed.Transform.Scale;
