@@ -32,7 +32,7 @@ Rigを試すときは、空の制作projectでgraph上部の **＋ Rigサンプ�
 
 右側の **Rig / weight編集** で対象boneを選び、選択頂点へweightを適用できます。`weight paintモード`をオンにしてブラシ半径を指定すると、中央のviewportをドラッグした頂点へweightを混合します。ドラッグ1回が1つのUndo単位です。poseはX/Y/Z回転を度数で入力して適用します。rest boneを動かした場合はbindingとposeがstaleになるため、確認後に **新しいrest骨へbinding / poseを再bind** を押します。
 
-このRigサンプルは制作パイプラインの検証用です。RadDollV3などのFBX・VRM・BLENDを直接取り込む機能とhumanoid自動配置はまだ接続していません。GLB/VRMのmorph取込・編集、複数graph objectのactive切替、標準GLBの明示出力profileに対応しています。
+このRigサンプルは制作パイプラインの検証用です。FBX・BLENDの直接取込とhumanoid自動配置はまだ接続していません。GLB/VRMは候補から1 mesh/skinを選んでgraphへ取り込め、skin取込時はrest poseのEditMesh段から頂点編集を始められます。GLB/VRMのmorph取込・編集、複数graph objectのactive切替、標準GLBの明示出力profileに対応しています。
 
 ## 保存と開き直し
 
@@ -61,7 +61,7 @@ Rigを試すときは、空の制作projectでgraph上部の **＋ Rigサンプ�
 
 実装済み: 空project、typed graph、Plane/EditMesh/Polygon/Mirror/UV/Paint/Material、頂点・面編集、Undo/Redo、schema 3 native保存、画像付きBake、Rig skeleton/skin binding/pose/skin-deform、weight paint、Unity Bridgeでの受け取り。
 
-未実装: 実アバターの制作編集、RadDollV3等のFBX/VRM/BLEND import、humanoid自動配置、標準VRM export、任意pose/morphのskin変換、実マウスでの手動見た目受入。標準GLBは表示形状profileと、rest pose・トポロジー不変の頂点編集まで対応するskin/morph profileをGUIから選べます。今回の往復検証はVRChat内の動作検証ではありません。
+未実装: FBX/BLEND import、humanoid自動配置、標準VRM export、任意pose/morphのskin変換、実RadDollV3を使ったGUI見た目受入。GLB/VRMは選択した1 mesh/skinの取込とrest pose EditMesh編集に対応します。標準GLBは表示形状profileと、rest pose・トポロジー不変の頂点編集まで対応するskin/morph profileをGUIから選べます。今回の往復検証はVRChat内の動作検証ではありません。
 
 ## 検証の再実行
 

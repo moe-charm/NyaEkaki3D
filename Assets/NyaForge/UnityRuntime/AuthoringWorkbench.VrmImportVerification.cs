@@ -23,6 +23,13 @@ namespace NyaForge.UnityRuntime
             ImportModel(selectionPath);
             Check(importedRigSession != null && importedRigSession.SourceSkin != null && importedRigSession.SourceSkinBinding != null, "Selected multi-mesh skin import did not retain source payload");
             Check(workspace.Document.Objects[0].Graph.Nodes.Values.Any(node => node.SourceMesh != null && node.SourceMesh.TopologyHash == importedRigSession.SourceSkinBinding.MeshTopologyHash), "Selected mesh graph was not created");
+            Check(workspace.Document.ActiveObject.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.EditMesh), "Imported skinned graph did not create an editable rest-space stage");
+            SelectEditStage(1); Select(new[] { 0 });
+            moveX.SetValueWithoutNotify(1); moveY.SetValueWithoutNotify(0); moveZ.SetValueWithoutNotify(0);
+            var beforeEdit = GraphEvaluator.Evaluate(workspace.Document.ActiveObject.Graph).Output.Mesh.ContentHash;
+            MoveSelection();
+            var afterEdit = GraphEvaluator.Evaluate(workspace.Document.ActiveObject.Graph).Output.Mesh.ContentHash;
+            Check(beforeEdit != afterEdit && activeEditContext != null, "Imported skinned graph vertex edit did not update its output");
             string firstObjectId = workspace.Document.ActiveObjectId, firstGraphId = workspace.Document.ActiveObject.Graph.GraphId;
             ImportModel(selectionPath);
             string secondObjectId = workspace.Document.ActiveObjectId, secondGraphId = workspace.Document.ActiveObject.Graph.GraphId;
