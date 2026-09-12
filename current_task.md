@@ -1,3 +1,9 @@
+## 2026-09-13 native project Explorer picker
+
+制作フォルダを手入力せず再開できるよう、Windows Authoring画面へ「Explorerで選ぶ…」を追加した。Explorerで`project.nyaforge.json`を選ぶと親フォルダをnative projectとして検証し、別JSON・manifest欠落・存在しない選択は開かない。ダイアログ中にworkspaceのdocumentが変わった場合も置換せず、既存の未保存確認（保存／破棄／キャンセル）を通してから開く。保存形式、nativeの正本、GLB/VRM取込経路は変更していない。
+
+Windows Player `Builds/ProjectPickerV1/NyaForge.exe` のAuthoring suite **PASS**（report `Artifacts/Authoring-20260913-063116-c9ba956e8e8d436cb14271bb46729ed5/report.json`、800x600）。GUI control存在を回帰し、既存の取込・頂点編集・Undo/Redo・native Save/Open・GLB出力・MCP・PhysBones表示を含む全チェックを通過した。Unity Bridge **PASS**（Unity 2022.3.22f1、report `Artifacts/BridgeReceiver-20260913-063147-237-c179a2dc469943feb5969a33dbcad0da/bridge-report.json`）。Core **454 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0611989018b34eb2863ba4e713f3a35c`）。自動検証はExplorerの実クリックやDPI差、実VRChat内受入を代替しない。
+
 ## 2026-09-13 attachment GUI verification
 
 装着ノードの制作導線を、GUIの実コントロールまで検証できるようにした。Authoring suiteは対象`object-attachment` foldout、対象graph objectのDropdown、stable BoneId Dropdownの存在を確認し、解決済みtarget/BoneIdが選択肢へ表示されることを回帰する。既存のroot pose追従、native Save/Open、未解決target拒否、標準GLBのmetadata loss guardも同じPlayerで継続確認した。
