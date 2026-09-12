@@ -138,6 +138,10 @@ namespace NyaForge.UnityBridge.Editor
             bool ready = validation.IsValid;
             using (new EditorGUI.DisabledScope(!ready))
             {
+                if (GUILayout.Button("事前診断（書き込みなし）")) InspectPackage();
+            }
+            using (new EditorGUI.DisabledScope(!ready))
+            {
                 if (GUILayout.Button(managedOnly ? "管理対象へ更新" : "PhysBones componentを作成／更新", GUILayout.Height(32))) ApplyPackage();
             }
             if (!ready) EditorGUILayout.HelpBox("割当を保存／適用できません: " + validation.Summary, MessageType.Warning);
@@ -266,10 +270,7 @@ namespace NyaForge.UnityBridge.Editor
                 PhysBonesBindingValidator.RequireValid(avatarRoot, boneBindings, ColliderBindingsForValidation(),
                     RequiredBones().Select(bone => bone.BoneId), RequiredColliderGroups());
                 var bones = new Dictionary<string, Transform>(boneBindings, StringComparer.Ordinal);
-                VrcPhysBonesReflectionBackend backend;
-                string resolverDiagnostic;
-                if (!VrcPhysBonesReflectionBackend.TryCreate(out backend, package.Target.SdkVersion, package.ComponentTypeName, out resolverDiagnostic))
-                    throw new InvalidOperationException("VRChat PhysBones SDK component typeを解決できません: " + resolverDiagnostic);
+                var backend = CreateBackend();
                 var colliderGroups = new Dictionary<int, IReadOnlyList<Component>>();
                 foreach (var pair in colliderBindings) colliderGroups[pair.Key] = pair.Value.Where(component => component != null).ToArray();
                 var result = PhysBonesBridge.ApplyPackage(manifestPath,
@@ -292,6 +293,49 @@ namespace NyaForge.UnityBridge.Editor
                 statusType = MessageType.Error;
                 Debug.LogException(error);
             }
+        }
+
+        void InspectPackage()
+        {
+            try
+            {
+                if (package == null || avatarRoot == null) throw new InvalidOperationException("target packageとavatar rootが必要です。");
+                PhysBonesBindingValidator.RequireValid(avatarRoot, boneBindings, ColliderBindingsForValidation(),
+                    RequiredBones().Select(bone => bone.BoneId), RequiredColliderGroups());
+                var bones = new Dictionary<string, Transform>(boneBindings, StringComparer.Ordinal);
+                var colliderGroups = new Dictionary<int, IReadOnlyList<Component>>();
+                foreach (var pair in colliderBindings) colliderGroups[pair.Key] = pair.Value.Where(component => component != null).ToArray();
+                var inspection = PhysBonesBridge.InspectPackage(manifestPath,
+                    new PhysBonesBridgeContext(avatarRoot, bones, colliderGroups), CreateBackend(),
+                    managedOnly ? PhysBonesApplyMode.UpdateManagedOnly : PhysBonesApplyMode.CreateOrUpdateManaged);
+                status = "事前診断OK（書き込みなし）: chains " + inspection.ChainCount + " · create " + inspection.CreatedCount + " · update " + inspection.UpdatedCount;
+                if (inspection.LossReport.Warnings.Count > 0)
+                    status += " · warnings " + inspection.LossReport.Warnings.Count;
+                statusType = inspection.LossReport.Warnings.Count > 0 ? MessageType.Warning : MessageType.Info;
+            }
+            catch (PhysBonesBridgeException error)
+            {
+                status = "事前診断で停止しました [" + error.Code + "]: " + error.Message;
+                if (error.LossReport != null && error.LossReport.Unsupported.Count > 0)
+                    status += " 未対応: " + string.Join(", ", error.LossReport.Unsupported.Select(entry => entry.Path).ToArray());
+                statusType = MessageType.Error;
+                Debug.LogException(error);
+            }
+            catch (Exception error)
+            {
+                status = "事前診断できませんでした: " + error.Message;
+                statusType = MessageType.Error;
+                Debug.LogException(error);
+            }
+        }
+
+        VrcPhysBonesReflectionBackend CreateBackend()
+        {
+            VrcPhysBonesReflectionBackend backend;
+            string resolverDiagnostic;
+            if (!VrcPhysBonesReflectionBackend.TryCreate(out backend, package.Target.SdkVersion, package.ComponentTypeName, out resolverDiagnostic))
+                throw new InvalidOperationException("VRChat PhysBones SDK component typeを解決できません: " + resolverDiagnostic);
+            return backend;
         }
 
         IEnumerable<int> RequiredColliderGroups()

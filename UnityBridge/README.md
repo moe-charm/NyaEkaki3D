@@ -42,6 +42,8 @@ receiver検証はSDK形状fixtureによる合成確認です。実際のVRChat S
 
 保存・適用の前には`PhysBonesBindingValidator`が共通で実行されます。必要なstable BoneId／collider groupの欠落、空のgroup、同じBoneIdやTransformの重複、avatar root外のTransform／Componentを検出して停止します。vendor SDKのcomponent型や個別プロパティの適合性はこの検証に含めず、reflection／SDK backendのpreflightへ委譲します。1つのcolliderを複数groupで共有する割当は許可し、同一group内の重複だけを拒否します。保存済み割当の読込時も同じ検証を通るため、階層を変更したsceneは適用前に診断できます。
 
+適用前に「事前診断（書き込みなし）」を押すと、`PhysBonesBridge.Inspect`／`InspectPackage`が本適用と同じtarget、SDK能力、stable ID、scene topology、managed markerのpreflightを実行します。componentやmarkerは生成・更新せず、対象chain数、作成予定数、更新予定数、loss warningを表示します。実SDKの型解決や割当が通るかを、sceneを変更せず確認できます。
+
 Prefab の頂点は、Bake の正の均一スケールと平行移動を一度だけ適用したメートル座標です。Prefab の Transform は位置ゼロ・回転ゼロ・スケール 1 です。UV0、法線、接線、頂点順、サブメッシュと三角形順を保持します。法線の自動再計算・頂点結合・最適化は行いません。
 
 「シーンにも配置する」を有効にすると、読み込んだ Prefab を配置します。親は任意のシーン Transform を明示して選べます。親子関係の変更時にはワールド位置を維持するため、骨名や首の位置からの推測はありません。親のスケールは正の均一値に限定します。これは首へのフィットや rest-pose の骨対応を実装した機能ではなく、通常の Unity の親子付けです。位置を調整して使ってください。シーン配置は Unity Undo で取り消せますが、書き出したアセットの削除は行いません。

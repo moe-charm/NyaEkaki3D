@@ -75,6 +75,11 @@ namespace NyaForge.UnityBridge.Editor
                 var bones = new Dictionary<string, Transform> { [rootId] = avatar.transform, [childId] = child.transform };
                 var context = new PhysBonesBridgeContext(avatar.transform, bones);
                 var backend = new VerificationBackend(true);
+                var inspection = PhysBonesBridge.Inspect(profile, skeleton, context, backend);
+                Require(inspection.ChainCount == 1 && inspection.CreatedCount == 1 && inspection.UpdatedCount == 0
+                    && avatar.GetComponentsInChildren<VerificationComponent>(true).Length == 0
+                    && avatar.GetComponentsInChildren<NyaForgePhysBonesManaged>(true).Length == 0,
+                    "PhysBones Bridge inspection mutated the scene or reported incorrect create/update counts.");
                 var first = PhysBonesBridge.Apply(profile, skeleton, context, backend);
                 Require(first.CreatedCount == 1 && first.UpdatedCount == 0 && first.Components.Count == 1, "PhysBones Bridge did not create one managed component.");
                 var managed = avatar.GetComponentsInChildren<NyaForgePhysBonesManaged>(true).Single();
@@ -132,6 +137,10 @@ namespace NyaForge.UnityBridge.Editor
                 string manifest = PhysBonesTargetPackage.Export(packageDirectory, profile, skeleton, fixtureType);
                 var package = PhysBonesTargetPackage.Read(manifest);
                 Require(package.ComponentTypeName == fixtureType, "PhysBones target package did not retain the explicit component type name.");
+                var packageInspection = PhysBonesBridge.InspectPackage(manifest, context, backend);
+                Require(packageInspection.ChainCount == 1 && packageInspection.CreatedCount == 1
+                    && avatar.GetComponentsInChildren<PhysBonesReflectionFixtureComponent>(true).Length == 0,
+                    "PhysBones package inspection did not remain non-mutating.");
                 var result = PhysBonesBridge.ApplyPackage(manifest, context, backend);
                 var component = (PhysBonesReflectionFixtureComponent)result.Components.Single();
                 Require(component.rootTransform == avatar.transform && Mathf.Abs(component.stiffness - .5f) < .0001f && component.allowCollision, "Reflection PhysBones backend did not map the target fields.");

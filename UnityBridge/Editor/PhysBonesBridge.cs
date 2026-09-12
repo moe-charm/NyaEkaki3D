@@ -115,11 +115,36 @@ namespace NyaForge.UnityBridge.Editor
         }
     }
 
+    /// <summary>Read-only result of a complete PhysBones target preflight. No component or marker is created.</summary>
+    public sealed class PhysBonesBridgeInspection
+    {
+        public string ProfileHash { get; private set; }
+        public PhysBonesLossReport LossReport { get; private set; }
+        public int ChainCount { get; private set; }
+        public int CreatedCount { get; private set; }
+        public int UpdatedCount { get; private set; }
+
+        internal PhysBonesBridgeInspection(string profileHash, PhysBonesLossReport report, int chainCount, int created, int updated)
+        {
+            ProfileHash = profileHash;
+            LossReport = report;
+            ChainCount = chainCount;
+            CreatedCount = created;
+            UpdatedCount = updated;
+        }
+    }
+
     /// <summary>
     /// Applies a PhysBones target only after a complete stable-ID preflight. Existing unmarked components are never changed.
     /// </summary>
     public static class PhysBonesBridge
     {
+        sealed class Prepared
+        {
+            internal PhysBonesLossReport Report;
+            internal List<Plan> Plans;
+        }
+
         sealed class Plan
         {
             internal int Index;
@@ -155,21 +180,9 @@ namespace NyaForge.UnityBridge.Editor
             PhysBonesApplyMode mode = PhysBonesApplyMode.CreateOrUpdateManaged,
             SecondaryMotionAsset source = null)
         {
-            if (profile == null) throw new ArgumentNullException("profile");
-            if (skeleton == null) throw new ArgumentNullException("skeleton");
-            if (context == null) throw new ArgumentNullException("context");
-            if (backend == null) throw new ArgumentNullException("backend");
-            if (backend.ComponentType == null) throw new PhysBonesBridgeException("SDK_UNAVAILABLE", "PhysBones component type is unavailable.");
-            try { profile.ValidateFor(source, skeleton); }
-            catch (AuthoringException error) { throw new PhysBonesBridgeException(error.Code, error.Message); }
-
-            if (profile.TargetId != backend.Capabilities.TargetId)
-                throw new PhysBonesBridgeException("TARGET_MISMATCH", "PhysBones target does not match the installed component backend.");
-            var report = PhysBonesLossReport.Compare(profile, backend.Capabilities);
-            if (report.Unsupported.Count != 0)
-                throw new PhysBonesBridgeException("UNSUPPORTED_FEATURE", "PhysBones target contains features unsupported by this backend.", report);
-
-            var plans = Preflight(profile, skeleton, context, backend, mode);
+            var prepared = Prepare(profile, skeleton, context, backend, mode, source);
+            var report = prepared.Report;
+            var plans = prepared.Plans;
             var applied = new List<Applied>();
             int created = 0, updated = 0;
             try
@@ -216,6 +229,28 @@ namespace NyaForge.UnityBridge.Editor
                 applied.Select(item => item.Component));
         }
 
+        /// <summary>Runs the same target, capability, scene, and managed-marker checks as Apply without mutating the scene.</summary>
+        public static PhysBonesBridgeInspection Inspect(PhysBonesTargetProfile profile, SkeletonDefinition skeleton,
+            PhysBonesBridgeContext context, IPhysBonesComponentBackend backend,
+            PhysBonesApplyMode mode = PhysBonesApplyMode.CreateOrUpdateManaged,
+            SecondaryMotionAsset source = null)
+        {
+            var prepared = Prepare(profile, skeleton, context, backend, mode, source);
+            int updated = prepared.Plans.Count(plan => plan.Existing != null);
+            return new PhysBonesBridgeInspection(profile.ContentHash, prepared.Report, prepared.Plans.Count,
+                prepared.Plans.Count - updated, updated);
+        }
+
+        /// <summary>Reads a self-contained target package and runs the same non-mutating inspection.</summary>
+        public static PhysBonesBridgeInspection InspectPackage(string manifestPath, PhysBonesBridgeContext context,
+            IPhysBonesComponentBackend backend, PhysBonesApplyMode mode = PhysBonesApplyMode.CreateOrUpdateManaged,
+            SecondaryMotionAsset source = null)
+        {
+            if (string.IsNullOrWhiteSpace(manifestPath)) throw new ArgumentException("PhysBones package manifest is required.", "manifestPath");
+            var package = PhysBonesTargetPackage.Read(manifestPath);
+            return Inspect(package.Target, package.Skeleton, context, backend, mode, source);
+        }
+
         /// <summary>Reads a self-contained target package and applies it after the same stable-ID preflight.</summary>
         public static PhysBonesBridgeResult ApplyPackage(string manifestPath, PhysBonesBridgeContext context,
             IPhysBonesComponentBackend backend, PhysBonesApplyMode mode = PhysBonesApplyMode.CreateOrUpdateManaged,
@@ -224,6 +259,25 @@ namespace NyaForge.UnityBridge.Editor
             if (string.IsNullOrWhiteSpace(manifestPath)) throw new ArgumentException("PhysBones package manifest is required.", "manifestPath");
             var package = PhysBonesTargetPackage.Read(manifestPath);
             return Apply(package.Target, package.Skeleton, context, backend, mode, source);
+        }
+
+        static Prepared Prepare(PhysBonesTargetProfile profile, SkeletonDefinition skeleton,
+            PhysBonesBridgeContext context, IPhysBonesComponentBackend backend, PhysBonesApplyMode mode,
+            SecondaryMotionAsset source)
+        {
+            if (profile == null) throw new ArgumentNullException("profile");
+            if (skeleton == null) throw new ArgumentNullException("skeleton");
+            if (context == null) throw new ArgumentNullException("context");
+            if (backend == null) throw new ArgumentNullException("backend");
+            if (backend.ComponentType == null) throw new PhysBonesBridgeException("SDK_UNAVAILABLE", "PhysBones component type is unavailable.");
+            try { profile.ValidateFor(source, skeleton); }
+            catch (AuthoringException error) { throw new PhysBonesBridgeException(error.Code, error.Message); }
+            if (profile.TargetId != backend.Capabilities.TargetId)
+                throw new PhysBonesBridgeException("TARGET_MISMATCH", "PhysBones target does not match the installed component backend.");
+            var report = PhysBonesLossReport.Compare(profile, backend.Capabilities);
+            if (report.Unsupported.Count != 0)
+                throw new PhysBonesBridgeException("UNSUPPORTED_FEATURE", "PhysBones target contains features unsupported by this backend.", report);
+            return new Prepared { Report = report, Plans = Preflight(profile, skeleton, context, backend, mode) };
         }
 
         static List<Plan> Preflight(PhysBonesTargetProfile profile, SkeletonDefinition skeleton,
