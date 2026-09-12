@@ -1,6 +1,6 @@
 # SpringBoneの長さ・衝突制約
 
-更新: 2026-09-12。R07のCore修正。対象は各jointのtail球とavatar座標のsphere colliderであり、capsuleや骨全体の連続衝突検出ではない。
+更新: 2026-09-12。R07のCore修正とI03のcapsule拡張。対象は各jointのtail球とavatar座標のsphere/capsule collider。骨全体の連続衝突検出ではない。
 
 ## 計算の責務
 
@@ -27,3 +27,13 @@ headを中心とする半径Lの球面上へtailを置く。colliderの中心ま
 - groupを参照しない旧「sphere collider keeps...」テストは削除し、実際に衝突処理を通る上記テストへ置換。
 
 時間停止・可変dtのR08は [時間契約](SpringBone-Time.md) を参照する。実VRMへの接続、見た目の受入は未完了事項である。
+
+## Capsule拡張（I03前段）
+
+`SpringBoneCollider`のTailがnullならsphere、値があればCenterからTailまでの線分を軸とするcapsuleを表す。Tail=Centerの長さ0も許可し、同じ半径のsphereとして扱う。いずれも入力座標は有限値、半径は従来の0〜10制約を維持する。
+
+`SpringColliderGeometry`が候補tailに最も近い軸上の点を求める。solverはその点を中心とするsphereとの交円へ投影する。次の投影で最も近い点が変わるため、各passと最終判定の両方で再計算する。固定個数のsphereを並べた近似や、片側端点だけで判定する方式ではない。
+
+7方向×32passの計算上限と未収束診断は共通である。成功時は全sphere/capsuleに対して、axisまでの距離がradius+hitRadius以上（許容差内）であることを検査する。全形状で解の発見を保証する完全探索ではない。
+
+Core回帰では、カプセル中央・端、ゼロ長、sphereとの混在、hitRadius、骨長・Pose/State一致、有限値と決定性を確認する。中央のケースは拡張前に失敗した。VRM offset/tailの座標変換、node/centerの追従、preview表示はまだ別adapterで接続する必要がある。

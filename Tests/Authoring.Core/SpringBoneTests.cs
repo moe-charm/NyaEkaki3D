@@ -15,6 +15,7 @@ internal static partial class Program
         RunSpringColliderScopeTests();
         RunSpringConstraintTests();
         RunSpringTimeTests();
+        RunSpringCapsuleTests();
         Test("SpringBone first step initializes a detached rest state", () =>
         {
             var fixture = SpringFixture(); var initial = SpringBoneSimulator.CreateInitialState(fixture.Skeleton, fixture.Pose, new[] { fixture.Chain });

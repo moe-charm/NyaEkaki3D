@@ -42,16 +42,18 @@ namespace NyaForge.Authoring.Rig
         }
     }
 
-    /// <summary>A spherical collider in avatar-rest space.</summary>
+    /// <summary>A sphere or capsule in the simulator's avatar coordinate space.</summary>
     public sealed class SpringBoneCollider
     {
         public Vec3 Center { get; }
         public float Radius { get; }
+        public Vec3? Tail { get; }
 
-        public SpringBoneCollider(Vec3 center, float radius)
+        public SpringBoneCollider(Vec3 center, float radius, Vec3? tail = null)
         {
             Checks.Finite(center); Checks.Finite(radius); Checks.Require(radius >= 0f && radius <= 10f, "INVALID_SPRING", "Spring collider radius must be between 0 and 10.");
-            Center = center; Radius = radius;
+            if (tail.HasValue) Checks.Finite(tail.Value);
+            Center = center; Radius = radius; Tail = tail;
         }
     }
 

@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01〜R10は下記のCore/Windows自動検証範囲で完了。実素材・実操作受入は独立して未完了。最新のCoreは330件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
+更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01〜R10は下記のCore/Windows自動検証範囲で完了。実素材・実操作受入は独立して未完了。最新のCoreは333件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
 
 ## 開発の入口
 
@@ -38,6 +38,15 @@
 状況照合時点では未修正だったR01/R02/R09を、下記の実装と自動検証で更新した。チェック済みは自動検証範囲であり、実素材と実マウスによる受入は別タスクのまま維持する。
 
 修正後は、未保持のgravityDir・collider shape値と保存移行を含むVRM入力契約を整え、node→stable BoneId、preview接続へ進む。一般node transform、skin/morph出力、実アバター受入、C1〜C5の全体目標は維持する。
+
+### I03前段: capsule衝突コア（2026-09-12）
+
+- `SpringBoneCollider`に任意のTailを追加し、sphere/capsuleを同じ不変型で保持する。`SpringColliderGeometry`へ最短軸点・距離を分離し、solverの各passと全形状の最終検査で使う。長さ0はsphereと等価。
+- 拡張前は新規中央接触ケースが失敗（`Logs/core-capsule-before.txt`、332 passed / 1 failed）。拡張後はCore **333 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f9ae8ff572dc4be69db33617c2529b4c`。中央/端/ゼロ長、sphere混在、hitRadius、長さ・Pose/State一致、有限値・決定性を確認した。
+- bounded探索と未収束診断はsphereと共通。契約は [制約solverのCapsule拡張](docs/SpringBone-Constraints.md)。実VRMのoffset/tailからavatar座標へ変換するadapterは未接続。
+- 次は元nodeのrest座標と骨格rest座標の関係を保持し、source-local offsetを正しく変換する。inverse bindから得たbone headを元node座標と無条件に同一視しない。その後、center追従・時間パラメータ変換・previewの再生/停止/リセットを接続する。I03全体は未完了。
+
+- Windows-CapsuleCore build **PASS**: `Logs/build-player-20260912-143007-334.log`。今回の変更はCore計算のみで、Player GUI suiteは再実行していない。実VRMのcapsule見た目受入も未実施。
 
 ### I02: 取込骨対応のsnapshot保存（2026-09-12）
 

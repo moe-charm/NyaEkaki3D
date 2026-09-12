@@ -30,4 +30,4 @@ CoreでVRM0/1の非default重力方向、sphere offset/radius、capsule offset/t
 
 Windowsの同一VRM取込→Save→空workspace→Open検証にも詳細値のassertを追加した。旧version 2 sessionの保存失敗・再試行検証では、不明なshapeが補完されていないことを確認する。
 
-骨対応の永続化、node/centerの座標変換、VRM時間パラメータとの対応、capsule衝突の実装、GUI previewは未完了。この変更は入力保存の精度を改善するものであり、実アバター物理の完成ではない。
+骨対応の永続化とcapsule衝突Coreは後続実装済み。node/centerの座標変換、VRM時間パラメータとの対応、GUI previewは未完了。この変更は入力保存の精度を改善するものであり、実アバター物理の完成ではない。

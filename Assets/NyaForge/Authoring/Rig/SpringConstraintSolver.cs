@@ -24,8 +24,9 @@ namespace NyaForge.Authoring.Rig
                     foreach (var collider in colliders)
                     {
                         double radius = collider.Radius + hitRadius;
-                        if (Distance(result, collider.Center) + Tolerance >= radius) continue;
-                        var offset = collider.Center - head;
+                        var center = SpringColliderGeometry.ClosestCenter(collider, result);
+                        if (Distance(result, center) + Tolerance >= radius) continue;
+                        var offset = center - head;
                         double d = Length(offset);
                         // An enclosing sphere has no feasible point on the bone-length sphere.
                         if (d + length + Tolerance < radius || d < 1e-12)
@@ -35,14 +36,15 @@ namespace NyaForge.Authoring.Rig
                         boundary = Math.Max(-1, Math.Min(1, boundary));
                         var tangent = direction - axis * (float)Dot(direction, axis);
                         tangent = Unit(tangent, Perpendicular(axis));
-                        // Move on the length sphere to the collider intersection circle.
+                        // Move to the intersection with the current closest sphere on the collider axis.
+                        // Capsule closest points are recomputed every pass and during final validation.
                         direction = Unit(axis * (float)boundary + tangent * (float)Math.Sqrt(Math.Max(0, 1 - boundary * boundary)), axis * -1f);
                         result = head + direction * length;
                     }
                     Checks.Finite(result);
                     bool satisfied = Math.Abs(Distance(head, result) - length) <= Tolerance;
                     foreach (var collider in colliders)
-                        satisfied &= Distance(result, collider.Center) + Tolerance >= collider.Radius + hitRadius;
+                        satisfied &= SpringColliderGeometry.DistanceToAxis(collider, result) + Tolerance >= collider.Radius + hitRadius;
                     if (satisfied) return result;
                 }
             }

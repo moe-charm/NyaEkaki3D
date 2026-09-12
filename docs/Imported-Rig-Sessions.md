@@ -26,4 +26,4 @@ Coreでsessionとnative snapshotの往復、対応骨ID・sourceの保持、別g
 
 Windows検証は同じVRM0/1を取込→Save→空workspace→Openし、復元したmapでhipsを解決する。骨格変更時のstale表示とUndo復帰を確認する。保存失敗試験はexpression/Spring/rigそれぞれを排他ロックし、新規/上書きとGUI/MCP handler再試行を通す。
 
-session自身の編集command/Undo、一般node transform、skin外Spring node、center/collider座標変換、capsule物理、再生UIは別段階。metadataは従来どおりworkspace単位で保持し、graph Undoによる消去はせず、参照対象がない間はstaleとして扱う。
+session自身の編集command/Undo、一般node transform、skin外Spring node、center/collider座標変換、collider座標adapter、再生UIは別段階。capsule衝突Coreは後続実装済み。metadataは従来どおりworkspace単位で保持し、graph Undoによる消去はせず、参照対象がない間はstaleとして扱う。
