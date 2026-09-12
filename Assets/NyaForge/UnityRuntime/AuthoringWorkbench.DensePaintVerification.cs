@@ -3,10 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Paint;
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEngine.UIElements;
 
 namespace NyaForge.UnityRuntime
@@ -18,7 +20,22 @@ namespace NyaForge.UnityRuntime
             public string unityVersion,failure;
             public int triangles;
             public double preparationWaitMs;
+            public DensePaintPerformance performance;
             public List<DensePaintStroke> strokes=new List<DensePaintStroke>();
+        }
+        [Serializable] sealed class DensePaintPerformance
+        {
+            public string sampleKind="synthetic dense-paint fixture";
+            public int frameSamples;
+            public double frameBudgetMs=250,frameMinMs,frameAverageMs,frameP95Ms,frameMaxMs;
+            public bool frameBudgetExceeded;
+            public string status="not_sampled";
+            public int targetFrameRate,vSyncCount,renderFrameInterval;
+            public string graphicsDevice;
+            public long managedHeapBefore,managedHeapAfter,managedAllocatedBytesBefore,managedAllocatedBytesAfter;
+            public bool managedAllocatedBytesAvailable;
+            public long unityAllocatedBytesBefore,unityAllocatedBytesAfter,unityReservedBytesBefore,unityReservedBytesAfter;
+            public int gcCollection0Before,gcCollection0After;
         }
         [Serializable] sealed class DensePaintStroke
         {
@@ -49,6 +66,7 @@ namespace NyaForge.UnityRuntime
                 }
                 catch(Exception e) { report.failure=e.ToString(); }
                 yield return null;yield return null;
+                if(report.failure==null) yield return SampleDensePaintFrames(report,30);
                 if(report.failure==null) try
                 {
                     float span=Vector2.Distance(VertexPanelPoint(new Vector3(-.08f,0,0)),VertexPanelPoint(new Vector3(.08f,0,0)));
@@ -101,6 +119,50 @@ namespace NyaForge.UnityRuntime
                 completed(report.failure);
             }
             finally { CancelSurfaceStroke();surfacePaintMode.SetValueWithoutNotify(false);paintPanel.value=false;ReplaceWorkspace(previous,previousPath); }
+        }
+
+        IEnumerator SampleDensePaintFrames(DensePaintReport report,int count)
+        {
+            var performance=new DensePaintPerformance(); report.performance=performance;
+            performance.targetFrameRate=Application.targetFrameRate;
+            performance.vSyncCount=QualitySettings.vSyncCount;
+            performance.renderFrameInterval=UnityEngine.Rendering.OnDemandRendering.renderFrameInterval;
+            performance.graphicsDevice=SystemInfo.graphicsDeviceName;
+            performance.managedHeapBefore=GC.GetTotalMemory(false);
+            performance.managedAllocatedBytesBefore=GC.GetAllocatedBytesForCurrentThread();
+            performance.unityAllocatedBytesBefore=Profiler.GetTotalAllocatedMemoryLong();
+            performance.unityReservedBytesBefore=Profiler.GetTotalReservedMemoryLong();
+            performance.gcCollection0Before=GC.CollectionCount(0);
+            var samples=new List<double>(count);
+            for(int i=0;i<3;i++) yield return null;
+            for(int i=0;i<count;i++)
+            {
+                var watch=Stopwatch.StartNew();
+                yield return null;
+                double elapsed=watch.Elapsed.TotalMilliseconds;
+                // Time.unscaledDeltaTime is the Player's frame interval. The
+                // stopwatch is retained as a fallback for headless/early frames.
+                double frameMs=Time.unscaledDeltaTime>0 ? Time.unscaledDeltaTime*1000.0 : elapsed;
+                samples.Add(frameMs);
+            }
+            performance.frameSamples=samples.Count;
+            if(samples.Count>0)
+            {
+                samples.Sort();
+                performance.frameMinMs=samples[0];
+                performance.frameMaxMs=samples[samples.Count-1];
+                performance.frameAverageMs=samples.Average();
+                int p95=Math.Min(samples.Count-1,(int)Math.Ceiling(samples.Count*.95)-1);
+                performance.frameP95Ms=samples[Math.Max(0,p95)];
+                performance.frameBudgetExceeded=samples.Any(sample=>sample>performance.frameBudgetMs);
+                performance.status=performance.frameBudgetExceeded ? "over_budget_observed" : "within_observed_budget";
+            }
+            performance.managedHeapAfter=GC.GetTotalMemory(false);
+            performance.managedAllocatedBytesAfter=GC.GetAllocatedBytesForCurrentThread();
+            performance.managedAllocatedBytesAvailable=performance.managedAllocatedBytesBefore>0 || performance.managedAllocatedBytesAfter>0;
+            performance.unityAllocatedBytesAfter=Profiler.GetTotalAllocatedMemoryLong();
+            performance.unityReservedBytesAfter=Profiler.GetTotalReservedMemoryLong();
+            performance.gcCollection0After=GC.CollectionCount(0);
         }
     }
 }

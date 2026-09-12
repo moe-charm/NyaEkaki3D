@@ -111,3 +111,11 @@ Core155件では未cacheのbinary/UV hashとの一致、同一snapshotの再利�
 `Windows-C1C-PreparationGuiFinal` / `Artifacts/Authoring-20260912-003814-87c823d218ba4c8e87b030b470839e03/report.json` は全GUI回帰とdense paintに合格。131,072tri、1280×800の同fixtureで準備待ち1,349.9ms、Ready後の初回down13.3ms、up37.5ms。前段snapshot版の初回down約984msから構築を切り離した。GUIは準備中・完了・失敗と再試行を表示する。
 
 `preparationWaitMs` は最終camera調整の後、各stroke前にReadyを待った実時間の合計。先行したworker計算や最初のmodel setupを含む総準備CPU時間ではない。準備計算が消えたわけではなく、初回クリックへ同期構築を持ち込まなくなった。frame最大時間・GPU完了・実アバターの操作感はこの数値から保証しない。
+
+## フレーム・GC・メモリの観測（2026-09-13）
+
+`dense-paint-profile.json` の `performance` に、PolygonSource 65,536 quad / 131,072 triangle fixtureを表示した状態で3 frameを捨てた後の30 frameを記録する。各値はPlayer coroutineの再開間隔（`Time.unscaledDeltaTime`、0の場合だけmonotonic stopwatchへフォールバック）から算出し、min / average / nearest-rank p95 / maxを保存する。併せて測定前後の `GC.GetTotalMemory(false)`、Gen0 collection count、Unity allocatorのallocated/reserved bytes、Windows PlayerのtargetFrameRate・vSync・OnDemandRendering間隔・GPU名を保存する。
+
+250msは現段階の観測境界で、`frameBudgetExceeded` は記録だけでAuthoring suiteの合否を変えない。`GC.GetAllocatedBytesForCurrentThread()` がPlayerで値を返さない場合は `managedAllocatedBytesAvailable=false` とし、0を割当量の証拠として扱わない。今回の合成fixtureでは30 frameが平均約66.70ms、p95約66.98ms、最大約67.35ms、境界超過なしだった。managed heapは測定前約145MiB／後約175MiB、Gen0は309→340、Unity allocated/reserved bytesも同じJSONで確認できる。
+
+証拠: `Artifacts/Authoring-20260913-043325-5cc9341e7b7f4d23b4c8289d6150035d/dense-paint-profile.json`、Player build `Builds/PerformanceProbeV2/NyaForge.exe`、build log `Logs/build-player-20260913-043306-763.log`。これは合成高密度Paintの一回のWindows Player観測であり、実RadDollV3、GPU完了、OS/DPI、VRChat、長時間のworking-set安定、製品の性能合格を意味しない。実アバターの比較と停止ポリシーはT04/T05で別途定義する。
