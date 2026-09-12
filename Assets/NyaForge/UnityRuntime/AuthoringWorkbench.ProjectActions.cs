@@ -35,6 +35,7 @@ namespace NyaForge.UnityRuntime
             activeEditContext = null;
             selectedFaces.Clear(); faceMode.SetValueWithoutNotify(false);
             ClearImportedVrmExpressions();
+            ClearImportedVrmSpring();
             workspace = next; commands = new AuthoringCommandService(workspace);
             savedDirectory = loadedPath == null ? null : Path.GetFullPath(loadedPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             projectPath.SetValueWithoutNotify(loadedPath ?? Path.Combine(Application.persistentDataPath, "Authoring", "Project-" + Guid.NewGuid().ToString("N").Substring(0, 8)));
@@ -50,6 +51,7 @@ namespace NyaForge.UnityRuntime
             long expectedVersion = string.Equals(directory, savedDirectory, StringComparison.OrdinalIgnoreCase) ? workspace.SaveVersion : 0;
             ProjectStore.Save(directory, workspace, expectedVersion);
             VrmExpressionSessionStore.Save(directory, importedVrmSession);
+            VrmSpringSessionStore.Save(directory, importedVrmSpringSession);
             graphCanvas.SaveLayout();
             savedDirectory = directory;
             Refresh(); SetStatus("保存しました: " + directory);
@@ -60,8 +62,10 @@ namespace NyaForge.UnityRuntime
             var directory = Path.GetFullPath(projectPath.value);
             var next = ProjectStore.Open(directory);
             var expressionSession = VrmExpressionSessionStore.Load(directory);
+            var springSession = VrmSpringSessionStore.Load(directory);
             ReplaceWorkspace(next, directory);
             importedVrmSession = expressionSession; Refresh();
+            importedVrmSpringSession = springSession; RefreshVrmSpringStatus();
         }
 
         void Export() => Try(() =>

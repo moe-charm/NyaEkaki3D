@@ -23,6 +23,7 @@ namespace NyaForge.UnityRuntime
             modelImportPanel = new Foldout { text = "GLBモデルを取り込む", value = false, name = "model-import" };
             modelImportStatus = new Label { name = "model-import-status" }; modelImportStatus.style.whiteSpace = WhiteSpace.Normal; modelImportPanel.Add(modelImportStatus);
             modelImportPanel.Add(new Label("Windows先行。GLB v2のbounded triangle mesh、POSITION morph、translation-only skinを取り込みます。VRMはidentity・humanoid・expression・SpringBone inventoryを読みます。FBX、VRM表情の適用、SpringBoneシミュレーション、回転つきskinは対応範囲外です。"));
+            BuildVrmSpringStatus(modelImportPanel);
             modelImportPanel.Add(Button("GLBを選ぶ", () => { if (!modelPickerOpen) StartCoroutine(PickModel()); }, "model-import-browse"));
             modelImportPath = new TextField("ファイルパス") { name = "model-import-path" }; modelImportPath.style.flexDirection = FlexDirection.Column; modelImportPanel.Add(modelImportPath);
             modelImportPanel.Add(Button("このGLBを新規graphへ取り込む", () => Try(() => ImportModel(modelImportPath.value)), "model-import-apply"));
@@ -43,6 +44,7 @@ namespace NyaForge.UnityRuntime
             if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("GLBファイルを選択してください。");
             var bytes = File.ReadAllBytes(Path.GetFullPath(path));
             VrmMetadata vrm = VrmMetadataReader.ContainsVrm(bytes) ? VrmMetadataReader.Read(bytes) : null;
+            SetImportedVrmSpring(vrm);
             if (GlbSkinImporter.ContainsSkin(bytes)) { ImportSkinnedModel(bytes, vrm); return; }
             var imported = GlbImporter.Read(bytes);
             SetImportedVrmExpressions(bytes, vrm, imported.Morphs);

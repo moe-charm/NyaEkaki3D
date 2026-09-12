@@ -12,4 +12,6 @@ The adapter rejects skin bindings, mixed attribute or morph layouts, sparse acce
 
 `VrmMetadataReader` also reads a bounded SpringBone inventory. VRM 1.0 `VRMC_springBone` chains, joints, collider groups and sphere/capsule radius fields are normalized alongside VRM 0.x `secondaryAnimation` root groups and sphere colliders. The adapter validates node/index/radius budgets and duplicate references but does not simulate motion, apply rotations, or recreate runtime colliders.
 
+`VrmSpringSession`／`VrmSpringSessionCodec` persist that inventory as `vrm-spring-session.nyaforge.json`. The workbench shows the restored chain/joint/collider counts after reopening a project. The sidecar is source-pinned and contains no VRM bytes or runtime simulation state.
+
 The Windows workbench uses these adapters only from an empty project and creates a native Source → optional MorphDeform → Output graph. A skin import additionally creates Skeleton, SkinBind, an initial rest pose and SkinDeform nodes. The original file is read locally and is not copied into the public repository. VRM metadata/humanoid, general node transforms, normal/tangent morph deltas and export are separate adapters.
