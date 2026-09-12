@@ -105,7 +105,11 @@ namespace NyaForge.Authoring.Import
                 var weightValues = ReadWeightVectors(Array(root, "accessors"), Array(root, "bufferViews"), document.Bin, IntProperty(attributes, "WEIGHTS_0", 0, int.MaxValue, "WEIGHTS_0"), "weights");
                 Checks.Require(jointValues.Length == positionCount && weightValues.Length == positionCount, "INVALID_IMPORT", "Skin attribute count differs from POSITION.");
                 for (int v = 0; v < positionCount; v++)
-                    for (int i = 0; i < 4; i++) if (weightValues[v][i] > 0) { Checks.Require(jointValues[v][i] < jointNodes.Length, "INVALID_IMPORT", "Skin joint index is outside the skin."); rawWeights.Add(new SkinBinding.VertexWeightInput(vertexOffset + v, jointToBone.BoneIds[jointValues[v][i]], weightValues[v][i])); }
+                    for (int i = 0; i < 4; i++)
+                    {
+                        float weight = weightValues[v][i]; Checks.Finite(weight); Checks.Require(weight >= 0f && weight <= 1f, "INVALID_WEIGHT", "WEIGHTS component must be between zero and one.");
+                        if (weight > 0) { Checks.Require(jointValues[v][i] < jointNodes.Length, "INVALID_IMPORT", "Skin joint index is outside the skin."); rawWeights.Add(new SkinBinding.VertexWeightInput(vertexOffset + v, jointToBone.BoneIds[jointValues[v][i]], weight)); }
+                    }
                 vertexOffset += positionCount;
             }
             Checks.Require(vertexOffset == baseSource.Mesh.VertexCount, "INVALID_IMPORT", "Skin vertex count differs from imported mesh.");
