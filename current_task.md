@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。R01〜R12は記録した自動検証範囲で修正済み。VRM1のchain・力・center・collider・固定stepを一時preview所有者まで接続し、最新Coreは353件合格。Workbenchの再生GUI、VRM0展開、一般node変換、実素材・実操作受入は未完了。直近の証拠と残件は下段の最新実装記録を参照する。
+更新: 2026-09-12。VRM1の再生/停止/リセットGUIと一時mesh表示を接続し、Windows Playerのhandler検証が合格。Coreの直近検証は353件合格。R01〜R12は記録した自動検証範囲で修正済み。VRM0展開、一般node変換、実素材・実操作・負荷の受入は未完了。
 
 ## 開発の入口
 
@@ -16,11 +16,19 @@
 - [x] **R12 / P2 — 取込の候補生成と公開を分離（Windows自動検証完了）**。mesh検査より前のSpring session/Label更新をやめる。完了条件: 不正skin・command失敗時に文書、metadata、表示、dirty/Undoが変わらず、再試行で成功するPlayer検証。Windows Playerで不正skin・command拒否・再試行を検証済み。
 - [x] **I03-A — collider座標adapter（対応profileのCore検証完了）**。VRM0/1の元座標表現を確認し、保存済みnode原点と現在poseからsphere/capsuleを変換する。半径scale・非一様scale/shearの対応方針と診断を定める。完了条件: offset/tail、移動・回転・scale、旧sessionの詳細不足、未対応node、source不一致の回帰合格。元node原点保存とcapsule solverは実装済み。
 - [ ] **I03-B — chain・center・重力・時間の契約**。VRM0 rootからの展開とVRM1 joint列を明示的に変換する。Coreのstiffness上限・時間式と元設定の差を解決し、無言のclampをしない。完了条件: center移動、固定/可変dt、停止/再開、上限外設定の数値検証と契約文書。
-- [ ] **I03-C — Workbench再生・停止・リセット**。計算状態を保存する作品やUndoから分離し、作品切替・骨格変更時の再初期化と失敗表示を実装する。完了条件: Windows Playerで取込→再生→停止→リセット→保存/Openを通し、停止中に履歴が進まず、未対応データを成功表示しない。
+- [ ] **I03-C — Workbench再生・停止・リセット（VRM1のGUI/handler接続済み、受入残）**。計算状態を保存する作品やUndoから分離し、作品切替・骨格変更時の再初期化と失敗表示を実装する。完了条件: Windows Playerで取込→再生→停止→リセット→保存/Openを通し、停止中に履歴が進まず、未対応データを成功表示しない。
 - [ ] **I04 — 実モデル取込profileの拡張**。一般nodeの回転/scale、非joint node、複数mesh等を現行のtranslation-only/1mesh制約と区別する。完了条件: 対象モデルに必要な範囲を先に記録し、対応した変換・属性・skin/morphの数値と保存往復を確認。未対応は具体的に表示する。
 - [ ] **A01 — Windows実素材・実操作受入**。利用可能なローカルモデルで取込・保存/Open・姿勢・揺れ・文字サイズと欠け・保存して終了を確認する。外部MCP transportのmetadata保存も別項目で検証する。完了条件: build名、入力、確認手順、結果、未対応事項の記録。素材はprivate/追跡除外を維持。
 
 初回レビュー時点の証拠（現状は下段参照）: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
+
+### I03-C: Workbench再生GUIと一時表示（2026-09-12）
+
+- `AuthoringWorkbench.SpringPlayback`に折りたたみの再生/一時停止/リセットを追加。`OwnedMeshProjection.Spring`で一時graph評価の表示を分離する。保存graph/attachments/Undoへ揺れたposeを書かず、編集・作品・metadata・stage変更時はownerを破棄する。
+- 新規Player検証で、取込後のprojectionが更新されない問題を検出（`Artifacts/Authoring-20260912-152432-0b03c51c51434b669e0a26b8f82e97e8/report.json`）。取込AddGraph commandへprojectionを渡し、成功した取込を即表示する共通経路へ修正。
+- Windows-SpringPlaybackUi build **PASS**: `Logs/build-player-20260912-152520-212.log`。Player suite **PASS**: `Artifacts/Authoring-20260912-152603-441f4a62fa4d48e4bd284d07396ee2f1/report.json`。自作VRM1の取込→12stepで表示頂点変化、graph/metadata不変、停止/再開/リセット、Save/Openで一時姿勢非保存、編集時破棄を専用handler検証で確認した。
+- [Workbench再生契約](docs/Workbench-Spring-Playback.md)。今回Coreは未変更で直近353件合格を参照。実クリック、文字の隠れ、実アバター、負荷は未受入。大きなmeshでの一時graph評価/projection再構築コストを今後確認する。
+- 次はVRM0 root/末端展開と、実素材に必要な一般node変換を進め、対応profileでWindows実操作受入を行う。I03-B/C全体、I04、A01とC0〜C5の製品目標は未完了部分を維持する。
 
 ### I03-B/C: VRM1 preview所有者への統合（2026-09-12）
 

@@ -231,6 +231,7 @@ namespace NyaForge.UnityRuntime
         {
             Try(() =>
             {
+                ClearSpringPlayback(true);
                 var result = ExecuteMeasured(operations);
                 if (!result.Success) { Refresh(); throw new InvalidOperationException(result.Code + ": " + result.Message); }
                 var guiWatch=measureCommands ? System.Diagnostics.Stopwatch.StartNew() : null;
@@ -274,6 +275,7 @@ namespace NyaForge.UnityRuntime
         void Refresh()
         {
             if (workspace == null) return;
+            if (springPlayback != null && (workspace != springWorkspace || workspace.Document.StateHash != springDocumentHash || workspace.Attachments.ContentHash != springMetadataHash)) ClearSpringPlayback(true);
             RefreshGraphEditing();
             graphCanvas.Bind(workspace, operations => Execute(operations), node => Try(() => SelectEditStage(editStageIds.IndexOf(node))));
             var displayed = DisplayedGraphValue();
@@ -297,6 +299,7 @@ namespace NyaForge.UnityRuntime
             RefreshPaint();
             RefreshMaterials();RefreshRig();RefreshMorph();RefreshEvidenceCapture();
             RefreshModelImport();
+            RefreshSpringPlayback();
             RefreshValidation();
         }
 

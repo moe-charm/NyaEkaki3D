@@ -22,7 +22,7 @@ namespace NyaForge.UnityRuntime
         {
             modelImportPanel = new Foldout { text = "GLBモデルを取り込む", value = false, name = "model-import" };
             modelImportStatus = new Label { name = "model-import-status" }; modelImportStatus.style.whiteSpace = WhiteSpace.Normal; modelImportPanel.Add(modelImportStatus);
-            modelImportPanel.Add(new Label("Windows先行。GLB v2のbounded triangle mesh、POSITION morph、translation-only skinを取り込みます。VRMはidentity・humanoid・expression・SpringBone inventoryを読みます。FBX、VRM表情の適用、SpringBoneシミュレーション、回転つきskinは対応範囲外です。"));
+            modelImportPanel.Add(new Label("Windows先行。GLB v2のbounded triangle mesh、POSITION morph、translation-only skinを取り込みます。VRMはidentity・humanoid・expression・SpringBone inventoryを読みます。FBX、VRM0の揺れプレビュー、回転つきskinは対応範囲外です。"));
             BuildVrmSpringStatus(modelImportPanel);
             BuildImportedRigStatus(modelImportPanel);
             modelImportPanel.Add(Button("GLBを選ぶ", () => { if (!modelPickerOpen) StartCoroutine(PickModel()); }, "model-import-browse"));

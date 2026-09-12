@@ -25,7 +25,7 @@ namespace NyaForge.UnityRuntime
 
         void CommitImportedGraph(AuthoringGraph graph, ImportMetadataCandidate candidate)
         {
-            var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph)));
+            var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph)), projection);
             if (!result.Success) throw new InvalidOperationException(result.Code + ": " + result.Message);
             workspace.SetAttachments(candidate.Attachments);
             importedRigSession = candidate.Rig;

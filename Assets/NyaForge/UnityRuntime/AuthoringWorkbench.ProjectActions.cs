@@ -33,6 +33,7 @@ namespace NyaForge.UnityRuntime
             projection.PreviewNodeId = "";
             try { using (var prepared = projection.PrepareGraph(next.Document, next.Preview)) prepared.Commit(); }
             catch { projection.PreviewNodeId = oldStage; throw; }
+            ClearSpringPlayback(false);
             activeEditContext = null;
             selectedFaces.Clear(); faceMode.SetValueWithoutNotify(false);
             importedRigSession = null;

@@ -21,6 +21,7 @@ namespace NyaForge.UnityRuntime
         void StopMcp() { authoringPipe?.Dispose();authoringPipe=null;if(mcpInstanceField!=null) mcpInstanceField.value=""; }
         void Update()
         {
+            if (springAutomaticTick) TickSpringPlayback(UnityEngine.Time.unscaledDeltaTime);
             if(authoringPipe==null) return;
             if(workspace==null || workspace.InstanceId!=pipeInstance) { StopMcp();return; }
             if(authoringPipe.Failure!=null) { SetStatus("AI接続を停止しました："+authoringPipe.Failure);StopMcp();return; }

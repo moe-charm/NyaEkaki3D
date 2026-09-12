@@ -14,14 +14,16 @@ namespace NyaForge.UnityRuntime
             vrmSpringStatus = new Label { name = "vrm-spring-status" };
             vrmSpringStatus.style.whiteSpace = WhiteSpace.Normal;
             parent.Add(vrmSpringStatus);
+            BuildSpringPlayback(parent);
         }
 
         void RefreshVrmSpringStatus()
         {
             if (vrmSpringStatus == null) return;
+            RefreshSpringPlayback();
             if (importedVrmSpringSession == null) { vrmSpringStatus.text = "SpringBone設定: なし"; return; }
             int joints = 0; foreach (var group in importedVrmSpringSession.SpringBones) joints += group.Joints.Count;
-            vrmSpringStatus.text = "SpringBone設定: " + importedVrmSpringSession.SpringBones.Count + " chain · " + joints + " joint · " + importedVrmSpringSession.ColliderGroups.Count + " collider group（preview未接続）";
+            vrmSpringStatus.text = "SpringBone設定: " + importedVrmSpringSession.SpringBones.Count + " chain · " + joints + " joint · " + importedVrmSpringSession.ColliderGroups.Count + " collider group";
             if (!importedVrmSpringSession.HasCompleteDetails) vrmSpringStatus.text += " 詳細不足：再取込または元設定の確認が必要です。";
         }
 

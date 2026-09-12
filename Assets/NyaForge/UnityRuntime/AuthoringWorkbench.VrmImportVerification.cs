@@ -64,6 +64,7 @@ namespace NyaForge.UnityRuntime
                     Check(shapes[2].Kind == "capsule" && shapes[2].Tail.Value.Y == .1f, "Imported VRM capsule tail changed");
                 }
             }
+            VerifySpringPlayback(output, checks);
             checks.Add("VRM0/1 file import to Workbench graph, composite Save, empty workspace and Open: skin/morph graph, source identity, authors, expression weights and repeated collider nodes");
         }
     }

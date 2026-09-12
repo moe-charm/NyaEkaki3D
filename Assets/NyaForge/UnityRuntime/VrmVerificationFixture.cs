@@ -9,7 +9,7 @@ namespace NyaForge.UnityRuntime
     // Self-authored bounded test data; no third-party avatar bytes.
     internal static class VrmVerificationFixture
     {
-    internal static byte[] Create(bool legacy, bool invalidSkin = false)
+    internal static byte[] Create(bool legacy, bool invalidSkin = false, bool playback = false)
     {
         using (var bin = new MemoryStream()) using (var b = new BinaryWriter(bin))
         {
@@ -29,6 +29,10 @@ namespace NyaForge.UnityRuntime
                 ["skins"] = new JArray(new JObject { ["joints"] = new JArray(0, 1), ["inverseBindMatrices"] = 4 })
             };
             AddVrm(json, legacy);
+            if (playback) json["extensions"]["VRMC_springBone"] = new JObject {
+                ["specVersion"] = "1.0", ["springs"] = new JArray(new JObject { ["center"] = 0, ["joints"] = new JArray(
+                    new JObject { ["node"] = 0, ["stiffness"] = 1, ["gravityPower"] = .2, ["gravityDir"] = new JArray(1, 0, 0) }, new JObject { ["node"] = 1 }) }) };
+
             if (invalidSkin) json["nodes"][1]["scale"] = new JArray(2, 1, 1);
             return BuildGlbContainer(Encoding.UTF8.GetBytes(json.ToString(Newtonsoft.Json.Formatting.None)), bin.ToArray());
         }
