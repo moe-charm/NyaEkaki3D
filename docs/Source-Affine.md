@@ -1,5 +1,15 @@
 # source affine数値基盤（I04-A）
 
+## source skin候補
+
+`SourceSkin`はsource node transformsとskin index、元のjoint slot順、任意のskeleton root、一般inverse-bind行列を不変保持する。制作骨格の256骨制限とは独立し、source node予算内の257骨以上も表現する。JOINTS属性の値はこのslotからsource nodeへ引く。配列順をソートしたり、node名から対応を推測しない。
+
+入力にinverse-bindがある場合は全joint分以上を要求し、余剰accessor entryも保持する。fresh sourceで省略された場合だけidentityを補い、`HasExplicitInverseBindMatrices`で明示値と区別する。これは[glTF skin schema](https://raw.githubusercontent.com/KhronosGroup/glTF/main/specification/2.0/schema/skin.schema.json)に従う。旧nativeで不明なbindをこの省略扱いへ変換してはならない。skeleton rootを指定する場合は全jointの祖先であることを検査する。
+
+`JointMatrix(slot, jointWorld)`はjointWorld×inverseBindを返す。出力はsource worldへ写す行列で、mesh node変換をさらに掛けない。描画先のlocal空間への変換、weight混合、normal/tangent処理は後段adapterが所有する。world行列は呼出側が同じsource座標系で渡す契約であり、任意pose配列のsource identity検証は今後のscene adapterで行う。
+
+実装範囲は候補型と数値検証まで。GLB accessorのdecode、native codec、一般skinのGUI取込はまだ接続していない。既存translation-only制限を解除する証拠ではない。
+
 `SourceAffine`はUnityに依存しない不変のcolumn-major 4×4行列。TRSの合成はT×R×S、`parent.Compose(local)`はparent×local。doubleで計算し、公開するVec3/Vec4はfinite float範囲を検査して返す。入力配列はコピーし、公開配列もコピーする。
 
 ## 計算契約
