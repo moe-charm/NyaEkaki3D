@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。レビュー対象は `bb1d89c`、修正状況の照合対象は `c5db3fe`。レビュー10項目のうちR03は自動検証まで完了、残り9項目は未完了。最新の記録はCore 303件合格とWindows-AtomicMetadata suite PASS。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
+更新: 2026-09-12。レビュー対象は `bb1d89c`、修正状況の照合対象は `c5db3fe`。レビュー10項目のうちR01/R02/R03/R09は自動検証まで完了、残り6項目は未完了。最新の記録はCore 306件合格とWindows-VrmMetadataRepair suite PASS。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
 
 ## 開発の入口
 
@@ -10,12 +10,12 @@
 
 ## 最優先: 実装レビューの修正タスク（2026-09-12）
 
-ユーザー依頼「ここまでチェック」「チェック後current_task更新してタスク化」に対応したレビューを起点に修正を進める。詳細な再現条件、対象行、完了条件、証拠は [Rig / VRMレビュー](docs/reviews/2026-09-12-Rig-Vrm-Review.md) を参照する。R03はCore/Windows自動検証まで完了し、次はR01。実マウス・実VRMの受入は各自動検証と区別する。
+ユーザー依頼「ここまでチェック」「チェック後current_task更新してタスク化」に対応したレビューを起点に修正を進める。詳細な再現条件、対象行、完了条件、証拠は [Rig / VRMレビュー](docs/reviews/2026-09-12-Rig-Vrm-Review.md) を参照する。R01/R02/R03/R09はCore/Windows自動検証まで完了し、次はR04/R05。実マウス・実VRMの受入は各自動検証と区別する。
 
 - [x] **R03 / P1 — 保存全体の成功判定と失敗時の保護**。schema 4の単一manifestで本体とVRM設定のblob参照を一括公開し、失敗時の旧作品・設定・dirty・versionを保持。Core共通保存service、Windows GUI/MCP handlerの再試行・終了防止・Save As/Openを検証した。外部MCP transport経由のmetadata専用試験と実マウスの受入は未実施。
-- [ ] **R01 / P1 — VRM1 authors配列**。文字列として扱うreaderと誤ったfixtureを修正する。複数作者をimportからsession保存・再読込まで保持し、既存形式の移行も定める。
-- [ ] **R02 / P1 — 同一nodeの複数コライダーの往復**。`nodes:[0,0]`を重複禁止readerで拒否する問題を直す。順序・件数を保持し、VRM0/1のimport→Save→Openを確認する。
-- [ ] **R09 / P2 — VRM1 SpringBoneの既定値**。省略stiffness/dragForceを1.0/0.5にし、明示0と区別する。session再読込でも一致させる。
+- [x] **R01 / P1 — VRM1 authors配列**。文字列として扱うreaderと誤ったfixtureを修正する。複数作者をimportからsession保存・再読込まで保持し、既存形式の移行も定める。
+- [x] **R02 / P1 — 同一nodeの複数コライダーの往復**。`nodes:[0,0]`を重複禁止readerで拒否する問題を直す。順序・件数を保持し、VRM0/1のimport→Save→Openを確認する。
+- [x] **R09 / P2 — VRM1 SpringBoneの既定値**。省略stiffness/dragForceを1.0/0.5にし、明示0と区別する。session再読込でも一致させる。
 - [ ] **R04 / P1 — 連続stepのPose/State整合**。step2でtailが約0.079809 mずれる回転合成を直す。同じbase pose／変化するbase poseで、出力PoseとStateが連続して一致することを確認する。
 - [ ] **R05 / P1 — chainの親子変換伝播**。親tailと子headが約0.079807 m離れる問題を直す。親から子へ相対offsetを保って評価し、2〜3jointと子孫追従を確認する。
 - [ ] **R06 / P2 — chainごとの衝突参照**。全chainのgroup参照を混合せず、所属chainの参照だけをjointへ渡す。参照なしBが別chain Aの追加で約0.290426 m動く再現を回帰化する。
@@ -25,25 +25,34 @@
 
 検証済み: このレビューでCore **297 passed / 0 failed**を再実行。別fixtureで作者情報拒否、session往復失敗、保存失敗後dirty=False、step2姿勢ずれ、親子gap、chain間衝突混入、貫通、dt=0の進行、null参照例外、省略値の相違を確認した。Player/Bridgeは今回再実行していない。実VRM全体・手動見た目受入も未確認。
 
-再開順: **R01/R02/R09 → R04/R05/R06/R07/R08**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
+再開順: **R04/R05 → R06/R07/R08**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
 
 ### 実行単位と完了判定
 
-- [ ] **次の実装: R01 + R02 + R09（取込・保存）**。作者名の配列保持と旧session移行、コライダーnode列の重複保持、省略値と明示0の区別を同じ段階で直す。正規の合成VRM0/1を使うCore往復テストとWindows Workbench Save/Openを完了条件とする。
+- [x] **R01 + R02 + R09（取込・保存、自動検証完了）**。作者名の配列保持と旧session移行、コライダーnode列の重複保持、省略値と明示0の区別を同じ段階で直す。正規の合成VRM0/1を使うCore往復テストとWindows Workbench Save/Openを完了条件とする。
 - [ ] **続く実装: R04 + R05（姿勢・階層）**。連続stepのPose/State一致と親子変換を修正する。2〜3joint、変化するbase pose、登録順、非simulated子孫と初期offsetを回帰対象にする。
 - [ ] **続く実装: R06 + R07 + R08（衝突・時間）**。chain単位の参照分離、長さと衝突の同時制約、停止・再開の契約を修正する。解なしの診断、有限値、可変dtを含めて検証する。
 - [ ] **各実装に同梱: R10（検証強化）**。修正前に失敗する再現を正式テストへ移す。保存・OpenはPlayer経路も通し、数値計算は前stepのStateを引き継ぎ、実際の衝突参照を指定する。null groupのdomain errorも確認する。
 - [ ] **基礎修正後の受入**。実VRMの読込・保存・再読込、GUIの保存して終了、文字サイズ・隠れ、姿勢と見た目をWindowsで確認する。外部MCP transportのmetadata保存も別途確認する。各記録に対象buildと確認方法を残す。
 
-今回の状況照合では、R01/R02/R09の該当readerとSpringBoneの既存経路が未修正であること、R03の実装・検証記録が後続commitにあることを確認した。今回追加のテスト実行や実装変更は行っていない。上記チェックは各タスクの完了条件と証拠が揃ってから更新する。
+状況照合時点では未修正だったR01/R02/R09を、下記の実装と自動検証で更新した。チェック済みは自動検証範囲であり、実素材と実マウスによる受入は別タスクのまま維持する。
 
 修正後は、未保持のgravityDir・collider shape値と保存移行を含むVRM入力契約を整え、node→stable BoneId、preview接続へ進む。一般node transform、skin/morph出力、実アバター受入、C1〜C5の全体目標は維持する。
+
+### R01/R02/R09: VRM取込とsession互換性（2026-09-12）
+
+- `VrmAuthorNames`へ作者リストの検査・不変コピー・旧単独名の変換を分離。VRM1は必須の非空配列を読み、各作者名と順序を保持する。上限は256名・各256文字。`Author`は表示用連結文字列、`Authors`は保存する原情報であり、カンマで再分割しない。
+- expression / Spring session writerはversion 2の`authors`配列へ変更し、readerはversion 1の`author`も受け入れる。旧空名は空リスト、旧非空名は丸ごと1名として扱う。snapshot schema 4は変更しない。旧payloadは開くだけでは書き換えず、codecで再書出しするとv2になる。
+- コライダーごとのnode列は重複と順序を保持し、rootやgroup参照の一意検査は維持。合成VRM0の同一node複数sphereとVRM1の同一/異なるnode・sphere/capsule inventoryを往復検証した。shape詳細値の保持は別の未完了事項。
+- VRM1の省略stiffness / dragForceを1 / 0.5へ修正し、明示0と区別。VRM0の既定値は変更していない。
+- Core **306 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-1f29d4a482f7474d839565a64cc827b5`。複数作者import→session往復、v1移行・v2保存、型違い・欠落・空作者拒否、複数node列、設定既定値、native snapshot Save/Openを検証。
+- Windows-VrmMetadataRepair build **PASS**: `Logs/build-player-20260912-134009-576.log`。Authoring suite **PASS**: `Artifacts/Authoring-20260912-134033-211dbe64c427447b93017ac79d8a3861/report.json`。複数作者・`nodes:[0,0,2]`・設定値を持つsessionで、保存失敗保護・GUI/MCP handler再試行・Workbench Openを確認した。実VRMファイルpicker・実クリック・見た目受入は未実施。
 
 ### R03: 作品本体とmetadataの一括公開（2026-09-12）
 
 - `ProjectAttachments`は所有するsession bytesとhashを不変データとして保持し、workspaceのdirty判定へ加える。`ProjectSnapshotCodec`はschema 2/3本体をschema 4 envelopeで包み、設定blob参照を同じmanifestへ保存する。`ProjectStore`の既存writer lock / expectedVersion境界でblobを準備・検証し、manifestを最後に一回だけ置き換え、その後にsaved状態を更新する。
 - 旧schema 1/2/3のsidecarはOpen時に取り込む。schema 4は古いsidecarを参照せず、設定を除去しても復活しない。schema 1は従来どおり別保存先への移行が必要。古いバージョンのNyaForgeはschema 4を開けない。形式と責務の詳細は [metadata snapshots](docs/Project-Metadata-Snapshots.md) を参照。
-- GUI import時点でmetadataをworkspaceへ渡し、GUI/MCPともに共通ProjectStoreで一括保存する。MCP handlerの保存成功でGUIの失敗表示も解除する。個別session内容の不具合R01/R02/R09は残っているので、保存transactionの修正をVRM互換性全体の合格とはしない。
+- GUI import時点でmetadataをworkspaceへ渡し、GUI/MCPともに共通ProjectStoreで一括保存する。MCP handlerの保存成功でGUIの失敗表示も解除する。この時点ではR01/R02/R09は未修正だった。後続修正は下記の記録を参照し、保存transactionの修正をVRM互換性全体の合格とはしない。
 - Core **303 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3d890be653834863b2859c79e76939a6`。expression/Spring書込み失敗で旧manifest・本体・metadata・dirty・versionを維持、Save As公開失敗と再試行、legacy移行/削除、corrupt blob、未知field、graphの共通save service往復とstale writer拒否を検証。
 - Windows-AtomicMetadata build **PASS**: `Logs/build-player-20260912-132607-475.log`。Authoring suite **PASS**: `Artifacts/Authoring-20260912-132736-efd679b908084601afb033b0e7681dce/report.json`。新規/既存の両方でblob排他ロックによる失敗を起こし、旧設定保持、終了/無確認切替防止、GUI/MCP handler再試行、設定を含むOpenを確認した。終了ボタンが使う判定関数の自動検証であり、実クリック・外部MCP transport・実VRMの手動受入は別途。
 

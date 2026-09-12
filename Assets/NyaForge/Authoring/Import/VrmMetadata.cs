@@ -101,16 +101,17 @@ namespace NyaForge.Authoring.Import
         public string SpecVersion { get; }
         public string Title { get; }
         public string Author { get; }
+        public IReadOnlyList<string> Authors { get; }
         public IReadOnlyDictionary<string, int> HumanoidNodes { get; }
         public IReadOnlyList<VrmExpression> Expressions { get; }
         public IReadOnlyList<VrmSpringBoneGroup> SpringBones { get; }
         public IReadOnlyList<VrmSpringColliderGroup> SpringColliderGroups { get; }
         public IReadOnlyList<string> Warnings { get; }
 
-        internal VrmMetadata(string sourceHash, string format, string specVersion, string title, string author, IDictionary<string, int> humanoidNodes, IEnumerable<VrmExpression> expressions, IEnumerable<VrmSpringBoneGroup> springBones, IEnumerable<VrmSpringColliderGroup> springColliderGroups, IEnumerable<string> warnings)
+        internal VrmMetadata(string sourceHash, string format, string specVersion, string title, string author, IDictionary<string, int> humanoidNodes, IEnumerable<VrmExpression> expressions, IEnumerable<VrmSpringBoneGroup> springBones, IEnumerable<VrmSpringColliderGroup> springColliderGroups, IEnumerable<string> warnings, IEnumerable<string> authors = null)
         {
             Checks.HashText(sourceHash); Checks.Name(format); Checks.Name(specVersion); Checks.Require(humanoidNodes != null, "INVALID_VRM", "Humanoid mapping is required.");
-            SourceHash = sourceHash; Format = format; SpecVersion = specVersion; Title = title ?? ""; Author = author ?? "";
+            SourceHash = sourceHash; Format = format; SpecVersion = specVersion; Title = title ?? ""; Authors = authors == null ? VrmAuthorNames.Legacy(author) : VrmAuthorNames.Copy(authors); Author = string.Join(", ", Authors);
             var expressionValues = (expressions ?? Array.Empty<VrmExpression>()).ToArray(); Checks.Require(expressionValues.Length <= MaxExpressions, "BUDGET_EXCEEDED", "VRM expression count exceeds capacity.");
             Expressions = Array.AsReadOnly(expressionValues); HumanoidNodes = new ReadOnlyDictionary<string, int>(new Dictionary<string, int>(humanoidNodes, StringComparer.Ordinal)); Warnings = Array.AsReadOnly((warnings ?? Array.Empty<string>()).ToArray());
             var springValues = (springBones ?? Array.Empty<VrmSpringBoneGroup>()).ToArray(); var colliderValues = (springColliderGroups ?? Array.Empty<VrmSpringColliderGroup>()).ToArray();
@@ -145,7 +146,7 @@ namespace NyaForge.Authoring.Import
             var expressions = ParseModernExpressions(document.Root, extension);
             var spring = ParseModernSpring(document.Root, extensions: document.Root["extensions"] as JObject);
             var warnings = new List<string> { "VRM 1.0 identity, humanoid, expression and SpringBone inventory were read; expression application, spring simulation, look-at and material conversion remain separate adapters." };
-            return new VrmMetadata(document.SourceHash, "vrm1", spec, OptionalString(meta, "name", 256), OptionalString(meta, "authors", 256), map, expressions, spring.Bones, spring.Colliders, warnings);
+            return new VrmMetadata(document.SourceHash, "vrm1", spec, OptionalString(meta, "name", 256), "", map, expressions, spring.Bones, spring.Colliders, warnings, VrmAuthorNames.Read(meta, true));
         }
 
         static VrmMetadata ParseLegacy(GlbDocument document, JObject extension)
@@ -168,7 +169,7 @@ namespace NyaForge.Authoring.Import
             var groupArray = OptionalArray(extension, "colliderGroups"); Checks.Require(groupArray.Count <= VrmMetadata.MaxSpringColliderGroups, "BUDGET_EXCEEDED", "VRM spring collider group count exceeds capacity.");
             var colliderNodes = colliderArray.Select(token => IntProperty((JObject)token, "node", 0, nodeCount - 1, "VRM spring collider node")).ToArray(); var colliders = new List<VrmSpringColliderGroup>(); foreach (var token in groupArray) { var value = token as JObject; Checks.Require(value != null, "INVALID_VRM", "VRM spring collider group is invalid."); var indices = IntArray(value, "colliders", 0, colliderArray.Count - 1, "VRM spring collider group index", true); var nodes = indices.Select(index => colliderNodes[index]).ToArray(); int commonNode = nodes.Length == 0 || nodes.All(node => node == nodes[0]) ? (nodes.Length == 0 ? -1 : nodes[0]) : -1; colliders.Add(new VrmSpringColliderGroup(commonNode, nodes.Length, nodes)); }
             var springs = OptionalArray(extension, "springs"); Checks.Require(springs.Count <= VrmMetadata.MaxSpringGroups, "BUDGET_EXCEEDED", "VRM spring count exceeds capacity."); var bones = new List<VrmSpringBoneGroup>(); int totalJoints = 0;
-            foreach (var token in springs) { var value = token as JObject; Checks.Require(value != null, "INVALID_VRM", "VRM spring is invalid."); string name = OptionalString(value, "name", 128); var joints = value["joints"] as JArray; Checks.Require(joints != null, "INVALID_VRM", "VRM spring joints are invalid."); var jointValues = new List<VrmSpringJoint>(); var seen = new HashSet<int>(); foreach (var jointToken in joints) { var joint = jointToken as JObject; Checks.Require(joint != null, "INVALID_VRM", "VRM spring joint is invalid."); int node = IntProperty(joint, "node", 0, nodeCount - 1, "VRM spring joint node"); Checks.Require(seen.Add(node), "INVALID_VRM", "VRM spring joint repeats."); jointValues.Add(new VrmSpringJoint(node, OptionalNumber(joint, "hitRadius", 0), OptionalNumber(joint, "stiffness", 0), OptionalNumber(joint, "gravityPower", 0), OptionalNumber(joint, "dragForce", 0, 1))); } totalJoints += jointValues.Count; Checks.Require(totalJoints <= VrmMetadata.MaxSpringJoints, "BUDGET_EXCEEDED", "VRM spring joint count exceeds capacity."); int center = OptionalInt(value, "center", -1, nodeCount - 1); var colliderGroups = IntArray(value, "colliderGroups", 0, groupArray.Count - 1, "VRM spring collider group index", true); bones.Add(new VrmSpringBoneGroup(name, jointValues, System.Array.Empty<int>(), colliderGroups, center)); }
+            foreach (var token in springs) { var value = token as JObject; Checks.Require(value != null, "INVALID_VRM", "VRM spring is invalid."); string name = OptionalString(value, "name", 128); var joints = value["joints"] as JArray; Checks.Require(joints != null, "INVALID_VRM", "VRM spring joints are invalid."); var jointValues = new List<VrmSpringJoint>(); var seen = new HashSet<int>(); foreach (var jointToken in joints) { var joint = jointToken as JObject; Checks.Require(joint != null, "INVALID_VRM", "VRM spring joint is invalid."); int node = IntProperty(joint, "node", 0, nodeCount - 1, "VRM spring joint node"); Checks.Require(seen.Add(node), "INVALID_VRM", "VRM spring joint repeats."); jointValues.Add(new VrmSpringJoint(node, OptionalNumber(joint, "hitRadius", 0), OptionalNumber(joint, "stiffness", 0, defaultValue: 1), OptionalNumber(joint, "gravityPower", 0), OptionalNumber(joint, "dragForce", 0, 1, defaultValue: .5f))); } totalJoints += jointValues.Count; Checks.Require(totalJoints <= VrmMetadata.MaxSpringJoints, "BUDGET_EXCEEDED", "VRM spring joint count exceeds capacity."); int center = OptionalInt(value, "center", -1, nodeCount - 1); var colliderGroups = IntArray(value, "colliderGroups", 0, groupArray.Count - 1, "VRM spring collider group index", true); bones.Add(new VrmSpringBoneGroup(name, jointValues, System.Array.Empty<int>(), colliderGroups, center)); }
             return (bones.AsReadOnly(), colliders.AsReadOnly());
         }
 
@@ -262,9 +263,9 @@ namespace NyaForge.Authoring.Import
             var value = owner[property]; if (value == null || value.Type == JTokenType.Null) return defaultValue; Checks.Require(value.Type == JTokenType.Integer, "INVALID_VRM", "VRM integer property is invalid: " + property); int number = (int)value; Checks.Require(number >= -1 && number <= maximum, "INVALID_VRM", "VRM integer property is out of range: " + property); return number;
         }
 
-        static float OptionalNumber(JObject owner, string property, float minimum, float maximum = float.MaxValue)
+        static float OptionalNumber(JObject owner, string property, float minimum, float maximum = float.MaxValue, float defaultValue = 0)
         {
-            var value = owner[property]; if (value == null || value.Type == JTokenType.Null) return 0; Checks.Require(value.Type == JTokenType.Float || value.Type == JTokenType.Integer, "INVALID_VRM", "VRM number property is invalid: " + property); float number = (float)value; Checks.Finite(number); Checks.Require(number >= minimum && number <= maximum, "INVALID_VRM", "VRM number property is out of range: " + property); return number;
+            var value = owner[property]; if (value == null || value.Type == JTokenType.Null) return defaultValue; Checks.Require(value.Type == JTokenType.Float || value.Type == JTokenType.Integer, "INVALID_VRM", "VRM number property is invalid: " + property); float number = (float)value; Checks.Finite(number); Checks.Require(number >= minimum && number <= maximum, "INVALID_VRM", "VRM number property is out of range: " + property); return number;
         }
 
         static IDictionary<string, int> ParseModernHumanoid(JObject root, JObject humanoid)

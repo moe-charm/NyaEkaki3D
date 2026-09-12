@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using NyaForge.Authoring;
+using Newtonsoft.Json.Linq;
 
 namespace NyaForge.UnityRuntime
 {
@@ -55,17 +56,25 @@ namespace NyaForge.UnityRuntime
                 OpenProject();
                 Check(!HasUnsaved && workspace.Attachments.ContentHash == metadata.ContentHash, "Retried project did not reopen");
                 Check(importedVrmSession.Title == "new" && importedVrmSpringSession.Title == "new", "Workbench did not decode snapshot metadata");
+                Check(importedVrmSession.Authors.Count == 2 && importedVrmSession.Authors[1] == "Moe, Charm" && importedVrmSpringSession.Authors[1] == "Moe, Charm", "Workbench lost ordered authors");
+                var nodes = importedVrmSpringSession.ColliderGroups[0].ColliderNodeIndices;
+                Check(nodes.Count == 3 && nodes[0] == 0 && nodes[1] == 0 && nodes[2] == 2, "Workbench lost repeated collider nodes");
+                Check(importedVrmSpringSession.SpringBones[0].Joints[0].Stiffness == 1 && importedVrmSpringSession.SpringBones[0].Joints[0].DragForce == .5f, "Workbench lost Spring settings");
             }
             checks.Add("Atomic metadata snapshots: expression/Spring blob IO failures preserve old manifest/settings and dirty/version, deny exit/replacement, and permit GUI/MCP-handler retry/reopen");
+            checks.Add("VRM metadata: ordered multiple authors, repeated/mixed collider nodes and Spring values survive Workbench Save/Open");
         }
 
         static ProjectAttachments VerificationMetadata(string title)
         {
-            string prefix = "{\"version\":1,\"sourceHash\":\"" + new string('0', 64) + "\",\"format\":\"vrm0\",\"title\":\"" + title + "\",\"author\":\"fixture\",";
+            var expression = new JObject { ["version"] = 2, ["sourceHash"] = new string('0', 64), ["format"] = "vrm1", ["title"] = title, ["authors"] = new JArray("fixture", "Moe, Charm"), ["expressions"] = new JArray() };
+            var spring = (JObject)expression.DeepClone(); spring.Remove("expressions");
+            spring["colliderGroups"] = new JArray(new JObject { ["node"] = -1, ["colliderCount"] = 3, ["nodes"] = new JArray(0, 0, 2) });
+            spring["springBones"] = new JArray(new JObject { ["name"] = "tail", ["centerNode"] = -1, ["rootBoneNodes"] = new JArray(), ["colliderGroupIndices"] = new JArray(0), ["joints"] = new JArray(new JObject { ["node"] = 1, ["hitRadius"] = 0, ["stiffness"] = 1, ["gravityPower"] = 0, ["dragForce"] = .5 }) });
             return new ProjectAttachments(new Dictionary<string, byte[]>
             {
-                [ProjectAttachments.Expressions] = Encoding.UTF8.GetBytes(prefix + "\"expressions\":[]}"),
-                [ProjectAttachments.Springs] = Encoding.UTF8.GetBytes(prefix + "\"springBones\":[],\"colliderGroups\":[]}")
+                [ProjectAttachments.Expressions] = Encoding.UTF8.GetBytes(expression.ToString()),
+                [ProjectAttachments.Springs] = Encoding.UTF8.GetBytes(spring.ToString())
             });
         }
     }

@@ -33,7 +33,7 @@ metadataを持つprojectは、次のenvelopeを使う。`ProjectSnapshotCodec`�
 
 schema 1/2/3を開いたときだけ、ルートの旧expression / Spring sidecarを読み取り、workspaceへ取り込む。次の保存でblob参照へ移行する。旧sidecarは削除も上書きもしない。schema 1の本体は従来どおり別フォルダ保存による移行が必要である。
 
-schema 4の読込はmutableな旧sidecarを参照しない。`OpenProject`はsnapshot内の設定をcodecでdecodeしてから表示を置き換える。設定自体のVRM仕様適合や、以前からのcodec不具合R01/R02/R09はこの保存transactionと分けて修正する。
+schema 4の読込はmutableな旧sidecarを参照しない。`OpenProject`はsnapshot内の設定をcodecでdecodeしてから表示を置き換える。設定自体のVRM仕様適合は保存transactionとは別に検査する。作者とコライダー列のcodec修正は以下を参照。
 
 ## GUI / MCPと残る境界
 
@@ -49,3 +49,13 @@ attachmentsはimport情報としてworkspace単位で保持し、現時点では
 - MCPが使うProjectSaveService: graph＋metadataを保存・再読込し、古いwriterの保存versionを拒否。
 - Windows Player: 新規／上書き保存でmetadata blobを排他ロックし、終了・無確認切替を拒否。GUI保存とMCP handlerの再試行、および設定を含むOpenを確認。
 - 外部MCP transportを通すmetadata保存、実マウスの「保存して終了」、実VRMでの受入は今回の専用検査には含めない。実行ログはcurrent_taskへ記録する。
+
+## Session version 2（2026-09-12）
+
+expression / Springの新しいwriterは`author`文字列の代わりに`authors`配列を出力する。readerはversion 1と2を受け入れ、旧単独名はカンマを含め1名として保持する。旧空名は空配列へ対応する。新形式の再書出しは決定的で、最大256名・各256文字の不変リストを保持する。`Author`は表示用の連結値で、保存元は`Authors`である。
+
+旧snapshotのpayloadはOpenだけでは変更せず、そのまま保存してもversion 1を維持できる。sessionをcodecで再書出ししたときにversion 2となる。旧NyaForgeのsession readerはversion 2を扱えない。project envelopeはschema 4を維持する。
+
+VRM1 importは非空の作者配列を必須とする。これは[公式meta schema](https://raw.githubusercontent.com/vrm-c/vrm-specification/master/specification/VRMC_vrm-1.0/schema/VRMC_vrm.meta.schema.json)に基づく。省略したstiffness=1、dragForce=0.5は[公式joint schema](https://raw.githubusercontent.com/vrm-c/vrm-specification/master/specification/VRMC_springBone-1.0/schema/VRMC_springBone.joint.schema.json)に合わせ、明示0は保持する。VRM全体のスキーマ検証を実装したという意味ではない。
+
+コライダーごとのnode列は重複を保持する。参照集合に必要な一意性検査とは分け、同一nodeの複数コライダーを保存後に失わない。shapeの詳細値とgravityDirの完全保持は引き続き別タスクである。

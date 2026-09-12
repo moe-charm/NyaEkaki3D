@@ -17,25 +17,26 @@ namespace NyaForge.Authoring.Import
         public string Format { get; }
         public string Title { get; }
         public string Author { get; }
+        public IReadOnlyList<string> Authors { get; }
         public IReadOnlyList<MappedVrmExpression> Expressions { get; }
 
-        internal VrmExpressionSession(string sourceHash, string format, string title, string author, IEnumerable<MappedVrmExpression> expressions)
+        internal VrmExpressionSession(string sourceHash, string format, string title, string author, IEnumerable<MappedVrmExpression> expressions, IEnumerable<string> authors = null)
         {
             Checks.HashText(sourceHash); Checks.Name(format); var values = (expressions ?? Array.Empty<MappedVrmExpression>()).ToArray(); Checks.Require(values.Length <= VrmMetadata.MaxExpressions, "BUDGET_EXCEEDED", "VRM expression session exceeds capacity.");
             var names = new HashSet<string>(StringComparer.Ordinal); foreach (var value in values) Checks.Require(value != null && names.Add(value.Name), "DUPLICATE_MORPH", "VRM expression session names must be unique.");
-            SourceHash = sourceHash; Format = format; Title = title ?? ""; Author = author ?? ""; Expressions = Array.AsReadOnly(values);
+            SourceHash = sourceHash; Format = format; Title = title ?? ""; Authors = authors == null ? VrmAuthorNames.Legacy(author) : VrmAuthorNames.Copy(authors); Author = string.Join(", ", Authors); Expressions = Array.AsReadOnly(values);
         }
 
         public static VrmExpressionSession Create(VrmMetadata metadata, IEnumerable<MappedVrmExpression> expressions)
         {
-            Checks.Require(metadata != null, "INVALID_VRM", "VRM metadata is required."); return new VrmExpressionSession(metadata.SourceHash, metadata.Format, metadata.Title, metadata.Author, expressions);
+            Checks.Require(metadata != null, "INVALID_VRM", "VRM metadata is required."); return new VrmExpressionSession(metadata.SourceHash, metadata.Format, metadata.Title, metadata.Author, expressions, metadata.Authors);
         }
     }
 
     /// <summary>Strict bounded JSON codec for the mapped expression sidecar.</summary>
     public static class VrmExpressionSessionCodec
     {
-        const int Version = 1;
+        const int Version = 2;
 
         public static byte[] Write(VrmExpressionSession session)
         {
@@ -45,7 +46,7 @@ namespace NyaForge.Authoring.Import
                 ["name"] = expression.Name, ["preset"] = expression.Preset, ["isCustom"] = expression.IsCustom,
                 ["weights"] = new JArray(expression.Weights.Select(pair => new JObject { ["targetId"] = pair.Key, ["weight"] = pair.Value }))
             }));
-            var root = new JObject { ["version"] = Version, ["sourceHash"] = session.SourceHash, ["format"] = session.Format, ["title"] = session.Title, ["author"] = session.Author, ["expressions"] = expressions };
+            var root = new JObject { ["version"] = Version, ["sourceHash"] = session.SourceHash, ["format"] = session.Format, ["title"] = session.Title, ["authors"] = new JArray(session.Authors), ["expressions"] = expressions };
             var bytes = new UTF8Encoding(false).GetBytes(root.ToString(Formatting.Indented) + "\n"); Checks.Require(bytes.Length <= AuthoringLimits.MaxBlobBytes, "BUDGET_EXCEEDED", "VRM expression session exceeds capacity."); return bytes;
         }
 
@@ -59,8 +60,9 @@ namespace NyaForge.Authoring.Import
                 {
                     root = JObject.Load(reader, new JsonLoadSettings { DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error }); Checks.Require(!reader.Read(), "INVALID_VRM", "Trailing VRM expression session data is not allowed.");
                 }
-                RequireFields(root, "version", "sourceHash", "format", "title", "author", "expressions"); Checks.Require(Int(root, "version") == Version, "UNSUPPORTED_FORMAT", "VRM expression session version is unsupported.");
-                string sourceHash = String(root, "sourceHash", 64); string format = String(root, "format", 32); string title = String(root, "title", 256, true); string author = String(root, "author", 256, true);
+                int version = Int(root, "version");
+                RequireFields(root, "version", "sourceHash", "format", "title", version == 1 ? "author" : "authors", "expressions"); Checks.Require(version == 1 || version == Version, "UNSUPPORTED_FORMAT", "VRM expression session version is unsupported.");
+                string sourceHash = String(root, "sourceHash", 64); string format = String(root, "format", 32); string title = String(root, "title", 256, true); var authors = version == 1 ? VrmAuthorNames.Legacy(String(root, "author", 256, true)) : VrmAuthorNames.Read(root, false);
                 var expressionArray = root["expressions"] as JArray; Checks.Require(expressionArray != null && expressionArray.Count <= VrmMetadata.MaxExpressions, "INVALID_VRM", "VRM expression session expressions are invalid.");
                 var expressions = new List<MappedVrmExpression>();
                 foreach (var token in expressionArray)
@@ -70,7 +72,7 @@ namespace NyaForge.Authoring.Import
                     var weights = new Dictionary<string, float>(StringComparer.Ordinal); foreach (var weightToken in weightsArray) { var weight = weightToken as JObject; Checks.Require(weight != null, "INVALID_VRM", "VRM expression session weight is invalid."); RequireFields(weight, "targetId", "weight"); string targetId = String(weight, "targetId", 36); Checks.Id(targetId); float value = Number(weight, "weight"); Checks.Require(weights.TryAdd(targetId, value), "DUPLICATE_MORPH", "VRM expression session target repeats."); }
                     expressions.Add(new MappedVrmExpression(name, preset, isCustom, weights));
                 }
-                return new VrmExpressionSession(sourceHash, format, title, author, expressions);
+                return new VrmExpressionSession(sourceHash, format, title, "", expressions, authors);
             }
             catch (JsonException error) { throw new AuthoringException("INVALID_VRM", error.Message); }
             catch (DecoderFallbackException error) { throw new AuthoringException("INVALID_VRM", error.Message); }
