@@ -10,16 +10,26 @@ namespace NyaForge.Authoring.Import
     /// <summary>One expression translated to native MorphSet target IDs for a single GLB owner.</summary>
     public sealed class MappedVrmExpression
     {
-        public string Name { get; }
-        public string Preset { get; }
-        public bool IsCustom { get; }
-        public IReadOnlyDictionary<string, float> Weights { get; }
+        public string Name { get; private set; }
+        public string Preset { get; private set; }
+        public bool IsCustom { get; private set; }
+        public IReadOnlyDictionary<string, float> Weights { get; private set; }
 
         internal MappedVrmExpression(VrmExpression source, IDictionary<string, float> weights)
         {
             Checks.Require(source != null && weights != null, "INVALID_VRM", "VRM expression mapping is incomplete.");
-            Name = source.Name; Preset = source.Preset; IsCustom = source.IsCustom;
-            Weights = new ReadOnlyDictionary<string, float>(new Dictionary<string, float>(weights, StringComparer.Ordinal));
+            Initialize(source.Name, source.Preset, source.IsCustom, weights);
+        }
+
+        internal MappedVrmExpression(string name, string preset, bool isCustom, IDictionary<string, float> weights)
+        { Initialize(name, preset, isCustom, weights); }
+
+        void Initialize(string name, string preset, bool isCustom, IDictionary<string, float> weights)
+        {
+            Checks.Name(name); Checks.Require(weights != null && weights.Count <= MorphSet.MaxTargets, "BUDGET_EXCEEDED", "VRM mapped expression exceeds capacity.");
+            var copy = new Dictionary<string, float>(StringComparer.Ordinal);
+            foreach (var pair in weights) { Checks.Id(pair.Key); Checks.Finite(pair.Value); Checks.Require(pair.Value >= 0 && pair.Value <= 1, "INVALID_MORPH_WEIGHT", "VRM mapped expression weight must be between 0 and 1."); Checks.Require(copy.TryAdd(pair.Key, pair.Value), "DUPLICATE_MORPH", "VRM mapped expression target repeats."); }
+            Name = name; Preset = preset ?? ""; IsCustom = isCustom; Weights = new ReadOnlyDictionary<string, float>(copy.OrderBy(pair => pair.Key, StringComparer.Ordinal).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal));
         }
     }
 

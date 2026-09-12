@@ -20,7 +20,8 @@ namespace NyaForge.UnityRuntime
         DropdownField vrmExpressionChoice;
         Button applyVrmExpression;
         readonly List<string> morphTargetIds = new List<string>();
-        IReadOnlyList<MappedVrmExpression> importedVrmExpressions = Array.Empty<MappedVrmExpression>();
+        VrmExpressionSession importedVrmSession;
+        IReadOnlyList<MappedVrmExpression> importedVrmExpressions { get { return importedVrmSession == null ? Array.Empty<MappedVrmExpression>() : importedVrmSession.Expressions; } }
 
         void BuildMorph(VisualElement parent)
         {
@@ -104,7 +105,7 @@ namespace NyaForge.UnityRuntime
                 int index = vrmExpressionChoice.index; if (index < 0 || index >= importedVrmExpressions.Count) throw new InvalidOperationException("VRM表情を選択してください。");
                 var graph = workspace.Document.Objects[0].Graph; var morphNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.MorphSet && node.Morphs != null); var deformNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.MorphDeform);
                 if (morphNode == null || deformNode == null) throw new InvalidOperationException("morph nodeが見つかりません。");
-                var selected = importedVrmExpressions[index]; var weights = morphNode.Morphs.Targets.ToDictionary(target => target.TargetId, target => selected.Weights.TryGetValue(target.TargetId, out var weight) ? weight : 0f, StringComparer.Ordinal);
+                var selected = importedVrmExpressions[index]; ChecksMappedTargets(selected, morphNode.Morphs); var weights = morphNode.Morphs.Targets.ToDictionary(target => target.TargetId, target => selected.Weights.TryGetValue(target.TargetId, out var weight) ? weight : 0f, StringComparer.Ordinal);
                 Execute(AuthoringOperation.UpdateNode(GraphNode.MorphDeformNode(deformNode.NodeId, weights)));
                 SetStatus("VRM表情を適用しました: " + selected.Name + "。元に戻す・やり直すで確認できます。");
             });
@@ -112,13 +113,17 @@ namespace NyaForge.UnityRuntime
 
         void SetImportedVrmExpressions(byte[] bytes, VrmMetadata metadata, MorphSet morphs)
         {
-            importedVrmExpressions = Array.Empty<MappedVrmExpression>();
+            importedVrmSession = null;
             if (metadata == null || morphs == null) return;
-            try { importedVrmExpressions = VrmExpressionMapper.ResolveForImportedMesh(bytes, metadata, morphs); }
+            try { importedVrmSession = VrmExpressionSession.Create(metadata, VrmExpressionMapper.ResolveForImportedMesh(bytes, metadata, morphs)); }
             catch (AuthoringException error) { Debug.LogWarning("[NyaForge VRM] expression mapping unavailable: " + error.Code + ": " + error.Message); }
         }
 
-        void ClearImportedVrmExpressions() { importedVrmExpressions = Array.Empty<MappedVrmExpression>(); }
+        void ClearImportedVrmExpressions() { importedVrmSession = null; }
+        static void ChecksMappedTargets(MappedVrmExpression expression, MorphSet morphs)
+        {
+            foreach (var targetId in expression.Weights.Keys) if (!morphs.ById.ContainsKey(targetId)) throw new InvalidOperationException("VRM表情が現在のMorphSetと一致しません。再取り込みしてください。");
+        }
         void ResetVrmExpressionUi()
         {
             if (vrmExpressionChoice == null) return;

@@ -49,6 +49,7 @@ namespace NyaForge.UnityRuntime
             // A new destination starts at version zero; existing destinations must be opened first.
             long expectedVersion = string.Equals(directory, savedDirectory, StringComparison.OrdinalIgnoreCase) ? workspace.SaveVersion : 0;
             ProjectStore.Save(directory, workspace, expectedVersion);
+            VrmExpressionSessionStore.Save(directory, importedVrmSession);
             graphCanvas.SaveLayout();
             savedDirectory = directory;
             Refresh(); SetStatus("保存しました: " + directory);
@@ -58,7 +59,9 @@ namespace NyaForge.UnityRuntime
         {
             var directory = Path.GetFullPath(projectPath.value);
             var next = ProjectStore.Open(directory);
+            var expressionSession = VrmExpressionSessionStore.Load(directory);
             ReplaceWorkspace(next, directory);
+            importedVrmSession = expressionSession; Refresh();
         }
 
         void Export() => Try(() =>

@@ -90,6 +90,12 @@
 - WorkbenchのMorphパネルへ「VRM表情」選択と「選択したVRM表情を適用」を追加。GLB/VRM取り込み時に単一mesh ownerを解決できた表情だけを一覧にし、選択すると全Morph weightを更新して既存の`UpdateNode`とUndoへ渡す。新規／開き直したprojectへVRM metadataを永続化する処理はまだ持たない。
 - Core **291 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-c9e2b12978f543c583125e3dadb12fdb`。Windows-VrmExpressionUi2 Player build / Authoring suite **PASS**: `Logs/build-player-20260912-121732-971.log`、`Artifacts/Authoring-20260912-121804-8ece484896984c1d970e44ba2b804a66/report.json`。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-121838-049-71972bc3cce24c78b7e8f09e398683f7/bridge-report.json`。実VRMをpickerから選び表情適用する手動受入は未確認。
 
+### VRM expression session sidecar（2026-09-12）
+
+- `VrmExpressionSession`／`VrmExpressionSessionCodec`を追加し、mapped expressionの名前・preset/custom・stable Morph ID weightを`vrm-expression-session.nyaforge.json`へbounded deterministic JSONとして保存する。`AuthoringWorkbench`のSave/Openへ接続したため、同じprojectを開き直しても表情一覧と適用対象を復元できる。元VRMファイルやprivate assetはコピーしない。
+- Codec往復・決定性と複数Morph index解決をCoreで確認した。現在のgraphとsidecarのtarget IDが一致しない場合は適用時に再取り込みを要求する。
+- 追加Core **291 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-42e7fc51a1354f728929a4d4c2d054c7`。Windows-VrmSession Player build / Authoring suite **PASS**: `Logs/build-player-20260912-122449-685.log`、`Artifacts/Authoring-20260912-122518-a0c65904ada24891b5237649164be16e/report.json`。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-122554-137-24a5c4fa1a6941a0998ada473b086944/bridge-report.json`。実VRMによるSave/Open手動受入は未確認。
+
 - `Authoring.Rig` を独立モジュールとして追加。`SkeletonDefinition` はcanonical UUIDのbone、親子階層、head/tailのrest座標を不変データとして保持し、循環・欠落親・重複IDを公開前に拒否する。
 - `SkinBinding` はmeshのtopology hashとskeleton hashを固定し、全頂点に1〜4本の明示boneを要求して、重みを降順・決定的順序で正規化する。同一boneの重複、未知bone、未weight、上限超過を拒否する。
 - `PoseTransform` と `SkinDeformer` を追加。bone headを基準にしたrest-relative affine poseを適用し、最大4 influenceの位置を線形ブレンドする。mesh topology hash / skeleton hash / 全bone poseを毎回照合し、normal・tangent・UVは元mesh所有のまま保持する。
