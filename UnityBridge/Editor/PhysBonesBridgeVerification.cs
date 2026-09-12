@@ -168,6 +168,45 @@ namespace NyaForge.UnityBridge.Editor
             finally { Object.DestroyImmediate(avatar); }
         }
 
+        static void VerifyPhysBonesBinding(List<string> checks)
+        {
+            var avatar = new GameObject("NyaForge PhysBones binding fixture");
+            try
+            {
+                var child = new GameObject("tail");
+                child.transform.SetParent(avatar.transform, false);
+                var collider = avatar.AddComponent<BoxCollider>();
+                string rootId = Guid.NewGuid().ToString("D"), childId = Guid.NewGuid().ToString("D");
+                var binding = (NyaForgePhysBonesBinding)Undo.AddComponent(avatar, typeof(NyaForgePhysBonesBinding));
+                binding.Capture("exports/physbones/test.json", "manifest-hash", "vrchat.physbones", "verification-sdk",
+                    "profile-hash", "skeleton-hash",
+                    new[]
+                    {
+                        new KeyValuePair<string, Transform>(childId, child.transform),
+                        new KeyValuePair<string, Transform>(rootId, avatar.transform)
+                    },
+                    new[]
+                    {
+                        new KeyValuePair<int, IEnumerable<Component>>(3, new Component[] { collider })
+                    });
+                Require(binding.Matches("manifest-hash", "vrchat.physbones", "verification-sdk", "profile-hash", "skeleton-hash"),
+                    "PhysBones binding did not retain the package identity.");
+                var expectedIds = new[] { childId, rootId }.OrderBy(id => id, StringComparer.Ordinal).ToArray();
+                Require(binding.Bones.Count == 2 && binding.Bones[0].BoneId == expectedIds[0] && binding.Bones[1].BoneId == expectedIds[1],
+                    "PhysBones binding did not use deterministic stable-ID ordering.");
+                Transform resolved;
+                Require(binding.TryGetBone(rootId, out resolved) && resolved == avatar.transform,
+                    "PhysBones binding did not resolve an explicit stable BoneId.");
+                Require(binding.ColliderGroups.Count == 1 && binding.ColliderGroups[0].GroupIndex == 3
+                    && binding.ColliderGroups[0].Colliders.Count == 1 && binding.ColliderGroups[0].Colliders[0] == collider,
+                    "PhysBones binding did not retain the explicit collider group.");
+                Require(!binding.Matches("changed-manifest", "vrchat.physbones", "verification-sdk", "profile-hash", "skeleton-hash"),
+                    "PhysBones binding accepted a stale package identity.");
+                checks.Add("PhysBones binding: explicit stable bones and collider groups persist with package identity and reject stale manifests");
+            }
+            finally { Object.DestroyImmediate(avatar); }
+        }
+
         static PhysBonesChain Chain(string root, string child, PhysBonesParameters parameters)
         {
             return new PhysBonesChain("tail", root, new[] { root, child }, PhysBonesEndpointMode.Auto, "", null,

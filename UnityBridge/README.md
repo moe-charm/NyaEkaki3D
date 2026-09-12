@@ -34,7 +34,7 @@ Editor側の`PhysBonesBridge`は、実行時に見つかったSDK component type
 
 receiver検証はSDK形状fixtureによる合成確認です。実際のVRChat SDK、アバターprefab、VRChat内の動作確認を完了したことを意味しません。`UnityBridge/Runtime/PhysBonesReflectionFixtureComponent.cs`はreflection検証専用の非表示fixtureで、production PhysBones componentではありません。
 
-受け取り側では **Tools > NyaForge > Import PhysBones Target...** を開き、manifestを選択します。表示されたstable BoneIdごとにavatarのTransformを手動で割り当て、「作成／更新」または「管理対象だけを更新」を実行します。collider groupを参照するtargetは、`PhysBonesBridgeContext`へcollider bindingをコードから明示して適用してください。windowは名前自動検索や暗黙のbone index変換を行いません。
+受け取り側では **Tools > NyaForge > Import PhysBones Target...** を開き、manifestを選択します。表示されたstable BoneIdごとにavatarのTransformを手動で割り当て、必要なcollider groupへComponentを指定します。「現在の割当を保存」でavatar rootへ`NyaForgePhysBonesBinding`を追加し、manifest hash・target／SDK・profile／skeleton hashとともにscene／prefabへ保存できます。次回は同じavatar rootとpackageを選び、「保存済み割当を読み込む」で復元します。identityが一致しないpackageは読み込まず、再対応を促します。その後「作成／更新」または「管理対象だけを更新」を実行します。windowは名前自動検索や暗黙のbone index変換を行いません。
 
 Prefab の頂点は、Bake の正の均一スケールと平行移動を一度だけ適用したメートル座標です。Prefab の Transform は位置ゼロ・回転ゼロ・スケール 1 です。UV0、法線、接線、頂点順、サブメッシュと三角形順を保持します。法線の自動再計算・頂点結合・最適化は行いません。
 
@@ -46,7 +46,7 @@ Prefab の頂点は、Bake の正の均一スケールと平行移動を一度�
 - 通常の Transform / MeshFilter / MeshRenderer のみを持つ Prefab。
 - 各サブメッシュに確認用の単色材質。元の shader、texture、材質パラメーターの変換は未実装です。
 
-skin、blendshape、任意回転・非一様/負スケール、texture、リグ対応、VRChat SDK 設定、FBX/GLB 出力は含みません。Bake codec が未対応 feature を拒否します。受け取りに NyaForge 用の実行時 MonoBehaviour は不要です。Bridge の成功は VRChat の Build & Test や見た目の受け入れ確認を代替しません。
+skin、blendshape、任意回転・非一様/負スケール、texture、リグ対応、VRChat SDK 設定、FBX/GLB 出力は含みません。Bake codec が未対応 feature を拒否します。静的Bakeだけを受け取る場合はNyaForge用の実行時MonoBehaviourは不要です。PhysBonesの明示割当をscene／prefabへ保存する場合だけ、`NyaForgePhysBonesBinding`をavatar rootへ追加します。Bridge の成功は VRChat の Build & Test や見た目の受け入れ確認を代替しません。
 
 ## 受け取り側の自動検証
 

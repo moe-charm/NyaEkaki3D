@@ -65,6 +65,7 @@ namespace NyaForge.UnityBridge.Editor
                 VerifyRejectedOutputDoesNotCreateAssets(scale1Path);
                 checks.Add("Output traversal is rejected before asset creation.");
                 VerifyPhysBonesBridge(checks);
+                VerifyPhysBonesBinding(checks);
                 if (Array.IndexOf(args,"--nyaforge-surface") >= 0)
                     VerifySurface(RequiredArgument(args,"--nyaforge-surface"),checks,folders);
                 if (Array.IndexOf(args,"--nyaforge-material") >= 0)

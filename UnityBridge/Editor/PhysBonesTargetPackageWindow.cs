@@ -5,6 +5,7 @@ using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Rig;
 using NyaForge.Authoring.Simulation;
+using NyaForge.UnityBridge;
 using UnityEditor;
 using UnityEngine;
 
@@ -18,6 +19,7 @@ namespace NyaForge.UnityBridge.Editor
         string manifestPath = "";
         PhysBonesTargetPackage package;
         Transform avatarRoot;
+        NyaForgePhysBonesBinding binding;
         readonly Dictionary<string, Transform> boneBindings = new Dictionary<string, Transform>(StringComparer.Ordinal);
         readonly Dictionary<int, List<Component>> colliderBindings = new Dictionary<int, List<Component>>();
         bool managedOnly;
@@ -37,7 +39,16 @@ namespace NyaForge.UnityBridge.Editor
             EditorGUILayout.HelpBox("target packageを読み込み、avatar rootとstable BoneIdを明示対応してからSDK componentへ適用します。名前による自動対応は行いません。", MessageType.Info);
 
             EditorGUILayout.BeginHorizontal();
+            string previousManifest = manifestPath;
             manifestPath = EditorGUILayout.TextField("Target manifest", manifestPath);
+            if (manifestPath != previousManifest)
+            {
+                package = null;
+                boneBindings.Clear();
+                colliderBindings.Clear();
+                binding = null;
+                status = "";
+            }
             if (GUILayout.Button("選択", GUILayout.Width(56)))
             {
                 string chosen = EditorUtility.OpenFilePanel("NyaForge PhysBones target manifest", "", "json");
@@ -62,8 +73,21 @@ namespace NyaForge.UnityBridge.Editor
             EditorGUILayout.LabelField("Package version", string.IsNullOrEmpty(package.Target.PackageVersion) ? "(なし)" : package.Target.PackageVersion);
             EditorGUILayout.LabelField("Skeleton", package.Skeleton.Bones.Count + " bones · " + package.Skeleton.ContentHash.Substring(0, 12));
 
+            Transform previousRoot = avatarRoot;
             avatarRoot = (Transform)EditorGUILayout.ObjectField("Avatar root", avatarRoot, typeof(Transform), true);
+            if (avatarRoot != previousRoot)
+            {
+                boneBindings.Clear();
+                colliderBindings.Clear();
+                binding = avatarRoot == null ? null : avatarRoot.GetComponent<NyaForgePhysBonesBinding>();
+            }
             managedOnly = EditorGUILayout.ToggleLeft("管理対象だけを更新する（既存が無ければ停止）", managedOnly);
+            bool bindingMatches = binding != null && binding.Matches(package.ManifestHash, package.Target.TargetId,
+                package.Target.SdkVersion, package.Target.ContentHash, package.Skeleton.ContentHash);
+            if (binding == null)
+                EditorGUILayout.HelpBox("このavatar rootには保存済みの割当がありません。", MessageType.Info);
+            else if (!bindingMatches)
+                EditorGUILayout.HelpBox("保存済み割当はこのtarget packageと一致しません。読み込まず、現在の割当を保存し直してください。", MessageType.Warning);
             EditorGUILayout.LabelField("Stable bone bindings", EditorStyles.boldLabel);
             boneScroll = EditorGUILayout.BeginScrollView(boneScroll, GUILayout.MinHeight(190));
             foreach (var bone in RequiredBones())
@@ -97,6 +121,17 @@ namespace NyaForge.UnityBridge.Editor
                     if (GUILayout.Button("このgroupへcolliderを追加")) values.Add(null);
                 }
             }
+
+            EditorGUILayout.BeginHorizontal();
+            using (new EditorGUI.DisabledScope(!readyForBinding()))
+            {
+                if (GUILayout.Button("現在の割当を保存")) SaveBindings();
+            }
+            using (new EditorGUI.DisabledScope(!bindingMatches))
+            {
+                if (GUILayout.Button("保存済み割当を読み込む")) LoadBindings();
+            }
+            EditorGUILayout.EndHorizontal();
 
             bool ready = avatarRoot != null && RequiredBones().All(bone => boneBindings.ContainsKey(bone.BoneId) && boneBindings[bone.BoneId] != null)
                 && groups.All(group => colliderBindings.ContainsKey(group) && colliderBindings[group].Any(component => component != null));
@@ -133,6 +168,7 @@ namespace NyaForge.UnityBridge.Editor
                 package = PhysBonesTargetPackage.Read(manifestPath);
                 boneBindings.Clear();
                 colliderBindings.Clear();
+                binding = avatarRoot == null ? null : avatarRoot.GetComponent<NyaForgePhysBonesBinding>();
                 status = "読み込みました。stable boneを手動対応してください。";
                 statusType = MessageType.Info;
             }
@@ -140,6 +176,67 @@ namespace NyaForge.UnityBridge.Editor
             {
                 package = null;
                 status = "読み込めませんでした: " + error.Message;
+                statusType = MessageType.Error;
+                Debug.LogException(error);
+            }
+        }
+
+        bool readyForBinding()
+        {
+            if (package == null || avatarRoot == null) return false;
+            var groups = RequiredColliderGroups().ToArray();
+            return RequiredBones().All(bone => boneBindings.ContainsKey(bone.BoneId) && boneBindings[bone.BoneId] != null)
+                && groups.All(group => colliderBindings.ContainsKey(group) && colliderBindings[group].Any(component => component != null));
+        }
+
+        void SaveBindings()
+        {
+            try
+            {
+                if (!readyForBinding()) throw new InvalidOperationException("完全なstable bone／collider group割当が必要です。");
+                if (binding == null) binding = (NyaForgePhysBonesBinding)Undo.AddComponent(avatarRoot.gameObject, typeof(NyaForgePhysBonesBinding));
+                var groups = colliderBindings.Select(pair => new KeyValuePair<int, IEnumerable<Component>>(pair.Key, pair.Value));
+                binding.Capture(manifestPath, package.ManifestHash, package.Target.TargetId, package.Target.SdkVersion,
+                    package.Target.ContentHash, package.Skeleton.ContentHash,
+                    boneBindings, groups);
+                EditorUtility.SetDirty(binding);
+                status = "stable bone／collider group割当をavatar rootへ保存しました。";
+                statusType = MessageType.Info;
+            }
+            catch (Exception error)
+            {
+                status = "割当を保存できませんでした: " + error.Message;
+                statusType = MessageType.Error;
+                Debug.LogException(error);
+            }
+        }
+
+        void LoadBindings()
+        {
+            try
+            {
+                if (binding == null || !binding.Matches(package.ManifestHash, package.Target.TargetId,
+                    package.Target.SdkVersion, package.Target.ContentHash, package.Skeleton.ContentHash))
+                    throw new InvalidOperationException("保存済み割当がtarget packageと一致しません。");
+                boneBindings.Clear();
+                colliderBindings.Clear();
+                foreach (var bone in binding.Bones)
+                {
+                    if (bone == null || string.IsNullOrEmpty(bone.BoneId) || bone.Transform == null)
+                        throw new InvalidOperationException("保存済みstable bone割当が不完全です。");
+                    boneBindings.Add(bone.BoneId, bone.Transform);
+                }
+                foreach (var group in binding.ColliderGroups)
+                {
+                    if (group == null) continue;
+                    colliderBindings[group.GroupIndex] = group.Colliders.Where(component => component != null).ToList();
+                }
+                status = "保存済み割当を読み込みました。";
+                statusType = MessageType.Info;
+            }
+            catch (Exception error)
+            {
+                status = "割当を読み込めませんでした: " + error.Message;
                 statusType = MessageType.Error;
                 Debug.LogException(error);
             }
