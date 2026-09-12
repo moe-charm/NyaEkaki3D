@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。HEAD `bb1d89c`のRig / VRM実装レビューを実施。既存Core 297件は合格したが、別の再現検査で読込・保存・SpringBone計算の問題を確認した。次は以下の修正タスクを優先し、過去の合格記録を当該機能の品質保証に読み替えない。
+更新: 2026-09-12。レビュー対象は `bb1d89c`、修正状況の照合対象は `c5db3fe`。レビュー10項目のうちR03は自動検証まで完了、残り9項目は未完了。最新の記録はCore 303件合格とWindows-AtomicMetadata suite PASS。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
 
 ## 開発の入口
 
@@ -26,6 +26,16 @@
 検証済み: このレビューでCore **297 passed / 0 failed**を再実行。別fixtureで作者情報拒否、session往復失敗、保存失敗後dirty=False、step2姿勢ずれ、親子gap、chain間衝突混入、貫通、dt=0の進行、null参照例外、省略値の相違を確認した。Player/Bridgeは今回再実行していない。実VRM全体・手動見た目受入も未確認。
 
 再開順: **R01/R02/R09 → R04/R05/R06/R07/R08**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
+
+### 実行単位と完了判定
+
+- [ ] **次の実装: R01 + R02 + R09（取込・保存）**。作者名の配列保持と旧session移行、コライダーnode列の重複保持、省略値と明示0の区別を同じ段階で直す。正規の合成VRM0/1を使うCore往復テストとWindows Workbench Save/Openを完了条件とする。
+- [ ] **続く実装: R04 + R05（姿勢・階層）**。連続stepのPose/State一致と親子変換を修正する。2〜3joint、変化するbase pose、登録順、非simulated子孫と初期offsetを回帰対象にする。
+- [ ] **続く実装: R06 + R07 + R08（衝突・時間）**。chain単位の参照分離、長さと衝突の同時制約、停止・再開の契約を修正する。解なしの診断、有限値、可変dtを含めて検証する。
+- [ ] **各実装に同梱: R10（検証強化）**。修正前に失敗する再現を正式テストへ移す。保存・OpenはPlayer経路も通し、数値計算は前stepのStateを引き継ぎ、実際の衝突参照を指定する。null groupのdomain errorも確認する。
+- [ ] **基礎修正後の受入**。実VRMの読込・保存・再読込、GUIの保存して終了、文字サイズ・隠れ、姿勢と見た目をWindowsで確認する。外部MCP transportのmetadata保存も別途確認する。各記録に対象buildと確認方法を残す。
+
+今回の状況照合では、R01/R02/R09の該当readerとSpringBoneの既存経路が未修正であること、R03の実装・検証記録が後続commitにあることを確認した。今回追加のテスト実行や実装変更は行っていない。上記チェックは各タスクの完了条件と証拠が揃ってから更新する。
 
 修正後は、未保持のgravityDir・collider shape値と保存移行を含むVRM入力契約を整え、node→stable BoneId、preview接続へ進む。一般node transform、skin/morph出力、実アバター受入、C1〜C5の全体目標は維持する。
 
