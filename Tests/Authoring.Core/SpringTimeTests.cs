@@ -7,6 +7,7 @@ internal static partial class Program
     static void RunSpringTimeTests()
     {
         RunSpringCenterTests();
+        RunSpringPreviewTests();
         Test("VRM reference forces retain source units and per-step drag", () =>
         {
             var joint = new SpringBoneJointSettings(ChildBone, 0, 25, 2, new Vec3(2, -3, 4), .25f, integrationMode: SpringIntegrationMode.VrmReference);

@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。最新チェック対象 `023d1cf`。Coreを再実行し334件合格。追加レビューでR11（骨階層の欠落）を再現し、R12（失敗した取込の表示先行更新）をコード上で確認した。R11は中間nodeを通る骨階層保持を修正し、Core338件合格。R12は取込候補と公開を分離し、Windows自動検証まで完了。I03-Aのcollider座標adapterを追加し、center履歴追従を追加し、明示先端の計算を追加し、VRM1 chain解決を追加し、明示回転中心を追加し、VRM1実行用chainを追加し、最新Coreは348件合格。過去のR01〜R10は各記録の自動検証範囲で完了、実素材・実操作の受入は未完了。
+更新: 2026-09-12。最新チェック対象 `023d1cf`。Coreを再実行し334件合格。追加レビューでR11（骨階層の欠落）を再現し、R12（失敗した取込の表示先行更新）をコード上で確認した。R11は中間nodeを通る骨階層保持を修正し、Core338件合格。R12は取込候補と公開を分離し、Windows自動検証まで完了。I03-Aのcollider座標adapterを追加し、center履歴追従を追加し、明示先端の計算を追加し、VRM1 chain解決を追加し、明示回転中心を追加し、VRM1実行用chainを追加し、固定step再生controllerを追加し、最新Coreは351件合格。過去のR01〜R10は各記録の自動検証範囲で完了、実素材・実操作の受入は未完了。
 
 ## 開発の入口
 
@@ -21,6 +21,14 @@
 - [ ] **A01 — Windows実素材・実操作受入**。利用可能なローカルモデルで取込・保存/Open・姿勢・揺れ・文字サイズと欠け・保存して終了を確認する。外部MCP transportのmetadata保存も別項目で検証する。完了条件: build名、入力、確認手順、結果、未対応事項の記録。素材はprivate/追跡除外を維持。
 
 現在の証拠: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
+
+### I03-B/C前段: 固定step再生controller（2026-09-12）
+
+- `SpringPreviewController`へState/center/Pose/端数時間/再生状態の所有を集約し、`SpringFixedClock`へ1/60秒の時計を分離。停止中は壁時計を蓄積せず、描き直しは履歴をcommitしない。全substep成功後だけ新状態を公開し、失敗時は再試行可能な旧状態を保つ。
+- floatの境界誤差で1step不足する新規ケースを検出（`Logs/core-spring-preview.txt`、349件合格/2件失敗）。1e-7秒の境界許容差を設け、修正後Core **351 passed / 0 failed**: `Logs/core-spring-preview-final.txt`、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a6ba63c364464e1c816aafad54b2a7be`。
+- 0.2秒の一括/分割一致、停止中のcenter移動と再開、Reset、衝突失敗・不正時間・不正centerでの全状態保持と再試行を検証。[controller契約](docs/Spring-Preview-Controller.md)参照。
+- Windows-SpringPreviewCore build **PASS**: `Logs/build-player-20260912-151436-987.log`。Core controller追加のためPlayer GUI suiteは今回再実行していない。実モデル受入は未実施。
+- 次はVRM sessionのcenter/colliderを毎frame解決し、graph base poseとpreview表示へ接続する所有者/GUI。VRM0展開、設定変更reset、一般node transform、実素材受入も未完了。I03-B/C全体は引き続き未完了。
 
 ### I03-B: VRM1実行chainと参考時間式（2026-09-12）
 
