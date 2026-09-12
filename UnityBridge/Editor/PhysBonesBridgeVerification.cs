@@ -128,7 +128,19 @@ namespace NyaForge.UnityBridge.Editor
                 Require(backend.Capabilities.Supports(PhysBonesFeatures.Limits) && backend.Capabilities.Supports(PhysBonesFeatures.Interaction), "Reflection PhysBones capability scan missed required fields.");
                 Require(result.ProfileHash == profile.ContentHash, "PhysBones package apply changed the target identity.");
                 if (Directory.Exists(packageDirectory)) Directory.Delete(packageDirectory, true);
-                checks.Add("PhysBones reflection backend: target package read, optional SDK type discovery and field mapping pass against a shape-compatible fixture");
+                VrcPhysBonesReflectionBackend inheritedBackend;
+                Require(VrcPhysBonesReflectionBackend.TryCreate(out inheritedBackend, "verification-sdk", typeof(PhysBonesReflectionInheritedFixtureComponent).AssemblyQualifiedName), "Reflection backend did not find inherited SDK members.");
+                var inheritedAvatar = new GameObject("NyaForge PhysBones inherited reflection fixture");
+                try
+                {
+                    var inheritedChild = new GameObject("tail"); inheritedChild.transform.SetParent(inheritedAvatar.transform, false); inheritedChild.transform.localPosition = Vector3.up;
+                    var inheritedContext = new PhysBonesBridgeContext(inheritedAvatar.transform, new Dictionary<string, Transform> { [rootId] = inheritedAvatar.transform, [childId] = inheritedChild.transform });
+                    var inheritedResult = PhysBonesBridge.Apply(profile, skeleton, inheritedContext, inheritedBackend);
+                    var inherited = (PhysBonesReflectionInheritedFixtureComponent)inheritedResult.Components.Single();
+                    Require(inherited.RootTransform == inheritedAvatar.transform && Mathf.Abs(inherited.Stiffness - .5f) < .0001f, "Reflection backend did not map private inherited SDK members.");
+                }
+                finally { Object.DestroyImmediate(inheritedAvatar); }
+                checks.Add("PhysBones reflection backend: target package read, optional SDK type discovery, field mapping and inherited private-member compatibility pass");
             }
             finally { Object.DestroyImmediate(avatar); }
             VerifyPhysBonesBranchPreflight(checks);

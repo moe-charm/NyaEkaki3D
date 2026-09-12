@@ -22,5 +22,29 @@ namespace NyaForge.UnityBridge
         public bool allowPosing, allowCollision, allowGrabbing, snapToHand;
         public string parameter;
     }
+
+    // Shape-compatible component whose target members live on an inherited type.
+    // This catches SDK versions that keep serialized values in a private base class.
+    public abstract class PhysBonesReflectionInheritedBase : MonoBehaviour
+    {
+        [SerializeField] Transform rootTransform;
+        [SerializeField] Vector3 endpointPosition;
+        [SerializeField] PhysBonesReflectionChildMode multiChildType;
+        [SerializeField] Transform[] ignoreTransforms;
+        [SerializeField] Component[] colliders;
+        [SerializeField] PhysBonesReflectionLimitMode limitType;
+        [SerializeField] float maxAngle, radius, stiffness, pull, spring, immobile, gravity, gravityFalloff, damping, elasticity, inert, friction, stretchMotion, squish;
+        [SerializeField] Vector3 gravityDir;
+        [SerializeField] bool allowPosing, allowCollision, allowGrabbing, snapToHand;
+        [SerializeField] string parameter;
+
+        public Transform RootTransform { get { return rootTransform; } }
+        public float Stiffness { get { return stiffness; } }
+    }
+
+    [AddComponentMenu("")]
+    public sealed class PhysBonesReflectionInheritedFixtureComponent : PhysBonesReflectionInheritedBase
+    {
+    }
 }
 #endif

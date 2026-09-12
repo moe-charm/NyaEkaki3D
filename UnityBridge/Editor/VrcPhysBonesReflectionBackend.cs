@@ -17,28 +17,13 @@ namespace NyaForge.UnityBridge.Editor
         public const string Target = "vrchat.physbones";
         public const string DefaultComponentType = "VRC.SDK3.Dynamics.PhysBone.Components.VRCPhysBone";
 
-        sealed class Member
-        {
-            internal readonly FieldInfo Field;
-            internal readonly PropertyInfo Property;
-            internal Type ValueType { get { return Field != null ? Field.FieldType : Property.PropertyType; } }
-            internal Member(FieldInfo field) { Field = field; }
-            internal Member(PropertyInfo property) { Property = property; }
-            internal object Get(object owner) { return Field != null ? Field.GetValue(owner) : Property.GetValue(owner, null); }
-            internal void Set(object owner, object value)
-            {
-                if (Field != null) Field.SetValue(owner, value);
-                else Property.SetValue(owner, value, null);
-            }
-        }
-
         sealed class Snapshot
         {
             internal readonly Dictionary<string, object> Values = new Dictionary<string, object>(StringComparer.Ordinal);
         }
 
         readonly Type componentType;
-        readonly Dictionary<string, Member> members;
+        readonly Dictionary<string, VrcPhysBonesReflectionMember> members;
         readonly PhysBonesCapabilities capabilities;
 
         public Type ComponentType { get { return componentType; } }
@@ -47,10 +32,7 @@ namespace NyaForge.UnityBridge.Editor
         VrcPhysBonesReflectionBackend(Type type, string sdkVersion)
         {
             componentType = type;
-            members = new Dictionary<string, Member>(StringComparer.Ordinal);
-            var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-            foreach (var field in type.GetFields(flags)) if (!field.IsStatic && !members.ContainsKey(field.Name)) members.Add(field.Name, new Member(field));
-            foreach (var property in type.GetProperties(flags)) if (property.CanRead && property.CanWrite && property.GetIndexParameters().Length == 0 && !members.ContainsKey(property.Name)) members.Add(property.Name, new Member(property));
+            members = VrcPhysBonesReflectionMemberCatalog.Discover(type);
             capabilities = new PhysBonesCapabilities(Target, string.IsNullOrEmpty(sdkVersion) ? "unknown" : sdkVersion, Features());
         }
 
@@ -110,7 +92,7 @@ namespace NyaForge.UnityBridge.Editor
             if (snapshot == null) throw new ArgumentException("Unexpected PhysBones snapshot.");
             foreach (var pair in snapshot.Values)
             {
-                Member member;
+                VrcPhysBonesReflectionMember member;
                 if (members.TryGetValue(pair.Key, out member)) member.Set(component, CopyValue(pair.Value));
             }
             EditorUtility.SetDirty(component);
@@ -203,7 +185,7 @@ namespace NyaForge.UnityBridge.Editor
             SetCollection(member, component, values.Cast<UnityEngine.Object>().ToArray(), typeof(Component), names[0], "COLLIDER_TYPE_MISMATCH");
         }
 
-        static void SetCollection(Member member, Component component, UnityEngine.Object[] values, Type expectedBase, string name, string mismatchCode)
+        static void SetCollection(VrcPhysBonesReflectionMember member, Component component, UnityEngine.Object[] values, Type expectedBase, string name, string mismatchCode)
         {
             Type element = member.ValueType.IsArray ? member.ValueType.GetElementType() : member.ValueType.IsGenericType ? member.ValueType.GetGenericArguments()[0] : null;
             if (element == null || !expectedBase.IsAssignableFrom(element))
@@ -257,7 +239,7 @@ namespace NyaForge.UnityBridge.Editor
         void SetRequired(Component component, string[] names, object value) { var member = Find(names); if (member == null) throw new PhysBonesBridgeException("SDK_MEMBER_MISSING", "PhysBones component is missing " + names[0] + "."); Assign(member, component, value, names[0]); }
         void SetTyped(Component component, string[] names, object value, string kind) { SetRequired(component, names, value); }
 
-        static void Assign(Member member, Component component, object value, string name)
+        static void Assign(VrcPhysBonesReflectionMember member, Component component, object value, string name)
         {
             try
             {
@@ -273,11 +255,11 @@ namespace NyaForge.UnityBridge.Editor
             catch (Exception error) { throw new PhysBonesBridgeException("SDK_MEMBER_TYPE", "PhysBones member has an incompatible type: " + name + " (" + error.Message + ")."); }
         }
 
-        Member Find(IEnumerable<string> names)
+        VrcPhysBonesReflectionMember Find(IEnumerable<string> names)
         {
             foreach (var name in names)
             {
-                Member value;
+                VrcPhysBonesReflectionMember value;
                 if (members.TryGetValue(name, out value)) return value;
                 if (members.TryGetValue("m_" + name, out value)) return value;
             }

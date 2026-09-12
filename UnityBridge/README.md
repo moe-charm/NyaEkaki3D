@@ -32,6 +32,8 @@ manifestとpayloadはhashとskeleton identityを検査して読み込みます�
 
 Editor側の`PhysBonesBridge`は、実行時に見つかったSDK component typeへreflectionで設定を書き込みます。初回は`CreateOrUpdateManaged`、再出力はNyaForgeの所有markerが付いたcomponentだけを対象にする`UpdateManagedOnly`を選べます。未管理componentや古いchainは削除せず、能力不足はloss reportで停止します。SDKに明示branch listがない場合は、`First`／`All`が実際の直下child構造で表現できるかを事前検査し、表現できないbranchを黙って省略しません。
 
+reflection member catalogはcomponent型から`Component`までを走査し、継承元のprivate serialized field/propertyも候補に含めます。同名memberは具体型を優先し、static・readonly・indexer・書込み不可propertyは除外します。SDKの型形状が異なる場合は能力不足として停止し、値を別名へ推測変換しません。
+
 receiver検証はSDK形状fixtureによる合成確認です。実際のVRChat SDK、アバターprefab、VRChat内の動作確認を完了したことを意味しません。`UnityBridge/Runtime/PhysBonesReflectionFixtureComponent.cs`はreflection検証専用の非表示fixtureで、production PhysBones componentではありません。
 
 受け取り側では **Tools > NyaForge > Import PhysBones Target...** を開き、manifestを選択します。表示されたstable BoneIdごとにavatarのTransformを手動で割り当て、必要なcollider groupへComponentを指定します。「現在の割当を保存」でavatar rootへ`NyaForgePhysBonesBinding`を追加し、manifest hash・target／SDK・profile／skeleton hashとともにscene／prefabへ保存できます。次回は同じavatar rootとpackageを選び、「保存済み割当を読み込む」で復元します。identityが一致しないpackageは読み込まず、再対応を促します。その後「作成／更新」または「管理対象だけを更新」を実行します。windowは名前自動検索や暗黙のbone index変換を行いません。

@@ -45,7 +45,7 @@ VRM0はsource nodeのroot subtreeを元children順で展開し、取込rigのsta
 
 - **SIM-01B**: 共通 `NYSM` attachmentをnative Save/Openでbyte/hash一致にし、VRM0 source-node移行後のstable chain、未知wire版保持、skeleton/topology stale診断を確認する。rebindは明示操作として別commandにする。
 - **SIM-01B-R**: `SecondaryMotionRebind.Apply`へbone/vertex対応表を明示指定し、Workbenchは同一stable `BoneId`で安全に対応できるstale状態だけをGUIから再bindする。リグのPose/Binding再bindとは別に実行し、推測によるID・頂点対応をしない。別のリグidentityがstaleでも、mesh topologyを検査できる範囲で操作を案内する。
-- **SIM-02B**: SDK版・型を固定し、target packageを読み込んで managed componentだけを更新できる。unsupported/warningは書込み前に返し、失敗時のrollbackとSDK未導入buildを確認する。
+- **SIM-02B**: SDK版・型を固定し、target packageを読み込んで managed componentだけを更新できる。reflection catalogは継承元private field/propertyを含めて対象型の実メンバーを確定する。unsupported/warningは書込み前に返し、失敗時のrollbackとSDK未導入buildを確認する。
 - **SIM-03B**: 固定step/warmupの連続frame、各画像hash、adapter/package/Unity/build、pose/root/collider条件、失敗ログを1 runへ束ねる。native revision・保存・制作姿勢は不変とする。
 - **SIM-07A**: root移動・停止・旋回・pose・colliderを、NyaForge preview／受取Unity／VRChat内の3面で別証拠として記録する。
 - **SIM-04〜06**: vendor依存をpublic repoから隔離し、BoneCloth、MeshCloth、BoneSpringを小さなfixtureで個別評価する。MeshClothはBlendShape重複を拒否または分離案内し、性能を記録する。
@@ -58,6 +58,8 @@ SIM-03Aの追加検証: Windows-SIM03B build **PASS**（`Logs/build-player-20260
 
 SIM-01B-RのGUI検証: Windows-SIM01B-RebindGui5 build **PASS**（`Logs/build-player-20260912-215039-912.log`）、Player **PASS / 73 checks**（`Artifacts/Authoring-20260912-215102-0d9808eabc394e84a899bf0b1a614cd7/report.json`）。stale骨格で同一stable `BoneId` の再bindボタンを有効化し、明示mapでsecondary attachmentのskeleton hashを更新、workspaceを未保存に戻すことを確認した。リグのPose/Binding再bindを別操作として先に行い、評価不能な中間状態でもmesh sourceをtopology witnessとして扱う。これは自動GUI検証であり、実素材・実SDK／実アバター／VRChat内の受入ではない。
 
+SIM-02B reflection catalog検証: Unity **2022.3.22f1** receiver **PASS**（`Artifacts/BridgeReceiver-20260912-220031-153-b6d83d0cd2ef48ba94dc95e896ab488e/bridge-report.json`）。継承元private fieldを含むcomponent member discoveryとtarget package applyを合成fixtureで確認した。既存markerの型干渉は別avatar fixtureへ分離し、managed-only・rollbackの境界を維持した。実VRChat SDK／実アバター／VRChat内の受入ではない。
+
 実装を止めずに受け入れ可能な順へ、SIM-01〜07を次の小タスクへ分ける。SIM-03AのGUI・内部handler・外部sidecar lifecycleとSIM-03Bの固定step capture証拠は完了済みで、現在の主経路は **SIM-02B → SIM-07A**。MagicaCloth2は任意評価へ隔離する。
 
 | ID / 優先・段階 | 作業 | 依存 / 完了条件 |
@@ -66,7 +68,7 @@ SIM-01B-RのGUI検証: Windows-SIM01B-RebindGui5 build **PASS**（`Logs/build-pl
 | SIM-01B / P1・C2 | native attachmentとVRM0移行 | `secondary-motion.nyaforge.bin` のNYSM Save/Open、未知版保持・GUI表示、VRM0 source-node→stable BoneId移行、stale診断、明示bone/vertex rebind APIと同一BoneId GUI再bindまで実装。実素材確認が残る |
 | SIM-01B-R / P1・C2 **完了** | stale時の明示rebind操作 | 旧→新BoneId／必要な固定頂点indexの対応表を必須化。Workbenchの同一BoneIdボタンは参照IDが現骨格に存在し、topology条件を満たす場合だけ有効。リグPose/Bindingとsecondary attachmentのidentity更新を別操作として検証済み |
 | SIM-02A / P1・C2 **完了** | PhysBones target packageと合成Bridge | `NYPP` v1、schema 4 attachment、target package、loss report、stable bone／collider mapping、managed-only、branch preflight、rollback、receiver Windowを合成fixtureで検証済み |
-| SIM-02B / P1・C2 **次** | 実SDK受け取り側 | SDK版・型を固定し、manifest/profile/skeleton読込、stable BoneId／collider group手動割当、実component生成・更新を確認。unsupportedは書込み前停止、未管理component保護、SDK未導入public build維持 |
+| SIM-02B / P1・C2 **次** | 実SDK受け取り側 | SDK版・型を固定し、manifest/profile/skeleton読込、stable BoneId／collider group手動割当、実component生成・更新を確認。継承元private memberを含むreflection mappingも確認する。unsupportedは書込み前停止、未管理component保護、SDK未導入public build維持 |
 | SIM-03A / P1・C2 **完了** | 共通GUI/MCPと再生所有者 | GUI・内部MCP handler・外部sidecar toolのplay/pause/reset/rebuild/fixed-step/stateを同じtransient owner／generationへ接続し、再生・停止・再構築・固定step・reset・Save/Open非保存・編集時破棄を合成backendと実named-pipe経路で確認済み。非同期vendor構築は後続 |
 | SIM-03B / P1・C2 **完了** | 連続撮影とbackend証拠 | `SecondaryMotionCaptureRecord`／codec、固定1/60秒・warmup・最大8frame・pixel budget、input/config hash、adapter／package版、target、Unity/build、pose/root/collider条件、各PNG hashと失敗statusをrun単位で記録。外部MCPの3frame実通信とnative状態不変を検証済み |
 | SIM-04 / P2・C2・任意 | MagicaCloth2 BoneCloth最小評価 | SIM-01/03。vendor依存を任意assemblyへ隔離し、未導入buildを維持。自作髪束1本のruntime生成・構築完了待ち・固定根・sphere衝突・rebuild/reset/破棄・写真列で採用可否を判断 |
