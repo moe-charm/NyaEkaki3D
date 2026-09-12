@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01/R02/R03/R04/R05/R09はCore自動検証まで完了、残り4項目は未完了。最新のCoreは311件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
+更新: 2026-09-12。レビュー対象は `bb1d89c`、R01/R02/R09の修正 `1ff0f12`に続き、R04/R05を修正。レビュー10項目のうちR01/R02/R03/R04/R05/R06/R09はCore自動検証まで完了、残り3項目は未完了。最新のCoreは313件合格。以下の優先順位で修正し、テスト合格を実VRM全体や手動操作の受入に読み替えない。
 
 ## 開発の入口
 
@@ -10,7 +10,7 @@
 
 ## 最優先: 実装レビューの修正タスク（2026-09-12）
 
-ユーザー依頼「ここまでチェック」「チェック後current_task更新してタスク化」に対応したレビューを起点に修正を進める。詳細な再現条件、対象行、完了条件、証拠は [Rig / VRMレビュー](docs/reviews/2026-09-12-Rig-Vrm-Review.md) を参照する。R01/R02/R03/R09はCore/Windows自動検証まで完了し、次はR06/R07/R08。実マウス・実VRMの受入は各自動検証と区別する。
+ユーザー依頼「ここまでチェック」「チェック後current_task更新してタスク化」に対応したレビューを起点に修正を進める。詳細な再現条件、対象行、完了条件、証拠は [Rig / VRMレビュー](docs/reviews/2026-09-12-Rig-Vrm-Review.md) を参照する。R01/R02/R03/R09はCore/Windows自動検証まで完了し、次はR07/R08。実マウス・実VRMの受入は各自動検証と区別する。
 
 - [x] **R03 / P1 — 保存全体の成功判定と失敗時の保護**。schema 4の単一manifestで本体とVRM設定のblob参照を一括公開し、失敗時の旧作品・設定・dirty・versionを保持。Core共通保存service、Windows GUI/MCP handlerの再試行・終了防止・Save As/Openを検証した。外部MCP transport経由のmetadata専用試験と実マウスの受入は未実施。
 - [x] **R01 / P1 — VRM1 authors配列**。文字列として扱うreaderと誤ったfixtureを修正する。複数作者をimportからsession保存・再読込まで保持し、既存形式の移行も定める。
@@ -18,14 +18,14 @@
 - [x] **R09 / P2 — VRM1 SpringBoneの既定値**。省略stiffness/dragForceを1.0/0.5にし、明示0と区別する。session再読込でも一致させる。
 - [x] **R04 / P1 — 連続stepのPose/State整合**。step2でtailが約0.079809 mずれる回転合成を直す。同じbase pose／変化するbase poseで、出力PoseとStateが連続して一致することを確認する。
 - [x] **R05 / P1 — chainの親子変換伝播**。親tailと子headが約0.079807 m離れる問題を直す。親から子へ相対offsetを保って評価し、2〜3jointと子孫追従を確認する。
-- [ ] **R06 / P2 — chainごとの衝突参照**。全chainのgroup参照を混合せず、所属chainの参照だけをjointへ渡す。参照なしBが別chain Aの追加で約0.290426 m動く再現を回帰化する。
+- [x] **R06 / P2 — chainごとの衝突参照**。全chainのgroup参照を混合せず、所属chainの参照だけをjointへ渡す。参照なしBが別chain Aの追加で約0.290426 m動く再現を回帰化する。
 - [ ] **R07 / P2 — 長さと衝突の同時制約**。押し出し後の長さ制約でsphere内へ戻る問題を直す。複数sphere、hitRadius、同軸例、解なし／反復上限の診断を確認する。
 - [ ] **R08 / P2 — 停止・再開と時間刻み**。dt=0でもtailが約0.079304 m動く問題を直す。物理履歴を停止中に進めず、固定step / 可変stepの契約と再開を検証する。
 - [ ] **R10 / P2 — 入力検査と実際の経路を通る回帰**。null collider groupをdomain errorで検出する。空groupの衝突テスト、初期Stateからの反復だけのテストを改め、R01〜R09の回帰を各修正と同時に追加する。保存失敗・終了防止はWindows Playerの専用検証も必要。
 
 検証済み: このレビューでCore **297 passed / 0 failed**を再実行。別fixtureで作者情報拒否、session往復失敗、保存失敗後dirty=False、step2姿勢ずれ、親子gap、chain間衝突混入、貫通、dt=0の進行、null参照例外、省略値の相違を確認した。Player/Bridgeは今回再実行していない。実VRM全体・手動見た目受入も未確認。
 
-再開順: **R06/R07/R08**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
+再開順: **R07/R08**、R10は各修正へ同梱する。R03の保存保護は完了。新規のVRM node→BoneId / Workbench接続より、この基礎を先に直す。設定・状態／計算／衝突／import adapter／保存coordinatorを役割ごとのモジュールへ分ける。
 
 ### 実行単位と完了判定
 
@@ -38,6 +38,15 @@
 状況照合時点では未修正だったR01/R02/R09を、下記の実装と自動検証で更新した。チェック済みは自動検証範囲であり、実素材と実マウスによる受入は別タスクのまま維持する。
 
 修正後は、未保持のgravityDir・collider shape値と保存移行を含むVRM入力契約を整え、node→stable BoneId、preview接続へ進む。一般node transform、skin/morph出力、実アバター受入、C1〜C5の全体目標は維持する。
+
+### R06とR10の入力検査: chain別コライダー（2026-09-12）
+
+- `SpringSimulationInputs`へ入力検査・chain hash・参照解決を分離。各chainのgroup参照を昇順・重複なしで解決し、同じchain内のjointだけで不変リストを共有する。全chainの参照unionは廃止した。
+- collider groupのnullは参照有無に関係なく`INVALID_SPRING`として初期化・Step入口で拒否。group数は最大256とし、group内最大64件の既存予算と組み合わせる。参照範囲外は従来の`SPRING_COLLIDER_MISSING`を維持する。
+- 修正前: 既存311件合格、新規2件失敗（`Logs/core-spring-scope-before.txt`）。独立bone BがAのgroup参照で動く距離は **0.29042628 m**。修正後: Core **313 passed / 0 failed**、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ac2eda790ccd47f88c273cd998e3476b`。
+- A追加/削除・A専用コライダー変更で参照なしBが不変、共有groupを明示した場合は両骨へ作用、null groupを初期状態公開前に拒否することを確認。R07の最終貫通解消・R08の時間刻みは未修正。R10全体はそれらの回帰追加まで未完了とする。
+
+- Windows-SpringColliderScope build **PASS**: `Logs/build-player-20260912-134944-700.log`。今回の変更はCore参照解決で、GUI/保存経路は変更していないためPlayer suiteは再実行していない。実VRMの衝突見た目受入も未実施。
 
 ### R04/R05: SpringBone姿勢と階層（2026-09-12）
 

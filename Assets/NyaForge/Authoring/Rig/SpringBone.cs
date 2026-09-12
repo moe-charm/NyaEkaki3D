@@ -139,7 +139,7 @@ namespace NyaForge.Authoring.Rig
 
         public static SpringBoneState CreateInitialState(SkeletonDefinition skeleton, PoseSet pose, IReadOnlyList<SpringBoneChain> chains, IReadOnlyList<SpringBoneColliderGroup> colliders)
         {
-            var valid = ValidateInputs(skeleton, pose, chains, colliders, null);
+            var valid = SpringSimulationInputs.Validate(skeleton, pose, chains, colliders, null);
             var tails = new Dictionary<string, Vec3>(StringComparer.Ordinal);
             foreach (var joint in valid.Joints) tails.Add(joint.BoneId, PosedTail(skeleton.ById[joint.BoneId], pose.ByBoneId[joint.BoneId].Transform));
             return SpringBoneState.Create(skeleton.ContentHash, valid.ChainHash, tails, tails);
@@ -148,7 +148,7 @@ namespace NyaForge.Authoring.Rig
         public static SpringBoneSimulationResult Step(SkeletonDefinition skeleton, PoseSet pose, IReadOnlyList<SpringBoneChain> chains, IReadOnlyList<SpringBoneColliderGroup> colliders, SpringBoneState previous, float deltaTime)
         {
             Checks.Finite(deltaTime); Checks.Require(deltaTime >= 0f && deltaTime <= MaxDeltaTime, "INVALID_DELTA_TIME", "Spring simulation delta time must be between 0 and 0.25 seconds.");
-            var valid = ValidateInputs(skeleton, pose, chains, colliders, previous);
+            var valid = SpringSimulationInputs.Validate(skeleton, pose, chains, colliders, previous);
             if (previous == null) return new SpringBoneSimulationResult(pose.ValidateFor(skeleton), CreateInitialState(skeleton, pose, chains, colliders));
 
             var nextTails = new Dictionary<string, Vec3>(StringComparer.Ordinal);
@@ -166,7 +166,7 @@ namespace NyaForge.Authoring.Rig
                 float stiffness = Math.Min(1f, joint.Stiffness * deltaTime);
                 candidate = candidate + (targetTail - candidate) * stiffness;
                 candidate = candidate + joint.GravityDirection * (joint.GravityPower * deltaTime * deltaTime);
-                candidate = ResolveColliders(head, candidate, joint.HitRadius, valid.ColliderGroups, colliders);
+                candidate = ResolveColliders(head, candidate, joint.HitRadius, valid.CollidersByBone[joint.BoneId]);
                 candidate = Constrain(head, candidate, length, targetTail - head);
                 nextTails.Add(joint.BoneId, candidate);
                 Vec3 currentDirection = targetTail - head, desiredDirection = candidate - head;
@@ -179,43 +179,6 @@ namespace NyaForge.Authoring.Rig
             return new SpringBoneSimulationResult(output, SpringBoneState.Create(skeleton.ContentHash, valid.ChainHash, previous.CurrentTails.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal), nextTails));
         }
 
-        private sealed class Validated
-        {
-            internal readonly List<SpringBoneJointSettings> Joints; internal readonly HashSet<int> ColliderGroups; internal readonly string ChainHash;
-            internal Validated(List<SpringBoneJointSettings> joints, HashSet<int> colliderGroups, string chainHash) { Joints = joints; ColliderGroups = colliderGroups; ChainHash = chainHash; }
-        }
-
-        private static Validated ValidateInputs(SkeletonDefinition skeleton, PoseSet pose, IReadOnlyList<SpringBoneChain> chains, IReadOnlyList<SpringBoneColliderGroup> colliders, SpringBoneState previous)
-        {
-            Checks.Require(skeleton != null && pose != null && chains != null, "INVALID_SPRING", "Spring skeleton, pose, and chains are required.");
-            var validPose = pose.ValidateFor(skeleton); Checks.Require(chains.Count <= MaxChains, "BUDGET_EXCEEDED", "Spring chain budget exceeded.");
-            int total = 0; var joints = new List<SpringBoneJointSettings>(); var seen = new HashSet<string>(StringComparer.Ordinal); var groups = new HashSet<int>();
-            foreach (var chain in chains)
-            {
-                Checks.Require(chain != null, "INVALID_SPRING", "Spring chain cannot be null."); total += chain.Joints.Count;
-                Checks.Require(total <= MaxTotalJoints, "BUDGET_EXCEEDED", "Spring joint budget exceeded.");
-                foreach (var index in chain.ColliderGroupIndices) { Checks.Require(colliders != null && index < colliders.Count, "SPRING_COLLIDER_MISSING", "Spring collider group does not exist."); groups.Add(index); }
-                foreach (var joint in chain.Joints)
-                {
-                    Checks.Require(skeleton.ById.ContainsKey(joint.BoneId), "SPRING_BONE_UNKNOWN", "Spring joint bone does not exist in the skeleton.");
-                    Checks.Require(seen.Add(joint.BoneId), "DUPLICATE_SPRING_JOINT", "A spring joint bone may only appear once."); joints.Add(joint);
-                }
-            }
-            string chainHash = HashChains(chains);
-            if (previous != null)
-            {
-                Checks.Require(previous.SkeletonHash == skeleton.ContentHash, "SPRING_SKELETON_CHANGED", "Spring state belongs to another skeleton.");
-                Checks.Require(previous.ChainHash == chainHash, "SPRING_CHAIN_CHANGED", "Spring state belongs to another chain definition.");
-                foreach (var joint in joints) Checks.Require(previous.CurrentTails.ContainsKey(joint.BoneId) && previous.PreviousTails.ContainsKey(joint.BoneId), "SPRING_STATE_MISSING", "Spring state is missing a joint tail.");
-            }
-            return new Validated(joints, groups, chainHash);
-        }
-
-        private static string HashChains(IReadOnlyList<SpringBoneChain> chains)
-        {
-            using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream, Encoding.UTF8)) { writer.Write(1); writer.Write(chains.Count); foreach (var chain in chains) writer.Write(chain.ContentHash); return Checks.Hash(stream.ToArray()); }
-        }
-
         private static Vec3 PosedHead(PoseTransform transform) { return transform.TransformPoint(new Vec3()); }
         private static Vec3 PosedTail(BoneDefinition bone, PoseTransform transform) { return transform.TransformPoint(bone.Tail - bone.Head); }
         private static float Distance(Vec3 a, Vec3 b) { return Length(a - b); }
@@ -223,12 +186,10 @@ namespace NyaForge.Authoring.Rig
         private static Vec3 Normalize(Vec3 value, Vec3 fallback) { float length = Length(value); return length <= 1e-6f ? fallback : value * (1f / length); }
         private static Vec3 Constrain(Vec3 head, Vec3 tail, float length, Vec3 fallbackDirection) { return head + Normalize(tail - head, Normalize(fallbackDirection, new Vec3(0, 1, 0))) * length; }
 
-        private static Vec3 ResolveColliders(Vec3 head, Vec3 candidate, float hitRadius, HashSet<int> groups, IReadOnlyList<SpringBoneColliderGroup> allGroups)
+        private static Vec3 ResolveColliders(Vec3 head, Vec3 candidate, float hitRadius, IReadOnlyList<SpringBoneCollider> colliders)
         {
-            if (allGroups == null) return candidate;
             Vec3 result = candidate;
-            foreach (var groupIndex in groups.OrderBy(index => index))
-                foreach (var collider in allGroups[groupIndex].Colliders)
+            foreach (var collider in colliders)
                 {
                     Vec3 delta = result - collider.Center; float distance = Length(delta), minimum = collider.Radius + hitRadius;
                     if (distance < minimum)
