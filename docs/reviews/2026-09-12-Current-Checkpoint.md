@@ -30,3 +30,7 @@ metadataを読んだ直後、mesh/skinの検査前に共有フィールドとLab
 ## 残作業の扱い
 
 上記は不具合。collider座標adapter、center/時間契約、再生GUI、一般node変換、実素材受入は未実装・未受入の作業として区別する。具体的な順序と完了条件は `current_task.md` 冒頭のチェックリストを正本とする。過去のR01〜R10の修正履歴は保持し、追加レビューを理由に未実施の受入まで完了にはしない。
+
+## R11修正追記
+
+最近傍祖先jointを解決するImportedJointHierarchyを追加。2026-09-12の修正後Coreは338件合格。1/3個の中間node、skin slot登録順違い、親の移動/回転に伴う子の追従、native保存/Openを検証した。上記本文は修正前のレビュー記録として保持する。R12は未修正、実素材受入は未実施。最新のbuild証拠と再開順はcurrent_taskを参照。

@@ -118,13 +118,20 @@ namespace NyaForge.Authoring.Import
                 Checks.Require(matrices.Length == jointNodes.Length, "INVALID_IMPORT", "Inverse bind matrix count differs from joints.");
                 for (int i = 0; i < matrices.Length; i++) { ValidateTranslationMatrix(matrices[i], "inverse bind matrix"); heads[i] = new Vec3(-matrices[i][12], -matrices[i][13], -matrices[i][14]); }
             }
+            var jointParents = ImportedJointHierarchy.ResolveParents(jointNodes, parentByNode);
             var bones = new List<BoneDefinition>(jointNodes.Length);
             for (int i = 0; i < jointNodes.Length; i++)
             {
-                int node = jointNodes[i]; string parent = parentByNode.ContainsKey(node) && ids.ContainsKey(parentByNode[node]) ? ids[parentByNode[node]] : "";
+                int node = jointNodes[i]; string parent = jointParents.TryGetValue(node, out var parentNode) ? ids[parentNode] : "";
                 Vec3 tail = heads[i] + new Vec3(0, .05f, 0);
-                var nodeToken = (JObject)nodes[node]; var children = nodeToken["children"] as JArray;
-                if (children != null) foreach (var childToken in children) { int child = IntToken(childToken, 0, nodes.Count - 1, "node child"); if (ids.ContainsKey(child)) { var candidate = heads[System.Array.IndexOf(jointNodes, child)]; if (DistanceSquared(heads[i], candidate) > 1e-12) { tail = candidate; break; } } }
+                var nodeToken = (JObject)nodes[node];
+                // A helper node does not split a skin hierarchy; heads already include its translation.
+                foreach (var child in jointNodes.OrderBy(value => value))
+                    if (jointParents.TryGetValue(child, out var ancestor) && ancestor == node)
+                    {
+                        var candidate = heads[System.Array.IndexOf(jointNodes, child)];
+                        if (DistanceSquared(heads[i], candidate) > 1e-12) { tail = candidate; break; }
+                    }
                 bones.Add(new BoneDefinition(ids[node], NodeName(nodeToken, i), parent, heads[i], tail));
             }
             return new SkeletonResult { Skeleton = new SkeletonDefinition(bones), BoneIds = jointNodes.Select(node => ids[node]).ToArray(), NodeToBone = ids };

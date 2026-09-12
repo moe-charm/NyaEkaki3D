@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。最新チェック対象 `023d1cf`。Coreを再実行し334件合格。追加レビューでR11（骨階層の欠落）を再現し、R12（失敗した取込の表示先行更新）をコード上で確認した。今回はチェックとタスク整理のみで、R11/R12は未修正。過去のR01〜R10は各記録の自動検証範囲で完了、実素材・実操作の受入は未完了。
+更新: 2026-09-12。最新チェック対象 `023d1cf`。Coreを再実行し334件合格。追加レビューでR11（骨階層の欠落）を再現し、R12（失敗した取込の表示先行更新）をコード上で確認した。R11は中間nodeを通る骨階層保持を修正し、Core338件合格。R12は未修正。過去のR01〜R10は各記録の自動検証範囲で完了、実素材・実操作の受入は未完了。
 
 ## 開発の入口
 
@@ -10,9 +10,9 @@
 
 ## 次に実行するタスク（最新チェック）
 
-詳細・再現条件・検証範囲: [追加レビュー](docs/reviews/2026-09-12-Current-Checkpoint.md)。**R11 → R12 → I03-A → I03-B → I03-C → A01** の順で進める。I04は実素材の事前確認で必要な対応範囲を決め、必要ならI03/A01に先行する。今回の変更は文書のみ。
+詳細・再現条件・検証範囲: [追加レビュー](docs/reviews/2026-09-12-Current-Checkpoint.md)。**R12 → I03-A → I03-B → I03-C → A01** の順で進める。I04は実素材の事前確認で必要な対応範囲を決め、必要ならI03/A01に先行する。R11の実装・検証を追記。
 
-- [ ] **R11 / P1 — 中間nodeによる骨階層欠落を修正**。直親が非jointだとroot扱いになる再現あり。最近傍祖先jointと中間変換を保持するか、未対応として拒否する。完了条件: 複数中間node・登録順・親子pose追従・保存/Openの回帰合格。
+- [x] **R11 / P1 — 中間nodeによる骨階層欠落を修正（Core検証完了）**。ImportedJointHierarchyが検証済みsource木から最近傍祖先jointを解決する。合成済みtranslationとinverse-bind由来Headの契約を維持し、tailも中間node越しの子jointから決定する。中間node1/3個・骨登録順違い・親の移動/回転への追従・native保存/Openの4回帰が合格。一般回転/scaleや実モデル受入は別タスク。
 - [ ] **R12 / P2 — 取込の候補生成と公開を分離**。mesh検査より前のSpring session/Label更新をやめる。完了条件: 不正skin・command失敗時に文書、metadata、表示、dirty/Undoが変わらず、再試行で成功するPlayer検証。現時点の根拠はコード確認で、Player再現はこれから。
 - [ ] **I03-A — collider座標adapter**。VRM0/1の元座標表現を確認し、保存済みnode原点と現在poseからsphere/capsuleを変換する。半径scale・非一様scale/shearの対応方針と診断を定める。完了条件: offset/tail、移動・回転・scale、旧sessionの詳細不足、未対応node、source不一致の回帰合格。元node原点保存とcapsule solverは実装済み。
 - [ ] **I03-B — chain・center・重力・時間の契約**。VRM0 rootからの展開とVRM1 joint列を明示的に変換する。Coreのstiffness上限・時間式と元設定の差を解決し、無言のclampをしない。完了条件: center移動、固定/可変dt、停止/再開、上限外設定の数値検証と契約文書。
@@ -21,6 +21,13 @@
 - [ ] **A01 — Windows実素材・実操作受入**。利用可能なローカルモデルで取込・保存/Open・姿勢・揺れ・文字サイズと欠け・保存して終了を確認する。外部MCP transportのmetadata保存も別項目で検証する。完了条件: build名、入力、確認手順、結果、未対応事項の記録。素材はprivate/追跡除外を維持。
 
 現在の証拠: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
+
+### R11実装の証拠（2026-09-12）
+
+- `ImportedJointHierarchy`へ元node木からskin joint木への変換を分離。入力木の循環/複数親検査とtranslation合成は既存importerで先に完了させる。子tail候補はsource node index順で選び、skin slot登録順に依存させない。
+- 修正前は既存334件合格・追加4件失敗 (`Logs/core-hierarchy-before.txt`)。修正後 **338 passed / 0 failed** (`Logs/core-hierarchy-after.txt`)。成果物: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4250aa56bf3a4229a762cce1797b61d9`。
+- Windows-JointHierarchy build **PASS**: `Logs/build-player-20260912-144506-592.log`。今回はCore import修正のためPlayer GUI suiteは再実行していない。実マウス・実アバター受入も未実施。
+- nodeを骨へ追加する変更ではなく、元joint間の祖先関係を保つ変更。非joint自体へのcollider追従、一般node回転/scale、再生previewは引き続きI03/I04で扱う。
 
 ## 過去レビューR01〜R10の修正・検証記録（2026-09-12）
 
