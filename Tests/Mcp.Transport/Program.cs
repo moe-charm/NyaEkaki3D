@@ -42,3 +42,4 @@ using(var cancellation=new CancellationTokenSource(TimeSpan.FromMilliseconds(100
 }
 Console.WriteLine("PASS: named-pipe request/result, wrong-instance rejection, unavailable-instance cancellation");
 await McpProtocolVerification.RunAsync();
+CaptureResultVerification.Run();

@@ -253,3 +253,4 @@ Windows-SIM03B-Capture3で実MCP client→stdio sidecar→named pipe→Playerを
 - UnityBridgeのPhysBones reflection backendは、再適用時に新profileから消えたAnimationCurveを空curveへ初期化する。
 - PhysBones managed markerはchain配列位置を主識別子にせず、target/name/rootのstable identityを優先して再利用し、profileの並び替えで重複生成しない。旧marker向けにindex fallbackを残す。
 - これらはコード検証とビルド確認を行い、実VRChat SDK内の受入は引き続き未完了。
+- sidecar回帰: `Tests/Mcp.Transport`へCaptureResult検証を追加し、camera metadata保持・PNG data非重複・ImageContentBlock bytesを確認した。`dotnet run --project Tests/Mcp.Transport/Mcp.Transport.Tests.csproj --no-build` は3項目PASS。
