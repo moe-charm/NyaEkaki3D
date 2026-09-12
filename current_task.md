@@ -1,3 +1,7 @@
+# 2026-09-13 glTF material color/default alignment
+
+glTF `baseColorFactor` は線形値として読み書きするよう修正し、取込時の不要なsRGB変換と出力時の逆変換を廃止した。`metallicFactor` の省略値もglTF仕様の1へ合わせ、linear RGBと省略既定値の回帰を追加した。Core **460 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-66295ed6bf6a4d98815455f15972ac53`）。Windows Player `Builds/MaterialLinearV1/NyaForge.exe` Authoring suite（`Artifacts/Authoring-20260913-074940-af62bbf5049a4276bccce18c480d93e2/report.json`）とUnity Bridge（`Artifacts/BridgeReceiver-20260913-075048-365-c4c2956b407148a6afe5110e50f45e0f/bridge-report.json`）はPASS。
+
 ## 2026-09-13 consistency feedback final recheck (`5826247`)
 
 提示されたレビュー（基準 `1c76e4a`）を現行 `main` の `5826247` へ再照合した。4件のP1と列挙されたP2は後続実装で閉じており、重複修正は行わず受入証拠を更新した。16bit `JOINTS_n` は2バイト幅で復号し、8bit/16bit同値・負weight拒否を回帰。source skin表示はgraph評価後の編集結果を保持し、PhysBones target packageはprofileが参照するsource assetを同梱してhash検証する。静的GLBのskin判定は選択meshに限定し、同居する小物を取り込める。

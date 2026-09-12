@@ -103,10 +103,15 @@ internal static partial class Program
             Equal(1, imported.Materials.Count);
             var material = imported.Materials[0];
             Equal(0, material.SubmeshIndex); Equal(0, material.SourceMaterialIndex); Equal("Red lacquer", material.Name); True(material.HasTextureReferences);
-            Near(.214041f, material.Parameters.BaseColor.X); Near(.050876f, material.Parameters.BaseColor.Y); Near(1f, material.Parameters.BaseColor.Z); Near(.75f, material.Parameters.BaseColor.W);
+            Near(.5f, material.Parameters.BaseColor.X); Near(.25f, material.Parameters.BaseColor.Y); Near(1f, material.Parameters.BaseColor.Z); Near(.75f, material.Parameters.BaseColor.W);
             True(material.Parameters.BaseColor.X >= 0f && material.Parameters.BaseColor.X <= 1f && material.Parameters.BaseColor.Y <= 1f && material.Parameters.BaseColor.Z <= 1f && material.Parameters.BaseColor.W <= 1f);
             Near(.7f, material.Parameters.Metallic); Near(.2f, material.Parameters.Roughness); Near(.1f, material.Parameters.Emission.X); Near(.3f, material.Parameters.Emission.Z);
             Equal(NyaForge.Authoring.Graph.MaterialAlphaMode.Blend, material.Parameters.AlphaMode); Near(.3f, material.Parameters.AlphaCutoff);
+            var defaults = JObject.Parse(ReadJsonChunk(BuildGlb()));
+            defaults["materials"] = new JArray(new JObject { ["pbrMetallicRoughness"] = new JObject() });
+            ((JObject)((JArray)((JObject)((JArray)defaults["meshes"]!)[0]!) ["primitives"]!)[0]!) ["material"] = 0;
+            var defaultMaterial = GlbImporter.Read(ReplaceJsonChunk(BuildGlb(), defaults.ToString(Newtonsoft.Json.Formatting.None))).Materials[0].Parameters;
+            Near(1f, defaultMaterial.Metallic); Near(1f, defaultMaterial.Roughness);
             var missingMaterials = JObject.Parse(ReadJsonChunk(BuildGlb()));
             ((JObject)((JArray)((JObject)((JArray)missingMaterials["meshes"]!)[0]!) ["primitives"]!)[0]!) ["material"] = 0;
             Expect("INVALID_IMPORT", () => GlbImporter.Read(ReplaceJsonChunk(BuildGlb(), missingMaterials.ToString(Newtonsoft.Json.Formatting.None))));

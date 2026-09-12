@@ -61,7 +61,9 @@ namespace NyaForge.Authoring.Import
             Checks.Require(name.Length <= 256, "INVALID_IMPORT", "GLB material name is too long.");
             var pbr = token["pbrMetallicRoughness"] as JObject;
             var baseColor = Color4(pbr?["baseColorFactor"], new[] { 1f, 1f, 1f, 1f }, "baseColorFactor");
-            var metallic = Number(pbr?["metallicFactor"], 0f, "metallicFactor");
+            // glTF's PBR factors are already linear scalar values. When omitted,
+            // metallicFactor and roughnessFactor both use the specification default 1.
+            var metallic = Number(pbr?["metallicFactor"], 1f, "metallicFactor");
             var roughness = Number(pbr?["roughnessFactor"], 1f, "roughnessFactor");
             var emission = Color3(token["emissiveFactor"], new[] { 0f, 0f, 0f }, "emissiveFactor");
             MaterialAlphaMode alpha = MaterialAlphaMode.Opaque;
@@ -119,7 +121,9 @@ namespace NyaForge.Authoring.Import
 
         static float[] Color4(JToken token, float[] fallback, string name)
         {
-            var values = Components(token, 4, fallback, name, 1f); return new[] { SrgbToLinear(values[0]), SrgbToLinear(values[1]), SrgbToLinear(values[2]), values[3] };
+            // baseColorFactor is a linear factor in glTF. Texture color data has a
+            // separate sRGB decode path; applying it here would darken authored RGB.
+            return Components(token, 4, fallback, name, 1f);
         }
 
         static float[] Color3(JToken token, float[] fallback, string name) => Components(token, 3, fallback, name, 64f);
@@ -131,13 +135,5 @@ namespace NyaForge.Authoring.Import
             var result = new float[count]; for (int i = 0; i < count; i++) result[i] = Number(array[i], fallback[i], name + "[" + i.ToString(CultureInfo.InvariantCulture) + "]", maximum); return result;
         }
 
-        static float SrgbToLinear(float value)
-        {
-            // The glTF endpoint value 1 can round slightly above one when the
-            // exponent is evaluated in double precision and converted to float.
-            // MaterialParameters treats the normalized range as a hard contract.
-            double converted = value <= .04045f ? value / 12.92 : Math.Pow((value + .055) / 1.055, 2.4);
-            return (float)Math.Max(0d, Math.Min(1d, converted));
-        }
     }
 }

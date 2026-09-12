@@ -286,7 +286,10 @@ namespace NyaForge.Authoring
                 if (materialIds.TryGetValue(key, out var existing)) return existing;
                 var json = new JObject { ["name"] = "NyaForgeMaterial-" + materials.Count.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     ["pbrMetallicRoughness"] = new JObject {
-                        ["baseColorFactor"] = new JArray(LinearToSrgb(parameters.BaseColor.X), LinearToSrgb(parameters.BaseColor.Y), LinearToSrgb(parameters.BaseColor.Z), parameters.BaseColor.W),
+                        // MaterialParameters stores linear RGB and glTF's
+                        // baseColorFactor is also linear. Do not apply the sRGB
+                        // transfer function used for texture pixels here.
+                        ["baseColorFactor"] = new JArray(parameters.BaseColor.X, parameters.BaseColor.Y, parameters.BaseColor.Z, parameters.BaseColor.W),
                         ["metallicFactor"] = parameters.Metallic, ["roughnessFactor"] = parameters.Roughness } };
                 var pbr = (JObject)json["pbrMetallicRoughness"];
                 if (image != null)
@@ -311,9 +314,6 @@ namespace NyaForge.Authoring
                 textures.Add(new JObject { ["source"] = imageId }); imageIds.Add(image.ImageHash, imageId); return imageId;
             }
         }
-
-        static float LinearToSrgb(float value)
-        { return value <= .0031308f ? value * 12.92f : 1.055f * (float)Math.Pow(value, 1f / 2.4f) - .055f; }
 
         public static byte[] Build(GlbExportService.MeshObject[] objects, GlbExportService.SkinnedObject skinned, GlbExportProfile profile)
             => BuildMany(objects, skinned == null ? null : new[] { skinned }, profile);
