@@ -61,6 +61,14 @@
 - Core **288 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-03d1dfa8995d4643b115d34d1e8910db`。合成skinのjoint階層・normalized weight・source hash保持、回転拒否を確認。
 - Windows-GlbSkin Player build / Authoring suite **PASS**: `Logs/build-player-20260912-114347-992.log`、`Artifacts/Authoring-20260912-114413-637c0868011d4e329b83a5a2ddb77d74/report.json`。標準fixtureの起動・描画・GUI回帰を目視した。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-114608-484-b8f097c1eee54d34a015286334605c27/bridge-report.json`。skin付きGLBの実ファイルpicker操作とRadDollV3／VRM実データは未確認。
 
+### VRM metadata境界（2026-09-12）
+
+- `VrmMetadataReader` を追加。VRM 1.0の`extensions.VRMC_vrm`とVRM 0.xの`extensions.VRM`から、spec version、title/name、author、humanoid semantic→glTF node indexをsource hash付きで読む。UniVRMやUnity APIへ依存しない。
+- malformed mapping、node範囲外、重複human bone、未対応spec versionは`INVALID_VRM`／`UNSUPPORTED_FORMAT`で拒否する。expression、look-at、spring bone、MToon、一般transform、VRM exportは別adapterのまま保持する。
+- GLB/VRM pickerのfilterを`.glb`／`.vrm`へ拡張し、取り込み時にmetadataを検査する。skin付きなら既存skin graphへ接続し、statusへVRM format/title/humanoid数を表示する。
+- Core **291 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-eb7fc75824464221943c9207fe446012`。VRM 1.0／0.x mapping、source identity、未対応versionと欠落extension拒否を確認。
+- Windows-VrmMetadata Player build / Authoring suite **PASS**: `Logs/build-player-20260912-115103-670.log`、`Artifacts/Authoring-20260912-115128-ad0dc9697de74b4798fb64c9633adfe4/report.json`。標準fixtureの起動・描画・GUI回帰を目視した。Unity Bridge receiverも **PASS**: `Artifacts/BridgeReceiver-20260912-115200-239-6157d093ce40429f85b7a9745da4db30/bridge-report.json`。実VRMファイル、humanoid姿勢、expression/springの受け取り先は未確認。
+
 - `Authoring.Rig` を独立モジュールとして追加。`SkeletonDefinition` はcanonical UUIDのbone、親子階層、head/tailのrest座標を不変データとして保持し、循環・欠落親・重複IDを公開前に拒否する。
 - `SkinBinding` はmeshのtopology hashとskeleton hashを固定し、全頂点に1〜4本の明示boneを要求して、重みを降順・決定的順序で正規化する。同一boneの重複、未知bone、未weight、上限超過を拒否する。
 - `PoseTransform` と `SkinDeformer` を追加。bone headを基準にしたrest-relative affine poseを適用し、最大4 influenceの位置を線形ブレンドする。mesh topology hash / skeleton hash / 全bone poseを毎回照合し、normal・tangent・UVは元mesh所有のまま保持する。
