@@ -1,3 +1,12 @@
+## 2026-09-13 object.attachment follow-up
+
+前回のボーンフィードバックを受け、チョーカーなどの小物を明示したavatarのstable `BoneId`へ装着する経路を実装した。graphへ`object.attachment`ノードを追加し、`targetObjectId`、`boneId`、`skeletonHash`、bone-local rest offset（メートル）を型付き・ハッシュ付きで保存する。GUIの「小物をボーンへ装着」は対象graphとBoneIdを選択して設定でき、名前推測・自動fit・貫通修正は行わない。MCPの`graph.node.add/update`でも同じpayloadを使える。
+
+Workbenchは対象avatarのimported rig sessionをstable hashとmappingで検証し、pose評価から小物rootの位置・回転を再投影する。active/inactive graph objectの表示投影、最終結果投影、Undo対象の追加/更新/解除、native schema 4 Save/Openのrig session復元まで接続した。装着poseをmesh projectionのcache判定へ含め、pose変更時に古いrootを再利用しないようにした。
+
+検証結果: Core **451 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b89a243dbb924b979d94173ee1f2bb11`）、Windows Player `Builds/AttachmentV3/NyaForge.exe` のAuthoring suite **PASS**（report `Artifacts/Authoring-20260913-060504-29017a8a29be484ab5e6c6540278b84a/report.json`）、MCP transport **3/3 PASS**。Playerではstable BoneId/root pose、Save/Open、rig-session restoreを含む全チェックを確認した。
+
+この検証は合成skeletonとNyaForge内の表示・保存経路が対象で、実VRChat SDK、実アバターでの自動fit/貫通、VRChat内の見た目受入は未完了。次は実SDK受け取りと実アバターでの装着確認を別証拠として進める。
 # NyaForge 開発タスク
 
 ## 2026-09-13 consistency review follow-up

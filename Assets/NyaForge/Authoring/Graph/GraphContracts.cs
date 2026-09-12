@@ -51,6 +51,8 @@ namespace NyaForge.Authoring.Graph
         public const string SkinDeform = "rig.skin-deform";
         public const string MorphSet = "rig.morph-set";
         public const string MorphDeform = "rig.morph-deform";
+        /// <summary>Metadata node that pins an accessory object to a stable avatar bone.</summary>
+        public const string Attachment = "object.attachment";
         static readonly IReadOnlyDictionary<string, NodeDefinition> definitions =
             new ReadOnlyDictionary<string, NodeDefinition>(new Dictionary<string, NodeDefinition>
             {
@@ -73,6 +75,7 @@ namespace NyaForge.Authoring.Graph
                 ,[SkinDeform] = new NodeDefinition(SkinDeform, new[] { new PortDefinition("mesh", PortType.Mesh), new PortDefinition("skeleton", PortType.Skeleton), new PortDefinition("binding", PortType.SkinBinding), new PortDefinition("pose", PortType.Pose) }, new[] { new PortDefinition("mesh", PortType.Mesh) })
                 ,[MorphSet] = new NodeDefinition(MorphSet, Array.Empty<PortDefinition>(), new[] { new PortDefinition("morphs", PortType.MorphSet) })
                 ,[MorphDeform] = new NodeDefinition(MorphDeform, new[] { new PortDefinition("mesh", PortType.Mesh), new PortDefinition("morphs", PortType.MorphSet) }, new[] { new PortDefinition("mesh", PortType.Mesh) })
+                ,[Attachment] = new NodeDefinition(Attachment, Array.Empty<PortDefinition>(), Array.Empty<PortDefinition>())
             });
         public static IReadOnlyDictionary<string, NodeDefinition> Definitions { get { return definitions; } }
         public static NodeDefinition Find(GraphNode node)

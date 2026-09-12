@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
+using NyaForge.Authoring.Rig;
 using NyaForge.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -25,6 +26,8 @@ namespace NyaForge.UnityRuntime
         public string PreviewNodeId { get; set; } = "";
         public int HighlightedTriangleCount => current?.FaceHighlight?.TriangleCount ?? 0;
         public bool ShowFinalResult { get; set; } = true;
+        /// <summary>Optional rigid accessory root pose resolved from an explicit attachment node.</summary>
+        public PoseTransform? AttachmentPose { get; set; }
         public Mesh FinalMesh => current?.FinalResult?.Mesh;
         public IEnumerable<Vector3> FramingPoints => Points.Concat(current?.FinalResult?.Points ?? Array.Empty<Vector3>());
 
@@ -55,30 +58,37 @@ namespace NyaForge.UnityRuntime
         }
 
         public IPreparedProjection PrepareGraph(AuthoringDocument document, AuthoringPreview preview)
+            => PrepareGraph(document, preview, AttachmentPose);
+
+        public IPreparedProjection PrepareGraph(AuthoringDocument document, AuthoringPreview preview, PoseTransform? attachmentPose)
         {
             if (PreviewNodeId != "" && !document.IsEmpty && !document.ActiveObject.IsStaticProfile)
             {
                 NyaForge.Authoring.Graph.GraphMeshValue stage = null;
                 preview.Evaluation?.MeshOutputs.TryGetValue(PreviewNodeId, out stage);
                 var final = ShowFinalResult && preview.IsComplete && preview.Output?.Mesh!=null && stage != null && preview.Output?.SnapshotHash != stage.SnapshotHash ? preview.Output : null;
-                return PrepareMesh(stage?.Mesh, stage?.Transform ?? new RestTransform(1, new Vec3()), final, stage?.BaseColor,stage?.Material?.Parameters,stage);
+                return PrepareMesh(stage?.Mesh, stage?.Transform ?? new RestTransform(1, new Vec3()), final, stage?.BaseColor,stage?.Material?.Parameters,stage, attachmentPose);
             }
-            return PrepareMesh(preview.Output?.Mesh, preview.Output?.Transform ?? new RestTransform(1, new Vec3()), null, preview.Output?.BaseColor,preview.Output?.Material?.Parameters,preview.Output);
+            return PrepareMesh(preview.Output?.Mesh, preview.Output?.Transform ?? new RestTransform(1, new Vec3()), null, preview.Output?.BaseColor,preview.Output?.Material?.Parameters,preview.Output, attachmentPose);
         }
 
         /// <summary>Prepares a graph stage with an optional source-skin final result.</summary>
         public IPreparedProjection PrepareGraphValue(AuthoringDocument document, GraphMeshValue stage, GraphMeshValue final = null)
+            => PrepareGraphValue(document, stage, final, AttachmentPose);
+
+        public IPreparedProjection PrepareGraphValue(AuthoringDocument document, GraphMeshValue stage, GraphMeshValue final, PoseTransform? attachmentPose)
         {
             var shown = stage ?? final;
             return PrepareMesh(shown?.Mesh, shown?.Transform ?? new RestTransform(1, new Vec3()), stage == null ? null : final,
-                shown?.BaseColor, shown?.Material?.Parameters, shown);
+                shown?.BaseColor, shown?.Material?.Parameters, shown, attachmentPose);
         }
 
-        IPreparedProjection PrepareMesh(MeshData evaluated, RestTransform transform, NyaForge.Authoring.Graph.GraphMeshValue final = null, NyaForge.Authoring.Graph.GraphImageValue baseColor = null,NyaForge.Authoring.Graph.MaterialParameters material=null,NyaForge.Authoring.Graph.GraphMeshValue appearance=null)
+        IPreparedProjection PrepareMesh(MeshData evaluated, RestTransform transform, NyaForge.Authoring.Graph.GraphMeshValue final = null, NyaForge.Authoring.Graph.GraphImageValue baseColor = null,NyaForge.Authoring.Graph.MaterialParameters material=null,NyaForge.Authoring.Graph.GraphMeshValue appearance=null, PoseTransform? attachmentPose = null)
         {
             if(evaluated!=null && final==null && current?.FinalResult==null && current?.Renderer!=null &&
                 current.MeshHash==evaluated.ContentHash && current.Transform.Equals(transform) &&
-                ReferenceEquals(current.EditPolygon,PreviewNodeId!="" ? appearance?.Polygon : null))
+                ReferenceEquals(current.EditPolygon,PreviewNodeId!="" ? appearance?.Polygon : null) &&
+                AttachmentPoseEquals(current.AttachmentPose, attachmentPose))
                 return new ColorUpdate(this,current,baseColor?.Image,material,appearance);
             var candidate = new Prepared(this);
             try
@@ -96,18 +106,24 @@ namespace NyaForge.UnityRuntime
                     }
                     return candidate;
                 }
-                candidate.MeshHash=evaluated.ContentHash;candidate.Transform=transform;
+                candidate.MeshHash=evaluated.ContentHash;candidate.Transform=transform;candidate.AttachmentPose=attachmentPose;
                 candidate.EditPolygon=PreviewNodeId!="" ? appearance?.Polygon : null;
                 candidate.Mesh = CreateMesh(evaluated);
                 var meshObject = new GameObject("Evaluated mesh") { layer = PreviewLayer };
                 meshObject.transform.SetParent(candidate.Root.transform, false);
                 meshObject.transform.localScale = Vector3.one * transform.Scale;
                 meshObject.transform.localPosition = ToUnity(transform.Translation);
+                if (attachmentPose.HasValue)
+                {
+                    candidate.Root.transform.localPosition = ToUnity(attachmentPose.Value.Translation);
+                    candidate.Root.transform.localRotation = Quaternion.LookRotation(ToUnity(attachmentPose.Value.ZAxis), ToUnity(attachmentPose.Value.YAxis));
+                    meshObject.transform.localPosition = Vector3.zero;
+                }
                 meshObject.AddComponent<MeshFilter>().sharedMesh = candidate.Mesh;
                 candidate.BaseColor = new MaterialSurfaceSet(evaluated.Submeshes.Count,surface,baseColor?.Image,material,appearance);
                 candidate.Renderer=meshObject.AddComponent<MeshRenderer>();candidate.Renderer.sharedMaterials=candidate.BaseColor.Materials;
                 candidate.FaceHighlight = new FaceHighlightProjection(meshObject.transform, candidate.Mesh, selectedFace);
-                if (final != null) candidate.FinalResult = new FinalResultProjection(candidate.Root.transform, final, finalSurface);
+                if (final != null) candidate.FinalResult = new FinalResultProjection(candidate.Root.transform, final, finalSurface, attachmentPose);
                 candidate.Points = evaluated.Positions.Select(p => ToUnity(transform.ToAvatarPoint(p))).ToArray();
                 if(PreviewNodeId!="" && appearance?.Polygon!=null)
                     candidate.Points=NyaForge.Authoring.Topology.PolygonEditPoints.VertexIds(appearance.Polygon).Select(id=>ToUnity(transform.ToAvatarPoint(appearance.Polygon.Vertices[id].Position))).ToArray();
@@ -159,6 +175,13 @@ namespace NyaForge.UnityRuntime
         public static Vector3 ToUnity(Vec3 value) => new Vector3(value.X, value.Y, value.Z);
         static bool Finite(Vector3 v) => !float.IsNaN(v.x) && !float.IsInfinity(v.x) && !float.IsNaN(v.y) && !float.IsInfinity(v.y) && !float.IsNaN(v.z) && !float.IsInfinity(v.z);
 
+        static bool AttachmentPoseEquals(PoseTransform? left, PoseTransform? right)
+        {
+            if (!left.HasValue || !right.HasValue) return left.HasValue == right.HasValue;
+            return left.Value.XAxis.Equals(right.Value.XAxis) && left.Value.YAxis.Equals(right.Value.YAxis) &&
+                left.Value.ZAxis.Equals(right.Value.ZAxis) && left.Value.Translation.Equals(right.Value.Translation);
+        }
+
         sealed class Prepared : IPreparedProjection
         {
             readonly OwnedMeshProjection owner;
@@ -167,6 +190,7 @@ namespace NyaForge.UnityRuntime
             public Mesh Mesh;
             public string MeshHash;
             public RestTransform Transform;
+            public PoseTransform? AttachmentPose;
             public MeshRenderer Renderer;
             public GameObject Root;
             public FaceHighlightProjection FaceHighlight;

@@ -19,6 +19,14 @@ namespace NyaForge.Authoring.Graph
         public PoseSet Pose { get; private set; }
         public MorphSet Morphs { get; private set; }
         public IReadOnlyDictionary<string, float> MorphWeights { get; private set; }
+        /// <summary>Target avatar object identity for an object.attachment node.</summary>
+        public string AttachmentTargetObjectId { get; private set; } = "";
+        /// <summary>Stable target bone identity; names are never used as a fallback.</summary>
+        public string AttachmentBoneId { get; private set; } = "";
+        /// <summary>Skeleton content hash observed when the attachment was authored.</summary>
+        public string AttachmentSkeletonHash { get; private set; } = "";
+        /// <summary>Accessory root offset in the target bone's rest-local coordinates.</summary>
+        public Vec3 AttachmentOffset { get; private set; }
         public static GraphNode PolygonEdit(string id, NyaForge.Authoring.Topology.PolygonMesh payload = null, string inputSnapshot = "", string domain = "", bool enabled = true)
         {
             if (payload != null) { Checks.HashText(inputSnapshot); Checks.HashText(domain); }
@@ -100,6 +108,14 @@ namespace NyaForge.Authoring.Graph
         { return new GraphNode(id, BuiltinNodes.Output, 1, null, Identity, 0, 0, 0, true, "", "", Empty, ""); }
         public static GraphNode Number(string id, float value)
         { return new GraphNode(id, BuiltinNodes.Scalar, 1, null, Identity, 0, 0, value, true, "", "", Empty, ""); }
+        public static GraphNode AttachmentNode(string id, string targetObjectId, string boneId, string skeletonHash, Vec3 offset)
+        {
+            Checks.Id(targetObjectId); Checks.Id(boneId); Checks.HashText(skeletonHash); Checks.Finite(offset);
+            var node = new GraphNode(id, BuiltinNodes.Attachment, 1, null, Identity, 0, 0, 0, true, "", "", Empty, "");
+            node.AttachmentTargetObjectId = targetObjectId; node.AttachmentBoneId = boneId;
+            node.AttachmentSkeletonHash = skeletonHash; node.AttachmentOffset = offset;
+            return node;
+        }
         public static GraphNode Unknown(string id, string type, int version, string payload)
         {
             var node = new GraphNode(id, type, version, null, Identity, 0, 0, 0, true, "", "", Empty, payload);

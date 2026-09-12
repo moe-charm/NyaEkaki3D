@@ -44,6 +44,9 @@ namespace NyaForge.Authoring
                     Empty(parameters);return GraphNode.Edit(id);
                 case BuiltinNodes.Output:
                     Empty(parameters);return GraphNode.Output(id);
+                case BuiltinNodes.Attachment:
+                    Shape(parameters,"targetObjectId boneId skeletonHash offset");
+                    return GraphNode.AttachmentNode(id,Text(parameters,"targetObjectId"),Text(parameters,"boneId"),Text(parameters,"skeletonHash"),Vector(parameters["offset"]));
                 default: throw new AuthoringException("UNSUPPORTED_NODE_WIRE","Node type is not exposed by command transport: "+type);
             }
         }

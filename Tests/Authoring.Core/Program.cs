@@ -46,6 +46,7 @@ internal static partial class Program
         RunProjectExportServiceTests();
         RunEmptyProjectTests();
         RunGraphTests();
+        RunAttachmentGraphTests();
         RunGraphStorageTests();
         RunGraphIdentityCacheTests();
         RunGraphDocumentTests();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
+using NyaForge.Authoring.Rig;
 using UnityEngine;
 
 namespace NyaForge.UnityRuntime
@@ -45,7 +46,7 @@ namespace NyaForge.UnityRuntime
             material.SetFloat("_DepthBias", 2);
         }
 
-        internal void Refresh(AuthoringDocument document)
+        internal void Refresh(AuthoringDocument document, Func<AuthoringObject, PoseTransform?> attachmentResolver = null)
         {
             var next = new List<Entry>();
             try
@@ -64,11 +65,17 @@ namespace NyaForge.UnityRuntime
                             if (evaluation.IsComplete && evaluation.Output != null) { data = evaluation.Output.Mesh; transform = evaluation.Output.Transform; }
                         }
                         if (data == null) continue;
+                        var attachmentPose = attachmentResolver == null ? (PoseTransform?)null : attachmentResolver(item);
                         var mesh = OwnedMeshProjection.CreateMesh(data);
                         var root = new GameObject("Inactive object " + item.ObjectId) { layer = OwnedMeshProjection.PreviewLayer };
                         root.transform.SetParent(parent, false);
                         root.transform.localScale = Vector3.one * transform.Scale;
                         root.transform.localPosition = OwnedMeshProjection.ToUnity(transform.Translation);
+                        if (attachmentPose.HasValue)
+                        {
+                            root.transform.localPosition = OwnedMeshProjection.ToUnity(attachmentPose.Value.Translation);
+                            root.transform.localRotation = Quaternion.LookRotation(OwnedMeshProjection.ToUnity(attachmentPose.Value.ZAxis), OwnedMeshProjection.ToUnity(attachmentPose.Value.YAxis));
+                        }
                         var filter = root.AddComponent<MeshFilter>(); filter.sharedMesh = mesh;
                         var renderer = root.AddComponent<MeshRenderer>();
                         renderer.sharedMaterials = Enumerable.Repeat(material, data.Submeshes.Count).ToArray();

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using NyaForge.Authoring.Graph;
+using NyaForge.Authoring.Rig;
 using UnityEngine;
 
 namespace NyaForge.UnityRuntime
@@ -11,7 +12,7 @@ namespace NyaForge.UnityRuntime
         public Mesh Mesh { get; }
         public Vector3[] Points { get; }
 
-        public FinalResultProjection(Transform parent, GraphMeshValue value, Material material)
+        public FinalResultProjection(Transform parent, GraphMeshValue value, Material material, PoseTransform? attachmentPose = null)
         {
             Mesh = OwnedMeshProjection.CreateMesh(value.Mesh);
             try
@@ -20,6 +21,11 @@ namespace NyaForge.UnityRuntime
                 root.transform.SetParent(parent, false);
                 root.transform.localScale = Vector3.one * value.Transform.Scale;
                 root.transform.localPosition = OwnedMeshProjection.ToUnity(value.Transform.Translation);
+                if (attachmentPose.HasValue)
+                {
+                    root.transform.localPosition = Vector3.zero;
+                    root.transform.localRotation = Quaternion.identity;
+                }
                 root.AddComponent<MeshFilter>().sharedMesh = Mesh;
                 root.AddComponent<MeshRenderer>().sharedMaterials = Enumerable.Repeat(material, value.Mesh.Submeshes.Count).ToArray();
                 Points = value.Mesh.Positions.Select(p => OwnedMeshProjection.ToUnity(value.Transform.ToAvatarPoint(p))).ToArray();

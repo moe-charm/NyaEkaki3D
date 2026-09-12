@@ -83,6 +83,9 @@ namespace NyaForge.Authoring
                         writer.Write(node.MorphWeights.Count);
                         foreach (var pair in node.MorphWeights.OrderBy(p => p.Key, StringComparer.Ordinal)) { Text(writer, pair.Key); writer.Write(Checks.Canonical(pair.Value)); }
                         break;
+                    case BuiltinNodes.Attachment:
+                        Text(writer, node.AttachmentTargetObjectId); Text(writer, node.AttachmentBoneId); Text(writer, node.AttachmentSkeletonHash); MeshBinary.Write(writer, node.AttachmentOffset);
+                        break;
                     case BuiltinNodes.Paint:
                         writer.Write(node.PaintWidth); writer.Write(node.PaintHeight); Text(writer,node.PaintUvHash); Text(writer,node.ExpectedDomain);
                         Text(writer,node.PaintImage == null ? "" : addBlob(PaintImageCodec.Write(node.PaintImage))); break;
@@ -179,6 +182,8 @@ namespace NyaForge.Authoring
                             weights.Add(weightId, reader.ReadSingle()); previousWeightId = weightId;
                         }
                         node=GraphNode.MorphDeformNode(id, weights);break;
+                    case BuiltinNodes.Attachment:
+                        node=GraphNode.AttachmentNode(id, Text(reader,64), Text(reader,64), Text(reader,64), MeshBinary.ReadVector(reader)); break;
                     case BuiltinNodes.Paint:
                         int paintWidth=reader.ReadInt32(),paintHeight=reader.ReadInt32();
                         NyaForge.Authoring.Paint.PaintImage.ValidateDimensions(paintWidth,paintHeight);

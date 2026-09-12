@@ -174,6 +174,7 @@ namespace NyaForge.UnityRuntime
                 VerifySpringCore(checks);
                 VerifyMultiObjectDisplay(output, checks);
                 VerifyChokerTemplate(output, checks);
+                VerifyAttachment(output, checks);
                 VerifyVrmImportRoundtrip(output, checks);
                 VerifySecondaryMotionRebind(checks);
                 VerifyPhysBonesTargetStatus(output, checks);

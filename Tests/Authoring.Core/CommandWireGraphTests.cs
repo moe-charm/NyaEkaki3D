@@ -24,5 +24,16 @@ internal static partial class Program
             var redo=Wire(w,new JObject { ["kind"]="history.redo" });Ok(service.Execute(CommandWireReader.Read(redo)));Equal(obj,w.Document.ObjectId);Equal(hash,w.Evaluate().ContentHash);
             ((JObject)payload["nodes"][0])["version"]="1";Expect("INVALID_COMMAND_WIRE",()=>CommandWireReader.Read(wire));
         });
+        Test("wire object attachment preserves stable target, bone and offset",() =>
+        {
+            var w=AuthoringWorkspace.CreateEmpty(); string obj=GraphId(), graph=GraphId(), plane=GraphId(), output=GraphId();
+            var payload=new JObject { ["graphId"]=graph, ["outputNodeId"]=output,
+                ["nodes"]=new JArray(new JObject { ["nodeId"]=plane,["typeId"]="primitive.plane",["version"]=1,["parameters"]=new JObject { ["width"]=.1,["height"]=.1 } }, new JObject { ["nodeId"]=output,["typeId"]="mesh.output",["version"]=1,["parameters"]=new JObject() }),
+                ["edges"]=new JArray(new JObject { ["fromNode"]=plane,["fromPort"]="mesh",["toNode"]=output,["toPort"]="mesh" }) };
+            var service=new AuthoringCommandService(w); Ok(service.Execute(CommandWireReader.Read(Wire(w,new JObject { ["kind"]="object.add_graph",["newObjectId"]=obj,["graph"]=payload }))));
+            string target=GraphId(), bone=GraphId(), skeleton=Checks.Hash(new byte[] { 8, 6, 7 }), node=GraphId();
+            var add=Wire(w,new JObject { ["kind"]="graph.node.add",["node"]=new JObject { ["nodeId"]=node,["typeId"]="object.attachment",["version"]=1,["parameters"]=new JObject { ["targetObjectId"]=target,["boneId"]=bone,["skeletonHash"]=skeleton,["offset"]=new JArray(.01,-.02,.03) } } });
+            Ok(service.Execute(CommandWireReader.Read(add))); var attached=w.Document.ActiveObject.Graph.Nodes[node]; Equal(target,attached.AttachmentTargetObjectId); Equal(bone,attached.AttachmentBoneId); Near(.03f,attached.AttachmentOffset.Z);
+        });
     }
 }

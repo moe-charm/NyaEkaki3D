@@ -64,6 +64,13 @@ namespace NyaForge.Authoring.Inspection
                             ["skinBindingOutput"]=Binding(binding),
                             ["poseOutput"]=Pose(pose),
                             ["morphOutput"]=Morph(morphs),
+                            ["attachment"] = n.TypeId == BuiltinNodes.Attachment ? (JToken)new JObject
+                            {
+                                ["targetObjectId"] = n.AttachmentTargetObjectId,
+                                ["boneId"] = n.AttachmentBoneId,
+                                ["skeletonHash"] = n.AttachmentSkeletonHash,
+                                ["offset"] = new JArray(n.AttachmentOffset.X, n.AttachmentOffset.Y, n.AttachmentOffset.Z)
+                            } : JValue.CreateNull(),
                             ["editContext"]=(definition!=null && ((n.TypeId==BuiltinNodes.EditMesh && input?.Mesh!=null && input.Polygon==null) || (n.TypeId==BuiltinNodes.PolygonEdit && input?.Polygon!=null))) ? (JToken)new JObject { ["graphId"]=graph.GraphId,["nodeId"]=n.NodeId,["inputSnapshot"]=input.SnapshotHash,["domainId"]=input.DomainId } : JValue.CreateNull()
                         };
                     })),
