@@ -40,7 +40,13 @@ namespace NyaForge.UnityRuntime
                 Refresh();
                 var expectedRoot = new UnityEngine.Vector3(bone.Head.X, bone.Head.Y, bone.Head.Z);
                 Check(UnityEngine.Vector3.Distance(projection.DisplayObject.transform.position, expectedRoot) < 1e-5f, "Accessory root did not resolve to the target bone rest position");
-                Check(projection.DisplayObject.transform.localRotation != UnityEngine.Quaternion.identity, "Accessory attachment did not expose the resolved bone pose");
+                var initialRotation = projection.DisplayObject.transform.localRotation;
+                Check(initialRotation != UnityEngine.Quaternion.identity, "Accessory attachment did not expose the resolved bone pose");
+                Execute(AuthoringOperation.SelectObject(targetObjectId));
+                var movedPose = PoseSet.Create(skeleton, new[] { new BonePose(boneId, PoseTransform.RotationZ(65, bone.Head)) });
+                Execute(AuthoringOperation.UpdateNode(GraphNode.PoseNode(poseNodeId, movedPose)));
+                Execute(AuthoringOperation.SelectObject(accessory.ObjectId));
+                Check(UnityEngine.Quaternion.Angle(initialRotation, projection.DisplayObject.transform.localRotation) > 1f, "Accessory root did not follow a changed target pose");
                 string project = Path.Combine(output, "attachment-project"); projectPath.SetValueWithoutNotify(project); SaveProject();
                 string savedHash = workspace.Document.StateHash; OpenProject();
                 Check(workspace.Document.StateHash == savedHash && !workspace.IsDirty, "Attachment project Save/Open changed the document");
