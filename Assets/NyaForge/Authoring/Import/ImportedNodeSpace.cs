@@ -29,5 +29,10 @@ namespace NyaForge.Authoring.Import
             var restPoint = session.SourceNodeOrigins[sourceNode] + sourceLocalPoint;
             return pose.ByBoneId[id].Transform.TransformPoint(restPoint - skeleton.ById[id].Head);
         }
+
+        public float UniformScale(int sourceNode)
+        {
+            return PoseUniformScale.Require(pose.ByBoneId[mapping.Resolve(sourceNode)].Transform);
+        }
     }
 }

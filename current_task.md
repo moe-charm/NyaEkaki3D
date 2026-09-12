@@ -1,6 +1,6 @@
 # NyaForge 開発タスク
 
-更新: 2026-09-12。最新チェック対象 `023d1cf`。Coreを再実行し334件合格。追加レビューでR11（骨階層の欠落）を再現し、R12（失敗した取込の表示先行更新）をコード上で確認した。R11は中間nodeを通る骨階層保持を修正し、Core338件合格。R12は取込候補と公開を分離し、Windows自動検証まで完了。過去のR01〜R10は各記録の自動検証範囲で完了、実素材・実操作の受入は未完了。
+更新: 2026-09-12。最新チェック対象 `023d1cf`。Coreを再実行し334件合格。追加レビューでR11（骨階層の欠落）を再現し、R12（失敗した取込の表示先行更新）をコード上で確認した。R11は中間nodeを通る骨階層保持を修正し、Core338件合格。R12は取込候補と公開を分離し、Windows自動検証まで完了。I03-Aのcollider座標adapterを追加し、最新Coreは340件合格。過去のR01〜R10は各記録の自動検証範囲で完了、実素材・実操作の受入は未完了。
 
 ## 開発の入口
 
@@ -10,17 +10,25 @@
 
 ## 次に実行するタスク（最新チェック）
 
-詳細・再現条件・検証範囲: [追加レビュー](docs/reviews/2026-09-12-Current-Checkpoint.md)。**I03-A → I03-B → I03-C → A01** の順で進める。I04は実素材の事前確認で必要な対応範囲を決め、必要ならI03/A01に先行する。R11の実装・検証を追記。
+詳細・再現条件・検証範囲: [追加レビュー](docs/reviews/2026-09-12-Current-Checkpoint.md)。**I03-B → I03-C → A01** の順で進める。I04は実素材の事前確認で必要な対応範囲を決め、必要ならI03/A01に先行する。R11の実装・検証を追記。
 
 - [x] **R11 / P1 — 中間nodeによる骨階層欠落を修正（Core検証完了）**。ImportedJointHierarchyが検証済みsource木から最近傍祖先jointを解決する。合成済みtranslationとinverse-bind由来Headの契約を維持し、tailも中間node越しの子jointから決定する。中間node1/3個・骨登録順違い・親の移動/回転への追従・native保存/Openの4回帰が合格。一般回転/scaleや実モデル受入は別タスク。
 - [x] **R12 / P2 — 取込の候補生成と公開を分離（Windows自動検証完了）**。mesh検査より前のSpring session/Label更新をやめる。完了条件: 不正skin・command失敗時に文書、metadata、表示、dirty/Undoが変わらず、再試行で成功するPlayer検証。Windows Playerで不正skin・command拒否・再試行を検証済み。
-- [ ] **I03-A — collider座標adapter**。VRM0/1の元座標表現を確認し、保存済みnode原点と現在poseからsphere/capsuleを変換する。半径scale・非一様scale/shearの対応方針と診断を定める。完了条件: offset/tail、移動・回転・scale、旧sessionの詳細不足、未対応node、source不一致の回帰合格。元node原点保存とcapsule solverは実装済み。
+- [x] **I03-A — collider座標adapter（対応profileのCore検証完了）**。VRM0/1の元座標表現を確認し、保存済みnode原点と現在poseからsphere/capsuleを変換する。半径scale・非一様scale/shearの対応方針と診断を定める。完了条件: offset/tail、移動・回転・scale、旧sessionの詳細不足、未対応node、source不一致の回帰合格。元node原点保存とcapsule solverは実装済み。
 - [ ] **I03-B — chain・center・重力・時間の契約**。VRM0 rootからの展開とVRM1 joint列を明示的に変換する。Coreのstiffness上限・時間式と元設定の差を解決し、無言のclampをしない。完了条件: center移動、固定/可変dt、停止/再開、上限外設定の数値検証と契約文書。
 - [ ] **I03-C — Workbench再生・停止・リセット**。計算状態を保存する作品やUndoから分離し、作品切替・骨格変更時の再初期化と失敗表示を実装する。完了条件: Windows Playerで取込→再生→停止→リセット→保存/Openを通し、停止中に履歴が進まず、未対応データを成功表示しない。
 - [ ] **I04 — 実モデル取込profileの拡張**。一般nodeの回転/scale、非joint node、複数mesh等を現行のtranslation-only/1mesh制約と区別する。完了条件: 対象モデルに必要な範囲を先に記録し、対応した変換・属性・skin/morphの数値と保存往復を確認。未対応は具体的に表示する。
 - [ ] **A01 — Windows実素材・実操作受入**。利用可能なローカルモデルで取込・保存/Open・姿勢・揺れ・文字サイズと欠け・保存して終了を確認する。外部MCP transportのmetadata保存も別項目で検証する。完了条件: build名、入力、確認手順、結果、未対応事項の記録。素材はprivate/追跡除外を維持。
 
 現在の証拠: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
+
+### I03-A: collider座標adapter（2026-09-12）
+
+- `VrmSpringColliderAdapter`へsource座標から現在poseへのsphere/capsule変換を分離し、`ImportedNodeSpace`を共用する。VRM0の拡張offsetは標準出力のZ反転を吸収し、VRM1は元glTF node-local値を使う。source/skeleton、形状詳細、未対応nodeを検査し、groupとcolliderの順序・重複を保持する。
+- `PoseUniformScale`へ球/カプセルの半径scale検査を分離。直交した一様scale（鏡映含む）だけを受け入れ、非一様scale/shearは診断する。Coreの半径/件数予算は無言で切り詰めない。
+- Core **340 passed / 0 failed**: `Logs/core-collider-adapter.txt`、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3dec6b4cbbd7497fa948f799bf9f91ea`。session codec往復、原点とbone Headの差、90度回転・2倍scale・鏡映、sphere/capsule、未対応入力を検証した。
+- Windows-ColliderAdapter build **PASS**: `Logs/build-player-20260912-145343-529.log`。Core adapter追加のためPlayer GUI suiteは今回再実行していない。実VRMの見た目受入は未実施。
+- 契約と公式実装の根拠は [collider adapter](docs/VRM-Collider-Adapter.md)。これはsnapshot生成までで、再生previewは未接続。次はI03-Bのchain/center/重力/時間契約、I03-Cのruntime所有とGUI。一般node変換と実素材受入も未完了。
 
 ### R12: 取込候補と状態公開の分離（2026-09-12）
 
