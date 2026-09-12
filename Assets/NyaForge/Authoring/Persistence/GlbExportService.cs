@@ -111,6 +111,11 @@ namespace NyaForge.Authoring
             var weights = morphDeform?.MorphWeights ?? new Dictionary<string, float>(StringComparer.Ordinal);
             Checks.Require(weights.Count == 0 || weights.Values.All(value => value == 0f), "GLB_MORPH_EDIT_UNSUPPORTED", "Skinned GLB export requires morph weights to be zero; bake a posed morph into static GLB or native project export.");
             var binding = bindingNodes[0].Binding.ValidateFor(authoredOutput, skeleton);
+            // This interchange profile writes one JOINTS_0/WEIGHTS_0 set. Do
+            // not silently drop fifth-and-later influences while producing a
+            // file that claims to preserve the skin.
+            Checks.Require(binding.Weights.Values.All(values => values.Count <= 4),
+                "GLB_SKIN_INFLUENCES", "Skinned GLB export supports at most four influences per vertex; use native export for higher influence counts.");
             MorphSet morphs = morphNode == null ? null : morphNode.Morphs.ValidateFor(source.SourceMesh);
             var pose = poseNodes.Length == 0 ? DefaultPose(skeleton) : poseNodes[0].Pose.ValidateFor(skeleton);
             foreach (var bone in skeleton.Bones)

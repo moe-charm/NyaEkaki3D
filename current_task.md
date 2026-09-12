@@ -17,6 +17,7 @@
 target package manifestには受け取り側の完全修飾`ComponentTypeName`を保存し、receiverはその型を解決する。旧manifestだけ既定のVRChat PhysBone型へフォールバックする。
 reflection型解決は`VrcPhysBonesReflectionResolver`へ分離し、assembly-qualified nameの厳密解決、未導入、非Component、曖昧な複数assemblyを非破壊診断する。
 
+- **標準skin出力の安全境界**: 4 influenceを超える入力をGLBへ黙って切り捨てないよう、`GLB_SKIN_INFLUENCES`で明示拒否する。native出力は高影響数を保持する経路として残す。
 作業先: `Z:/TextureVoice_local/git/NyaForge`。Windows先行、macOSは将来。
 読む順: このファイル → [モデル交換仕様](docs/Model-Interchange-Spec.md) → [実素材調査](docs/Real-Asset-Import-Plan.md) → 対象コード。製品全体の範囲は [開発計画](docs/Development-Plan.md) と [設計v2](docs/NyaForge-Authoring-Design2.md) を参照。[文書一覧](docs/README.md)参照。
 製品目標は小物の制作・出力を一周し、低ポリ全身キャラ、品質向上へ進むこと。設計v2は製品方針、v1は背景資料。設計中の外部依存・機能は採用済みや実装済みを意味しない。
