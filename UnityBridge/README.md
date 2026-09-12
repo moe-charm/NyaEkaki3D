@@ -28,7 +28,7 @@ Workbenchの「PhysBones targetを書き出す」は、次の3ファイルから
 - `physbones-target.nyaforge.bin` — `PhysBonesTargetProfile`（`NYPP` v1）
 - `skeleton.nyaforge.bin` — stable bone ID付きの骨格
 
-manifestとpayloadはhashとskeleton identityを検査して読み込みます。元のNyaForge projectやBlenderは受け取り側に不要です。collider groupを使うprofileでは、受け取り側が同じstable IDのcolliderを明示的に解決します。名前推測や暗黙のbone index変換は行いません。
+manifestとpayloadはhashとskeleton identityを検査して読み込みます。manifestには受け取り側の完全修飾`ComponentTypeName`も保存し、旧manifestで省略されている場合だけ既定の`VRC.SDK3.Dynamics.PhysBone.Components.VRCPhysBone`へ互換フォールバックします。元のNyaForge projectやBlenderは受け取り側に不要です。collider groupを使うprofileでは、受け取り側が同じstable IDのcolliderを明示的に解決します。名前推測や暗黙のbone index変換は行いません。
 
 Editor側の`PhysBonesBridge`は、実行時に見つかったSDK component typeへreflectionで設定を書き込みます。初回は`CreateOrUpdateManaged`、再出力はNyaForgeの所有markerが付いたcomponentだけを対象にする`UpdateManagedOnly`を選べます。未管理componentや古いchainは削除せず、能力不足はloss reportで停止します。SDKに明示branch listがない場合は、`First`／`All`が実際の直下child構造で表現できるかを事前検査し、表現できないbranchを黙って省略しません。
 

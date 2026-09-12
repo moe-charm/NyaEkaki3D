@@ -18,6 +18,8 @@ namespace NyaForge.Authoring
         [JsonProperty(Required = Required.Always)] public string SkeletonHash;
         [JsonProperty(Required = Required.Always)] public string ProfileFile = PhysBonesTargetPackage.ProfileFileName;
         [JsonProperty(Required = Required.Always)] public string SkeletonFile = PhysBonesTargetPackage.SkeletonFileName;
+        // Optional for compatibility with packages exported before the receiver type was recorded.
+        [JsonProperty] public string ComponentTypeName;
     }
 
     /// <summary>Self-contained PhysBones target package for a Unity Bridge receiver.</summary>
@@ -27,26 +29,29 @@ namespace NyaForge.Authoring
         public const string ManifestName = "physbones.nyaforge-target.json";
         public const string ProfileFileName = "physbones-target.nyaforge.bin";
         public const string SkeletonFileName = "skeleton.nyaforge.bin";
+        public const string DefaultComponentTypeName = "VRC.SDK3.Dynamics.PhysBone.Components.VRCPhysBone";
 
         public PhysBonesTargetProfile Target { get; private set; }
         public SkeletonDefinition Skeleton { get; private set; }
         public string ManifestHash { get; private set; }
+        public string ComponentTypeName { get; private set; }
 
-        PhysBonesTargetPackage(PhysBonesTargetProfile target, SkeletonDefinition skeleton, string manifestHash)
-        { Target = target; Skeleton = skeleton; ManifestHash = manifestHash; }
+        PhysBonesTargetPackage(PhysBonesTargetProfile target, SkeletonDefinition skeleton, string manifestHash, string componentTypeName)
+        { Target = target; Skeleton = skeleton; ManifestHash = manifestHash; ComponentTypeName = componentTypeName; }
 
-        public static string Export(string directory, PhysBonesTargetProfile target, SkeletonDefinition skeleton)
+        public static string Export(string directory, PhysBonesTargetProfile target, SkeletonDefinition skeleton, string componentTypeName = null)
         {
             if (target == null) throw new ArgumentNullException("target");
             if (skeleton == null) throw new ArgumentNullException("skeleton");
             Checks.Require(target.SkeletonHash == skeleton.ContentHash, "SIMULATION_SKELETON_CHANGED", "PhysBones target does not match the exported skeleton.");
+            componentTypeName = NormalizeComponentTypeName(componentTypeName);
             directory = Storage.DirectoryPath(directory);
             byte[] profileBytes = PhysBonesTargetCodec.Write(target);
             byte[] skeletonBytes = RigCodec.WriteSkeleton(skeleton);
             var manifest = new PhysBonesTargetManifest
             {
                 TargetId = target.TargetId, SdkVersion = target.SdkVersion, PackageVersion = target.PackageVersion,
-                ProfileHash = Checks.Hash(profileBytes), SkeletonHash = Checks.Hash(skeletonBytes)
+                ProfileHash = Checks.Hash(profileBytes), SkeletonHash = Checks.Hash(skeletonBytes), ComponentTypeName = componentTypeName
             };
             byte[] manifestBytes = Storage.JsonBytes(manifest);
             using (Storage.Lock(directory))
@@ -77,7 +82,14 @@ namespace NyaForge.Authoring
             var skeleton = RigCodec.ReadSkeleton(skeletonBytes);
             Checks.Require(target.TargetId == manifest.TargetId && target.SdkVersion == manifest.SdkVersion && target.PackageVersion == manifest.PackageVersion, "INVALID_MANIFEST", "PhysBones package metadata differs from its target profile.");
             Checks.Require(target.SkeletonHash == skeleton.ContentHash, "SIMULATION_SKELETON_CHANGED", "PhysBones package target does not match its skeleton.");
-            return new PhysBonesTargetPackage(target, skeleton, Checks.Hash(Storage.ReadBounded(manifestPath, AuthoringLimits.MaxManifestBytes)));
+            return new PhysBonesTargetPackage(target, skeleton, Checks.Hash(Storage.ReadBounded(manifestPath, AuthoringLimits.MaxManifestBytes)), NormalizeComponentTypeName(manifest.ComponentTypeName));
+        }
+
+        static string NormalizeComponentTypeName(string value)
+        {
+            string result = string.IsNullOrWhiteSpace(value) ? DefaultComponentTypeName : value.Trim();
+            Checks.Require(result.Length <= 512 && result.IndexOf('\0') < 0, "INVALID_MANIFEST", "PhysBones component type name is invalid.");
+            return result;
         }
     }
 }

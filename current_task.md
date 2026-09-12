@@ -5,6 +5,7 @@
 ## 開発の入口
 
 今回のSIM-02B実装では、receiver GUIの保存・読込・適用前に`PhysBonesBindingValidator`を通す。必要stable BoneId／collider groupの欠落、avatar root外、重複Transform、空groupを共通診断し、vendor SDKの型判断はbackendへ委譲する。
+target package manifestには受け取り側の完全修飾`ComponentTypeName`を保存し、receiverはその型を解決する。旧manifestだけ既定のVRChat PhysBone型へフォールバックする。
 
 作業先: `Z:/TextureVoice_local/git/NyaForge`。Windows先行、macOSは将来。
 読む順: このファイル → [モデル交換仕様](docs/Model-Interchange-Spec.md) → [実素材調査](docs/Real-Asset-Import-Plan.md) → 対象コード。製品全体の範囲は [開発計画](docs/Development-Plan.md) と [設計v2](docs/NyaForge-Authoring-Design2.md) を参照。[文書一覧](docs/README.md)参照。
@@ -47,6 +48,7 @@
 | [x] SIM-01B-R / P1 | stale時の明示rebind操作 | `SecondaryMotionRebind.Apply`でbone/vertex対応表を必須化し、Workbenchは同一BoneIdの安全な場合だけボタンを有効化。リグのPose/Binding再bindと二次運動attachment再bindを分離し、推測による自動対応をしない |
 | [x] SIM-02A / P1 | PhysBones target packageと合成Bridge | `PhysBonesTargetProfile`／`PhysBonesChain`、`NYPP` v1、schema 4 attachment、loss report、target package、reflection writer、managed-only、branch preflight、receiver Windowを追加し合成fixtureで検証済み |
 | [x] SIM-02B-1 / P1 | receiver binding事前検証 | `PhysBonesBindingValidator`をGUIの保存／読込／適用前へ接続し、必須stable BoneId／collider group、avatar root配下、重複Transform、空groupを共通診断。vendor SDKの型判断はbackendへ委譲 |
+| [x] SIM-02B-2 / P1 | receiver component型の固定 | target package manifestへ完全修飾`ComponentTypeName`を保存し、receiverのreflection resolverへ渡す。旧manifestは既定型へフォールバックし、custom型と旧形式をCore／Bridgeで往復確認 |
 | [ ] SIM-02B / P1 **次に実行** | 実SDK受け取り側 | `NyaForgePhysBonesBinding`へpackage identity付きのstable BoneId／collider group手動割当を保存・読込できるようにした。reflection member catalogは継承元private field/propertyも対象にする。次は対象SDKの版・型を固定し、package読込→実component生成・更新を実SDKで確認。未対応項目は書込み前にloss reportで停止し、未管理componentを変更しない。SDK未導入時のpublic buildは維持 |
 | [x] SIM-03A / P1 | GUI/MCPの設定と再生所有者 | GUI・内部MCP handler・外部sidecar toolにplay/pause/reset/rebuild/fixed-step/stateを接続し、同じtransient owner／generationで保存対象外、編集・作品切替時の破棄を確認済み。非同期vendor構築の実SDK接続は後続タスク |
 | [x] SIM-03B / P1 | 連続撮影とbackend証拠 | `SecondaryMotionCaptureRecord`／codec、固定1/60秒・warmup・最大8frame・pixel budget、input/config hash、adapter／package版、target、Unity/build、pose/root/collider条件、各PNG hashと失敗statusを1 runへ束ね、`forge_secondary_motion_capture`の実MCPで3frameを確認済み。native revision／保存／制作姿勢は不変。実VRChat受入の証拠とは分ける |
@@ -101,6 +103,7 @@ SIM-02Bのbinding validationは実装済み。次は対象SDKの版・完全修�
 - SIM-02B reflection catalog regression: Unity **2022.3.22f1** receiver **PASS**（`Artifacts/BridgeReceiver-20260912-220031-153-b6d83d0cd2ef48ba94dc95e896ab488e/bridge-report.json`）。別component型のmarker干渉を分離したうえで、継承元private fieldを含むreflection discovery、package apply、managed-only、rollbackを確認した。これはSDK形状fixtureの受入であり、実VRChat SDK／実アバター／VRChat内動作ではない。
 - SIM-02B binding validation: Unity **2022.3.22f1** receiverで`PhysBonesBindingValidator`の有効なdescendant mapping、root外bone、不足collider groupを確認した。保存／読込／適用前の共通検証としてGUIへ接続済み。これは合成fixtureの受入であり、実VRChat SDK／実アバター／VRChat内動作ではない。
 - SIM-02B binding validation checkpoint: Windows Player build **PASS**（`Logs/build-player-20260912-220850-504.log`）、Player **PASS**（`Artifacts/Authoring-20260912-220901-ad5f61277a8d434a822f0ea09c3c2f43/report.json`）。同成果物をUnity **2022.3.22f1** receiverへ渡し、**10 checks PASS**（`Artifacts/BridgeReceiver-20260912-220932-900-7db78aa674cd4198849405029fd7accb/bridge-report.json`）。validatorの有効mapping、root外bone、不足collider groupを回帰した。これは合成fixtureの受入であり、実VRChat SDK／実アバター／VRChat内動作ではない。
+- SIM-02B component identity checkpoint: Core **411 passed / 0 failed**（`Logs/core-physbones-component-type.txt`）。custom完全修飾型のmanifest往復と、型名を省略した旧manifestの既定型フォールバックを確認。Windows Player build **PASS**（`Logs/build-player-20260912-221503-050.log`）、Player **PASS**（`Artifacts/Authoring-20260912-221524-3e04602763934b2d82a483965a3d197b/report.json`）、Unity **2022.3.22f1** receiver **10 checks PASS**（`Artifacts/BridgeReceiver-20260912-221557-826-3ecd6b78c46743cd8321f2f3981d147b/bridge-report.json`）。これはcomponent型fixtureの受入であり、実VRChat SDK／実アバター／VRChat内動作ではない。
 
 - GUI完全source接続: Windows-SourceSkinImport build **PASS** (`Logs/build-player-20260912-170004-544.log`)、Player **PASS** (`Artifacts/Authoring-20260912-170036-ad7444ce32a14d94b4b57c23c2f86ff7/report.json`)。VRM0/1で元GLBとNYFS一致、再生中Save、生成fixtureの原本パスを移動後にOpen、完全payload維持と制作姿勢復元を確認。import失敗保護も合格。実マウス/任意実素材の受入ではない。今回はCore変更なしでCore suiteを再実行していない。
 

@@ -121,7 +121,10 @@ namespace NyaForge.UnityBridge.Editor
                 VrcPhysBonesReflectionBackend backend;
                 Require(VrcPhysBonesReflectionBackend.TryCreate(out backend, "verification-sdk", typeof(PhysBonesReflectionFixtureComponent).AssemblyQualifiedName), "Reflection PhysBones backend did not find the shape-compatible fixture type.");
                 string packageDirectory = Path.Combine("Temp", "NyaForgePhysBonesBridgePackage-" + Guid.NewGuid().ToString("N"));
-                string manifest = PhysBonesTargetPackage.Export(packageDirectory, profile, skeleton);
+                string fixtureType = typeof(PhysBonesReflectionFixtureComponent).AssemblyQualifiedName;
+                string manifest = PhysBonesTargetPackage.Export(packageDirectory, profile, skeleton, fixtureType);
+                var package = PhysBonesTargetPackage.Read(manifest);
+                Require(package.ComponentTypeName == fixtureType, "PhysBones target package did not retain the explicit component type name.");
                 var result = PhysBonesBridge.ApplyPackage(manifest, context, backend);
                 var component = (PhysBonesReflectionFixtureComponent)result.Components.Single();
                 Require(component.rootTransform == avatar.transform && Mathf.Abs(component.stiffness - .5f) < .0001f && component.allowCollision, "Reflection PhysBones backend did not map the target fields.");

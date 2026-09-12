@@ -62,6 +62,10 @@ SIM-02B reflection catalog検証: Unity **2022.3.22f1** receiver **PASS**（`Art
 
 SIM-02B binding validation: 保存・適用・保存済み割当の読込で共通の`PhysBonesBindingValidator`を通し、必要stable BoneId／collider group、root配下制約、重複Transform／同一group内collider重複を事前に検査する。vendor component型は推測せずbackendへ委譲し、colliderのgroup間共有は許可する。Bridge合成fixtureで有効なdescendant mappingと、root外bone／不足groupの停止を確認する。
 
+SIM-02B component identity: target package manifestへ受け取り側の完全修飾`ComponentTypeName`を保存し、receiverのreflection resolverへ渡す。旧manifestで未指定の場合は既定のVRChat PhysBone型へフォールバックする。実SDKの版・型が一致することは、SDK導入後に別受入として確認する。
+
+SIM-02B component identity検証: Core **411 passed / 0 failed**（`Logs/core-physbones-component-type.txt`）でcustom型と旧manifestの既定型フォールバックを確認し、Windows PlayerとUnity **2022.3.22f1** receiver **10 checks**もPASS（`Logs/build-player-20260912-221503-050.log`、`Artifacts/Authoring-20260912-221524-3e04602763934b2d82a483965a3d197b/report.json`、`Artifacts/BridgeReceiver-20260912-221557-826-3ecd6b78c46743cd8321f2f3981d147b/bridge-report.json`）。
+
 実装を止めずに受け入れ可能な順へ、SIM-01〜07を次の小タスクへ分ける。SIM-03AのGUI・内部handler・外部sidecar lifecycleとSIM-03Bの固定step capture証拠は完了済みで、現在の主経路は **SIM-02B → SIM-07A**。MagicaCloth2は任意評価へ隔離する。
 
 | ID / 優先・段階 | 作業 | 依存 / 完了条件 |
@@ -71,6 +75,7 @@ SIM-02B binding validation: 保存・適用・保存済み割当の読込で共�
 | SIM-01B-R / P1・C2 **完了** | stale時の明示rebind操作 | 旧→新BoneId／必要な固定頂点indexの対応表を必須化。Workbenchの同一BoneIdボタンは参照IDが現骨格に存在し、topology条件を満たす場合だけ有効。リグPose/Bindingとsecondary attachmentのidentity更新を別操作として検証済み |
 | SIM-02A / P1・C2 **完了** | PhysBones target packageと合成Bridge | `NYPP` v1、schema 4 attachment、target package、loss report、stable bone／collider mapping、managed-only、branch preflight、rollback、receiver Windowを合成fixtureで検証済み |
 | SIM-02B-1 / P1・C2 **完了** | receiver binding事前検証 | `PhysBonesBindingValidator`を保存／読込／適用前へ接続し、必須stable BoneId／collider group、avatar root配下、重複Transform、空groupを共通診断。vendor SDKの型判断はbackendへ委譲 |
+| SIM-02B-2 / P1・C2 **完了** | receiver component型の固定 | target package manifestへ完全修飾`ComponentTypeName`を保存し、receiverのreflection resolverへ渡す。旧manifestは既定型へフォールバックし、custom型と旧形式をCore／Bridgeで往復確認 |
 | SIM-02B / P1・C2 **次** | 実SDK受け取り側 | `PhysBonesBindingValidator`で保存／読込／適用前のroot配下・必須ID・重複・空groupを検証済み。SDK版・型を固定し、manifest/profile/skeleton読込、stable BoneId／collider group手動割当、実component生成・更新を確認する。継承元private memberを含むreflection mappingも確認する。unsupportedは書込み前停止、未管理component保護、SDK未導入public build維持 |
 | SIM-03A / P1・C2 **完了** | 共通GUI/MCPと再生所有者 | GUI・内部MCP handler・外部sidecar toolのplay/pause/reset/rebuild/fixed-step/stateを同じtransient owner／generationへ接続し、再生・停止・再構築・固定step・reset・Save/Open非保存・編集時破棄を合成backendと実named-pipe経路で確認済み。非同期vendor構築は後続 |
 | SIM-03B / P1・C2 **完了** | 連続撮影とbackend証拠 | `SecondaryMotionCaptureRecord`／codec、固定1/60秒・warmup・最大8frame・pixel budget、input/config hash、adapter／package版、target、Unity/build、pose/root/collider条件、各PNG hashと失敗statusをrun単位で記録。外部MCPの3frame実通信とnative状態不変を検証済み |
