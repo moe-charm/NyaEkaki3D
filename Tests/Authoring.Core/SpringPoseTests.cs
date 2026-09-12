@@ -13,6 +13,7 @@ internal static partial class Program
 
     static void RunSpringPoseTests()
     {
+        RunSpringEndpointTests();
         Test("Spring three joints follow moving affine base poses without mutating input", () =>
         {
             string tip = "00000000-0000-0000-0000-000000000003";
