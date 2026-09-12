@@ -166,8 +166,7 @@ namespace NyaForge.Authoring.Rig
                 float stiffness = Math.Min(1f, joint.Stiffness * deltaTime);
                 candidate = candidate + (targetTail - candidate) * stiffness;
                 candidate = candidate + joint.GravityDirection * (joint.GravityPower * deltaTime * deltaTime);
-                candidate = ResolveColliders(head, candidate, joint.HitRadius, valid.CollidersByBone[joint.BoneId]);
-                candidate = Constrain(head, candidate, length, targetTail - head);
+                candidate = SpringConstraintSolver.Solve(head, candidate, length, targetTail - head, joint.HitRadius, valid.CollidersByBone[joint.BoneId]);
                 nextTails.Add(joint.BoneId, candidate);
                 Vec3 currentDirection = targetTail - head, desiredDirection = candidate - head;
                 Mat3 rotation = RotationBetween(currentDirection, desiredDirection);
@@ -184,23 +183,6 @@ namespace NyaForge.Authoring.Rig
         private static float Distance(Vec3 a, Vec3 b) { return Length(a - b); }
         private static float Length(Vec3 value) { return (float)Math.Sqrt(value.X * value.X + value.Y * value.Y + value.Z * value.Z); }
         private static Vec3 Normalize(Vec3 value, Vec3 fallback) { float length = Length(value); return length <= 1e-6f ? fallback : value * (1f / length); }
-        private static Vec3 Constrain(Vec3 head, Vec3 tail, float length, Vec3 fallbackDirection) { return head + Normalize(tail - head, Normalize(fallbackDirection, new Vec3(0, 1, 0))) * length; }
-
-        private static Vec3 ResolveColliders(Vec3 head, Vec3 candidate, float hitRadius, IReadOnlyList<SpringBoneCollider> colliders)
-        {
-            Vec3 result = candidate;
-            foreach (var collider in colliders)
-                {
-                    Vec3 delta = result - collider.Center; float distance = Length(delta), minimum = collider.Radius + hitRadius;
-                    if (distance < minimum)
-                    {
-                        Vec3 fallback = Normalize(result - head, new Vec3(0, 1, 0));
-                        result = collider.Center + Normalize(delta, fallback) * minimum;
-                    }
-                }
-            return result;
-        }
-
         private struct Mat3
         {
             internal Vec3 X, Y, Z;

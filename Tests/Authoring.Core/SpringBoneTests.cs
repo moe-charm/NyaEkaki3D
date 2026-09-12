@@ -13,6 +13,7 @@ internal static partial class Program
     {
         RunSpringPoseTests();
         RunSpringColliderScopeTests();
+        RunSpringConstraintTests();
         Test("SpringBone first step initializes a detached rest state", () =>
         {
             var fixture = SpringFixture(); var initial = SpringBoneSimulator.CreateInitialState(fixture.Skeleton, fixture.Pose, new[] { fixture.Chain });
@@ -26,14 +27,6 @@ internal static partial class Program
             var result = SpringBoneSimulator.Step(fixture.Skeleton, fixture.Pose, new[] { fixture.Chain }, Array.Empty<SpringBoneColliderGroup>(), initial, .1f);
             Vec3 head = result.Pose.ByBoneId[ChildBone].Transform.TransformPoint(new Vec3()); Vec3 tail = result.Pose.ByBoneId[ChildBone].Transform.TransformPoint(new Vec3(0, 1, 0));
             Near(1f, Distance(head, tail)); True(tail.X > head.X); True(result.State.CurrentTails[ChildBone].X > 0f); False(result.Pose.ContentHash == fixture.Pose.ContentHash);
-        });
-
-        Test("SpringBone sphere collider keeps the simulated tail outside", () =>
-        {
-            var fixture = SpringFixture(gravityPower: 10f, gravityDirection: new Vec3(1, 0, 0), hitRadius: .05f); var initial = SpringBoneSimulator.CreateInitialState(fixture.Skeleton, fixture.Pose, new[] { fixture.Chain });
-            var collider = new SpringBoneColliderGroup("body", new[] { new SpringBoneCollider(new Vec3(.4f, .8f, 0), .1f) });
-            var result = SpringBoneSimulator.Step(fixture.Skeleton, fixture.Pose, new[] { fixture.Chain }, new[] { collider }, initial, .25f);
-            float distance = Distance(result.State.CurrentTails[ChildBone], collider.Colliders[0].Center); True(distance >= .149f); 
         });
 
         Test("SpringBone rejects invalid time, duplicate joints, and missing bones", () =>
