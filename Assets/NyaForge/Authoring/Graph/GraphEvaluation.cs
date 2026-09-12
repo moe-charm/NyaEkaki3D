@@ -51,6 +51,12 @@ namespace NyaForge.Authoring.Graph
             string domain = Checks.Hash(Encoding.UTF8.GetBytes(nodeId + ":" + mesh.TopologyHash));
             return new GraphMeshValue(mesh, transform, domain);
         }
+
+        /// <summary>Creates a value with replaced geometry while retaining graph identity and appearance.</summary>
+        internal GraphMeshValue WithMesh(MeshData mesh)
+        {
+            return new GraphMeshValue(mesh, Transform, DomainId, Polygon, PolygonRendering, BaseColor, Material, SlotMaterials);
+        }
     }
 
     public sealed class GraphDiagnostic

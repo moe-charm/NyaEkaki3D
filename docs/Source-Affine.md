@@ -75,7 +75,7 @@ Player検証はVRM0/1でsource payloadと元GLBの一致、再生中の保存、
 
 1. **実装済み**: `GlbNodeTransformReader`がnode JSONのTRS/matrixをdecodeし、混在・配列長・型を検査する。`SourceNodeTransforms`がsource木の親合成を反復処理で行い、local/worldの両方を保持する。詳細は下段。
 2. **実装済み**: `GlbSourceSkinImporter`が全dense JOINTS/WEIGHTS setをslot順の`SourceSkinBinding`へ渡し、`SourceSkinDeformer`がbind相殺とpose paletteを計算する。`SourceSkinPackageCodec`とrig session v5が行列・bind・元weightを保存する。
-3. **次に実装**: source mesh topology/hashと既存graphの表示meshを明示的に結び、一般bind paletteをgraph deformerへ接続する。rest/複数pose/normal・tangent、再利用mesh/object、失敗時原子性を検証してから表示制限を見直す。
+3. **一部接続済み / 次に実装**: `SourceSkinGraphAdapter`が評価済み`GraphMeshValue`へsource paletteを明示適用し、domain・RestTransform・属性・topologyを保ったmesh差し替えを行う。次はsource mesh topology/hashとimport graphのpose palette生成・再利用mesh/object表示を自動経路へ接続し、rest/複数pose/normal・tangent・失敗時原子性を検証してから表示制限を見直す。
 4. 複数mesh/instance/skin、normalized/sparse weight、未知拡張・材質・animationの保持はI04-B〜Eへ残す。既存translation-only作品を新source情報ありと捏造せず、能力表示は実装済み範囲だけを示す。
 
 Core回帰は非一様TRSと親子合成の解析値、joint global×inverse-bind、point/vectorの差、shear/鏡映の逆変換、normal/tangent直交性、入力独立性、不正matrix/quaternion/方向、小さいscaleの往復を含む。実行結果はcurrent_taskへ記録。一般GLBの取込・実素材受入の証拠とは区別する。

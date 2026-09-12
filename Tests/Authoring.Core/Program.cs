@@ -24,6 +24,7 @@ internal static partial class Program
         RunSourceSkinCodecTests();
         RunSourceMeshTransformTests();
         RunSourceSkinDeformerTests();
+        RunSourceSkinGraphAdapterTests();
         RunGlbSourceSkinImporterTests();
         RunGlbNodeTransformTests();
         RunFaceInspectionTests();
