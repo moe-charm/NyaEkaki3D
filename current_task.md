@@ -22,6 +22,13 @@
 
 初回レビュー時点の証拠（現状は下段参照）: Core **334 passed / 0 failed** (`Logs/core-check-20260912.txt`)。R11の追加再現ログは `Logs/review-current-repro.txt`。既存Windows-NodeSpace reportのPASSを読み直したが、今回Player/build/実マウスは再実行していない。C0〜C5、skin/morph出力・受け取り先検証などの製品目標は引き続き [開発計画](docs/Development-Plan.md) の範囲に残る。
 
+### I03-C: 再生projectionの再利用（2026-09-12）
+
+- `SpringMeshBuffers`へ再利用するposition/normal/tangent/Points配列とbounds検査を分離。同じtopology・transform・属性数・UV・材質ならUnity Mesh/GameObjectを保持し、頂点データだけ更新する。構成変更時は通常のprojection再構築へ戻す。
+- 再生中は編集点バッチを作らず、終了/Resetで編集中の表示と編集点を復元する。表示が初期姿勢と一致していても復元を省略しない。graphは従来どおり一時評価し、制作文書へは書かない。
+- Windows-SpringMeshReuse build **PASS**: `Logs/build-player-20260912-153043-091.log`。初回suiteは120秒で時間切れ (`Artifacts/Authoring-20260912-153122-17d1650d16ca40148eca6e10794714d8/player.log`)。検証process終了後にTimeoutSeconds=300で再実行し、Player suite **PASS**: `Artifacts/Authoring-20260912-153336-c66834f83e614fecb6278247149ea256/report.json`。Core変更なし、直近353件合格を参照。
+- 専用Player検証へ12stepのMesh/Object同一性、表示頂点変化、再生中の編集点非表示とReset復元を追加。[再利用契約](docs/Workbench-Spring-Playback.md)参照。大規模モデルの速度/メモリ測定は未実施。
+
 ### I03-C: Workbench再生GUIと一時表示（2026-09-12）
 
 - `AuthoringWorkbench.SpringPlayback`に折りたたみの再生/一時停止/リセットを追加。`OwnedMeshProjection.Spring`で一時graph評価の表示を分離する。保存graph/attachments/Undoへ揺れたposeを書かず、編集・作品・metadata・stage変更時はownerを破棄する。

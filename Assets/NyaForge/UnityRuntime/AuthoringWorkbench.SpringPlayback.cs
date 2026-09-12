@@ -88,6 +88,7 @@ namespace NyaForge.UnityRuntime
         {
             bool hadPreview = springPlayback != null;
             springPlayback = null; springWorkspace = null;
+            projection?.EndSpringPreview();
             if (restore && hadPreview && workspace != null)
                 using (var prepared = projection.PrepareGraph(workspace.Document, workspace.Preview)) prepared.Commit();
             RefreshSpringPlayback();

@@ -21,7 +21,14 @@ namespace NyaForge.UnityRuntime
                 var baseline = projection.DisplayMesh.vertices;
                 Check(springPlay.enabledSelf, "Spring play button is disabled for VRM1");
                 StartSpringPlayback();
-                for (int i = 0; i < 12; i++) TickSpringPlayback(1f / 60);
+                TickSpringPlayback(1f / 60);
+                var reusedMesh = projection.DisplayMesh; var reusedObject = projection.DisplayObject;
+                for (int i = 1; i < 12; i++)
+                {
+                    TickSpringPlayback(1f / 60);
+                    Check(projection.DisplayMesh == reusedMesh && projection.DisplayObject == reusedObject, "Spring playback rebuilt unchanged mesh layout");
+                }
+                Check(projection.PointBatchCount == 0, "Playback retained edit point batches");
                 Check(springPlayback != null && springPlayback.CompletedSteps == 12, "GUI Spring preview did not run");
                 Check(projection.DisplayMesh.vertices.Where((v, i) => (v - baseline[i]).sqrMagnitude > 1e-10f).Any(), "Spring pose did not reach displayed mesh");
                 Check(workspace.Document.StateHash == authored && workspace.Attachments.ContentHash == metadata, "Playback changed authored state");
@@ -37,13 +44,13 @@ namespace NyaForge.UnityRuntime
                 var restored = projection.DisplayMesh.vertices;
                 Check(restored.Where((v, i) => (v - baseline[i]).sqrMagnitude > 1e-10f).Any() == false, "Open did not restore authored mesh");
                 StartSpringPlayback(); TickSpringPlayback(1f / 60); ClearSpringPlayback(true);
-                Check(springPlayback == null && !springReset.enabledSelf, "Reset did not clear transient preview");
+                Check(springPlayback == null && !springReset.enabledSelf && projection.PointBatchCount > 0, "Reset did not restore editing projection");
                 StartSpringPlayback();
                 var graph = workspace.Document.Objects[0].Graph;
                 var node = graph.Nodes[springPoseNode];
                 Execute(AuthoringOperation.UpdateNode(GraphNode.PoseNode(node.NodeId, node.Pose)));
                 Check(springPlayback == null, "Editing did not stop Spring playback");
-                checks.Add("VRM1 playback handlers: displayed mesh changes, authored graph/metadata unchanged, pause/resume/reset, Save/Open excludes simulation, editing stops playback");
+                checks.Add("VRM1 playback handlers: displayed mesh changes with reused mesh/object and restored edit points, authored graph/metadata unchanged, pause/resume/reset, Save/Open excludes simulation, editing stops playback");
             }
             finally { ClearSpringPlayback(true); springAutomaticTick = true; }
         }

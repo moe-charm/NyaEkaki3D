@@ -204,6 +204,7 @@ namespace NyaForge.UnityRuntime
 
         public void Dispose()
         {
+            EndSpringPreview();
             current?.DestroyOwned(); current = null;
             UnityEngine.Object.Destroy(surface);
             UnityEngine.Object.Destroy(point);
