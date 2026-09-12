@@ -31,6 +31,11 @@ namespace NyaForge.UnityRuntime
             InspectModelSelection(path);
             ImportModel(path);
             Check(!workspace.Document.IsEmpty && workspace.Document.ActiveObject.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.EditMesh), "Real model import did not publish an editable graph stage.");
+            var importedPaints = workspace.Document.ActiveObject.Graph.Nodes.Values
+                .Where(node => node.TypeId == BuiltinNodes.Paint && node.PaintImage != null).ToArray();
+            Check(importedPaints.All(node => node.PaintImage.Width <= 1024 && node.PaintImage.Height <= 1024), "Imported base-color Paint exceeded the native 1024px budget.");
+            if (importedPaints.Length > 0)
+                checks.Add("embedded base-color images are owned by native Paint and fit the 1024px budget");
             SelectEditStage(1); Select(new[] { 0 });
             moveX.SetValueWithoutNotify(1); moveY.SetValueWithoutNotify(0); moveZ.SetValueWithoutNotify(0);
             string before = GraphEvaluator.Evaluate(workspace.Document.ActiveObject.Graph).Output.Mesh.ContentHash;

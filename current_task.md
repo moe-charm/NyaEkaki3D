@@ -1,3 +1,7 @@
+# 2026-09-13 embedded base-color image budget retention
+
+GLB/VRMの埋め込みbase-color画像が1024pxを超える場合、取込を白一色へ退避せず、最大8192pxまでデコードしてアスペクト比を保った最近傍縮小を行い、native Paintの1024px上限へ所有データとして保存するようにした。8192px超・壊れた画像・16MiB超は従来どおり明示診断で省略し、外部URIやbase-color以外のtexture mapは推測取得しない。実RadDollV3（private一時素材、埋め込み画像6件）で縮小後のPaintノードとSave/Open依存なしを確認した。Core **461 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a7b92fd3fb184402a46aef4f4dfa676c`）。Windows Player `Builds/MaterialResizeV1/NyaForge.exe` Authoring **80 checks PASS**（`Artifacts/Authoring-20260913-081327-dc634884b6f0475e9ebbcabff60eff72/report.json`）、Unity **2022.3.22f1** Bridge **PASS**（`Artifacts/BridgeReceiver-20260913-081803-691-55c8fee7b2794de8a139d297b4ca5482/bridge-report.json`）。
+
 # 2026-09-13 glTF material color/default alignment
 
 glTF `baseColorFactor` は線形値として読み書きするよう修正し、取込時の不要なsRGB変換と出力時の逆変換を廃止した。`metallicFactor` の省略値もglTF仕様の1へ合わせ、linear RGBと省略既定値の回帰を追加した。Core **460 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-66295ed6bf6a4d98815455f15972ac53`）。Windows Player `Builds/MaterialLinearV1/NyaForge.exe` Authoring suite（`Artifacts/Authoring-20260913-074940-af62bbf5049a4276bccce18c480d93e2/report.json`）とUnity Bridge（`Artifacts/BridgeReceiver-20260913-075048-365-c4c2956b407148a6afe5110e50f45e0f/bridge-report.json`）はPASS。

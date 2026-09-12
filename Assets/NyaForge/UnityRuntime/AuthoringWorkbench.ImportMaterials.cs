@@ -62,17 +62,46 @@ namespace NyaForge.UnityRuntime
             {
                 texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, false);
                 if (!texture.LoadImage(bytes, false)) throw new AuthoringException("INVALID_IMAGE", "埋め込みbase color画像を読み込めませんでした。");
-                if (texture.width < 1 || texture.height < 1 || texture.width > 1024 || texture.height > 1024)
-                    throw new AuthoringException("IMAGE_DIMENSION_EXCEEDED", "埋め込みbase color画像は1024x1024以内で保持します（" + texture.width + "x" + texture.height + "）。");
+                if (texture.width < 1 || texture.height < 1)
+                    throw new AuthoringException("IMAGE_DIMENSION_EXCEEDED", "埋め込みbase color画像の寸法が不正です（" + texture.width + "x" + texture.height + "）。");
+                // Keep the native Paint budget deterministic while retaining the
+                // visual reference of common 2K/4K avatar textures. Decode only
+                // up to a bounded source size, then downsample in CPU space so
+                // the persisted project owns the resulting pixels and never
+                // depends on the original GLB after Save/Open.
+                if (texture.width > 8192 || texture.height > 8192)
+                    throw new AuthoringException("IMAGE_DIMENSION_EXCEEDED", "埋め込みbase color画像は8192px以内で読み込みます（" + texture.width + "x" + texture.height + "）。");
                 var colors = texture.GetPixels32();
-                var rgba = new byte[colors.Length * 4];
-                for (int i = 0; i < colors.Length; i++)
+                int targetWidth = texture.width, targetHeight = texture.height;
+                if (targetWidth > 1024 || targetHeight > 1024)
                 {
-                    int at = i * 4; rgba[at] = colors[i].r; rgba[at + 1] = colors[i].g; rgba[at + 2] = colors[i].b; rgba[at + 3] = colors[i].a;
+                    float scale = Mathf.Min(1024f / targetWidth, 1024f / targetHeight);
+                    targetWidth = Mathf.Max(1, Mathf.RoundToInt(targetWidth * scale));
+                    targetHeight = Mathf.Max(1, Mathf.RoundToInt(targetHeight * scale));
                 }
-                return PaintImage.FromRgbaBottomLeft(texture.width, texture.height, rgba);
+                var rgba = ResizeRgba(colors, texture.width, texture.height, targetWidth, targetHeight);
+                return PaintImage.FromRgbaBottomLeft(targetWidth, targetHeight, rgba);
             }
             finally { if (texture != null) UnityEngine.Object.Destroy(texture); }
+        }
+
+        static byte[] ResizeRgba(Color32[] source, int sourceWidth, int sourceHeight, int targetWidth, int targetHeight)
+        {
+            Checks.Require(source != null && source.Length == sourceWidth * sourceHeight, "INVALID_IMAGE", "Decoded image pixels are incomplete.");
+            Checks.Require(targetWidth > 0 && targetHeight > 0 && targetWidth <= 1024 && targetHeight <= 1024, "IMAGE_DIMENSION_EXCEEDED", "Native Paint image dimensions exceed 1024px.");
+            var rgba = new byte[targetWidth * targetHeight * 4];
+            for (int y = 0; y < targetHeight; y++)
+            {
+                int sourceY = Mathf.Min(sourceHeight - 1, Mathf.FloorToInt((y + .5f) * sourceHeight / targetHeight));
+                for (int x = 0; x < targetWidth; x++)
+                {
+                    int sourceX = Mathf.Min(sourceWidth - 1, Mathf.FloorToInt((x + .5f) * sourceWidth / targetWidth));
+                    var pixel = source[sourceY * sourceWidth + sourceX];
+                    int at = (y * targetWidth + x) * 4;
+                    rgba[at] = pixel.r; rgba[at + 1] = pixel.g; rgba[at + 2] = pixel.b; rgba[at + 3] = pixel.a;
+                }
+            }
+            return rgba;
         }
     }
 }
