@@ -273,6 +273,7 @@ MCP adapterはprotocolを変換するだけ。生成・検査の仕様をsidecar
 | `forge_history` | Undo／Redo | action、expected revision → 新revision |
 | `forge_save_project` | 制作状態を保存 | workspace内の保存先、期待する保存version |
 | `forge_export` | 指定対象を受け渡す | format/profile、objectIds、snapshot ID |
+| `forge_export_glb` | revision固定の標準GLBを書き出す | static/skinned/skinned_extended、exportId、未対応資源のloss境界 |
 | `forge_job` | 長い処理を確認・中止 | jobId、action → status／result |
 | `forge_read_artifact` | 詳細画像・データを取得 | artifactId、必要ならcrop／chunk |
 

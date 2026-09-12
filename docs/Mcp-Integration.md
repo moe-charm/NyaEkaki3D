@@ -254,3 +254,9 @@ Windows-SIM03B-Capture3で実MCP client→stdio sidecar→named pipe→Playerを
 - PhysBones managed markerはchain配列位置を主識別子にせず、target/name/rootのstable identityを優先して再利用し、profileの並び替えで重複生成しない。旧marker向けにindex fallbackを残す。
 - これらはコード検証とビルド確認を行い、実VRChat SDK内の受入は引き続き未完了。
 - sidecar回帰: `Tests/Mcp.Transport`へCaptureResult検証を追加し、camera metadata保持・PNG data非重複・ImageContentBlock bytesを確認した。`dotnet run --project Tests/Mcp.Transport/Mcp.Transport.Tests.csproj --no-build` は3項目PASS。
+
+## forge_export_glb（2026-09-13）
+
+- `forge_export_glb` を追加し、`static` / `skinned` / `skinned_extended` のprofileを明示して標準GLBを出力する。要求は`forge_get_state`の`saveTarget.directory`、`documentId`、`revision`、canonical GUIDの`exportId`を必要とし、出力先は`<saveTarget>/exports/glb-<exportId>/model.glb`へ固定する。
+- GUIの `GlbExportService` と同じ出力serviceを使い、staticでは標準PBRと埋め込みbase-colorを保持する。skinnedではrest pose・identity transformの境界と4 influence／全weight境界を共用し、未対応texture・animation・VRM拡張を補完しない。
+- 同じexportIdの再送は既存出力先拒否となり、native documentのrevision/state hashは変更しない。外部MCP client→stdio sidecar→named pipe→Windows Playerの実通信でGLB magic、再送拒否、state不変を確認した。Player `Builds/McpGlbExportV3/NyaForge.exe`、Authoring report `Artifacts/Authoring-20260913-042411-d4ffa53ce78d430baf6b34abed2a7f72/report.json`、MCP transport buildがPASS。
