@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
+using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Rig;
 
 namespace NyaForge.UnityRuntime
@@ -26,6 +27,9 @@ namespace NyaForge.UnityRuntime
                 var path = Path.Combine(output, "playback.vrm");
                 File.WriteAllBytes(path, VrmVerificationFixture.Create(legacy, playback: true));
                 ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null); ImportModel(path);
+                Check(importedRigSession?.SourceSkin != null, "GUI import did not retain complete source skin");
+                var sourcePayload = SourceSkinCodec.Write(importedRigSession.SourceSkin);
+                Check(sourcePayload.SequenceEqual(SourceSkinCodec.Write(GlbSourceSkinReader.Read(File.ReadAllBytes(path)))), "GUI import changed source frames or binds");
                 string authored = workspace.Document.StateHash, metadata = workspace.Attachments.ContentHash;
                 var baseline = projection.DisplayMesh.vertices;
                 Check(springPlay.enabledSelf, "Spring play button is disabled for VRM");
@@ -48,7 +52,10 @@ namespace NyaForge.UnityRuntime
                 Check(springPlayback.CompletedSteps == 13, "Resume reset or skipped history");
                 projectPath.SetValueWithoutNotify(Path.Combine(output, "playback-project"));
                 Check(TrySaveProject(), "Save during Spring playback failed");
+                // Only this generated fixture is moved; native reopening must not depend on the source path.
+                File.Move(path, path + ".source-unavailable");
                 OpenProject();
+                Check(importedRigSession?.SourceSkin != null && sourcePayload.SequenceEqual(SourceSkinCodec.Write(importedRigSession.SourceSkin)), "Save/Open lost complete source frames or binds");
                 Check(springPlayback == null && workspace.Document.StateHash == authored && !HasUnsaved, "Open persisted transient simulation");
                 var restored = projection.DisplayMesh.vertices;
                 Check(restored.Where((v, i) => (v - baseline[i]).sqrMagnitude > 1e-10f).Any() == false, "Open did not restore authored mesh");
@@ -59,7 +66,7 @@ namespace NyaForge.UnityRuntime
                 var node = graph.Nodes[springPoseNode];
                 Execute(AuthoringOperation.UpdateNode(GraphNode.PoseNode(node.NodeId, node.Pose)));
                 Check(springPlayback == null, "Editing did not stop Spring playback");
-                checks.Add((legacy ? "VRM0" : "VRM1") + " playback handlers: displayed mesh changes with reused mesh/object and restored edit points, authored graph/metadata unchanged, pause/resume/reset, Save/Open excludes simulation, editing stops playback");
+                checks.Add((legacy ? "VRM0" : "VRM1") + " playback handlers: complete source skin matches GLB and survives native Save/Open; displayed mesh changes with reused mesh/object and restored edit points, authored graph/metadata unchanged, pause/resume/reset, Save/Open excludes simulation, editing stops playback");
             }
             finally { ClearSpringPlayback(true); springAutomaticTick = true; }
         }

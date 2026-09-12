@@ -14,7 +14,9 @@ rig session v4の明示`sourceSkin` fieldへNYFSをbase64で格納する。既�
 
 writerは完全sourceありの場合v4、なしの場合v3。readerはv1〜v4に対応。旧版に完全transform/bindを捏造せず、`SourceSkin == null`を維持する。v4はsourceSkin必須でnull/不正base64/不正NYFSを拒否する。既存native projectのRig attachment保存・hash検査を利用し、Save/Open後のNYFS byte一致をCoreで確認済み。
 
-GUI取込はまだWithSourceSkinを呼んでいないため、現在のGUI新規取込はv3のまま。次は取込からの生成接続とPlayer往復、一般geometry/skin座標対応を進める。v4保存成功だけで一般mesh/skinを正しく描画できるとは扱わない。
+GUIのskinned取込は同じbytesからGlbSourceSkinReaderでsourceを読み、WithSourceSkinで検証してからCommitImportedGraphへ渡す。新規skinned取込はv4を保存する。source decode/対応検査が失敗した場合はgraph公開前に拒否し、完全情報を省いたv3へ黙ってfallbackしない。既存nativeのv1〜v3は引き続き情報不明のまま利用できる。
+
+Player検証はVRM0/1でsource payloadと元GLBの一致、再生中の保存、原本パスを利用できない状態でのOpen、完全payloadの維持、制作姿勢の復元を対象とする。結果はcurrent_task参照。一般geometry/skin座標対応はまだ未完了で、v4保存成功だけで一般mesh/skinを正しく描画できるとは扱わない。
 
 ## source skin候補
 
