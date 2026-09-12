@@ -84,6 +84,14 @@ namespace NyaForge.Authoring.Import
                 inverse[4]*n.X+inverse[5]*n.Y+inverse[6]*n.Z, inverse[8]*n.X+inverse[9]*n.Y+inverse[10]*n.Z);
         }
 
+        /// <summary>Transforms an additive normal morph delta without normalizing it.</summary>
+        public Vec3 TransformNormalDelta(Vec3 delta)
+        {
+            var inverse = Inverse().m;
+            return Vector(inverse[0]*delta.X+inverse[1]*delta.Y+inverse[2]*delta.Z,
+                inverse[4]*delta.X+inverse[5]*delta.Y+inverse[6]*delta.Z, inverse[8]*delta.X+inverse[9]*delta.Y+inverse[10]*delta.Z);
+        }
+
         public Vec4 TransformTangent(Vec4 tangent, Vec3 sourceNormal)
         {
             Require(tangent.W == -1 || tangent.W == 1, "Tangent handedness must be -1 or 1.");

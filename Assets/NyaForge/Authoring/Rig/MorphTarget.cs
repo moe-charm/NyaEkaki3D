@@ -24,47 +24,71 @@ namespace NyaForge.Authoring.Rig
         public string Name { get; }
         public string MeshTopologyHash { get; }
         public IReadOnlyDictionary<int, Vec3> Deltas { get; }
+        public IReadOnlyDictionary<int, Vec3> NormalDeltas { get; }
+        public IReadOnlyDictionary<int, Vec3> TangentDeltas { get; }
         public string ContentHash { get; }
 
-        private MorphTarget(string targetId, string name, string meshTopologyHash, IReadOnlyDictionary<int, Vec3> deltas)
+        private MorphTarget(string targetId, string name, string meshTopologyHash, IReadOnlyDictionary<int, Vec3> deltas, IReadOnlyDictionary<int, Vec3> normalDeltas, IReadOnlyDictionary<int, Vec3> tangentDeltas)
         {
             Checks.Id(targetId); Checks.Name(name); Checks.HashText(meshTopologyHash);
-            TargetId = targetId; Name = name; MeshTopologyHash = meshTopologyHash; Deltas = deltas;
+            TargetId = targetId; Name = name; MeshTopologyHash = meshTopologyHash; Deltas = deltas; NormalDeltas = normalDeltas; TangentDeltas = tangentDeltas;
             using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream, Encoding.UTF8))
             {
-                writer.Write(1); writer.Write(TargetId); writer.Write(Name); writer.Write(MeshTopologyHash); writer.Write(Deltas.Count);
-                foreach (var pair in Deltas.OrderBy(item => item.Key))
-                { writer.Write(pair.Key); Write(writer, pair.Value); }
+                writer.Write(2); writer.Write(TargetId); writer.Write(Name); writer.Write(MeshTopologyHash); WriteValues(writer, Deltas); WriteValues(writer, NormalDeltas); WriteValues(writer, TangentDeltas);
                 ContentHash = Checks.Hash(stream.ToArray());
             }
         }
 
         public static MorphTarget Create(MeshData mesh, string targetId, string name, IEnumerable<MorphDelta> deltas)
+            => Create(mesh, targetId, name, deltas, null, null);
+
+        public static MorphTarget Create(MeshData mesh, string targetId, string name, IEnumerable<MorphDelta> deltas, IEnumerable<MorphDelta> normalDeltas, IEnumerable<MorphDelta> tangentDeltas)
         {
             Checks.Require(mesh != null && deltas != null, "INVALID_MORPH", "Mesh and morph deltas are required.");
             Checks.Id(targetId); Checks.Name(name);
-            var values = new Dictionary<int, Vec3>();
-            foreach (var delta in deltas)
-            {
-                Checks.Require(delta != null && delta.VertexIndex < mesh.VertexCount, "INVALID_VERTEX", "Morph vertex is outside the mesh domain.");
-                Checks.Require(values.TryAdd(delta.VertexIndex, delta.Delta), "DUPLICATE_MORPH", "A morph target cannot list one vertex twice.");
-            }
-            Checks.Require(values.Count <= mesh.VertexCount, "BUDGET_EXCEEDED", "Morph delta count exceeds the mesh domain.");
-            return new MorphTarget(targetId, name, mesh.TopologyHash, new System.Collections.ObjectModel.ReadOnlyDictionary<int, Vec3>(values));
+            var values = Values(mesh, deltas, "position");
+            Checks.Require(normalDeltas == null || mesh.Normals.Count == mesh.VertexCount, "UNSUPPORTED_FORMAT", "Normal morph deltas require base normals.");
+            Checks.Require(tangentDeltas == null || mesh.Tangents.Count == mesh.VertexCount, "UNSUPPORTED_FORMAT", "Tangent morph deltas require base tangents.");
+            return new MorphTarget(targetId, name, mesh.TopologyHash, values, Values(mesh, normalDeltas, "normal"), Values(mesh, tangentDeltas, "tangent"));
         }
 
         internal static MorphTarget FromSerialized(string targetId, string name, string meshTopologyHash, IEnumerable<MorphDelta> deltas, int vertexCount)
+            => FromSerialized(targetId, name, meshTopologyHash, deltas, null, null, vertexCount);
+
+        internal static MorphTarget FromSerialized(string targetId, string name, string meshTopologyHash, IEnumerable<MorphDelta> deltas, IEnumerable<MorphDelta> normalDeltas, IEnumerable<MorphDelta> tangentDeltas, int vertexCount)
         {
             Checks.Require(deltas != null && vertexCount > 0, "INVALID_MORPH", "Serialized morph data is invalid.");
             Checks.Id(targetId); Checks.Name(name); Checks.HashText(meshTopologyHash);
+            return new MorphTarget(targetId, name, meshTopologyHash, SerializedValues(deltas, vertexCount), SerializedValues(normalDeltas, vertexCount), SerializedValues(tangentDeltas, vertexCount));
+        }
+
+        static IReadOnlyDictionary<int, Vec3> Values(MeshData mesh, IEnumerable<MorphDelta> deltas, string label)
+        {
+            if (deltas == null) return new System.Collections.ObjectModel.ReadOnlyDictionary<int, Vec3>(new Dictionary<int, Vec3>());
+            var values = new Dictionary<int, Vec3>();
+            foreach (var delta in deltas)
+            {
+                Checks.Require(delta != null && delta.VertexIndex < mesh.VertexCount, "INVALID_VERTEX", "Morph " + label + " vertex is outside the mesh domain.");
+                Checks.Require(values.TryAdd(delta.VertexIndex, delta.Delta), "DUPLICATE_MORPH", "A morph target cannot list one vertex twice.");
+            }
+            Checks.Require(values.Count <= mesh.VertexCount, "BUDGET_EXCEEDED", "Morph delta count exceeds the mesh domain.");
+            return new System.Collections.ObjectModel.ReadOnlyDictionary<int, Vec3>(values);
+        }
+
+        static IReadOnlyDictionary<int, Vec3> SerializedValues(IEnumerable<MorphDelta> deltas, int vertexCount)
+        {
+            if (deltas == null) return new System.Collections.ObjectModel.ReadOnlyDictionary<int, Vec3>(new Dictionary<int, Vec3>());
             var values = new Dictionary<int, Vec3>();
             foreach (var delta in deltas)
             {
                 Checks.Require(delta != null && delta.VertexIndex >= 0 && delta.VertexIndex < vertexCount, "INVALID_VERTEX", "Serialized morph vertex is outside the mesh domain.");
                 Checks.Require(values.TryAdd(delta.VertexIndex, delta.Delta), "DUPLICATE_MORPH", "Serialized morph target contains a duplicate vertex.");
             }
-            return new MorphTarget(targetId, name, meshTopologyHash, new System.Collections.ObjectModel.ReadOnlyDictionary<int, Vec3>(values));
+            return new System.Collections.ObjectModel.ReadOnlyDictionary<int, Vec3>(values);
         }
+
+        static void WriteValues(BinaryWriter writer, IReadOnlyDictionary<int, Vec3> values)
+        { writer.Write(values.Count); foreach (var pair in values.OrderBy(item => item.Key)) { writer.Write(pair.Key); Write(writer, pair.Value); } }
 
         internal static void Write(BinaryWriter writer, Vec3 value)
         { writer.Write(Checks.Canonical(value.X)); writer.Write(Checks.Canonical(value.Y)); writer.Write(Checks.Canonical(value.Z)); }

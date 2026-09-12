@@ -202,7 +202,18 @@ namespace NyaForge.Authoring
                     foreach (var target in meshObject.Morphs.Targets)
                     {
                         var deltas = new Vec3[mesh.VertexCount]; foreach (var pair in target.Deltas) deltas[pair.Key] = pair.Value;
-                        morphTargets.Add(new JObject { ["POSITION"] = AddVec3(binary, views, accessors, deltas, ArrayBuffer, false) });
+                        var targetJson = new JObject { ["POSITION"] = AddVec3(binary, views, accessors, deltas, ArrayBuffer, false) };
+                        if (target.NormalDeltas.Count > 0)
+                        {
+                            var normalDeltas = new Vec3[mesh.VertexCount]; foreach (var pair in target.NormalDeltas) normalDeltas[pair.Key] = pair.Value;
+                            targetJson["NORMAL"] = AddVec3(binary, views, accessors, normalDeltas, ArrayBuffer, false);
+                        }
+                        if (target.TangentDeltas.Count > 0)
+                        {
+                            var tangentDeltas = new Vec3[mesh.VertexCount]; foreach (var pair in target.TangentDeltas) tangentDeltas[pair.Key] = pair.Value;
+                            targetJson["TANGENT"] = AddVec3(binary, views, accessors, tangentDeltas, ArrayBuffer, false);
+                        }
+                        morphTargets.Add(targetJson);
                     }
                 // NyaForge currently has no material assignment in the standard
                 // interchange boundary, so combine submesh index streams into one

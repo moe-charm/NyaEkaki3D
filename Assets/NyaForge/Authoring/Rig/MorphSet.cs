@@ -62,8 +62,14 @@ namespace NyaForge.Authoring.Rig
         {
             ValidateIdentity(mesh.TopologyHash, values);
             foreach (var target in values)
+            {
                 foreach (var vertex in target.Deltas.Keys)
                     Checks.Require(vertex < mesh.VertexCount, "INVALID_VERTEX", "Morph vertex is outside the mesh domain.");
+                foreach (var vertex in target.NormalDeltas.Keys)
+                    Checks.Require(mesh.Normals.Count == mesh.VertexCount && vertex < mesh.VertexCount, "UNSUPPORTED_FORMAT", "Normal morph deltas require base normals.");
+                foreach (var vertex in target.TangentDeltas.Keys)
+                    Checks.Require(mesh.Tangents.Count == mesh.VertexCount && vertex < mesh.VertexCount, "UNSUPPORTED_FORMAT", "Tangent morph deltas require base tangents.");
+            }
         }
 
         static void ValidateIdentity(string meshTopologyHash, MorphTarget[] values)

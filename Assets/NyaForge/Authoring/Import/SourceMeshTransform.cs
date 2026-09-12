@@ -33,8 +33,10 @@ namespace NyaForge.Authoring.Import
             MorphSet converted = null;
             if (morphs != null)
                 converted = MorphSet.Create(mesh, morphs.Targets.Select(target => MorphTarget.Create(mesh,
-                    target.TargetId, target.Name, target.Deltas.Select(delta =>
-                        new MorphDelta(delta.Key, transform.TransformVector(delta.Value))))));
+                    target.TargetId, target.Name,
+                    target.Deltas.Select(delta => new MorphDelta(delta.Key, transform.TransformVector(delta.Value))),
+                    target.NormalDeltas.Count == 0 ? null : target.NormalDeltas.Select(delta => new MorphDelta(delta.Key, transform.TransformNormalDelta(delta.Value))),
+                    target.TangentDeltas.Count == 0 ? null : target.TangentDeltas.Select(delta => new MorphDelta(delta.Key, transform.TransformVector(delta.Value))))));
             return new SourceMeshTransform(mesh, converted, source.ContentHash);
         }
     }

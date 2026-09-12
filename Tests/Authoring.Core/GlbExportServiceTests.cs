@@ -75,5 +75,17 @@ internal static partial class Program
             var imported = GlbSkinImporter.Read(File.ReadAllBytes(result.Path));
             Near(mesh.Positions[0].X + .01f, imported.Mesh.Positions[0].X);
         });
+
+        Test("standard GLB export retains normal and tangent morph attributes", () =>
+        {
+            var mesh = AuthoringFixtures.Panel(1); string id = GraphId();
+            var morph = MorphTarget.Create(mesh, id, "Normals", new[] { new MorphDelta(0, new Vec3(.01f, 0, 0)) },
+                new[] { new MorphDelta(0, new Vec3(0, .2f, 0)) }, new[] { new MorphDelta(0, new Vec3(0, .1f, 0)) });
+            var morphs = MorphSet.Create(mesh, new[] { morph });
+            var bytes = GlbWriter.Build(new[] { new GlbExportService.MeshObject { Mesh = mesh, Morphs = morphs, Name = "morph" } }, null, GlbExportProfile.StaticGeometry);
+            var imported = GlbImporter.Read(bytes);
+            Equal(1, imported.Morphs.Targets[0].NormalDeltas.Count); Equal(1, imported.Morphs.Targets[0].TangentDeltas.Count);
+            Near(.2f, imported.Morphs.Targets[0].NormalDeltas[0].Y); Near(.1f, imported.Morphs.Targets[0].TangentDeltas[0].Y);
+        });
     }
 }

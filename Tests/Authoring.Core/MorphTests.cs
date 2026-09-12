@@ -31,5 +31,18 @@ internal static partial class Program
             Expect("MORPH_TOPOLOGY_CHANGED", () => MorphDeformer.Apply(changed, morphs, new Dictionary<string, float> { [id] = 1 }));
             Expect("INVALID_BLOB", () => MorphCodec.Read(MorphCodec.Write(morphs).Concat(new byte[] { 1 }).ToArray(), mesh));
         });
+
+        Test("normal and tangent morph deltas roundtrip and deform attributes", () =>
+        {
+            var mesh = AuthoringFixtures.Panel(1); string id = GraphId();
+            var target = MorphTarget.Create(mesh, id, "Normals", new[] { new MorphDelta(0, new Vec3(.1f, 0, 0)) },
+                new[] { new MorphDelta(0, new Vec3(0, 1, 1)) }, new[] { new MorphDelta(0, new Vec3(0, 1, 0)) });
+            var morphs = MorphSet.Create(mesh, new[] { target });
+            var result = MorphDeformer.Apply(mesh, morphs, new Dictionary<string, float> { [id] = .5f });
+            Near(0f, result.Normals[0].X); True(result.Normals[0].Y > .3f && result.Normals[0].Z < 0f);
+            Near(.5f, result.Tangents[0].Y); Equal(mesh.Tangents[0].W, result.Tangents[0].W);
+            var restored = MorphCodec.Read(MorphCodec.Write(morphs), mesh);
+            Equal(1, restored.Targets[0].NormalDeltas.Count); Equal(1, restored.Targets[0].TangentDeltas.Count);
+        });
     }
 }

@@ -94,7 +94,8 @@ namespace NyaForge.Authoring.Import
             var submeshes = new int[parts.Length][]; int vertexOffset = 0;
             for (int i = 0; i < parts.Length; i++) { submeshes[i] = parts[i].Indices.Select(index => checked(index + vertexOffset)).ToArray(); vertexOffset += parts[i].Positions.Length; }
             var mesh = new MeshData(positions, normals, tangents, uv0, submeshes);
-            MorphSet morphs = ParseMorphs(meshToken, parts, mesh, sourceHash, meshIndex);
+            bool unsupportedNormalMorph, unsupportedTangentMorph;
+            MorphSet morphs = ParseMorphs(meshToken, parts, mesh, sourceHash, meshIndex, out unsupportedNormalMorph, out unsupportedTangentMorph);
             if (instanceWorld != null)
             {
                 var transformed = SourceMeshTransform.Apply(mesh, instanceWorld, morphs);
@@ -102,7 +103,7 @@ namespace NyaForge.Authoring.Import
             }
             var warnings = new List<string> { "Imported as " + parts.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " static triangle primitive(s); original glTF scene hierarchy, materials and skin bindings are not retained." };
             if (instanceWorld != null) warnings.Add("Selected node instance world transform was applied to mesh positions, normals, tangents and POSITION morph deltas.");
-            if (morphs != null) warnings.Add("POSITION morph targets were retained; normal/tangent morph deltas are not imported.");
+            if (unsupportedNormalMorph || unsupportedTangentMorph) warnings.Add("POSITION morph targets were retained; normal/tangent morph deltas are not imported because the base mesh lacks the matching attribute.");
             return new ImportedMeshSource(sourceHash, meshIndex, mesh, morphs, warnings);
         }
 
@@ -121,7 +122,7 @@ namespace NyaForge.Authoring.Import
 
         sealed class PrimitiveData
         {
-            public Vec3[] Positions; public Vec3[] Normals; public Vec4[] Tangents; public Vec2[] Uv0; public int[] Indices; public Vec3[][] MorphDeltas;
+            public Vec3[] Positions; public Vec3[] Normals; public Vec4[] Tangents; public Vec2[] Uv0; public int[] Indices; public Vec3[][] MorphDeltas; public Vec3[][] MorphNormalDeltas; public Vec3[][] MorphTangentDeltas;
         }
 
         static PrimitiveData ReadPrimitive(JObject primitive, JArray accessors, JArray views, byte[] bin)
@@ -138,13 +139,16 @@ namespace NyaForge.Authoring.Import
             Checks.Require(indices.Length > 0 && indices.Length % 3 == 0 && indices.All(index => index >= 0 && index < positions.Length), "INVALID_IMPORT", "Triangle indices are invalid.");
             var targetTokens = primitive["targets"] as JArray;
             var morphs = new Vec3[targetTokens == null ? 0 : targetTokens.Count][];
+            var normalMorphs = new Vec3[morphs.Length][]; var tangentMorphs = new Vec3[morphs.Length][];
             for (int i = 0; i < morphs.Length; i++)
             {
                 var target = targetTokens[i] as JObject; Checks.Require(target != null && target["POSITION"] != null, "UNSUPPORTED_FORMAT", "Every morph target needs a POSITION accessor.");
                 morphs[i] = Vec3Accessor(accessors, views, bin, Int(target, "POSITION", 0, accessors.Count - 1), "morph position");
                 Checks.Require(morphs[i].Length == positions.Length, "INVALID_IMPORT", "Morph POSITION count must match the primitive base mesh.");
+                if (target["NORMAL"] != null) { normalMorphs[i] = Vec3Accessor(accessors, views, bin, Int(target, "NORMAL", 0, accessors.Count - 1), "morph normal"); Checks.Require(normalMorphs[i].Length == positions.Length, "INVALID_IMPORT", "Morph NORMAL count must match the primitive base mesh."); }
+                if (target["TANGENT"] != null) { tangentMorphs[i] = Vec3Accessor(accessors, views, bin, Int(target, "TANGENT", 0, accessors.Count - 1), "morph tangent"); Checks.Require(tangentMorphs[i].Length == positions.Length, "INVALID_IMPORT", "Morph TANGENT count must match the primitive base mesh."); }
             }
-            return new PrimitiveData { Positions = positions, Normals = normals, Tangents = tangents, Uv0 = uv0, Indices = indices, MorphDeltas = morphs };
+            return new PrimitiveData { Positions = positions, Normals = normals, Tangents = tangents, Uv0 = uv0, Indices = indices, MorphDeltas = morphs, MorphNormalDeltas = normalMorphs, MorphTangentDeltas = tangentMorphs };
         }
 
         static bool AttributePresence(PrimitiveData[] parts, Func<PrimitiveData, bool> selector, string name)
@@ -152,8 +156,11 @@ namespace NyaForge.Authoring.Import
             bool present = selector(parts[0]); Checks.Require(parts.All(p => selector(p) == present), "UNSUPPORTED_FORMAT", "All primitives must use the same " + name + " attribute layout."); return present;
         }
 
-        static MorphSet ParseMorphs(JToken meshToken, PrimitiveData[] parts, MeshData mesh, string sourceHash, int meshIndex)
+        static MorphSet ParseMorphs(JToken meshToken, PrimitiveData[] parts, MeshData mesh, string sourceHash, int meshIndex, out bool unsupportedNormalMorph, out bool unsupportedTangentMorph)
         {
+            var primitiveTokens = meshToken["primitives"] as JArray;
+            unsupportedNormalMorph = mesh.Normals.Count == 0 && primitiveTokens != null && primitiveTokens.OfType<JObject>().SelectMany(p => (p["targets"] as JArray) ?? new JArray()).OfType<JObject>().Any(t => t["NORMAL"] != null);
+            unsupportedTangentMorph = mesh.Tangents.Count == 0 && primitiveTokens != null && primitiveTokens.OfType<JObject>().SelectMany(p => (p["targets"] as JArray) ?? new JArray()).OfType<JObject>().Any(t => t["TANGENT"] != null);
             int morphCount = parts[0].MorphDeltas.Length; Checks.Require(parts.All(p => p.MorphDeltas.Length == morphCount), "UNSUPPORTED_FORMAT", "All primitives must use the same morph target layout.");
             if (morphCount == 0) return null;
             var result = new List<MorphTarget>();
@@ -161,11 +168,26 @@ namespace NyaForge.Authoring.Import
             int vertexOffset = 0;
             for (int i = 0; i < morphCount; i++)
             {
-                var entries = new List<MorphDelta>(); vertexOffset = 0;
-                foreach (var part in parts) { foreach (var delta in part.MorphDeltas[i].Select((delta, index) => new MorphDelta(index + vertexOffset, delta))) if (delta.Delta.X != 0 || delta.Delta.Y != 0 || delta.Delta.Z != 0) entries.Add(delta); vertexOffset += part.Positions.Length; }
+                var entries = new List<MorphDelta>(); var normalEntries = new List<MorphDelta>(); var tangentEntries = new List<MorphDelta>(); vertexOffset = 0;
+                foreach (var part in parts)
+                {
+                    foreach (var delta in part.MorphDeltas[i].Select((delta, index) => new MorphDelta(index + vertexOffset, delta))) if (delta.Delta.X != 0 || delta.Delta.Y != 0 || delta.Delta.Z != 0) entries.Add(delta);
+                    if (part.MorphNormalDeltas[i] != null)
+                    {
+                        if (mesh.Normals.Count == mesh.VertexCount) foreach (var delta in part.MorphNormalDeltas[i].Select((delta, index) => new MorphDelta(index + vertexOffset, delta))) if (delta.Delta.X != 0 || delta.Delta.Y != 0 || delta.Delta.Z != 0) normalEntries.Add(delta);
+                        else unsupportedNormalMorph = true;
+                    }
+                    if (part.MorphTangentDeltas[i] != null)
+                    {
+                        if (mesh.Tangents.Count == mesh.VertexCount) foreach (var delta in part.MorphTangentDeltas[i].Select((delta, index) => new MorphDelta(index + vertexOffset, delta))) if (delta.Delta.X != 0 || delta.Delta.Y != 0 || delta.Delta.Z != 0) tangentEntries.Add(delta);
+                        else unsupportedTangentMorph = true;
+                    }
+                    vertexOffset += part.Positions.Length;
+                }
                 string name = "Morph " + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 if (names != null && i < names.Count && names[i].Type == JTokenType.String && !string.IsNullOrWhiteSpace((string)names[i])) name = (string)names[i];
-                result.Add(MorphTarget.Create(mesh, MorphTargetId(sourceHash, meshIndex, i), name, entries));
+                result.Add(MorphTarget.Create(mesh, MorphTargetId(sourceHash, meshIndex, i), name, entries,
+                    normalEntries.Count == 0 ? null : normalEntries, tangentEntries.Count == 0 ? null : tangentEntries));
             }
             return MorphSet.Create(mesh, result);
         }

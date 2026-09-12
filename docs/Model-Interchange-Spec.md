@@ -136,7 +136,7 @@ flowchart LR
 
 コード照合対象は現行main。GLB importは一回の制作操作で一つの明示候補をgraph objectとして公開し、一般affine（node TRS/matrix・inverse-bind）、4weight、256骨/256morphの範囲で扱う。WEIGHTSのfloat形式に加え、normalized UBYTE/USHORTはfloatへ復元してから同じbinding検証へ通す。sparse accessorは引き続き未対応として拒否する。`GlbSceneInventoryReader`は複数mesh/instance/skinを元indexで保持し、Workbenchはnode instance indexを指定した場合にそのnodeのmesh／skin対応を採用する。静的meshでは選択nodeのworld affineをpositions、normal、tangent、POSITION morphへ適用する。skinを持たないnode instanceは静的meshとして扱い、GLB全体に別skinがあることだけを理由にskinned importへ回さない。native documentは最大64 objectのactive object方式で、`object.select`とSave/Openを提供する。 skinned objectのsource rig sessionはGraphIdで分離した`imported-rig-sessions.nyaforge.bin`へ保存し、active object切替時に対応sessionを選ぶ。取込source nodeは最大4096、一時実行骨は最大256。複数objectは`multi-object.nyaforge-bake.json`配下へobjectごとのBakeを束ねて出力できるが、mesh結合・共有参照・複数SkinDeform同時評価は未実装。nativeの材質/rig機能が進んでいても、任意の外部モデルを完全に取り込める段階ではない。 rig/morphを含むgraphの出力は`project.nyaforge.json` native packageへルーティングし、Skin/Morph情報を保持したまま再開できる。標準VRM/GLBへのskin/morph変換は別の未完了profileである。
 
-現行readerには本仕様をまだ満たさない箇所もある。`GlbImport`は材質・静的scene構造・NORMAL/TANGENT morphを保持せず警告し、追加UV等も全属性を取り込まない。`GlbSceneInventoryReader`は複数mesh/instance/skinの参照とnode world transformを候補化し、`GlbImporter.Read(bytes, meshIndex)` / `GlbSkinImporter.Read(bytes, meshIndex, skinIndex)` / `GlbSourceSkinImporter.Read(bytes, meshIndex, skinIndex)` とWorkbenchの選択GUIは選択した候補を一つずつnative objectへ公開できる。16bit JOINTSはbyte幅を保って読取り、source skin表示は最終graph出力へ適用して下流編集を保持する。Workbenchのactive object編集と非active object同時表示は実装済みだが、結合出力、同名morph/共有参照、複数SkinDeformの同時評価は未実装。未知の `extensionsRequired` を網羅して拒否する処理、任意のVRM meta/利用条件/未知拡張を依存込みで保管する機構も未実装。これらはI04-B/Eの解消対象で、現在の取込成功を本仕様の完全保持成功と称しない。容量監査には16MiB/blob・100,000頂点・32submesh等の予算も含める。
+現行readerには本仕様をまだ満たさない箇所もある。`GlbImport`は材質・静的scene構造・追加UV等を保持しない。NORMAL/TANGENT morphはbase属性が揃う場合に保持し、欠ける場合はPOSITIONを残してwarningを返す。`GlbSceneInventoryReader`は複数mesh/instance/skinの参照とnode world transformを候補化し、`GlbImporter.Read(bytes, meshIndex)` / `GlbSkinImporter.Read(bytes, meshIndex, skinIndex)` / `GlbSourceSkinImporter.Read(bytes, meshIndex, skinIndex)` とWorkbenchの選択GUIは選択した候補を一つずつnative objectへ公開できる。16bit JOINTSはbyte幅を保って読取り、source skin表示は最終graph出力へ適用して下流編集を保持する。Workbenchのactive object編集と非active object同時表示は実装済みだが、結合出力、同名morph/共有参照、複数SkinDeformの同時評価は未実装。未知の `extensionsRequired` を網羅して拒否する処理、任意のVRM meta/利用条件/未知拡張を依存込みで保管する機構も未実装。これらはI04-B/Eの解消対象で、現在の取込成功を本仕様の完全保持成功と称しない。容量監査には16MiB/blob・100,000頂点・32submesh等の予算も含める。
 
 T03の読取調査は完了。実素材要求には20mesh、257骨、18weight/頂点、単一mesh262morphがあり、一般基底も必要。[観測条件と限界](Real-Asset-Import-Plan.md)を参照。これらは最低限の検証入力であり、新しい一律上限値そのものではない。
 
@@ -162,7 +162,7 @@ GLB/VRMの入出力にはnative blobと分離した128 MiBファイル予算と�
 | profile | 保持する情報 | 境界 |
 |---|---|---|
 | `StaticGeometry` | 現在評価できる表示メッシュ、頂点属性、正の一様変換 | skin・骨・morph・材質・アニメーションは含めず、複数submeshは現時点で一つのprimitiveへ結合 |
-| `SkinnedGeometry` | 単一graphのsource mesh、4 influence weight、骨階層、inverse bind、POSITION morph | rest pose・identity source/output transformに限定。EditMeshによるトポロジー不変の頂点編集を保持する。任意pose、非ゼロmorph変形、未対応nodeは拒否しnative/static exportを案内 |
+| `SkinnedGeometry` | 単一graphのsource mesh、4 influence weight、骨階層、inverse bind、POSITION/NORMAL/TANGENT morph | rest pose・identity source/output transformに限定。EditMeshによるトポロジー不変の頂点編集を保持する。任意pose、非ゼロmorph変形、未対応nodeは拒否しnative/static exportを案内 |
 
 GUIには「標準GLB（表示形状）」と「標準GLB（skin/morph保持）」を分けて表示する。出力先は`<project>/exports/glb-*`の新規ディレクトリに限定し、失敗時はstagingを削除して既存制作状態を変更しない。標準GLBの読込確認はCore importerで行い、Unity・VRChat実機での外観／挙動受入とは分離して記録する。
 
