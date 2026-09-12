@@ -78,6 +78,11 @@ namespace NyaForge.Authoring
                     case BuiltinNodes.SkinBind: Text(writer, addBlob(RigCodec.WriteBinding(node.Binding))); break;
                     case BuiltinNodes.Pose: Text(writer, addBlob(PoseCodec.Write(node.Pose))); break;
                     case BuiltinNodes.SkinDeform: break;
+                    case BuiltinNodes.MorphSet: Text(writer, addBlob(MorphCodec.Write(node.Morphs))); break;
+                    case BuiltinNodes.MorphDeform:
+                        writer.Write(node.MorphWeights.Count);
+                        foreach (var pair in node.MorphWeights.OrderBy(p => p.Key, StringComparer.Ordinal)) { Text(writer, pair.Key); writer.Write(Checks.Canonical(pair.Value)); }
+                        break;
                     case BuiltinNodes.Paint:
                         writer.Write(node.PaintWidth); writer.Write(node.PaintHeight); Text(writer,node.PaintUvHash); Text(writer,node.ExpectedDomain);
                         Text(writer,node.PaintImage == null ? "" : addBlob(PaintImageCodec.Write(node.PaintImage))); break;
@@ -164,6 +169,16 @@ namespace NyaForge.Authoring
                         node=GraphNode.PoseNode(id,PoseCodec.ReadUnbound(readBlob(Text(reader,64))));break;
                     case BuiltinNodes.SkinDeform:
                         node=GraphNode.SkinDeformNode(id);break;
+                    case BuiltinNodes.MorphSet:
+                        node=GraphNode.MorphSetNode(id, MorphCodec.ReadUnbound(readBlob(Text(reader,64))));break;
+                    case BuiltinNodes.MorphDeform:
+                        int weightCount = Count(reader, MorphSet.MaxTargets); var weights = new Dictionary<string, float>(StringComparer.Ordinal); string previousWeightId = "";
+                        for (int i = 0; i < weightCount; i++)
+                        {
+                            string weightId = Text(reader,64); Checks.Require(i == 0 || string.CompareOrdinal(previousWeightId, weightId) < 0, "INVALID_BLOB", "Morph weights must be canonical sorted keys.");
+                            weights.Add(weightId, reader.ReadSingle()); previousWeightId = weightId;
+                        }
+                        node=GraphNode.MorphDeformNode(id, weights);break;
                     case BuiltinNodes.Paint:
                         int paintWidth=reader.ReadInt32(),paintHeight=reader.ReadInt32();
                         NyaForge.Authoring.Paint.PaintImage.ValidateDimensions(paintWidth,paintHeight);

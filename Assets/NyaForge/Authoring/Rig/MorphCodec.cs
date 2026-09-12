@@ -31,6 +31,16 @@ namespace NyaForge.Authoring.Rig
         public static MorphSet Read(byte[] bytes, MeshData mesh)
         {
             Checks.Require(mesh != null, "INVALID_MORPH", "Mesh is required.");
+            return ReadCore(bytes, mesh, true);
+        }
+
+        internal static MorphSet ReadUnbound(byte[] bytes)
+        {
+            return ReadCore(bytes, null, false);
+        }
+
+        static MorphSet ReadCore(byte[] bytes, MeshData mesh, bool bound)
+        {
             Checks.Require(bytes != null && bytes.Length <= AuthoringLimits.MaxBlobBytes, "BUDGET_EXCEEDED", "Morph asset exceeds capacity.");
             try
             {
@@ -40,13 +50,13 @@ namespace NyaForge.Authoring.Rig
                     string hash = Text(reader, 64); int count = Count(reader, MorphSet.MaxTargets); var targets = new List<MorphTarget>(count);
                     for (int i = 0; i < count; i++)
                     {
-                        string id = Text(reader, 64), name = Text(reader, 128), targetHash = Text(reader, 64); int deltas = Count(reader, mesh.VertexCount, true);
+                        string id = Text(reader, 64), name = Text(reader, 128), targetHash = Text(reader, 64); int deltas = Count(reader, AuthoringLimits.MaxVertices, true);
                         var values = new List<MorphDelta>(deltas);
                         for (int j = 0; j < deltas; j++) values.Add(new MorphDelta(reader.ReadInt32(), MorphTarget.Read(reader)));
-                        targets.Add(MorphTarget.FromSerialized(id, name, targetHash, values, mesh.VertexCount));
+                        targets.Add(MorphTarget.FromSerialized(id, name, targetHash, values, AuthoringLimits.MaxVertices));
                     }
                     Checks.Require(stream.Position == stream.Length, "INVALID_BLOB", "Trailing morph asset bytes.");
-                    return MorphSet.FromSerialized(mesh, hash, targets);
+                    return bound ? MorphSet.FromSerialized(mesh, hash, targets) : MorphSet.FromSerializedUnbound(hash, targets);
                 }
             }
             catch (EndOfStreamException e) { throw new AuthoringException("INVALID_BLOB", e.Message); }

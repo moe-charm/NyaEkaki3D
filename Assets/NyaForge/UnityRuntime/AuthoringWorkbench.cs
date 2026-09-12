@@ -123,6 +123,7 @@ namespace NyaForge.UnityRuntime
             BuildPaint(side);
             BuildMaterials(side);
             BuildRig(side);
+            BuildMorph(side);
             BuildValidation(side);
             selectionLabel = new Label { name = "authoring-selection" }; side.Add(selectionLabel);
             var selectRow = Row(side);
@@ -293,7 +294,7 @@ namespace NyaForge.UnityRuntime
             RefreshSolidify();
             RefreshUv();
             RefreshPaint();
-            RefreshMaterials();RefreshRig();RefreshEvidenceCapture();
+            RefreshMaterials();RefreshRig();RefreshMorph();RefreshEvidenceCapture();
             RefreshValidation();
         }
 

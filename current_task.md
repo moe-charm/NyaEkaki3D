@@ -26,14 +26,23 @@
 
 ## C2 Rigコア基盤（2026-09-12）
 
-### Morphコア（Graph/UI接続前の独立基盤）
+### MorphコアとGraph/UI接続（2026-09-12）
 
 - `MorphTarget` はmesh topology hashに紐づく疎なrest-space頂点差分をstable target ID・名前とともに保持し、同一頂点の重複・範囲外・非有限値を拒否する。`MorphSet` は最大256ターゲット、ID/名前重複、別topologyを拒否する。
 - `MorphDeformer` は0..1のtarget weightを検査し、複数targetをrest meshへ加算適用する。pose済みmeshへ焼き込む設計ではなく、属性（normal/tangent/UV/submesh）を元meshから保持する。
 - `MorphCodec` は疎payloadを厳密な`NYRM` v1へ保存・復元する。mesh topology hash、件数、UTF-8、末尾bytesを検査し、壊れたassetや別meshを公開しない。
 - Core **282 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f817e5ee174e410ca5c2f78063889c91`。Morph変形の半量適用、属性保持、決定的codec往復、未知target／範囲外weight／stale topology／末尾bytes拒否を確認。
-- Windows-MorphCore build / Authoring Player suite **PASS**: `Logs/build-all-20260912-110016-285.log`、`Artifacts/Authoring-20260912-110055-aa6d942115e2424a930f9d3e39c352a3/report.json`。既存Rig GUI lifecycleも再回帰した。Morph自体はUnity Graph/UIへ未接続のため、このPlayer画像はMorph表示受入を意味しない。
-- MorphはまだGraph node、Rigパネル、実アバターshape key/VRM blendshape importへ接続していない。次は実アバターの編集可能mesh import境界を確定し、normal再計算とMorph/skin exportを別段階で接続する。
+- Windows-MorphCore build / Authoring Player suite **PASS**: `Logs/build-all-20260912-110016-285.log`、`Artifacts/Authoring-20260912-110055-aa6d942115e2424a930f9d3e39c352a3/report.json`。既存Rig GUI lifecycleも再回帰した。
+
+### Morph Graph/UI接続（2026-09-12）
+
+- `PortType.MorphSet`、`rig.morph-set`、`rig.morph-deform`を追加。MorphSetはmesh topology hashを保持し、MorphDeformはtarget IDごとの0..1 weightを入力payloadとして正規化・保存する。
+- Graph evaluatorはMorphSetのtyped outputと、rest-space `MorphDeformer`によるmesh outputを提供する。変形後もmaterial/baseColor/slot参照を保持し、別topologyでは診断を出して公開しない。
+- native graph schema 3へ`NYRM` blob参照とcanonical sorted weight payloadを接続。`graph_inspect`はmorph hash、target数、delta数、targetごとのcontent hashを返す。
+- Graph canvasに「Morphサンプル」、Workbenchに折りたたみ式target選択／weight編集を追加。既存のcommand・Undo・保存経路でnode更新を行う。
+- Core **284 passed / 0 failed**: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-52240aca170840e9b350e6859ddd0241`。Morph graphの評価、inspection、native保存→再読込、半量変形、topology変更拒否を確認。
+- Windows-MorphUi Player build / Authoring suite **PASS**: `Logs/build-player-20260912-111005-833.log`、`Artifacts/Authoring-20260912-111029-eb76635897054006a74c1d0117fd5872/report.json`。標準fixtureの画像を目視し、追加UIは折りたたみ領域のため実クリック受入は未実施。
+- 次は実アバターの編集可能mesh import境界を確定し、normal再計算とMorph/skin exportを別段階で接続する。
 
 - `Authoring.Rig` を独立モジュールとして追加。`SkeletonDefinition` はcanonical UUIDのbone、親子階層、head/tailのrest座標を不変データとして保持し、循環・欠落親・重複IDを公開前に拒否する。
 - `SkinBinding` はmeshのtopology hashとskeleton hashを固定し、全頂点に1〜4本の明示boneを要求して、重みを降順・決定的順序で正規化する。同一boneの重複、未知bone、未weight、上限超過を拒否する。

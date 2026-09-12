@@ -72,9 +72,10 @@ namespace NyaForge.Authoring.Graph
         public IReadOnlyDictionary<string, GraphSkeletonValue> SkeletonOutputs { get; }
         public IReadOnlyDictionary<string, GraphSkinBindingValue> SkinBindingOutputs { get; }
         public IReadOnlyDictionary<string, GraphPoseValue> PoseOutputs { get; }
+        public IReadOnlyDictionary<string, GraphMorphSetValue> MorphSetOutputs { get; }
         public IReadOnlyList<GraphDiagnostic> Diagnostics { get; }
         internal GraphEvaluation(GraphMeshValue output, Dictionary<string, GraphMeshValue> outputs,
-            Dictionary<string, GraphMeshValue> inputs, List<GraphDiagnostic> diagnostics, Dictionary<string, GraphImageValue> images, Dictionary<string, GraphMaterialValue> materials, Dictionary<string, GraphSkeletonValue> skeletons, Dictionary<string, GraphSkinBindingValue> bindings, Dictionary<string, GraphPoseValue> poses)
+            Dictionary<string, GraphMeshValue> inputs, List<GraphDiagnostic> diagnostics, Dictionary<string, GraphImageValue> images, Dictionary<string, GraphMaterialValue> materials, Dictionary<string, GraphSkeletonValue> skeletons, Dictionary<string, GraphSkinBindingValue> bindings, Dictionary<string, GraphPoseValue> poses, Dictionary<string, GraphMorphSetValue> morphSets)
         {
             Output = output;
             MeshOutputs = new ReadOnlyDictionary<string, GraphMeshValue>(outputs);
@@ -85,6 +86,7 @@ namespace NyaForge.Authoring.Graph
             SkeletonOutputs = new ReadOnlyDictionary<string, GraphSkeletonValue>(skeletons);
             SkinBindingOutputs = new ReadOnlyDictionary<string, GraphSkinBindingValue>(bindings);
             PoseOutputs = new ReadOnlyDictionary<string, GraphPoseValue>(poses);
+            MorphSetOutputs = new ReadOnlyDictionary<string, GraphMorphSetValue>(morphSets);
         }
     }
 
@@ -102,6 +104,7 @@ namespace NyaForge.Authoring.Graph
             var skeletons = new Dictionary<string, GraphSkeletonValue>();
             var bindings = new Dictionary<string, GraphSkinBindingValue>();
             var poses = new Dictionary<string, GraphPoseValue>();
+            var morphSets = new Dictionary<string, GraphMorphSetValue>();
             var diagnostics = new List<GraphDiagnostic>();
             var links = graph.Edges.ToDictionary(e => e.ToNode + "/" + e.ToPort);
             foreach (string id in order)
@@ -117,6 +120,7 @@ namespace NyaForge.Authoring.Graph
                     GraphSkeletonValue skeletonInput = null;
                     GraphSkinBindingValue bindingInput = null;
                     GraphPoseValue poseInput = null;
+                    GraphMorphSetValue morphInput = null;
                     foreach (var port in definition.Inputs)
                     {
                         GraphEdge edge;
@@ -125,7 +129,7 @@ namespace NyaForge.Authoring.Graph
                             Checks.Require(!port.Required, "INPUT_MISSING", "Required input is not connected: " + port.Id);
                             continue;
                         }
-                        bool ready = port.Type == PortType.Mesh ? outputs.ContainsKey(edge.FromNode) : port.Type == PortType.Image ? images.ContainsKey(edge.FromNode) : port.Type == PortType.Material ? materials.ContainsKey(edge.FromNode) : port.Type == PortType.Skeleton ? skeletons.ContainsKey(edge.FromNode) : port.Type == PortType.SkinBinding ? bindings.ContainsKey(edge.FromNode) : port.Type == PortType.Pose ? poses.ContainsKey(edge.FromNode) : numbers.ContainsKey(edge.FromNode);
+                        bool ready = port.Type == PortType.Mesh ? outputs.ContainsKey(edge.FromNode) : port.Type == PortType.Image ? images.ContainsKey(edge.FromNode) : port.Type == PortType.Material ? materials.ContainsKey(edge.FromNode) : port.Type == PortType.Skeleton ? skeletons.ContainsKey(edge.FromNode) : port.Type == PortType.SkinBinding ? bindings.ContainsKey(edge.FromNode) : port.Type == PortType.Pose ? poses.ContainsKey(edge.FromNode) : port.Type == PortType.MorphSet ? morphSets.ContainsKey(edge.FromNode) : numbers.ContainsKey(edge.FromNode);
                         Checks.Require(ready, "INPUT_UNRESOLVED", "Upstream output is unavailable.");
                         if (port.Type == PortType.Mesh) { input = outputs[edge.FromNode]; inputs[id] = input; }
                         else if (port.Type == PortType.Image) imageInput = images[edge.FromNode];
@@ -133,6 +137,7 @@ namespace NyaForge.Authoring.Graph
                         else if (port.Type == PortType.Skeleton) skeletonInput=skeletons[edge.FromNode];
                         else if (port.Type == PortType.SkinBinding) bindingInput=bindings[edge.FromNode];
                         else if (port.Type == PortType.Pose) poseInput=poses[edge.FromNode];
+                        else if (port.Type == PortType.MorphSet) morphInput=morphSets[edge.FromNode];
                     }
                     Checks.Require(input?.Material==null && input?.SlotMaterials==null || node.TypeId==BuiltinNodes.Output || node.TypeId==BuiltinNodes.AssignMaterial || node.TypeId==BuiltinNodes.AssignMaterials,
                         "MATERIAL_ORDER_UNSUPPORTED","Place material assignment after geometry and Paint inputs.");
@@ -163,6 +168,14 @@ namespace NyaForge.Authoring.Graph
                         var validBinding = bindingInput.Binding.ValidateFor(input.Mesh, skeletonInput.Skeleton);
                         var validPose = poseInput.Pose.ValidateFor(skeletonInput.Skeleton);
                         var deformed = SkinDeformer.Apply(input.Mesh, skeletonInput.Skeleton, validBinding, validPose.Poses);
+                        outputs[id] = new GraphMeshValue(deformed, input.Transform, input.DomainId, null, null, input.BaseColor, input.Material, input.SlotMaterials);
+                    }
+                    else if (node.TypeId == BuiltinNodes.MorphSet)
+                        morphSets[id] = new GraphMorphSetValue(node.Morphs);
+                    else if (node.TypeId == BuiltinNodes.MorphDeform)
+                    {
+                        Checks.Require(input != null && input.Mesh != null && morphInput != null, "INPUT_UNRESOLVED", "Morph deformation requires mesh and morph inputs.");
+                        var deformed = MorphDeformer.Apply(input.Mesh, morphInput.Morphs, node.MorphWeights);
                         outputs[id] = new GraphMeshValue(deformed, input.Transform, input.DomainId, null, null, input.BaseColor, input.Material, input.SlotMaterials);
                     }
                     else if (node.TypeId == BuiltinNodes.AssignMaterial) outputs[id]=MaterialEvaluation.Assign(input,materialInput);
@@ -199,7 +212,7 @@ namespace NyaForge.Authoring.Graph
             GraphMeshValue output = null;
             if (graph.OutputNodeId != "") outputs.TryGetValue(graph.OutputNodeId, out output);
             else diagnostics.Add(new GraphDiagnostic("", "OUTPUT_MISSING", "Select an Output node."));
-            return new GraphEvaluation(output, outputs, inputs, diagnostics, images, materials, skeletons, bindings, poses);
+            return new GraphEvaluation(output, outputs, inputs, diagnostics, images, materials, skeletons, bindings, poses, morphSets);
         }
 
         static GraphMeshValue ApplyEdit(GraphNode node, GraphMeshValue input)

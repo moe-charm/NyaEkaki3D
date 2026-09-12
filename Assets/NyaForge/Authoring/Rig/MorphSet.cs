@@ -43,6 +43,14 @@ namespace NyaForge.Authoring.Rig
             return new MorphSet(meshTopologyHash, Array.AsReadOnly(values.OrderBy(item => item.TargetId, StringComparer.Ordinal).ToArray()));
         }
 
+        internal static MorphSet FromSerializedUnbound(string meshTopologyHash, IEnumerable<MorphTarget> targets)
+        {
+            Checks.Require(targets != null, "INVALID_MORPH", "Morph targets are required.");
+            Checks.HashText(meshTopologyHash);
+            var values = targets.ToArray(); ValidateIdentity(meshTopologyHash, values);
+            return new MorphSet(meshTopologyHash, Array.AsReadOnly(values.OrderBy(item => item.TargetId, StringComparer.Ordinal).ToArray()));
+        }
+
         public MorphSet ValidateFor(MeshData mesh)
         {
             Checks.Require(mesh != null, "INVALID_MORPH", "Mesh is required.");
@@ -52,13 +60,21 @@ namespace NyaForge.Authoring.Rig
 
         static void Validate(MeshData mesh, MorphTarget[] values)
         {
-            Checks.Require(values.Length > 0 && values.Length <= MaxTargets, "BUDGET_EXCEEDED", "Morph target count exceeds capacity.");
+            ValidateIdentity(mesh.TopologyHash, values);
+            foreach (var target in values)
+                foreach (var vertex in target.Deltas.Keys)
+                    Checks.Require(vertex < mesh.VertexCount, "INVALID_VERTEX", "Morph vertex is outside the mesh domain.");
+        }
+
+        static void ValidateIdentity(string meshTopologyHash, MorphTarget[] values)
+        {
             var ids = new HashSet<string>(StringComparer.Ordinal); var names = new HashSet<string>(StringComparer.Ordinal);
+            Checks.Require(values.Length > 0 && values.Length <= MaxTargets, "BUDGET_EXCEEDED", "Morph target count exceeds capacity.");
             foreach (var target in values)
             {
                 Checks.Require(target != null && ids.Add(target.TargetId), "DUPLICATE_MORPH", "Morph target identity must be unique.");
                 Checks.Require(names.Add(target.Name), "DUPLICATE_MORPH", "Morph target names must be unique.");
-                Checks.Require(target.MeshTopologyHash == mesh.TopologyHash, "MORPH_TOPOLOGY_CHANGED", "Morph target belongs to another mesh topology.");
+                Checks.Require(target.MeshTopologyHash == meshTopologyHash, "MORPH_TOPOLOGY_CHANGED", "Morph target belongs to another mesh topology.");
             }
         }
     }

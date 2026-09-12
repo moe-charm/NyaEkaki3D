@@ -85,7 +85,7 @@ Paint GUIの既存コードを検証し、未確定previewと文書commitを分�
 
 `Assets/NyaForge/Authoring/Rig` にUnity非依存のrest skeletonとskin bindingを置く。boneはstable IDと親子関係、head/tailを持ち、bindingはmesh topology hash・skeleton hashを固定して1〜4本の正規化weightを保持する。`PoseTransform` と `SkinDeformer` はrest-relative affine poseを適用し、位置だけを線形ブレンドする。循環、未知bone、未weight、重複、上限超過、stale topology/skeleton/poseは候補生成・評価時に拒否する。
 
-`rig.skeleton`（NYRS v1）、`rig.skin-bind`（NYRB v1）、`rig.pose`（NYRP v1）、`rig.skin-deform`（rest-relative変形）の評価・保存・inspectionまで接続済み。Graph canvasのRigサンプルとRigパネルのbone選択、weight混合、Root 100%割当、ブラシweight paint、pose XYZ回転、rest bone移動、stale依存の明示再bindを実装し、Windows Player内の専用検証で評価・inspection・schema3再読込、1操作1Undo、pose Undo/Redo lifecycleを確認した。さらにGraph/UIから独立したMorphコアとして、mesh topology hash付きの疎なrest-space頂点差分（`MorphTarget`/`MorphSet`）、0..1適用（`MorphDeformer`）、`NYRM` v1 codecを追加し、Coreで変形・属性保持・往復・stale拒否を確認した。これはC2全体の完了ではない。次の変更単位で実アバターimport、normal/morph連携、skin exportを順に接続し、各段階でrest→poseの数値検証と受け取り先確認を追加する。実マウスでの手動見た目受入は別に確認する。
+`rig.skeleton`（NYRS v1）、`rig.skin-bind`（NYRB v1）、`rig.pose`（NYRP v1）、`rig.skin-deform`（rest-relative変形）の評価・保存・inspectionまで接続済み。Graph canvasのRigサンプルとRigパネルのbone選択、weight混合、Root 100%割当、ブラシweight paint、pose XYZ回転、rest bone移動、stale依存の明示再bindを実装し、Windows Player内の専用検証で評価・inspection・schema3再読込、1操作1Undo、pose Undo/Redo lifecycleを確認した。Morphについても、mesh topology hash付きの疎なrest-space頂点差分（`MorphTarget`/`MorphSet`）、0..1適用（`MorphDeformer`）、`NYRM` v1 codecに加えて、`rig.morph-set`／`rig.morph-deform` typed graph、native保存、inspection、Graph canvasのMorphサンプル、Workbenchのtarget/weight編集を接続した。CoreとWindows Playerで変形・属性保持・往復・stale拒否を確認した。これはC2全体の完了ではない。次の変更単位で実アバターimport、normal/morph連携、skin exportを順に接続し、各段階でrest→poseの数値検証と受け取り先確認を追加する。実マウスでの手動見た目受入は別に確認する。
 
 ## 移行時に固定する判断
 

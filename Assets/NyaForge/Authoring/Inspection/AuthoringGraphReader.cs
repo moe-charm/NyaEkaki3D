@@ -27,6 +27,7 @@ namespace NyaForge.Authoring.Inspection
                         evaluation.SkeletonOutputs.TryGetValue(n.NodeId,out var skeleton);
                         evaluation.SkinBindingOutputs.TryGetValue(n.NodeId,out var binding);
                         evaluation.PoseOutputs.TryGetValue(n.NodeId,out var pose);
+                        evaluation.MorphSetOutputs.TryGetValue(n.NodeId,out var morphs);
                         return new JObject
                         {
                             ["nodeId"]=n.NodeId,["typeId"]=n.TypeId,["version"]=n.Version,["supported"]=definition!=null,
@@ -43,6 +44,7 @@ namespace NyaForge.Authoring.Inspection
                             ["skeletonOutput"]=Skeleton(skeleton),
                             ["skinBindingOutput"]=Binding(binding),
                             ["poseOutput"]=Pose(pose),
+                            ["morphOutput"]=Morph(morphs),
                             ["editContext"]=(definition!=null && ((n.TypeId==BuiltinNodes.EditMesh && input?.Mesh!=null && input.Polygon==null) || (n.TypeId==BuiltinNodes.PolygonEdit && input?.Polygon!=null))) ? (JToken)new JObject { ["graphId"]=graph.GraphId,["nodeId"]=n.NodeId,["inputSnapshot"]=input.SnapshotHash,["domainId"]=input.DomainId } : JValue.CreateNull()
                         };
                     })),
@@ -72,6 +74,11 @@ namespace NyaForge.Authoring.Inspection
         static JToken Pose(GraphPoseValue value)=>value==null ? JValue.CreateNull() : (JToken)new JObject
         {
             ["skeletonHash"]=value.Pose.SkeletonHash,["poseHash"]=value.Pose.ContentHash,["boneCount"]=value.Pose.Poses.Count
+        };
+        static JToken Morph(GraphMorphSetValue value)=>value==null ? JValue.CreateNull() : (JToken)new JObject
+        {
+            ["meshTopologyHash"]=value.Morphs.MeshTopologyHash,["morphHash"]=value.Morphs.ContentHash,["targetCount"]=value.Morphs.Targets.Count,
+            ["targets"]=new JArray(value.Morphs.Targets.OrderBy(t=>t.TargetId,StringComparer.Ordinal).Select(t=>new JObject { ["targetId"]=t.TargetId,["name"]=t.Name,["deltaCount"]=t.Deltas.Count,["contentHash"]=t.ContentHash }))
         };
     }
 }

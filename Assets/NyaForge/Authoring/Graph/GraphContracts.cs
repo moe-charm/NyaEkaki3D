@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace NyaForge.Authoring.Graph
 {
-    public enum PortType { Mesh, Scalar, Image, Material, Skeleton, SkinBinding, Pose }
+    public enum PortType { Mesh, Scalar, Image, Material, Skeleton, SkinBinding, Pose, MorphSet }
 
     public sealed class PortDefinition
     {
@@ -49,6 +49,8 @@ namespace NyaForge.Authoring.Graph
         public const string SkinBind = "rig.skin-bind";
         public const string Pose = "rig.pose";
         public const string SkinDeform = "rig.skin-deform";
+        public const string MorphSet = "rig.morph-set";
+        public const string MorphDeform = "rig.morph-deform";
         static readonly IReadOnlyDictionary<string, NodeDefinition> definitions =
             new ReadOnlyDictionary<string, NodeDefinition>(new Dictionary<string, NodeDefinition>
             {
@@ -69,6 +71,8 @@ namespace NyaForge.Authoring.Graph
                 ,[SkinBind] = new NodeDefinition(SkinBind, new[] { new PortDefinition("mesh", PortType.Mesh), new PortDefinition("skeleton", PortType.Skeleton) }, new[] { new PortDefinition("binding", PortType.SkinBinding) })
                 ,[Pose] = new NodeDefinition(Pose, new[] { new PortDefinition("skeleton", PortType.Skeleton) }, new[] { new PortDefinition("pose", PortType.Pose) })
                 ,[SkinDeform] = new NodeDefinition(SkinDeform, new[] { new PortDefinition("mesh", PortType.Mesh), new PortDefinition("skeleton", PortType.Skeleton), new PortDefinition("binding", PortType.SkinBinding), new PortDefinition("pose", PortType.Pose) }, new[] { new PortDefinition("mesh", PortType.Mesh) })
+                ,[MorphSet] = new NodeDefinition(MorphSet, Array.Empty<PortDefinition>(), new[] { new PortDefinition("morphs", PortType.MorphSet) })
+                ,[MorphDeform] = new NodeDefinition(MorphDeform, new[] { new PortDefinition("mesh", PortType.Mesh), new PortDefinition("morphs", PortType.MorphSet) }, new[] { new PortDefinition("mesh", PortType.Mesh) })
             });
         public static IReadOnlyDictionary<string, NodeDefinition> Definitions { get { return definitions; } }
         public static NodeDefinition Find(GraphNode node)

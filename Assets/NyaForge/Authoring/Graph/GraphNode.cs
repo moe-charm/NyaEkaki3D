@@ -17,6 +17,8 @@ namespace NyaForge.Authoring.Graph
         public SkeletonDefinition Skeleton { get; private set; }
         public SkinBinding Binding { get; private set; }
         public PoseSet Pose { get; private set; }
+        public MorphSet Morphs { get; private set; }
+        public IReadOnlyDictionary<string, float> MorphWeights { get; private set; }
         public static GraphNode PolygonEdit(string id, NyaForge.Authoring.Topology.PolygonMesh payload = null, string inputSnapshot = "", string domain = "", bool enabled = true)
         {
             if (payload != null) { Checks.HashText(inputSnapshot); Checks.HashText(domain); }
@@ -61,6 +63,7 @@ namespace NyaForge.Authoring.Graph
             UnknownPayload = unknown; UnknownPayloadIsText = true;
             UnknownPayloadBytes = Array.AsReadOnly(new UTF8Encoding(false,true).GetBytes(unknown));
             Offsets = new ReadOnlyDictionary<int, Vec3>(copy);
+            MorphWeights = new ReadOnlyDictionary<string, float>(new Dictionary<string, float>(StringComparer.Ordinal));
         }
         static RestTransform Identity { get { return new RestTransform(1, new Vec3()); } }
         static IDictionary<int, Vec3> Empty { get { return new Dictionary<int, Vec3>(); } }

@@ -91,6 +91,7 @@ internal static partial class Program
         RunSkinDeformerTests();
         RunRigCodecTests();
         RunMorphTests();
+        RunMorphGraphTests();
         RunSkeletonGraphTests();
         RunPoseGraphTests();
         RunPaintPathSimplifierTests();

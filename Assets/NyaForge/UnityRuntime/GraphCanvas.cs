@@ -31,6 +31,7 @@ namespace NyaForge.UnityRuntime
                 string captured = type; toolbar.Add(ActionButton("＋ " + type, () => AddNode(captured), "graph-add-" + type));
             }
             toolbar.Add(ActionButton("＋ Rigサンプル", AddRigSample, "graph-add-rig-sample"));
+            toolbar.Add(ActionButton("＋ Morphサンプル", AddMorphSample, "graph-add-morph-sample"));
             toolbar.Add(ActionButton("接続をキャンセル", () => { sourceNode = sourcePort = null; ShowState(); }, "graph-cancel-link"));
             message = new Label("出力ポート → 入力ポートの順にクリック。見出しをドラッグして配置。");
             message.style.whiteSpace = WhiteSpace.Normal; Add(message);
@@ -103,6 +104,19 @@ namespace NyaForge.UnityRuntime
 
         // Runtime verification uses the same command path without depending on toolbar scroll position.
         internal void AddRigSampleForVerification() => AddRigSample();
+
+        void AddMorphSample()
+        {
+            if (!workspace.Document.IsEmpty) { message.text = "Morphサンプルは空のプロジェクトで追加してください。"; return; }
+            string planeId = Guid.NewGuid().ToString("D"), morphId = Guid.NewGuid().ToString("D"), deformId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D"), targetId = Guid.NewGuid().ToString("D");
+            var mesh = PrimitiveGeometry.Plane(.2f, .1f);
+            var morphs = NyaForge.Authoring.Rig.MorphSet.Create(mesh, new[] { NyaForge.Authoring.Rig.MorphTarget.Create(mesh, targetId, "Smile", new[] { new NyaForge.Authoring.Rig.MorphDelta(0, new Vec3(.025f, .01f, 0)) }) });
+            var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), new[] { GraphNode.Plane(planeId), GraphNode.MorphSetNode(morphId, morphs), GraphNode.MorphDeformNode(deformId, new Dictionary<string, float> { [targetId] = .5f }), GraphNode.Output(outputId) },
+                new[] { new GraphEdge(planeId, "mesh", deformId, "mesh"), new GraphEdge(morphId, "morphs", deformId, "morphs"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
+            submit(new[] { AuthoringOperation.AddGraph(graph) });
+        }
+
+        internal void AddMorphSampleForVerification() => AddMorphSample();
 
         void Input(string node, string port)
         {
