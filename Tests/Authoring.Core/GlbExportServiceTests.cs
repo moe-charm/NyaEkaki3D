@@ -432,6 +432,19 @@ internal static partial class Program
             True(!originalBytes.SequenceEqual(importedEdited.CopyBaseColorImageBytes()));
             var editedHeader = PaintPngInput.Read(importedEdited.CopyBaseColorImageBytes());
             Equal(2, editedHeader.Width); Equal(1, editedHeader.Height);
+
+            // JPEG sources must keep their source MIME and bytes as well; the
+            // exporter must not silently transcode an unchanged original to PNG.
+            var jpegBytes = new byte[] { 0xff, 0xd8, 0xff, 0xd9 };
+            var jpegImage = new GraphImageValue(preview, "", "fixture-domain");
+            var jpegSource = new GraphOriginalImage(GraphId(), 4096, 2048, "image/jpeg", jpegBytes, jpegImage.ImageHash);
+            var jpegGlb = GlbWriter.Build(new[] { new GlbExportService.MeshObject {
+                Mesh = mesh, Material = new GraphMaterialValue(MaterialParameters.Default, jpegImage), Name = "original-jpeg",
+                OriginalImagesByPreviewHash = new Dictionary<string, GraphOriginalImage> { [jpegImage.ImageHash] = jpegSource }
+            } }, null, GlbExportProfile.StaticGeometry);
+            var jpegMaterial = GlbImporter.Read(jpegGlb).Materials.Single();
+            Equal("image/jpeg", jpegMaterial.BaseColorImageMimeType);
+            True(jpegBytes.SequenceEqual(jpegMaterial.CopyBaseColorImageBytes()));
         });
 
         Test("GLB export preserves semantic normal and metallic-roughness images", () =>

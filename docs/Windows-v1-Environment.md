@@ -20,7 +20,7 @@
 
 ## fixtureと証拠
 
-- Core: `dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`。検証対象mainで **505 passed / 0 failed**（artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3e7fef879a9c462cbcd96fd1308958d8`）。最新package fixtureはpublic repositoryへ置かず、一時artifactへ出力する。
+- Core: `dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`。検証対象mainで **505 passed / 0 failed**（最新artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2bd33d69fb4843c9960f648d30d381b4`、JPEG原画像MIME・bytes保持回帰を含む）。最新package fixtureはpublic repositoryへ置かず、一時artifactへ出力する。
 - Windows Player: `Builds/ReleaseCandidateV10/NyaForge.exe`でprivate一時RadDollV3 VRMを全mesh取込→EditMesh→native Save/Open→標準skinned GLB／VRM出力。semantic texture、原画像source inspection、未編集base-color原画像再出力を含む。最新の実モデル証拠は `Artifacts/Authoring-20260914-063522-17459e1e1a1e466fb3ef816fa6103750/report.json`。
 - Unity Bridge: 上記Player reportと衣装packageを使った合成receiver回帰。`Artifacts/BridgeReceiver-20260914-063802-587-d17638bb920544bcb4192f9ef4b84e43/bridge-report.json`（PASS）。packageのBoneId、bindpose、材質、ownership、semantic map適用を含む。
 - private素材は公開リポジトリへ追加しない。入力pathやsceneはローカル証拠でのみ管理し、共有時はhashと匿名化したreportを使う。

@@ -6,7 +6,7 @@
 
 ## 2026-09-14 NF-V1-09D: 未編集base-colorの原画像出力
 
-原画像sourceと現在のbounded Paint previewのhashを比較し、hashが一致する未編集base-colorだけはGLBへ元のPNG/JPEG bytes・MIME・原寸で出力するようにした。Paintを編集した場合、または旧project／source hashのないgraphでは従来のpreview PNGへ戻る。複数材質で同じpreview hashに異なる原画像が紐づく曖昧なケースは安全側にpreviewを使う。Coreは **505 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3e7fef879a9c462cbcd96fd1308958d8`）、Player V10 Authoring suiteとprivate RadDollV3実モデル＋Unity Bridge smokeも **PASS**（Player `Artifacts/Authoring-20260914-063522-17459e1e1a1e466fb3ef816fa6103750/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-063802-587-d17638bb920544bcb4192f9ef4b84e43/bridge-report.json`）。
+原画像sourceと現在のbounded Paint previewのhashを比較し、hashが一致する未編集base-colorだけはGLBへ元のPNG/JPEG bytes・MIME・原寸で出力するようにした。Paintを編集した場合、または旧project／source hashのないgraphでは従来のpreview PNGへ戻る。複数材質で同じpreview hashに異なる原画像が紐づく曖昧なケースは安全側にpreviewを使う。Coreは **505 passed / 0 failed**（最新artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2bd33d69fb4843c9960f648d30d381b4`。JPEGのMIME・bytes保持回帰を含む）、Player V10 Authoring suiteとprivate RadDollV3実モデル＋Unity Bridge smokeも **PASS**（Player `Artifacts/Authoring-20260914-063522-17459e1e1a1e466fb3ef816fa6103750/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-063802-587-d17638bb920544bcb4192f9ef4b84e43/bridge-report.json`）。
 
 ## 2026-09-14 NF-V1-09C: 原画像sourceのinspection公開
 
