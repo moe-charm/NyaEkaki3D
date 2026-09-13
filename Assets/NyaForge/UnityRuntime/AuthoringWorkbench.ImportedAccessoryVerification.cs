@@ -94,9 +94,12 @@ namespace NyaForge.UnityRuntime
                     Math.Abs(values.Sum(value => value.Weight) - 1f) < 1e-5f),
                     "Accessory automatic weights were not normalized within the four-influence limit");
                 string boneBindingHash = bound.Binding.ContentHash;
+                var preservedUnselectedWeights = bound.Binding.Weights[2]
+                    .Select(value => value.BoneId + ":" + value.Weight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).ToArray();
                 attachmentTargetChoice = avatarObjectId;
                 RefreshAttachmentControls();
                 accessorySurfaceTriangleIds.SetValueWithoutNotify("0");
+                accessoryClothingVertexIds.SetValueWithoutNotify("0,1");
                 TransferAccessorySurfaceWeights();
                 boundGraph = workspace.Document.ActiveObject.Graph;
                 bound = boundGraph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.SkinBind);
@@ -107,7 +110,12 @@ namespace NyaForge.UnityRuntime
                     "Accessory avatar-surface weights were not normalized within the four-influence limit");
                 Check(status.text.Contains("1面領域"),
                     "Accessory surface weight initialization did not report the selected avatar triangle region");
+                Check(status.text.Contains("2頂点") && bound.Binding.Weights[2]
+                    .Select(value => value.BoneId + ":" + value.Weight.ToString("R", System.Globalization.CultureInfo.InvariantCulture))
+                    .SequenceEqual(preservedUnselectedWeights),
+                    "Accessory surface weight initialization changed an unselected clothing vertex");
                 string beforeFit = workspace.Evaluate().ContentHash;
+                var beforeUnselectedPosition = workspace.Preview.Evaluation.MeshOutputs[accessoryEdit.NodeId].Mesh.Positions[2];
                 accessoryFitOffsetMm.SetValueWithoutNotify(2);
                 accessoryFitMaxDistanceMm.SetValueWithoutNotify(50);
                 attachmentTargetChoice = avatarObjectId;
@@ -119,6 +127,8 @@ namespace NyaForge.UnityRuntime
                     "Accessory surface fit status did not expose measured quality metrics");
                 Check(status.text.Contains("1面領域"),
                     "Accessory surface fit did not report the selected avatar triangle region");
+                Check(status.text.Contains("2頂点") && workspace.Preview.Evaluation.MeshOutputs[accessoryEdit.NodeId].Mesh.Positions[2].Equals(beforeUnselectedPosition),
+                    "Accessory surface fit changed an unselected clothing vertex");
                 string failedFitState = workspace.Document.StateHash;
                 long failedFitRevision = workspace.Document.DocumentRevision;
                 accessoryFitMaxDistanceMm.SetValueWithoutNotify(1);
@@ -127,6 +137,7 @@ namespace NyaForge.UnityRuntime
                     "Out-of-range avatar-surface fit changed the clothing document");
                 accessoryFitMaxDistanceMm.SetValueWithoutNotify(50);
                 accessorySurfaceTriangleIds.SetValueWithoutNotify("");
+                accessoryClothingVertexIds.SetValueWithoutNotify("");
 
                 // Exercise the same explicit pose-copy action exposed by the
                 // Workbench. Move the source avatar, copy its evaluated pose

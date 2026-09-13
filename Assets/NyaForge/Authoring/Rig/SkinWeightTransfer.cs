@@ -36,7 +36,7 @@ namespace NyaForge.Authoring.Rig
             SkinBinding avatarBinding, SkeletonDefinition skeleton,
             int maxInfluences = 4)
             => BySurfaceProjection(clothingMesh, clothingTransform, avatarMesh,
-                avatarTransform, avatarBinding, skeleton, maxInfluences, null, null);
+                avatarTransform, avatarBinding, skeleton, maxInfluences, null, null, null, null);
 
         /// <summary>
         /// Transfers weights from an explicitly selected avatar surface region.
@@ -49,12 +49,36 @@ namespace NyaForge.Authoring.Rig
             MeshData avatarMesh, RestTransform avatarTransform,
             SkinBinding avatarBinding, SkeletonDefinition skeleton,
             int maxInfluences, float? maxDistance, IEnumerable<int> avatarTriangleIndices)
+            => BySurfaceProjection(clothingMesh, clothingTransform, avatarMesh,
+                avatarTransform, avatarBinding, skeleton, maxInfluences, maxDistance,
+                avatarTriangleIndices, null, null);
+
+        /// <summary>
+        /// Transfers weights only to selected clothing vertices. Unselected
+        /// vertices retain the supplied clothing binding, while the avatar
+        /// surface region and distance limit remain shared with fit.
+        /// </summary>
+        public static SkinBinding BySurfaceProjection(
+            MeshData clothingMesh, RestTransform clothingTransform,
+            MeshData avatarMesh, RestTransform avatarTransform,
+            SkinBinding avatarBinding, SkeletonDefinition skeleton,
+            int maxInfluences, float? maxDistance, IEnumerable<int> avatarTriangleIndices,
+            IEnumerable<int> clothingVertexIndices, SkinBinding existingClothingBinding)
         {
             Checks.Require(clothingMesh != null && avatarMesh != null && avatarBinding != null && skeleton != null,
                 "INVALID_SKIN", "Clothing mesh, avatar mesh, binding and skeleton are required.");
             clothingTransform.Validate(); avatarTransform.Validate();
             Checks.Require(maxInfluences >= 1 && maxInfluences <= SkinBinding.MaxInfluencesPerVertex,
                 "INFLUENCE_LIMIT", "Weight transfer influence count is invalid.");
+            HashSet<int> selectedVertices = clothingVertexIndices == null ? null : new HashSet<int>(clothingVertexIndices);
+            if (selectedVertices != null)
+            {
+                Checks.Require(selectedVertices.Count > 0, "SELECTION_EMPTY", "At least one clothing vertex must be selected.");
+                foreach (int vertex in selectedVertices)
+                    Checks.Require(vertex >= 0 && vertex < clothingMesh.VertexCount, "INVALID_VERTEX", "Selected clothing vertex is outside the mesh domain.");
+                Checks.Require(existingClothingBinding != null, "INVALID_SKIN", "An existing clothing binding is required when only selected vertices are updated.");
+                existingClothingBinding.ValidateFor(clothingMesh, skeleton);
+            }
             if (maxDistance.HasValue)
             {
                 Checks.Finite(maxDistance.Value);
@@ -66,6 +90,12 @@ namespace NyaForge.Authoring.Rig
             var raw = new List<SkinBinding.VertexWeightInput>(clothingMesh.VertexCount * maxInfluences);
             for (int vertex = 0; vertex < clothingMesh.VertexCount; vertex++)
             {
+                if (selectedVertices != null && !selectedVertices.Contains(vertex))
+                {
+                    foreach (var weight in existingClothingBinding.Weights[vertex])
+                        raw.Add(new SkinBinding.VertexWeightInput(vertex, weight.BoneId, weight.Weight));
+                    continue;
+                }
                 Vec3 avatarPoint = clothingTransform.ToAvatarPoint(clothingMesh.Positions[vertex]);
                 MeshSurfaceHit hit = projection.FindClosest(avatarPoint);
                 if (maxDistance.HasValue)

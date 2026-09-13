@@ -38,7 +38,7 @@ namespace NyaForge.Authoring.Geometry
             MeshData avatarMesh, RestTransform avatarTransform,
             float surfaceOffset, float maxDistance)
             => Project(clothingMesh, clothingTransform, avatarMesh, avatarTransform,
-                surfaceOffset, maxDistance, null);
+                surfaceOffset, maxDistance, null, null);
 
         /// <summary>
         /// Projects clothing onto an explicitly selected avatar triangle region.
@@ -50,12 +50,28 @@ namespace NyaForge.Authoring.Geometry
             MeshData clothingMesh, RestTransform clothingTransform,
             MeshData avatarMesh, RestTransform avatarTransform,
             float surfaceOffset, float maxDistance, IEnumerable<int> avatarTriangleIndices)
+            => Project(clothingMesh, clothingTransform, avatarMesh, avatarTransform,
+                surfaceOffset, maxDistance, null, avatarTriangleIndices);
+
+        /// <summary>Projects only selected clothing vertices, preserving all other positions.</summary>
+        public static MeshSurfaceFitResult Project(
+            MeshData clothingMesh, RestTransform clothingTransform,
+            MeshData avatarMesh, RestTransform avatarTransform,
+            float surfaceOffset, float maxDistance, IEnumerable<int> clothingVertexIndices,
+            IEnumerable<int> avatarTriangleIndices)
         {
             Checks.Require(clothingMesh != null && avatarMesh != null, "INVALID_SURFACE_FIT", "Clothing and avatar meshes are required.");
             clothingTransform.Validate(); avatarTransform.Validate();
             Checks.Finite(surfaceOffset); Checks.Finite(maxDistance);
             Checks.Require(maxDistance > 0f && maxDistance <= 10f, "INVALID_SURFACE_FIT", "Surface fit distance must be between zero and 10 metres.");
             Checks.Require(Math.Abs(surfaceOffset) <= maxDistance, "INVALID_SURFACE_FIT", "Surface offset cannot exceed the fit distance.");
+            HashSet<int> selectedVertices = clothingVertexIndices == null ? null : new HashSet<int>(clothingVertexIndices);
+            if (selectedVertices != null)
+            {
+                Checks.Require(selectedVertices.Count > 0, "SELECTION_EMPTY", "At least one clothing vertex must be selected.");
+                foreach (int vertex in selectedVertices)
+                    Checks.Require(vertex >= 0 && vertex < clothingMesh.VertexCount, "INVALID_VERTEX", "Selected clothing vertex is outside the mesh domain.");
+            }
             var projection = new MeshSurfaceProjection(avatarMesh, avatarTransform, avatarTriangleIndices);
             var result = new Vec3[clothingMesh.VertexCount];
             int moved = 0;
@@ -63,6 +79,11 @@ namespace NyaForge.Authoring.Geometry
             float maxProjectionDistance = 0f, maxDisplacement = 0f;
             for (int vertex = 0; vertex < clothingMesh.VertexCount; vertex++)
             {
+                if (selectedVertices != null && !selectedVertices.Contains(vertex))
+                {
+                    result[vertex] = clothingMesh.Positions[vertex];
+                    continue;
+                }
                 Vec3 worldPoint = clothingTransform.ToAvatarPoint(clothingMesh.Positions[vertex]);
                 MeshSurfaceHit hit = projection.FindClosest(worldPoint);
                 double projectionDistanceSquared = hit.DistanceSquared;

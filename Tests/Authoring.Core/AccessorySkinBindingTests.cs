@@ -128,6 +128,24 @@ internal static partial class Program
             Expect("WEIGHT_TRANSFER_DISTANCE", () => SkinWeightTransfer.BySurfaceProjection(clothing,
                 new RestTransform(1, new Vec3()), avatar, new RestTransform(1, new Vec3()),
                 avatarBinding, skeleton, 2, .5f, new[] { 0 }));
+
+            var existingClothing = SkinBinding.Create(clothing, skeleton, new[] {
+                new SkinBinding.VertexWeightInput(0, root, 1),
+                new SkinBinding.VertexWeightInput(1, root, 1),
+                new SkinBinding.VertexWeightInput(2, root, 1)
+            });
+            var partialFit = MeshSurfaceFit.Project(clothing, new RestTransform(1, new Vec3()),
+                avatar, new RestTransform(1, new Vec3()), .02f, .5f, new[] { 0, 1 }, new[] { 1 });
+            if (!(!partialFit.Positions[0].Equals(clothing.Positions[0]) && !partialFit.Positions[1].Equals(clothing.Positions[1]) &&
+                partialFit.Positions[2].Equals(clothing.Positions[2]))) throw new Exception("Surface fit did not preserve unselected clothing vertices");
+            var partialWeights = SkinWeightTransfer.BySurfaceProjection(clothing,
+                new RestTransform(1, new Vec3()), avatar, new RestTransform(1, new Vec3()),
+                avatarBinding, skeleton, 2, .5f, new[] { 1 }, new[] { 0, 1 }, existingClothing);
+            if (!(partialWeights.Weights[0].All(value => value.BoneId == child) &&
+                partialWeights.Weights[1].All(value => value.BoneId == child) &&
+                partialWeights.Weights[2].Count == 1 && partialWeights.Weights[2][0].BoneId == root &&
+                Math.Abs(partialWeights.Weights[2][0].Weight - 1f) < 1e-6f))
+                throw new Exception("Surface weight transfer did not preserve an unselected clothing vertex");
         });
 
         Test("static accessory can become a root-initialized avatar skin graph", () =>
