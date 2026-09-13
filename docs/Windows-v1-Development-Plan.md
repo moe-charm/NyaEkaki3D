@@ -54,7 +54,7 @@ NF-V1のIDは持込提案との対応用に維持。状態は実装済み・合�
 | NF-V1-03B | 納品対象allowlistの永続化 | 03 | `DeliveryAllowlistCodec`、native attachment、GUI／MCP state、multi-object／GLB subset出力、Save/Open、参照body混入拒否、Player回帰まで実装済み。実EditorWindowでのクリック操作と受け取り側manifest／report照合は外部受入として残す |
 | NF-V1-03A | 最小衣装packageと初回Unity適用 | 03 | `skinned-clothing-v1`で衣装GLB・stable skeleton・bindingを個別に渡す。参照bodyの非同梱、BoneId map・IBM対応、事前hash検証、失敗時無変更を確認。合成Unity receiver、明示割当GUI、ownership markerまで実証済み。実アバター適用と実更新結果は外部受入として残す |
 | NF-V1-02A | G1初回の独立reader・SDK・クライアント受入 | 01、03A（衣装ケース） | E01〜E05の現行対応分、E06のbase color/alpha、E08のlocal段階を確認。独立readerで骨/形状を比較。E07更新・未実装map・他者視点は後続へ明示的に分ける |
-| NF-V1-04 | Polygon造形確定command | 03の座標/出自契約 | 元graphを残し派生MeshSource/EditMesh graphを一括生成。UV seam/corner→render vertex対応、material/paint、元object/graph/revisionとhash、transformを保持。Undo一回、失敗無変更。新規skinへ進める |
+| NF-V1-04 | Polygon造形確定command | 03の座標/出自契約 | 元graphを残し派生MeshSource/EditMesh graphを一括生成。UV seam/corner→render vertex対応、material/paint、元object/graph/revisionとhash、transformを保持。剛体attachment済みのPolygonは基準姿勢のbone-local offsetをavatar-localへ焼き込み、派生skinからattachment metadataを除去する。Undo一回、失敗無変更。新規skinへ進める |
 | NF-V1-05 | topology確定・属性依存 | 04 | skin/morph前に造形確定。既存skin/morphの未対応topology変更を事前拒否。再造形は新派生へ明示転送し旧派生を保持 |
 | NF-V1-06 | 範囲を指定するfit/weight | 03の座標/対象契約 | 衣装の選択頂点、元body面領域、距離を共通候補として使う。Workbenchのavatar面ID・衣装頂点ID入力、衣装頂点選択の取込、ビューポートavatar面raycastをfit／weightへ接続済み。範囲外は無変更、未選択頂点・weightを保持。薄い表裏・袖/胴体・遠方の負例。候補/未対応点/移動量を確認して確定 |
 | NF-V1-07 | 衣装検査GUIと参照保護 | 05、06 | rest編集/pose確認、bodyと衣装の表示、参照ロック、既存weight修正、固定pose群をGUIへ接続。参照object保護のnative保存・Open復元・Undo/Redo同期と頂点編集停止はPlayer回帰済み。実EditorWindowの手動操作、実アバターの全周fit・貫通・見た目は別受入として残す。新ブラシは一周で必要性が判明したものに限定 |

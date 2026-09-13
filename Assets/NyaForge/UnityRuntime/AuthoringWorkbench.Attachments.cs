@@ -306,8 +306,9 @@ namespace NyaForge.UnityRuntime
             var nodes = graph.Nodes.Values.ToArray();
             if (nodes.Count(node => node.TypeId == BuiltinNodes.PolygonSource) != 1 ||
                 nodes.Count(node => node.TypeId == BuiltinNodes.PolygonEdit) != 1 ||
+                nodes.Count(node => node.TypeId == BuiltinNodes.Attachment) > 1 ||
                 nodes.Any(node => node.TypeId == BuiltinNodes.Skeleton || node.TypeId == BuiltinNodes.SkinBind ||
-                    node.TypeId == BuiltinNodes.SkinDeform || node.TypeId == BuiltinNodes.Pose || node.TypeId == BuiltinNodes.Attachment ||
+                    node.TypeId == BuiltinNodes.SkinDeform || node.TypeId == BuiltinNodes.Pose ||
                     node.TypeId == BuiltinNodes.LayeredPaint || node.TypeId == BuiltinNodes.Mirror)) return false;
             try { return GraphEvaluator.Evaluate(graph).IsComplete; }
             catch (AuthoringException) { return false; }
@@ -328,10 +329,30 @@ namespace NyaForge.UnityRuntime
                 if (!CanMaterializePolygonAccessory(graph)) throw new InvalidOperationException("PolygonSource→PolygonEditとappearanceだけのgraphを選択してください。");
                 var root = skeleton.Bones.FirstOrDefault(bone => string.IsNullOrEmpty(bone.ParentBoneId));
                 if (root == null) throw new InvalidOperationException("avatar skeletonにRoot boneがありません。");
-                var result = AccessorySkinMaterializer.Materialize(graph, skeleton, root.BoneId, target.ObjectId);
+                var attachment = graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.Attachment);
+                PoseTransform? bakeAttachment = null;
+                if (attachment != null)
+                {
+                    if (attachment.AttachmentTargetObjectId != target.ObjectId)
+                        throw new InvalidOperationException("Polygon小物の装着先avatarと派生先が一致していません。");
+                    ChecksForAttachment(attachment, session.Resolve(target.Graph));
+                    // Attachment offsets are authored in the current avatar
+                    // skeleton's rest bone-local frame. The authored rest pose
+                    // uses identity axes around BoneDefinition.Head, so baking
+                    // the frame keeps the visible rigid placement when the
+                    // derived graph switches to root-initialized skin weights.
+                    var bone = skeleton.ById[attachment.AttachmentBoneId];
+                    var restFrame = PoseTransform.FromTranslation(bone.Head);
+                    bakeAttachment = new PoseTransform(restFrame.XAxis, restFrame.YAxis, restFrame.ZAxis,
+                        restFrame.TransformPoint(attachment.AttachmentOffset));
+                }
+                var result = AccessorySkinMaterializer.Materialize(graph, skeleton, root.BoneId, target.ObjectId,
+                    bakeAttachmentTransform: bakeAttachment);
                 Execute(AuthoringOperation.AddGraph(result.Graph));
                 attachmentTargetChoice = target.ObjectId;
-                SetStatus("Polygon造形をskin衣装へ派生しました。元graphは保持されています。新しい衣装objectでweight・fit・poseを確認して保存してください。");
+                SetStatus(attachment == null
+                    ? "Polygon造形をskin衣装へ派生しました。元graphは保持されています。新しい衣装objectでweight・fit・poseを確認して保存してください。"
+                    : "装着位置をavatar rest座標へ焼き込み、Polygon造形をskin衣装へ派生しました。元graphは保持されています。新しい衣装objectでweight・fit・poseを確認して保存してください。");
             });
         }
 

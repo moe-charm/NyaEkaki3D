@@ -339,5 +339,30 @@ internal static partial class Program
             var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(GraphId(), "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
             Expect("ACCESSORY_ATTACHMENT_CONFLICT", () => AccessorySkinBindingAdapter.BindToSkeleton(graph, mesh, skeleton, skeleton.Bones[0].BoneId));
         });
+
+        Test("polygon materialization bakes rigid attachment placement into the skin derivative", () =>
+        {
+            string source = GraphId(), edit = GraphId(), output = GraphId(), target = GraphId();
+            var polygon = PolygonPrimitives.Plane(GraphId(), .2f, .2f);
+            var graph = new AuthoringGraph(GraphId(), new[] {
+                GraphNode.Polygon(source, polygon, new RestTransform(1, new Vec3())),
+                GraphNode.PolygonEdit(edit), GraphNode.Output(output),
+                GraphNode.AttachmentNode(GraphId(), target, GraphId(), Checks.Hash(new byte[] { 2 }), new Vec3(.01f, .02f, .03f))
+            }, new[] { new GraphEdge(source, "mesh", edit, "mesh"), new GraphEdge(edit, "mesh", output, "mesh") }, output);
+            var before = GraphEvaluator.Evaluate(graph);
+            var root = GraphId();
+            var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(root, "Root", "", new Vec3(.2f, .3f, .4f), new Vec3(.2f, .4f, .4f)) });
+            var attachmentFrame = PoseTransform.FromTranslation(new Vec3(.21f, .32f, .43f));
+            var materialized = AccessorySkinMaterializer.Materialize(graph, skeleton, root, poseSourceObjectId: target,
+                derivedGraphId: GraphId(), bakeAttachmentTransform: attachmentFrame);
+            var after = GraphEvaluator.Evaluate(materialized.Graph);
+            True(before.IsComplete && after.IsComplete && after.Output.Mesh != null);
+            True(!materialized.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.Attachment));
+            Equal(before.Output.Mesh.TopologyHash, after.Output.Mesh.TopologyHash);
+            Near(before.Output.Mesh.Positions[0].X + .21f, after.Output.Mesh.Positions[0].X);
+            Near(before.Output.Mesh.Positions[0].Y + .32f, after.Output.Mesh.Positions[0].Y);
+            Near(before.Output.Mesh.Positions[0].Z + .43f, after.Output.Mesh.Positions[0].Z);
+            True(GraphEvaluator.Evaluate(graph).Output.Mesh.ContentHash == before.Output.Mesh.ContentHash);
+        });
     }
 }

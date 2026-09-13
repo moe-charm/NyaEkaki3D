@@ -30,7 +30,7 @@ namespace NyaForge.Authoring.Graph
     {
         public static AccessorySkinMaterialization Materialize(
             AuthoringGraph polygonGraph, SkeletonDefinition skeleton, string rootBoneId,
-            string poseSourceObjectId = "", string derivedGraphId = "")
+            string poseSourceObjectId = "", string derivedGraphId = "", PoseTransform? bakeAttachmentTransform = null)
         {
             Checks.Require(polygonGraph != null && skeleton != null, "INVALID_SKIN", "Polygon graph and avatar skeleton are required.");
             if (string.IsNullOrEmpty(derivedGraphId)) derivedGraphId = Guid.NewGuid().ToString("D");
@@ -45,9 +45,12 @@ namespace NyaForge.Authoring.Graph
             var source = sources[0]; var edit = edits[0];
             Checks.Require(polygonGraph.Edges.Any(edge => edge.FromNode == source.NodeId && edge.FromPort == "mesh" && edge.ToNode == edit.NodeId && edge.ToPort == "mesh"),
                 "POLYGON_MATERIALIZE_SHAPE", "PolygonSource must feed PolygonEdit directly.");
+            var attachments = polygonGraph.Nodes.Values.Where(node => node.TypeId == BuiltinNodes.Attachment).ToArray();
+            Checks.Require(attachments.Length <= 1, "POLYGON_MATERIALIZE_ATTACHMENT", "Materialization supports at most one rigid attachment.");
+            Checks.Require(attachments.Length == 0 || bakeAttachmentTransform.HasValue, "POLYGON_MATERIALIZE_ATTACHMENT", "A rigid attachment must be resolved before materialization.");
             Checks.Require(!polygonGraph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.Skeleton ||
                 node.TypeId == BuiltinNodes.SkinBind || node.TypeId == BuiltinNodes.SkinDeform || node.TypeId == BuiltinNodes.Pose ||
-                node.TypeId == BuiltinNodes.Attachment), "ACCESSORY_ALREADY_SKINNED", "The polygon graph already contains a rig or attachment.");
+                (node.TypeId == BuiltinNodes.Attachment && !bakeAttachmentTransform.HasValue)), "ACCESSORY_ALREADY_SKINNED", "The polygon graph already contains a rig or attachment.");
 
             // Geometry-altering stages need a topology-aware conversion. The
             // first v1 materializer is deliberately limited to polygon editing
@@ -57,6 +60,7 @@ namespace NyaForge.Authoring.Graph
                 BuiltinNodes.Paint, BuiltinNodes.StandardMaterial, BuiltinNodes.AssignMaterial,
                 BuiltinNodes.AssignMaterials
             }, StringComparer.Ordinal);
+            if (bakeAttachmentTransform.HasValue) allowed.Add(BuiltinNodes.Attachment);
             Checks.Require(polygonGraph.Nodes.Values.All(node => allowed.Contains(node.TypeId)),
                 "POLYGON_MATERIALIZE_UNSUPPORTED", "Materialization supports polygon editing and appearance nodes only.");
             var evaluation = GraphEvaluator.Evaluate(polygonGraph);
@@ -65,14 +69,21 @@ namespace NyaForge.Authoring.Graph
             Checks.Require(evaluation.MeshOutputs.TryGetValue(edit.NodeId, out var editValue) && editValue != null && editValue.Mesh != null,
                 "POLYGON_MATERIALIZE_INCOMPLETE", "PolygonEdit must produce a renderable mesh.");
 
-            var materializedSource = GraphNode.Source(source.NodeId, editValue.Mesh, editValue.Transform);
+            var materializedMesh = editValue.Mesh;
+            var materializedTransform = editValue.Transform;
+            if (bakeAttachmentTransform.HasValue)
+            {
+                materializedMesh = BakeAttachmentTransform(materializedMesh, materializedTransform, bakeAttachmentTransform.Value);
+                materializedTransform = new RestTransform(1, new Vec3());
+            }
+            var materializedSource = GraphNode.Source(source.NodeId, materializedMesh, materializedTransform);
             // Preserve the evaluated polygon rendering metadata, especially
             // the authored->dense MaterialSlotMap when slots have gaps.
-            var sourceValue = GraphMeshValue.Source(source.NodeId, editValue.Mesh, editValue.Transform,
+            var sourceValue = GraphMeshValue.Source(source.NodeId, materializedMesh, materializedTransform,
                 editValue.Polygon, editValue.PolygonRendering);
             var materializedEdit = GraphNode.Edit(edit.NodeId, true, null, sourceValue.SnapshotHash, sourceValue.DomainId);
             var sourceMarker = GraphNode.DerivedSourceNode(Guid.NewGuid().ToString("D"), polygonGraph.GraphId, GraphContentIdentity.Hash(polygonGraph));
-            var nodes = polygonGraph.Nodes.Values.Select(node =>
+            var nodes = polygonGraph.Nodes.Values.Where(node => !bakeAttachmentTransform.HasValue || node.TypeId != BuiltinNodes.Attachment).Select(node =>
             {
                 if (node.NodeId == source.NodeId) return materializedSource;
                 if (node.NodeId == edit.NodeId) return materializedEdit;
@@ -91,11 +102,40 @@ namespace NyaForge.Authoring.Graph
             var derivedEvaluation = GraphEvaluator.Evaluate(derived);
             Checks.Require(derivedEvaluation.IsComplete && derivedEvaluation.Output != null && derivedEvaluation.Output.Mesh != null,
                 "POLYGON_MATERIALIZE_INCOMPLETE", "The materialized appearance graph could not be evaluated.");
-            Checks.Require(derivedEvaluation.Output.Mesh.ContentHash == evaluation.Output.Mesh.ContentHash,
-                "POLYGON_MATERIALIZE_MISMATCH", "Materialization changed the evaluated geometry.");
+            if (!bakeAttachmentTransform.HasValue)
+                Checks.Require(derivedEvaluation.Output.Mesh.ContentHash == evaluation.Output.Mesh.ContentHash,
+                    "POLYGON_MATERIALIZE_MISMATCH", "Materialization changed the evaluated geometry.");
+            else
+                Checks.Require(derivedEvaluation.Output.Mesh.TopologyHash == evaluation.Output.Mesh.TopologyHash &&
+                    derivedEvaluation.Output.Mesh.VertexCount == evaluation.Output.Mesh.VertexCount,
+                    "POLYGON_MATERIALIZE_MISMATCH", "Attachment baking changed the polygon topology.");
             var rootBound = AccessorySkinBindingAdapter.BindToSkeleton(derived,
                 derivedEvaluation.MeshOutputs[edit.NodeId].Mesh, skeleton, rootBoneId, poseSourceObjectId);
             return new AccessorySkinMaterialization(polygonGraph.GraphId, GraphContentIdentity.Hash(polygonGraph), rootBound);
+        }
+
+        static MeshData BakeAttachmentTransform(MeshData mesh, RestTransform sourceTransform, PoseTransform attachment)
+        {
+            var positions = mesh.Positions.Select(point => attachment.TransformPoint(sourceTransform.ToAvatarPoint(point))).ToArray();
+            var normals = mesh.Normals.Count == 0 ? Array.Empty<Vec3>() : mesh.Normals.Select(normal => Normalize(TransformVector(attachment, normal))).ToArray();
+            var tangents = mesh.Tangents.Count == 0 ? Array.Empty<Vec4>() : mesh.Tangents.Select(tangent =>
+            {
+                var direction = Normalize(TransformVector(attachment, new Vec3(tangent.X, tangent.Y, tangent.Z)));
+                return new Vec4(direction.X, direction.Y, direction.Z, tangent.W);
+            }).ToArray();
+            return new MeshData(positions, normals, tangents, mesh.Uv0.ToArray(), mesh.Submeshes.ToArray());
+        }
+
+        static Vec3 TransformVector(PoseTransform transform, Vec3 value)
+        {
+            return transform.XAxis * value.X + transform.YAxis * value.Y + transform.ZAxis * value.Z;
+        }
+
+        static Vec3 Normalize(Vec3 value)
+        {
+            double length = Math.Sqrt((double)value.X * value.X + (double)value.Y * value.Y + (double)value.Z * value.Z);
+            Checks.Require(length > 1e-12, "INVALID_MESH", "Attachment transform produced a zero direction.");
+            return value * (float)(1.0 / length);
         }
     }
 

@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-04: 剛体装着済みPolygonのskin派生
+
+Polygonで作ったチョーカー／カフを先にstable BoneIdへ剛体装着し、位置を確認してからskin衣装へ派生できるようにした。`AccessorySkinMaterializer`へ基準姿勢のattachment frame焼き込みを追加し、`BoneDefinition.Head + bone-local offset`をavatar-local座標へ変換して位置・normal・tangentを派生MeshSourceへ保持する。派生側からattachment nodeは除去し、元のPolygon graphとDerivedSource provenanceは残す。Workbenchの **Polygon造形をskin衣装へ派生** は、attachmentなしの従来経路と、同じavatarを対象にしたattachment付き経路の両方を扱う。現在poseの見た目を焼き込まず、基準姿勢で確定する契約である。
+
+Coreへ「polygon materialization bakes rigid attachment placement into the skin derivative」を追加し、**500 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0e7b280081cf4990b228925d8bdce824`）。Unity Player `Builds/ChokerMaterializeV1/NyaForge.exe`もビルド成功し、既存Authoring suite **PASS**（`Artifacts/Authoring-20260914-045048-0b2598a47f3f4dfdb7ba4f2094d6f631/report.json`）。実RadDollV3全周fit・貫通・見た目、実EditorWindowの手動操作、VRChat内受入は引き続き別カードである。
+
 ## 2026-09-14 feedback triage: 9855d43レビューの再照合
 
 外部レビューで挙がったP1 3件（avatar-local配置、`SaveBindings`の管理参照、UV1欠落）とP2 5件（sparse material slot、MR係数、Cuff winding、sampler共有、適用前／削除後の割当読込）を現行`main`（`0a52e45`）へ再照合した。いずれも既存修正と回帰で解消済みで、本番コードの重複修正は行わない。対応の詳細は[レビュー再照合](docs/reviews/2026-09-14-Feedback-9855d43-Triage.md)へ固定した。
