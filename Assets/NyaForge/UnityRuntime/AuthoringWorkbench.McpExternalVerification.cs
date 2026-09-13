@@ -61,7 +61,8 @@ namespace NyaForge.UnityRuntime
                             {
                                 var glbs=Directory.GetFiles(Path.Combine(projectPath.value,"exports"),"model.glb",SearchOption.AllDirectories);
                                 var reports=Directory.GetFiles(Path.Combine(projectPath.value,"exports"),"export-report.json",SearchOption.AllDirectories);
-                                if(glbs.Length!=1 || BitConverter.ToUInt32(File.ReadAllBytes(glbs[0]),0)!=0x46546c67 || reports.Length!=1 || !File.ReadAllText(reports[0]).Contains(workspace.Document.StateHash,StringComparison.Ordinal)) failure="MCP GLB export or pinned report is missing or invalid";
+                                string glbHash=glbs.Length==1 ? NyaForge.Authoring.Checks.Hash(File.ReadAllBytes(glbs[0])) : "";
+                                if(glbs.Length!=1 || BitConverter.ToUInt32(File.ReadAllBytes(glbs[0]),0)!=0x46546c67 || reports.Length!=1 || !File.ReadAllText(reports[0]).Contains(workspace.Document.StateHash,StringComparison.Ordinal) || !File.ReadAllText(reports[0]).Contains(glbHash,StringComparison.Ordinal)) failure="MCP GLB export or pinned report is missing or invalid";
                             }
                             else if(!create && !secondary)
                             {

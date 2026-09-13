@@ -1,3 +1,9 @@
+# 2026-09-13 GLB export report hash binding recheck
+
+標準GLBの出力レポートへ `glbHash`（`model.glb`本体のSHA-256）を追加し、レポートとバイナリが同じ成果物か機械的に照合できるようにした。Core回帰の静的GLBレポート、Workbenchのskin-bound衣装検証、外部MCP→Player検証で本体ハッシュを確認する契約を揃えた。クイックスタートにも照合方法を記載した。
+
+最新Core回帰は **468 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f75abb38c9684f498a2b7d9dfa5295b9`）。Windows Player `Builds/ExportReportV4/NyaForge.exe` の800x600 Authoring suiteは **PASS、82 checks**（`Artifacts/Authoring-20260913-115430-d76ec906a1144a26849c256fe25a28f5/report.json`）。外部MCPのrevision-pinned GLB出力、`reportPath`、同一出力先の再送拒否、レポート内state hash／GLB hash照合、文書状態不変を含む。private一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）でも **PASS、82 checks**（`Artifacts/Authoring-20260913-115830-b9f27f6f5b8c41cdae29dcae272fbe0f/report.json`）。両成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（最新実モデル経路: `Artifacts/BridgeReceiver-20260913-120250-409-d0658a1587154f43b0eb62325454c9c7/bridge-report.json`）。実VRChat内の見た目・挙動、標準VRM出力、実マウス／DPI差、衣装自動fit・貫通修正は引き続き未検証境界とする。
+
 # 2026-09-13 final export-report real-model recheck
 
 最新のWindows Player `Builds/ExportReportV3/NyaForge.exe` で、private一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`、public repositoryへ追加しない）を読み取り専用で再検証した。800x600 Authoring suiteは **PASS、82 checks**（`Artifacts/Authoring-20260913-114549-e48c45f2dcf24379a057688838b8510b/report.json`）。実モデルの候補選択、EditMesh頂点編集、native Save/Open、標準skinned GLB出力、出力GLB再取込、材質画像の既存予算処理に加え、skin-bound衣装導線も通過した。GLB出力フォルダには`export-report.json`が生成され、document ID・revision・state hash・profile・対象件数・保持しないVRM/graph metadataを確認した。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-115021-716-c4dcd03ad3f14941a1c67e8671f82bd1/bridge-report.json`）。これは実モデルの自動smokeと出力記録の証拠で、実マウス/DPI差、実VRChat内の見た目・挙動、標準VRM出力、自動fit・貫通修正は引き続き未検証境界とする。

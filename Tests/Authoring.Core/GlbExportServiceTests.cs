@@ -24,6 +24,7 @@ internal static partial class Program
             var report = JObject.Parse(File.ReadAllText(result.ReportPath));
             Equal(workspace.Document.DocumentId, (string)report["documentId"]!);
             Equal(workspace.Document.StateHash, (string)report["stateHash"]!);
+            Equal(Checks.Hash(File.ReadAllBytes(result.Path)), (string)report["glbHash"]!);
             Equal("StaticGeometry", (string)report["profile"]!);
             Equal(1, (int)report["objectCount"]!);
             var imported = GlbImporter.Read(File.ReadAllBytes(result.Path));

@@ -128,6 +128,7 @@ namespace NyaForge.UnityRuntime
                 Check((string)glbReport["documentId"] == workspace.Document.DocumentId &&
                     (long)glbReport["documentRevision"] == workspace.Document.DocumentRevision &&
                     (string)glbReport["stateHash"] == workspace.Document.StateHash &&
+                    (string)glbReport["glbHash"] == Checks.Hash(File.ReadAllBytes(glb.Path)) &&
                     (string)glbReport["profile"] == GlbExportProfile.SkinnedGeometry.ToString() &&
                     (int)glbReport["objectCount"] == workspace.Document.Objects.Count,
                     "Skin-bound accessory GLB report did not pin the exported snapshot");

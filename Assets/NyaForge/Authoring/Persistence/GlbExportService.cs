@@ -259,6 +259,7 @@ namespace NyaForge.Authoring
                     ["documentId"] = documentId,
                     ["documentRevision"] = documentRevision,
                     ["stateHash"] = stateHash,
+                    ["glbHash"] = Checks.Hash(bytes),
                     ["objectCount"] = objects.Length,
                     ["objects"] = new JArray(objects.Select(item => new JObject
                     {
