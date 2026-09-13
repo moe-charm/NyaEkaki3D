@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-16: ReleaseCandidateV1の再実行
+
+現行 `main` の出荷候補Playerを `Builds/ReleaseCandidateV1/NyaForge.exe`（Unity 6000.4.3f1、NVIDIA GeForce RTX 4090）へ別出力し、Authoring suiteを **PASS**（`Artifacts/Authoring-20260914-052458-36a6f92a0af24da28d27f780f349f008/report.json`）で確認した。private一時入力 `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm` を公開ツリーへコピーせず、実RadDollV3の全mesh取込、EditMesh、native Save/Open、標準skinned GLB／VRM1出力と再読込を一周した。制御fixtureの衣装packageも同じPlayerから生成した。
+
+生成したpackageをUnity **2022.3.22f1** Bridgeへ渡し、**16 checks PASS**（`Artifacts/BridgeReceiver-20260914-052738-428-fe139e32ebbc4f989de3c0343a7bd732/bridge-report.json`）。avatar-local配置（translation／rotation／scale）、stable BoneId、ownership更新・削除Undo、semantic normal／MRを含む受け取り経路を確認した。これは実アバターへ新規衣装を全周fitした貫通・見た目、実EditorWindowのマウス／DPI、VRChat Build & Test／実機表示の受入ではない。今回のコード変更はなく、証拠を現行HEADへ結び付ける再実行である。
+
 ## 2026-09-14 feedback再照合: 9855d43 → 8f6377a
 
 提示された衣装受け取り・材質処理レビューを現行 `main` `8f6377a` へ再照合した。P1（移動avatarへの配置、更新時ownership参照、UV1欠落）とP2（sparse material slot、MR係数、Cuff winding、sampler共有、適用前／削除後の割当読込）は後続実装と回帰で解消済みで、本番コードの重複修正は行っていない。詳細は [レビュー再照合](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-8f6377a.md) に固定した。
