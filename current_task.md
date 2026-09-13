@@ -1,6 +1,10 @@
 # 2026-09-13 native UI acceptance bridge check
 
-提示されたレビュー（基準 `0d1e957`）のP1/P2は、現行main（`e999ec2`）の実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。
+提示されたレビュー（基準 `0d1e957`）のP1/P2は、現行main（`8e2aa27`）の実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。
+
+# 2026-09-13 real RadDollV3 recheck after validation fix
+
+private一時素材 `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm` を、画像リソース重複計上修正後の `Builds/ValidationTextureDedupV1/NyaForge.exe` で再取込した。候補選択→rest-space EditMesh頂点編集→native Save/Open→標準skinned GLB出力→再取込までのAuthoring suiteは **PASS**（800x600、`Artifacts/Authoring-20260913-091957-e8571df5858c48958b862af3a3ebcfc5/report.json`、画面 `authoring.png`）。同じ成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-092110-708-47b95c99f5ea44bd9645d430261a0f04/bridge-report.json`）。private素材はpublic repositoryへ追加していない。実マウス/DPI差、実VRChat SDK/VRChat内の見た目受入とは分けて扱う。
 
 # 2026-09-13 validation texture resource deduplication
 
