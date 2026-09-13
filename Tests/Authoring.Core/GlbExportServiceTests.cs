@@ -263,6 +263,42 @@ internal static partial class Program
             Near(mesh.Positions[0].X + .01f, imported.Mesh.Positions[0].X);
         });
 
+        Test("skinned GLB export retains non-translation joint local transforms", () =>
+        {
+            // Keep the child before its parent in the authored list to exercise
+            // the stable BoneId/order boundary used by the writer.
+            string rootId = GraphId(), childId = GraphId();
+            var skeleton = new SkeletonDefinition(new[] {
+                new BoneDefinition(childId, "Child", rootId, new Vec3(0, .1f, 0), new Vec3(0, .2f, 0)),
+                new BoneDefinition(rootId, "Root", "", new Vec3(), new Vec3(0, .1f, 0))
+            });
+            var mesh = PrimitiveGeometry.Plane(.2f, .1f);
+            var binding = SkinBinding.Create(mesh, skeleton,
+                Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, childId, 1f)));
+            var pose = PoseSet.Create(skeleton, skeleton.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head))));
+            var rootLocal = SourceAffine.FromTrs(new Vec3(.25f, -.5f, .75f), new Vec4(0, 0, 0, 1), new Vec3(1, 1, 1));
+            var childLocal = SourceAffine.FromTrs(new Vec3(.1f, .2f, .3f), new Vec4(0, 0, (float)Math.Sqrt(.5), (float)Math.Sqrt(.5)), new Vec3(2, 3, 4));
+            var skinned = new GlbExportService.SkinnedObject {
+                Mesh = new GlbExportService.MeshObject { Mesh = mesh, Name = "joint-transform" },
+                Skeleton = skeleton, Binding = binding, Pose = pose,
+                InverseBindMatrices = new[] { SourceAffine.Identity, SourceAffine.Identity },
+                JointLocalTransforms = new[] { childLocal, rootLocal }
+            };
+            var bytes = GlbWriter.Build(new[] { skinned.Mesh }, skinned, GlbExportProfile.SkinnedGeometryExtended);
+            var json = JObject.Parse(ReadJsonChunk(bytes));
+            var nodes = ((JArray)json["nodes"]!).OfType<JObject>().ToArray();
+            var childNode = nodes.Single(node => (string)node["name"] == "Child");
+            var actual = ((JArray)childNode["matrix"]!).Values<double>().ToArray();
+            var expected = childLocal.ToColumnMajor().ToArray();
+            Equal(16, actual.Length);
+            for (int i = 0; i < actual.Length; i++) Near((float)expected[i], (float)actual[i]);
+            var imported = GlbSourceSkinImporter.Read(bytes, 0, 0);
+            var childIndex = imported.Skin.Joints.Single(index => (string)nodes[index]["name"] == "Child");
+            var world = imported.Skin.Nodes.World[childIndex].ToColumnMajor().ToArray();
+            var expectedWorld = rootLocal.Compose(childLocal).ToColumnMajor().ToArray();
+            for (int i = 0; i < world.Length; i++) Near((float)expectedWorld[i], (float)world[i]);
+        });
+
         Test("standard GLB export retains normal and tangent morph attributes", () =>
         {
             var mesh = AuthoringFixtures.Panel(1); string id = GraphId();

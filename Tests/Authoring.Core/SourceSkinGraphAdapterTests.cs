@@ -69,11 +69,21 @@ internal static partial class Program
             var projected = SourceSkinGraphAdapter.ApplyToEvaluation(evaluation, graph, session);
             for (int i = 0; i < imported.Mesh.VertexCount; i++) SpringPointNear(imported.Mesh.Positions[i], projected.Mesh.Positions[i]);
             Equal(evaluation.Output.DomainId, projected.DomainId); Equal(evaluation.Output.Transform.Scale, projected.Transform.Scale);
+
             var moved = PoseSet.Create(imported.Skeleton, imported.Skeleton.Bones.Select((b, i) => new BonePose(b.BoneId, i == 0 ? PoseTransform.RotationZ(25, b.Head) : PoseTransform.FromTranslation(b.Head))));
             var movedGraph = graph.ReplaceNode(GraphNode.PoseNode(poseId, moved)); var movedEvaluation = GraphEvaluator.Evaluate(movedGraph);
             var movedSession = ImportedRigSession.Create(imported, null, movedGraph.GraphId, skeletonId).WithSourceSkin(source.Skin, source.Binding);
             var movedProjected = SourceSkinGraphAdapter.ApplyToEvaluation(movedEvaluation, movedGraph, movedSession);
             True(movedProjected.Mesh.ContentHash != projected.Mesh.ContentHash);
+
+            // The display adapter must consume the current authored SkinBind value,
+            // rather than the binding captured when the source session was imported.
+            // Reassigning vertex 0 to the second bone changes the posed result.
+            string editedBoneId = imported.BoneMap.Resolve(2);
+            var editedBinding = SkinBindingEditing.AssignVertices(imported.Binding, imported.Mesh, imported.Skeleton, new[] { 2 }, editedBoneId);
+            var editedProjected = SourceSkinGraphAdapter.ApplyToEvaluation(movedEvaluation, movedGraph, movedSession, editedBinding);
+            True(editedProjected.Mesh.ContentHash != movedProjected.Mesh.ContentHash);
+            True(Math.Abs(editedProjected.Mesh.Positions[2].X - movedProjected.Mesh.Positions[2].X) > 1e-5f);
 
             // A downstream EditMesh must consume the source-skinned replacement at the
             // SkinDeform position. Applying source skin to the already edited final output

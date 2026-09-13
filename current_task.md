@@ -1796,3 +1796,9 @@ MCPのapply経路がGUIのExecuteを経由しないため、history.undo／histo
 回帰検証へ、GUIのrebind Undo/Redoに加えてMCP Undo/Redoを追加し、復元前後のattachment raw hashがactive cacheへ反映されることを確認した。Coreは **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4e68ec5a34524831a4a9cc0a84b173dd`）。Unity 6000.4.3f1のWindows Player `Builds/McpHistorySyncV2/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-163945-132.log`）。private一時RadDollV3 VRMを使ったAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-164008-0387e88c1cb14a4a91110187259842c2/report.json`、`authoring.png`）。同成果物のUnity **2022.3.22f1 Bridge**も **PASS**（`Artifacts/BridgeReceiver-20260913-164225-649-8406d9aa891c42fdbc2403176809679d/bridge-report.json`）。
 
 これは自動Player／Core／Bridgeでの履歴同期証跡であり、外部sidecarを使った実MCPプロセス接続、実マウス／DPI差、実VRChat内の受取・外観・挙動は別受入境界として残す。
+
+# 2026-09-13 レビュー指摘のGLB姿勢・編集ウェイト回帰固定
+
+4fcd0fd時点のレビューで挙がった保存／出力／ウェイト編集のP1を現行mainへ再照合し、再発防止のCore回帰を追加した。GLB出力はstable BoneId順のinverse-bindと親相対joint-local行列を使い、子が親より先に並ぶ骨格でも回転・非一様拡縮・平行移動を保持することを確認した。source skin表示は評価中の現在SkinBind入力をSourceSkinGraphAdapterへ渡し、ポーズ中のウェイト再割当が表示メッシュへ反映されることを確認した。GraphId付きrig／expression／Spring、表示と静的出力の不一致停止、静的小物取込の既存修正も維持する。
+
+Coreは **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-17e01774b91a44ddb4878de8d86aff1b`）。これはコード経路と合成fixtureの回帰証跡であり、実マウス／DPI差、UniVRM／VRChat SDK受取、実VRChat内の外観・挙動は引き続き別受入境界とする。
