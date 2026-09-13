@@ -23,6 +23,8 @@ internal static class PlayerGlbExportVerification
         var export=new ExportGlbCommand { documentId=state.GetProperty("documentId").GetString()!, expectedRevision=state.GetProperty("revision").GetInt64(), directory=state.GetProperty("saveTarget").GetProperty("directory").GetString()!, exportId=Guid.NewGuid().ToString("D"), profile="static" };
         var first=await CallExport(client,export,token);
         if(!first.GetProperty("success").GetBoolean() || first.GetProperty("profile").GetString()!="StaticGeometry") throw new Exception("MCP GLB export failed: "+first);
+        if(first.GetProperty("documentId").GetString()!=state.GetProperty("documentId").GetString() || first.GetProperty("revision").GetInt64()!=state.GetProperty("revision").GetInt64() || first.GetProperty("stateHash").GetString()!=state.GetProperty("stateHash").GetString()) throw new Exception("MCP GLB response did not pin the exported snapshot");
+        if(first.GetProperty("sourceDiagnosticCount").GetInt32()!=0 || first.GetProperty("validation").GetProperty("glbSceneInventory").GetString()!="passed") throw new Exception("MCP GLB response omitted report validation or diagnostics");
         string path=first.GetProperty("glbPath").GetString()!; if(!File.Exists(path) || BitConverter.ToUInt32(File.ReadAllBytes(path),0)!=0x46546c67) throw new Exception("MCP GLB output is missing or invalid");
         string report=first.GetProperty("reportPath").GetString()!; if(!File.Exists(report) || !File.ReadAllText(report).Contains(state.GetProperty("stateHash").GetString()!, StringComparison.Ordinal)) throw new Exception("MCP GLB export report is missing or does not pin state");
         var repeat=await CallExport(client,export,token);

@@ -1,3 +1,6 @@
+# 2026-09-13 MCP GLB export snapshot response
+
+`forge_export_glb`の成功レスポンスを、出力report由来のdocument ID・revision・state hashへ変更し、`sourceDiagnosticCount`と`validation.glbSceneInventory`も返すようにした。出力後のworkspaceを読み直して別snapshotを返す経路を避け、AI側がその場でreport検証結果を確認できる。Unity **6000.4.3f1** Player `Builds/McpSnapshotV1/NyaForge.exe`の`-GlbExportMcp` Authoring suiteは **PASS / 82 checks**（`Artifacts/Authoring-20260913-203615-26ca37caffd847b1bae6286ef590f186/report.json`）。
 # 2026-09-13 VRM report snapshot pin
 
 VRM1 exportではGLB生成・package・metadata再読込の後、report作成直前にdocument ID／revisionを再確認するようにした。workspaceが変わっていた場合は`REVISION_CONFLICT`でstagingを破棄し、本体とreportのsnapshot不一致を防ぐ。Core **486 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-229a3ea3029d4c10b4d52b408b349140`）。Unity **6000.4.3f1** Player `Builds/SnapshotPinV1/NyaForge.exe`のAuthoring suiteは **PASS / 82 checks**（`Artifacts/Authoring-20260913-203351-90824516204b4e3ebb61385f086716a9/report.json`）。ビルドログは`Logs/build-player-20260913-203329-835.log`。
