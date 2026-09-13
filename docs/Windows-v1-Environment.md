@@ -32,6 +32,7 @@
 - EditorWindowの実マウス操作、DPI 100/150/200%、日本語・空白path、別Windows環境は未受入である。
 
 - SDK probe証拠: `private/PhysBonesSdkProbe-20260914/sdk-probe-report.json`（`status: verified`）。private project・SDK DLL・private avatar素材は公開しない。
+- RadDollV3 Unity import probe: `private/PhysBonesSdkProbe-20260914/avatar-import-report.json`（20 `SkinnedMeshRenderer`、279 transforms、共通root `Hips`）。衣装package適用と実VRChat Build & Testは未受入。
 
 ## 使い方
 

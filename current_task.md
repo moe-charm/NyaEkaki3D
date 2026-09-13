@@ -8,7 +8,7 @@ ChatGPT Proの持込Windows v1案を現行mainへ照合し、[採用修正版](d
 
 原案からの実務上の修正は採用修正版へ反映済みである。NF-V1-02を02A/02Bへ分割し、衣装package/receiver（03A）をG1へ前倒しし、実SDK・実VRChat・実マウスをCore/Player/合成Bridgeと混同しない。12週間・週20〜25時間は見積りの仮定として採用せず、最小受け渡しと一着の実測後に見直す。
 
-semantic normal/MRは現行実装で一周したため、ここから先はAO/emissive・全shader・FBX/BLEND・完全VRM・Quest/macOSを増やさず、NF-V1-01/03の受け取り環境とNF-V1-04〜08のカフ一着手動完走を優先する。実SDKが用意できない間はBLOCKEDの証拠を維持し、Core 493件PASSや合成Bridge PASSを実VRChat合格へ読み替えない。
+semantic normal/MRは現行実装で一周したため、ここから先はAO/emissive・全shader・FBX/BLEND・完全VRM・Quest/macOSを増やさず、NF-V1-01/03の受け取り環境とNF-V1-04〜08のカフ一着手動完走を優先する。実SDK probe済みの範囲と、実アバター／実VRChatでまだ受入していない範囲を分け、Core 493件PASSや合成Bridge PASSを実VRChat合格へ読み替えない。
 
 ## 2026-09-14 実VRChat SDK probe
 
@@ -16,12 +16,14 @@ VCCキャッシュの`com.vrchat.base`／`com.vrchat.avatars` **3.7.6**を公開
 
 この結果でNF-V1-01のSDK版固定とNF-V1-02Aの「型解決・受け取り設定」部分は進んだが、実RadDollV3 Unity sceneへの全BoneId割当、Build & Test、実VRChat内の揺れ・外観・他者視点、実マウス/DPIはまだ未受入である。SDK DLL・private素材・検証projectはpublic repositoryへ追加しない。
 
+同じprivate projectへ`RadDollV3.fbx`を置き、Unity AssetDatabaseで読み込んだところ、20個の`SkinnedMeshRenderer`、279 transform、renderer bone参照3420件、共通root `Hips` を検出した。証拠は`private/PhysBonesSdkProbe-20260914/avatar-import-report.json`。これは骨格の存在確認であり、衣装packageの適用やVRChat Build & Testの成功とは扱わない。
+
 ## 次に実装するカード
 
 | 順 | ID | 状態 | 次の具体作業・完了条件 |
 |---|---|---|---|
 | 1 | NF-V1-01 / 03 | manifest・実SDK probe済み / 実アバター外部受入BLOCKED | private受け取りprojectでSDK 3.7.6の実`VRCPhysBone`解決・生成・stable root/BoneId設定まで確認済み。次は実アバターsceneの明示割当とBuild & Testを行い、未実施の実VRChatはBLOCKEDとして残す |
-| 2 | NF-V1-03A | 実装・合成Bridge受入済み / 実アバター未受入 | `SkinnedClothingReceiver`、`skinned-clothing-v1`、割当GUI、ownership markerを重複実装しない。実RadDollV3 sceneでBoneId割当→初回適用→再適用を手動確認 |
+| 2 | NF-V1-03A | 実装・合成Bridge受入済み / 実アバター適用未受入 | private SDK probeで実RadDollV3 FBXのUnity import（20 SkinnedMeshRenderer、279 transforms、Hips root）まで確認。次は同sceneで`skinned-clothing-v1`のBoneId明示割当→初回適用→再適用を確認 |
 | 3 | NF-V1-04 / 05 / 06 / 07 | Core/Player実装済み・手動未受入 | Polygon派生→UV/paint→確定→範囲限定fit/weight→pose確認を実マウスで通し、参照body保護・Undo・Save/Openを確認 |
 | 4 | NF-V1-08 | カフ試作経路実装・Player受入済み / 実アバター未受入 | 低ポリ手首カフを頂点編集し、実RadDollV3へfit・weight・Unity適用・VRChat確認。自動テンプレート通過を販売品質と扱わない |
 | 5 | NF-V1-09 / 10 | Core実装済み・Unity/VRChat未受入 | semantic normal／metallic-roughnessのpackage適用を実sceneで確認し、Standard shaderの外観・tangent・samplerを記録。occlusion/emissiveと専用paintは後続範囲 |
