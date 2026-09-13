@@ -1,3 +1,10 @@
+# 2026-09-13 feedback recheck: c4a2748 against current main c74c1f9
+
+提示されたレビュー（基準 `c4a2748`）を現行mainへ再照合した。P1の3件は後続コミットと既存回帰で解消済み。VRM出力は`GlbExportNodeMap`の実node対応表をhumanBones／expression／Springへ渡し、複数skinはstable `BoneId`とskin単位の順序でJOINTSを出力し、旧形式sidecarへ通常GLBを追加する場合もgraph単位のsession tableへ移行する。
+
+P2も現行実装で確認した。Undo/RedoはDocumentとProjectAttachmentsを同じ履歴で復元し、VRM metaは`licenseUrl=other`と`otherLicenseUrl`へ分離、source-skin表示cacheは現在のbinding hashをキーに含め、装着後の描画・面選択は`WorldPoints`／`RenderWorldPoints`の共通配置を使う。PhysBones SDK probeのUnity起動引数は空白を含むパスを要素ごとに引用する。
+
+Coreを再実行し **485 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2800c0038d4144b6b597618edc994b12`）。このフィードバックに対する追加コード変更は不要だった。実マウス／DPI、実VRChat内の見た目・挙動、完全なVRM意味情報保持は引き続き別受入境界とする。
 # 2026-09-13 private RadDollV3 VRM1 export recheck
 
 private一時RadDollV3 VRMをWindows Player `Builds/LegacyMigrationV1/NyaForge.exe`へ指定し、取込→EditMesh頂点編集→native Save/Open→標準skinned GLB出力・再取込→初期VRM 1.0 package出力・metadata再読込まで確認した。suiteは **89 checks PASS**（`Artifacts/Authoring-20260913-195925-52de0f979d3742aca92e4d1f02146594/report.json`、画面 `authoring.png`）。VRM出力ではsource GLBのtopology／vertex・triangle数とskeleton cardinalityを保持し、humanoid／expression／Springのnode参照を再読込できた。Unity Bridge（2022.3.22f1）も **PASS**（`Artifacts/BridgeReceiver-20260913-200125-711-53b841c4e2874885b86fb21d28f625cb/bridge-report.json`）。
@@ -1993,3 +2000,4 @@ Coreは **483 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 検証レポート: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-package-flow-20260913.json`（status `verified`、Unity probe `passed`）。UnityBridgeの合成受け取り回帰も **PASS**（`Artifacts/BridgeReceiver-20260913-193241-889-d5072cb90b02488cbd8d9ef8e6d8a161/bridge-report.json`）。SDK projectと一時packageはpublic repositoryへ追加していない。
 
 実アバターへのstable BoneId／collider手動割当、複数pose・root移動・停止／再開の挙動、VRChat Build & Test／実機の見た目とPhysBones挙動はSIM-07Aの別受入境界として残す。
+
