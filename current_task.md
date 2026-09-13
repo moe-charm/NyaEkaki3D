@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09U: 実RadDollV3単一候補の通常Authoring回帰
+
+全mesh展開オプションと通常経路を分けるため、private一時 `RadDollV3_VRM.vrm` を単一候補として `Builds/PerformanceV30/NyaForge.exe`へ渡し、1280×800でAuthoring suite＋VRM1出力を再実行した。**PASS**（`Artifacts/Authoring-20260914-085304-69897268cb7e4f4e95514ad6eaf8c644/report.json`）。実モデルのcandidate選択、EditMesh、頂点編集、native Save/Open、skinned GLB再読込、VRM1 metadata／geometry再読込、semantic texture・衣装関連の既存回帰を確認した。
+
+実行中のプロセス観測はprivate bytes約3.6GB、working set約2.9GBまで上がった。これは一時的な実VRM取込＋同一suiteの全回帰を含む単一環境の値で、軽量性の合否ではない。通常の1候補取込と全mesh一括取込をNF-V1-15の計測で分離し、実EditorWindowの長時間編集・別PCは未受入として残す。
+
 ## 2026-09-14 NF-V1-09T: PerformanceV30標準作業解像度Authoring回帰
 
 性能修正後の候補 `Builds/PerformanceV30/NyaForge.exe` を1600×1000で単独起動し、制作UIの一周を再確認した。**PASS**（`Artifacts/Authoring-20260914-085112-29a398ddae9e48ae9eae2f21cb46aa34/report.json`、画面`authoring.png`）。制作対象の参照保護・納品対象・小物装着・Polygon編集入口、頂点表示、保存・出力一致の既存回帰が、標準作業解像度でも完了した。画面を目視し、右側の長いpanelはスクロール可能で、status footerとviewportを確認できた。
