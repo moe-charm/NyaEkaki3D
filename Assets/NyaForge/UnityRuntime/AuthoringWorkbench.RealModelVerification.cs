@@ -199,6 +199,13 @@ namespace NyaForge.UnityRuntime
             Check(File.Exists(model) && File.Exists(report), "Real model VRM 1.0 export is missing model.vrm or export-report.json.");
             var metadata = VrmMetadataReader.Read(File.ReadAllBytes(model));
             Check(metadata.Format == "vrm1" && metadata.HumanoidNodes.Count >= 15, "Real model VRM 1.0 export did not retain humanoid metadata.");
+            string sourceGlb = Path.Combine(project, "exports", "real-model-skinned", "model.glb");
+            Check(File.Exists(sourceGlb), "Real model VRM geometry comparison source GLB is missing.");
+            var sourceSkin = GlbSkinImporter.Read(File.ReadAllBytes(sourceGlb), 0, 0);
+            var vrmSkin = GlbSkinImporter.Read(File.ReadAllBytes(model), 0, 0);
+            Check(sourceSkin.Mesh.TopologyHash == vrmSkin.Mesh.TopologyHash && sourceSkin.Mesh.VertexCount == vrmSkin.Mesh.VertexCount && sourceSkin.Mesh.TriangleCount == vrmSkin.Mesh.TriangleCount && sourceSkin.Skeleton.Bones.Count == vrmSkin.Skeleton.Bones.Count,
+                "Real model VRM 1.0 package changed the GLB geometry or skeleton cardinality.");
+            checks.Add("VRM 1.0 package preserves source skinned GLB topology, vertex/triangle counts and skeleton cardinality");
             checks.Add("real GLB/VRM command-line import: VRM 1.0 package export and metadata re-read");
             // Leave the common fixture suite in its expected empty startup
             // state after this opt-in export check.

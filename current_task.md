@@ -1857,3 +1857,10 @@ Core／Windows Player／Unity Bridgeの直前PASS証跡は前項のPhysBones SDK
 Coreは **477 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-212d7df90b524f1383c60eda06d182e2`）。Unity 6000.4.3f1のWindows Player `Builds/ImportLocatorV2/NyaForge.exe`はビルド成功（`Logs/build-all-20260913-174750-928.log`）。Authoring suiteは **PASS・81 checks**（`Artifacts/Authoring-20260913-174813-4363023cd488480fa353aece07713e87/report.json`、画面`authoring.png`）で、clean GLB locator回帰を含む。同成果物をUnity **2022.3.22f1** Bridgeへ渡した受け取り検証も **PASS**（`Artifacts/BridgeReceiver-20260913-174848-448-a38f7b33920a452997438a283373cc3e/bridge-report.json`）。
 
 safe resource dedup、異なるsource skeletonの結合、実素材・実マウス／DPI差、UniVRM／VRChat Build & Test・実機での見た目とPhysBones挙動は引き続き別受入境界とする。
+# 2026-09-13 実モデルVRM 1.0 geometry再読込検証
+
+VRM 1.0初期profileの実モデル受入を強化し、`VerifyCommandLineVrmExport`で出力`model.vrm`を`VrmMetadataReader`だけでなく`GlbSkinImporter`でも再読込するようにした。VRM包装前に生成した標準skinned GLBと、VRM内GLBのmesh topology hash・頂点数・三角形数・骨数が一致することを確認する。これによりmeta/humanoidが読めるだけでなく、包装時にgeometry／skeleton cardinalityが変わっていないことを実モデル回帰へ固定した。RadDollV3はVRM 0.x由来のため、SpringBone自動変換は仕様どおり検証対象から明示除外している。
+
+private一時RadDollV3 VRMを使ったWindows Player `Builds/VrmRealGeometryV1/NyaForge.exe` のAuthoring suiteは **PASS・88 checks**（`Artifacts/Authoring-20260913-175341-bff0e1119a8443c18770a3eea7f2b6df/report.json`）。VRM 1.0 metadata再読込、source skinned GLBとのgeometry／骨数一致、native Save/Open、GLB出力を確認した。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-175531-361-e30d839270284c66b41684879f7add00/bridge-report.json`）。private素材・生成VRMはpublic repositoryへ追加していない。
+
+VRM 1.0のmaterial bind・LookAt・FirstPerson・MToon・animation・任意拡張、VRM 0.x SpringBone変換、実VRChat内の見た目・挙動、実マウス／DPI差は引き続き別受入境界とする。
