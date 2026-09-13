@@ -45,7 +45,10 @@ namespace NyaForge.UnityRuntime
             // bytes while the status panel and playback owner keep the old asset.
             if (result.Success && command?.Operations?.Length == 1 &&
                 (command.Operations[0].Kind == "history.undo" || command.Operations[0].Kind == "history.redo"))
+            {
                 RefreshSecondaryMotionAttachmentFromWorkspace();
+                RefreshReferenceProtectionFromWorkspace();
+            }
             selection.RemoveWhere(i=>i<0 || i>=projection.Points.Length);projection.Select(selection);Refresh();
             return result;
         }

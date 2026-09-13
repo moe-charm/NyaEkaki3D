@@ -56,6 +56,10 @@ namespace NyaForge.UnityRuntime
                 var protectedBefore = GraphEvaluator.Evaluate(workspace.Document.ActiveObject.Graph).Output.Mesh.ContentHash;
                 referenceProtectionToggle.value = true;
                 Check(referenceProtectionToggle.value && referenceProtectedObjectIds.Contains(objectIds[0]), "Reference protection toggle did not register the active object");
+                Execute(AuthoringOperation.Undo());
+                Check(!referenceProtectedObjectIds.Contains(objectIds[0]) && !referenceProtectionToggle.value, "Reference protection was not restored after Undo");
+                Execute(AuthoringOperation.Redo());
+                Check(referenceProtectedObjectIds.Contains(objectIds[0]) && referenceProtectionToggle.value, "Reference protection was not restored after Redo");
                 moveX.SetValueWithoutNotify(1); moveY.SetValueWithoutNotify(0); moveZ.SetValueWithoutNotify(0); MoveSelection();
                 var protectedAfter = GraphEvaluator.Evaluate(workspace.Document.ActiveObject.Graph).Output.Mesh.ContentHash;
                 Check(protectedAfter == protectedBefore && status.text.Contains("参照"), "Reference-protected object accepted a geometry edit (before=" + protectedBefore + ", after=" + protectedAfter + ", active=" + workspace.Document.ActiveObjectId + ", protected=" + referenceProtectedObjectIds.Contains(workspace.Document.ActiveObjectId) + ", status=" + status.text + ")");
