@@ -33,6 +33,17 @@ V24で通常ビューワーを`1280x800`で起動し、パック選択、キャ�
 
 これはスクリプト化された入口回帰であり、実マウス、Explorer、IME、実RadDollV3の全周fit、VRChat内表示の手動受入ではない。
 
+## 2026-09-14 NF-V1-09J: 狭いviewportとstatusの重なりを解消
+
+1080論理px・DPI150%で、viewportの操作説明、空project案内、下部statusが同時に折り返されると重なりやすい状態を確認した。viewportが狭い場合は空project案内を隠し、statusは実ウィンドウで折り返して全文を表示する。注入式Authoring検証では固定高さを維持し、リサイズ回帰の座標契約を壊さない。
+
+- コード: `2965a93`（`fix: keep narrow authoring hints readable`）
+- Player: `Builds/ReleaseCandidateV28/NyaForge.exe`
+- 自動Authoring suite: **PASS**（`Artifacts/Authoring-20260914-075949-b4b0a79fe074472ab61ab08d1fe0df31/report.json`、`1080x700`）
+- 実ウィンドウ: **上部操作・右controls・status全文を確認**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-manual-v28-1080.png`）
+
+この確認は表示の重なりを対象にしており、実マウス・IME・Explorer、実RadDollV3全周fit、VRChat Build & Test／実機表示の受入ではない。
+
 ## 2026-09-14 NF-V1-09F: V19実RadDollV3一周スモーク
 
 最新V19 Playerへprivate一時RadDollV3 VRMを渡し、全mesh取込、EditMesh、native Save/Open、標準skinned GLB／VRM1出力、制御fixtureのskinned clothing package生成を再実行した。生成packageをUnity **2022.3.22f1** Bridgeへ渡し、stable BoneId、bind pose、avatar-local translation／rotation／scale、材質・semantic map、ownership更新・削除Undoを含む**16 checks PASS**で確認した。private入力は公開ツリーへコピーしていない。

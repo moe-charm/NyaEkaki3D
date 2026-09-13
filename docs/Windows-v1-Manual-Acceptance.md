@@ -1,6 +1,6 @@
 # Nya Ekaki 3D Windows v1 手動受入チェック
 
-この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/ReleaseCandidateV24/NyaForge.exe`（コード `c29ad83`）。高DPI 150%の直接起動で右側制作パネル表示を確認した（画面証跡: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-manual-v24-1080.png`）。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
+この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/ReleaseCandidateV28/NyaForge.exe`（コード `2965a93`）。高DPI 150%の直接起動で右側制作パネル表示を確認した（画面証跡: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-manual-v28-1080.png`）。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
 
 ## 1. 実EditorWindow（Windows）
 
