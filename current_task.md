@@ -23,6 +23,8 @@ private probeへ実RadDollV3の`Body` rendererを基準にした最小surface測
 
 公開コードの現行mainからWindows Playerを再生成し、`Builds/WindowsV1Final/NyaForge.exe`（Unity **6000.4.3f1**）でAuthoring suiteを **83 checks PASS**した。実行GPUはNVIDIA GeForce RTX 4090、画面は1600×1000で、証拠は`Artifacts/Authoring-20260914-021258-85e612e192e448e7b3298a6fd3ae9b97/report.json` と `authoring.png`。これは自動GUI／GPU fixtureの受入であり、実マウス操作や実RadDollV3の全周fit・VRChat内表示とは別である。
 
+同じ`WindowsV1Final`へprivate RadDollV3 VRMを指定し、VRM出力まで含むAuthoring suiteも **90 checks PASS**した。証拠は`Artifacts/Authoring-20260914-021400-f77677eea9194ebc8d1a00f310696d17/report.json` と `authoring.png`。これは実VRMの取込・編集経路と自動GLB/VRM回帰を確認したもので、実RadDollV3 sceneへの衣装fit・貫通・手動EditorWindow操作・VRChat内Build & Testとは分けて扱う。
+
 ChatGPT Proの持込Windows v1案を現行mainへ照合し、[採用修正版](docs/Windows-v1-Development-Plan.md)へタスク化した。方針は採用するが、実SDK／実VRChat未受入を完了扱いにせず、実装済みの衣装受け渡しを重複開発しない。製品全体のC0〜C5と進行中goalは維持する。以降の着手順はこの欄と採用修正版を優先し、下に残る日付付き記録の「次」は当時の履歴として読む。
 
 ## 2026-09-14 Downloads版Windows v1案の再確認
