@@ -20,6 +20,19 @@ internal static partial class Program
             Equal("unknown", (string)result["status"]); Equal(before, workspace.Document.StateHash); Equal(0L, (long)result["revision"]);
         });
 
+        Test("validation aggregates every object in a multi-object project", () =>
+        {
+            var workspace = AuthoringWorkspace.CreateEmpty("multi validation");
+            var commands = new AuthoringCommandService(workspace);
+            Ok(commands.Execute(workspace.NewCommand(AuthoringOperation.AddMesh(AuthoringFixtures.Panel(1), new RestTransform(1, new Vec3())))));
+            Ok(commands.Execute(workspace.NewCommand(AuthoringOperation.AddMesh(AuthoringFixtures.Panel(1), new RestTransform(1, new Vec3(.2f, 0, 0))))));
+            var request = AuthoringValidationRequest.Read(new JObject { ["documentId"] = workspace.Document.DocumentId, ["expectedRevision"] = workspace.Document.DocumentRevision, ["profile"] = "pc" });
+            var result = AuthoringValidationReader.Read(workspace, workspace.InstanceId, request);
+            Equal("pass", (string)result["status"]);
+            Equal(8, (int)result["metrics"]["triangles"]);
+            Equal(16, (int)result["metrics"]["renderVertices"]);
+        });
+
         Test("mobile validation fails when two material slots are assigned", () =>
         {
             var imported = TriangleMeshAdapter.Import(GraphId(), AuthoringFixtures.Panel(1));

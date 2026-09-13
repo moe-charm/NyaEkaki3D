@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Paint;
+using NyaForge.Authoring.Rig;
 using Newtonsoft.Json.Linq;
 
 namespace NyaForge.Authoring.Inspection
@@ -58,26 +59,48 @@ namespace NyaForge.Authoring.Inspection
 
                 var limits = request.Profile == "mobile" ? new Limits("mobile", 20000, 1, 1024) : new Limits("pc", 70000, 8, 2048);
                 var checks = new JArray();
-                var evaluation = workspace.Preview?.Evaluation;
-                var output = workspace.Preview?.Output;
-                if (evaluation == null || !workspace.Preview.IsComplete || output == null || output.Mesh == null)
+                var evaluations = new List<Tuple<AuthoringObject, GraphEvaluation>>();
+                var incomplete = new List<string>();
+                foreach (var item in workspace.Document.Objects)
                 {
-                    return Result(workspace, request, limits, "unknown", checks, null, null, null, null, null, null,
-                        new JArray("Final output is incomplete or has no renderable mesh."));
+                    GraphEvaluation evaluation = item == workspace.Document.ActiveObject
+                        ? workspace.Preview?.Evaluation
+                        : item.EvaluateGraph();
+                    bool stale = item == workspace.Document.ActiveObject && workspace.Preview != null && workspace.Preview.IsStale;
+                    if (evaluation == null || stale || !evaluation.IsComplete || evaluation.Output == null || evaluation.Output.Mesh == null)
+                    {
+                        incomplete.Add(item.ObjectId);
+                        continue;
+                    }
+                    evaluations.Add(Tuple.Create(item, evaluation));
+                }
+                if (incomplete.Count > 0 || evaluations.Count == 0)
+                {
+                    var warnings = new JArray();
+                    if (incomplete.Count > 0)
+                        warnings.Add("Final output is incomplete or has no renderable mesh for object(s): " + string.Join(", ", incomplete));
+                    else
+                        warnings.Add("Final output is incomplete or has no renderable mesh.");
+                    return Result(workspace, request, limits, "unknown", checks, null, null, null, null, null, null, warnings);
                 }
 
-                int triangles = output.Mesh.TriangleCount;
-                int materials = output.SlotMaterials?.Count ?? (output.Material == null ? 0 : 1);
+                int triangles = evaluations.Sum(pair => pair.Item2.Output.Mesh.TriangleCount);
+                int vertices = evaluations.Sum(pair => pair.Item2.Output.Mesh.VertexCount);
+                int materials = evaluations.Sum(pair => pair.Item2.Output.SlotMaterials?.Count ?? (pair.Item2.Output.Material == null ? 0 : 1));
                 int textures = 0, maxTexture = 0;
-                foreach (var image in Images(output))
-                {
-                    textures++;
-                    maxTexture = Math.Max(maxTexture, Math.Max(image.Width, image.Height));
-                }
+                var imageHashes = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var pair in evaluations)
+                    foreach (var image in Images(pair.Item2.Output))
+                        if (imageHashes.Add(Checks.Hash(PaintImageCodec.Write(image))))
+                        {
+                            textures++;
+                            maxTexture = Math.Max(maxTexture, Math.Max(image.Width, image.Height));
+                        }
                 AddBound(checks, "triangles", triangles, limits.Triangles, "Triangles");
                 AddBound(checks, "materials", materials, limits.Materials, "Materials");
                 AddBound(checks, "maxTextureDimension", maxTexture, limits.TextureDimension, "Largest texture dimension");
-                var skin = SummarizeSkin(evaluation, workspace.Document.ActiveObject.Graph);
+                var skin = new SkinSummary();
+                foreach (var pair in evaluations) skin.Merge(SummarizeSkin(pair.Item2, pair.Item1.Graph));
                 if (!skin.HasBinding)
                 {
                     checks.Add(new JObject { ["name"] = "bones", ["status"] = "unknown", ["reason"] = "No evaluated skin binding is present in the current authoring profile." });
@@ -90,7 +113,7 @@ namespace NyaForge.Authoring.Inspection
                 }
                 checks.Add(new JObject { ["name"] = "fit", ["status"] = "unknown", ["reason"] = "Avatar fit and pose deformation are not part of this static profile." });
                 string status = checks.OfType<JObject>().Any(c => (string)c["status"] == "fail") ? "fail" : "pass";
-                return Result(workspace, request, limits, status, checks, triangles, output.Mesh.VertexCount, materials, textures, maxTexture, skin, new JArray());
+                return Result(workspace, request, limits, status, checks, triangles, vertices, materials, textures, maxTexture, skin, new JArray());
             }
         }
 
@@ -99,6 +122,23 @@ namespace NyaForge.Authoring.Inspection
             public bool HasBinding;
             public int Bones;
             public int MaxInfluences;
+            readonly HashSet<string> skeletons = new HashSet<string>(StringComparer.Ordinal);
+
+            public void AddSkeleton(SkeletonDefinition skeleton)
+            {
+                if (skeleton != null && skeletons.Add(skeleton.ContentHash)) Bones += skeleton.Bones.Count;
+            }
+
+            public void Merge(SkinSummary other)
+            {
+                if (other == null) return;
+                HasBinding |= other.HasBinding;
+                MaxInfluences = Math.Max(MaxInfluences, other.MaxInfluences);
+                foreach (var hash in other.skeletons)
+                    if (skeletons.Add(hash)) Bones += other.skeletonCounts[hash];
+            }
+
+            internal readonly Dictionary<string, int> skeletonCounts = new Dictionary<string, int>(StringComparer.Ordinal);
         }
 
         static SkinSummary SummarizeSkin(GraphEvaluation evaluation, AuthoringGraph graph)
@@ -113,9 +153,13 @@ namespace NyaForge.Authoring.Inspection
                 .SelectMany(value => value.Binding.Weights.Values)
                 .Select(weights => weights == null ? 0 : weights.Count)
                 .DefaultIfEmpty(0).Max();
-            result.Bones = evaluation.SkeletonOutputs == null
-                ? 0
-                : evaluation.SkeletonOutputs.Where(pair => reachable.Contains(pair.Key)).Select(pair => pair.Value.Skeleton.Bones.Count).DefaultIfEmpty(0).Max();
+            if (evaluation.SkeletonOutputs != null)
+                foreach (var pair in evaluation.SkeletonOutputs)
+                    if (reachable.Contains(pair.Key) && pair.Value?.Skeleton != null)
+                    {
+                        result.AddSkeleton(pair.Value.Skeleton);
+                        result.skeletonCounts[pair.Value.Skeleton.ContentHash] = pair.Value.Skeleton.Bones.Count;
+                    }
             return result;
         }
 

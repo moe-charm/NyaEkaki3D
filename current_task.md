@@ -1609,3 +1609,8 @@ Core **469 passed / 0 failed**（`dotnet run --project Tests/Authoring.Core/Auth
 Windows Player `Builds/AllMeshRealV1/NyaForge.exe` の実RadDollV3 Authoring suiteは **PASS / 84 checks**（`Artifacts/Authoring-20260913-130636-74e77cd8f5b143b5a62324d73c5e3669/report.json`）。全mesh instanceの取込・保存・再開・native export roundtripを含む。同成果物のUnity **2022.3.22f1 Bridge**も **PASS**（`Artifacts/BridgeReceiver-20260913-131142-286-11d7292fd3e74bb492946824f1af290d/bridge-report.json`）。
 
 これはprivate実モデルの自動smokeであり、実マウス／DPI差、実VRChat内の見た目・PhysBones、異なるskeletonの自動結合、共有mesh／skin／morph参照、完全VRM出力は別受入境界として残す。
+# 2026-09-13 multi-object output validation
+
+出力前のValidationがactive objectだけを見ていたため、body＋衣装の組合せでtriangle・vertex・材質・画像・骨格数を過小評価する経路を修正した。現在は全objectを同じdocument revisionで評価し、どれか一つでも未完了／stale／面なしなら `unknown` とする。負荷値は全objectの合計、同一skeleton hashは一度だけ数え、別skeletonは重複出力分を加算する。既存のfit判定がunknownである境界は維持した。
+
+Coreは **471 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-cffa6324e716435794fde74d1fefdfef`）。2つのstatic objectを作り、triangle 8・render vertex 16として集計される回帰を追加した。Windows Player `Builds/MultiObjectValidationV1/NyaForge.exe` のAuthoring suiteは **PASS / 80 checks**（`Artifacts/Authoring-20260913-134148-d06d092bc9ce4b538a559653169febaf/report.json`）。Unity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-134221-106-41ca7637e04d4e719c2ef6b97fdab020/bridge-report.json`）。
