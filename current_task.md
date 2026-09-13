@@ -1,6 +1,6 @@
 # 2026-09-13 native UI acceptance bridge check
 
-提示されたレビュー（基準 `0d1e957`）のP1/P2は、現行main（`18706ff`）の実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。
+提示されたレビュー（基準 `0d1e957`）のP1/P2は、現行main（`e999ec2`）の実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。
 
 # 2026-09-13 validation texture resource deduplication
 
@@ -8,7 +8,7 @@
 
 # 2026-09-13 latest automated acceptance recheck
 
-現行HEAD `465ff78` でCoreを再実行し、**464 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-34dfcea0ab314363911a8ccaeac4a20b`）。`Builds/ValidationSkinV3/NyaForge.exe` の800x600 Authoring suiteも **PASS**（`Artifacts/Authoring-20260913-091250-cf3646192e704ab8bbb5eea32c568969/report.json`、画面 `authoring.png`）。同じPlayer検証成果物をUnity **2022.3.22f1** synthetic Bridgeへ渡した結果も **PASS**（`Artifacts/BridgeReceiver-20260913-091344-440-d19dee26d87b4d83a65334dc283d045d/bridge-report.json`）。これは自動回帰・合成receiverの証拠であり、実マウス/DPI差、実VRChat SDK/実アバター内の見た目受入とは分けて扱う。
+現行HEAD `e999ec2` でCoreを再実行し、**465 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2ce6c7d8eaf547fbad1d9c8d09714515`）。`Builds/ValidationSkinV3/NyaForge.exe` の800x600 Authoring suiteも **PASS**（`Artifacts/Authoring-20260913-091250-cf3646192e704ab8bbb5eea32c568969/report.json`、画面 `authoring.png`）。同じPlayer検証成果物をUnity **2022.3.22f1** synthetic Bridgeへ渡した結果も **PASS**（`Artifacts/BridgeReceiver-20260913-091344-440-d19dee26d87b4d83a65334dc283d045d/bridge-report.json`）。これは自動回帰・合成receiverの証拠であり、実マウス/DPI差、実VRChat SDK/実アバター内の見た目受入とは分けて扱う。
 
 # 2026-09-13 material output guidance
 
