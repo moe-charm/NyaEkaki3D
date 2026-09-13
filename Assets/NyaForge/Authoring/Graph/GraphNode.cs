@@ -17,6 +17,8 @@ namespace NyaForge.Authoring.Graph
         public SkeletonDefinition Skeleton { get; private set; }
         public SkinBinding Binding { get; private set; }
         public PoseSet Pose { get; private set; }
+        /// <summary>Avatar object identity used by the last explicit pose copy.</summary>
+        public string PoseSourceObjectId { get; private set; } = "";
         public MorphSet Morphs { get; private set; }
         public IReadOnlyDictionary<string, float> MorphWeights { get; private set; }
         /// <summary>Target avatar object identity for an object.attachment node.</summary>
@@ -102,6 +104,13 @@ namespace NyaForge.Authoring.Graph
         }
         public static GraphNode SkinDeformNode(string id)
         { return new GraphNode(id, BuiltinNodes.SkinDeform, 1, null, Identity, 0, 0, 0, true, "", "", Empty, ""); }
+        public static GraphNode PoseSourceNode(string id, string objectId)
+        {
+            Checks.Id(objectId);
+            var node = new GraphNode(id, BuiltinNodes.PoseSource, 1, null, Identity, 0, 0, 0, true, "", "", Empty, "");
+            node.PoseSourceObjectId = objectId;
+            return node;
+        }
         public static GraphNode Edit(string id, bool enabled = true, IDictionary<int, Vec3> offsets = null, string inputSnapshot = "", string domain = "")
         { return new GraphNode(id, BuiltinNodes.EditMesh, 1, null, Identity, 0, 0, 0, enabled, inputSnapshot, domain, offsets ?? Empty, ""); }
         public static GraphNode Output(string id)

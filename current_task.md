@@ -1,3 +1,9 @@
+# 2026-09-13 persist avatar pose-copy source across reopen
+
+skin-bind衣装へavatarの現在poseをコピーした後、複数avatar候補がある状態でnative projectを再読込しても同じ対象を選べるよう、graph metadata node `rig.pose-source` を追加した。PoseSourceはavatarのstable object IDだけを保持し、WorkbenchのRefresh時にattachment targetのfallbackとして使う。skin-bind時とposeコピー時に更新し、GraphBinaryCodec・Inspection・標準skinned GLB whitelistへ対応した。標準GLBはこの制作メタデータを持たないため、native project側でのみ復元する。
+
+Coreは **454 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2e1aa8cd7b834460b53cb64a49bef8ee`）。回帰ではPoseSourceのavatar object IDがnative Save/Openで保持され、pose-copy済み衣装の標準skinned GLB exportが成功することを確認した。Windows Player `Builds/AccessoryPoseSourceV1/NyaForge.exe` の800x600 Authoring suiteは **PASS、79 checks**（`Artifacts/Authoring-20260913-111322-4fde8bc8f8ef4e97a3209998b17b3282/report.json`、画面 `authoring.png`）。このsuiteでは別avatar＋static accessoryのskin-bind、Root pose変更→明示poseコピー、native Save/Open後のpose hash照合、rest復帰とGLB出力まで通過した。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-111704-717-0a3f174945384229aa5369868688eee4/bridge-report.json`）。実マウス/DPI差、実VRChat SDK・実アバター内の見た目、衣装の自動fit・貫通修正、完全なVRM出力は引き続き別境界とする。
+
 # 2026-09-13 explicit avatar pose copy for skin-bound clothing
 
 skin-bindした衣装をavatarと同じ姿勢で確認できるよう、Workbenchの小物パネルへ「avatarの現在poseを衣装へコピー」を追加した。選択したavatarの評価済みPoseを、同じstable skeletonを持つ衣装側Pose nodeへ明示的に再bindして保存する。avatarとのライブ共有ではなく、姿勢を変更した場合は再度コピーする運用とし、異なるskeletonの自動結合や自動fit・貫通修正は対象外とする。Rig panelのweight編集と組み合わせ、Root初期化後の袖・裾などの確認をしやすくする。

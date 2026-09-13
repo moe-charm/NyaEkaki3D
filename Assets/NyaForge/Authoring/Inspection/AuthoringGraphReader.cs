@@ -63,6 +63,7 @@ namespace NyaForge.Authoring.Inspection
                             ["skeletonOutput"]=Skeleton(skeleton),
                             ["skinBindingOutput"]=Binding(binding),
                             ["poseOutput"]=Pose(pose),
+                            ["poseSourceObjectId"] = n.TypeId == BuiltinNodes.PoseSource ? (JToken)new JValue(n.PoseSourceObjectId) : JValue.CreateNull(),
                             ["morphOutput"]=Morph(morphs),
                             ["attachment"] = n.TypeId == BuiltinNodes.Attachment ? (JToken)new JObject
                             {

@@ -192,6 +192,7 @@ namespace NyaForge.Authoring
                 BuiltinNodes.MeshSource, BuiltinNodes.EditMesh, BuiltinNodes.MorphSet,
                 BuiltinNodes.MorphDeform, BuiltinNodes.Skeleton, BuiltinNodes.SkinBind,
                 BuiltinNodes.Pose, BuiltinNodes.SkinDeform, BuiltinNodes.Output,
+                BuiltinNodes.PoseSource,
                 BuiltinNodes.StandardMaterial, BuiltinNodes.AssignMaterial,
                 BuiltinNodes.AssignMaterials, BuiltinNodes.Paint, BuiltinNodes.LayeredPaint
             }, StringComparer.Ordinal);

@@ -158,7 +158,8 @@ namespace NyaForge.UnityRuntime
             var targetLabels = targets.Select(item => "graph · " + item.ObjectId.Substring(0, Math.Min(8, item.ObjectId.Length))).ToList();
             if (targetLabels.Count == 0) targetLabels.Add("対象なし");
             attachmentTarget.choices = targetLabels;
-            string requestedTarget = string.IsNullOrEmpty(attachmentTargetChoice) ? node?.AttachmentTargetObjectId : attachmentTargetChoice;
+            var poseSource = workspace.Document.ActiveObject.Graph.Nodes.Values.FirstOrDefault(item => item.TypeId == BuiltinNodes.PoseSource);
+            string requestedTarget = string.IsNullOrEmpty(attachmentTargetChoice) ? (node?.AttachmentTargetObjectId ?? poseSource?.PoseSourceObjectId) : attachmentTargetChoice;
             int targetIndex = requestedTarget == null ? -1 : attachmentTargetIds.IndexOf(requestedTarget);
             if (targetIndex < 0) targetIndex = 0;
             attachmentTarget.SetValueWithoutNotify(targetLabels[targetIndex]);
@@ -249,7 +250,7 @@ namespace NyaForge.UnityRuntime
                     throw new InvalidOperationException("衣装EditMeshの評価結果を取得できません。");
                 var root = skeleton.Bones.FirstOrDefault(bone => string.IsNullOrEmpty(bone.ParentBoneId));
                 if (root == null) throw new InvalidOperationException("avatar skeletonにRoot boneがありません。");
-                var changed = AccessorySkinBindingAdapter.BindToSkeleton(graph, editValue.Mesh, skeleton, root.BoneId);
+                var changed = AccessorySkinBindingAdapter.BindToSkeleton(graph, editValue.Mesh, skeleton, root.BoneId, target.ObjectId);
                 Execute(AuthoringOperation.ReplaceGraph(changed));
                 attachmentTargetChoice = target.ObjectId;
                 SetStatus("衣装をavatar骨格へskin-bindしました。全頂点をRootへ初期化済みです。Rig panelでweight paintし、poseと保存後の出力を確認してください。");
@@ -271,6 +272,9 @@ namespace NyaForge.UnityRuntime
                 if (targetPose == null) throw new InvalidOperationException("avatarのposeが衣装と同じskeletonではありません。");
                 attachmentTargetChoice = target.ObjectId;
                 Execute(AuthoringOperation.UpdateNode(GraphNode.PoseNode(poseNode.NodeId, PoseEditing.Rebind(targetPose, clothingSkeleton))));
+                var sourceNode = workspace.Document.ActiveObject.Graph.Nodes.Values.FirstOrDefault(item => item.TypeId == BuiltinNodes.PoseSource);
+                var sourceUpdate = GraphNode.PoseSourceNode(sourceNode?.NodeId ?? Guid.NewGuid().ToString("D"), target.ObjectId);
+                Execute(sourceNode == null ? AuthoringOperation.AddNode(sourceUpdate) : AuthoringOperation.UpdateNode(sourceUpdate));
                 RefreshAttachmentControls();
                 SetStatus("avatarの現在poseを衣装へコピーしました。必要ならweightを調整して保存してください。");
             });

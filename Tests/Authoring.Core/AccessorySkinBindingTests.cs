@@ -21,9 +21,11 @@ internal static partial class Program
             });
             string root = skeleton.Bones[0].BoneId;
             var before = GraphEvaluator.Evaluate(graph);
-            var changed = AccessorySkinBindingAdapter.BindToSkeleton(graph, before.MeshOutputs[edit].Mesh, skeleton, root);
+            string avatarObjectId = GraphId();
+            var changed = AccessorySkinBindingAdapter.BindToSkeleton(graph, before.MeshOutputs[edit].Mesh, skeleton, root, avatarObjectId);
             var after = GraphEvaluator.Evaluate(changed);
             True(after.IsComplete && after.Output != null && after.Output.Mesh != null);
+            True(changed.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.PoseSource && node.PoseSourceObjectId == avatarObjectId));
             var bind = changed.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.SkinBind);
             Equal(mesh.VertexCount, bind.Binding.Weights.Count);
             True(bind.Binding.Weights.Values.All(values => values.Count == 1 && values[0].BoneId == root && Math.Abs(values[0].Weight - 1f) < 1e-6f));
@@ -54,6 +56,10 @@ internal static partial class Program
             var reopened = ProjectStore.Open(directory);
             var restored = reopened.Document.Objects[0].Graph;
             True(restored.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinBind));
+            Equal(avatarObjectId, restored.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.PoseSource).PoseSourceObjectId);
+            var glb = GlbExportService.ExportSkinned(workspace, workspace.InstanceId, workspace.Document.DocumentId,
+                workspace.Document.DocumentRevision, Dir("accessory-pose-source-glb-" + Guid.NewGuid().ToString("N")));
+            True(System.IO.File.Exists(glb.Path));
             Equal(workspace.Preview.Output.Mesh.ContentHash, reopened.Preview.Output.Mesh.ContentHash);
         });
 

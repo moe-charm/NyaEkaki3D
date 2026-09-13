@@ -49,6 +49,8 @@ namespace NyaForge.Authoring.Graph
         public const string SkinBind = "rig.skin-bind";
         public const string Pose = "rig.pose";
         public const string SkinDeform = "rig.skin-deform";
+        /// <summary>Metadata node that records the explicit avatar pose-copy source.</summary>
+        public const string PoseSource = "rig.pose-source";
         public const string MorphSet = "rig.morph-set";
         public const string MorphDeform = "rig.morph-deform";
         /// <summary>Metadata node that pins an accessory object to a stable avatar bone.</summary>
@@ -73,6 +75,7 @@ namespace NyaForge.Authoring.Graph
                 ,[SkinBind] = new NodeDefinition(SkinBind, new[] { new PortDefinition("mesh", PortType.Mesh), new PortDefinition("skeleton", PortType.Skeleton) }, new[] { new PortDefinition("binding", PortType.SkinBinding) })
                 ,[Pose] = new NodeDefinition(Pose, new[] { new PortDefinition("skeleton", PortType.Skeleton) }, new[] { new PortDefinition("pose", PortType.Pose) })
                 ,[SkinDeform] = new NodeDefinition(SkinDeform, new[] { new PortDefinition("mesh", PortType.Mesh), new PortDefinition("skeleton", PortType.Skeleton), new PortDefinition("binding", PortType.SkinBinding), new PortDefinition("pose", PortType.Pose) }, new[] { new PortDefinition("mesh", PortType.Mesh) })
+                ,[PoseSource] = new NodeDefinition(PoseSource, Array.Empty<PortDefinition>(), Array.Empty<PortDefinition>())
                 ,[MorphSet] = new NodeDefinition(MorphSet, Array.Empty<PortDefinition>(), new[] { new PortDefinition("morphs", PortType.MorphSet) })
                 ,[MorphDeform] = new NodeDefinition(MorphDeform, new[] { new PortDefinition("mesh", PortType.Mesh), new PortDefinition("morphs", PortType.MorphSet) }, new[] { new PortDefinition("mesh", PortType.Mesh) })
                 ,[Attachment] = new NodeDefinition(Attachment, Array.Empty<PortDefinition>(), Array.Empty<PortDefinition>())

@@ -14,12 +14,13 @@ namespace NyaForge.Authoring.Graph
     public static class AccessorySkinBindingAdapter
     {
         public static AuthoringGraph BindToSkeleton(AuthoringGraph graph, MeshData editMesh,
-            SkeletonDefinition skeleton, string rootBoneId)
+            SkeletonDefinition skeleton, string rootBoneId, string poseSourceObjectId = "")
         {
             Checks.Require(graph != null && editMesh != null && skeleton != null,
                 "INVALID_SKIN", "Accessory graph, evaluated mesh and avatar skeleton are required.");
             Checks.Id(rootBoneId);
             Checks.Require(skeleton.ById.ContainsKey(rootBoneId), "BONE_NOT_FOUND", "The selected root bone is not in the avatar skeleton.");
+            if (!string.IsNullOrEmpty(poseSourceObjectId)) Checks.Id(poseSourceObjectId);
             Checks.Require(graph.Nodes.Values.All(node => node.TypeId != BuiltinNodes.Skeleton &&
                 node.TypeId != BuiltinNodes.SkinBind && node.TypeId != BuiltinNodes.SkinDeform &&
                 node.TypeId != BuiltinNodes.Pose), "ACCESSORY_ALREADY_SKINNED", "This accessory already has a skin graph.");
@@ -48,6 +49,7 @@ namespace NyaForge.Authoring.Graph
             nodes.Add(GraphNode.SkinBindNode(bindingId, binding));
             nodes.Add(GraphNode.PoseNode(poseId, pose));
             nodes.Add(GraphNode.SkinDeformNode(deformId));
+            if (!string.IsNullOrEmpty(poseSourceObjectId)) nodes.Add(GraphNode.PoseSourceNode(NewId(graph, "pose-source"), poseSourceObjectId));
 
             // Keep all material/paint stages downstream of deformation.  The
             // imported static graph normally has EditMesh -> assignment/output,
