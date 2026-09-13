@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09M: Authoring検証の多重起動ガード
+
+同じReleaseCandidate Playerを2画面で同時にAuthoring検証すると、共有runtime資源の競合で両方がタイムアウトすることが分かった。`Tools/Test-NyaForgeAuthoring.ps1`へ同じ`BuildName`の`NyaForge.exe`検出を追加し、検証開始前に「順番に実行」エラーを返すようにした。製品Playerのコードや保存形式は変更していない。
+
+PowerShell parserで **PASS** を確認。V29の単独実行（1080×700／1600×1000）はNF-V1-09Lへ記録済みで、今後は同じPlayerを並列起動しない。
+
 ## 2026-09-14 NF-V1-09L: 現行HEADのReleaseCandidateV29再確認
 
 前回のレビュー再照合後、現行HEAD `dd76473` からWindows Player `Builds/ReleaseCandidateV29/NyaForge.exe`を別出力した。既存Playerを上書きせず、Authoring suiteを1画面ずつ実行した。

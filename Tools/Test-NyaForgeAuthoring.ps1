@@ -17,6 +17,15 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $playerPath = Join-Path $projectRoot "Builds\$BuildName\NyaForge.exe"
 if (-not (Test-Path -LiteralPath $playerPath -PathType Leaf)) { throw 'Build the Windows Player first with Tools/Build-NyaForge.ps1.' }
+# Authoring verification writes the same temporary Unity/runtime resources as
+# every other instance of this Player. Refuse a concurrent run up front so a
+# shared-resource timeout is reported as an invocation error, rather than as a
+# misleading product verification failure.
+$runningPlayer = @(Get-Process -Name NyaForge -ErrorAction SilentlyContinue |
+    Where-Object { $_.Path -and [IO.Path]::GetFullPath($_.Path) -eq $playerPath })
+if ($runningPlayer.Count -gt 0) {
+    throw "The Player is already running for BuildName '$BuildName'. Run authoring verification sequentially or close PID $($runningPlayer[0].Id)."
+}
 $checkDirectory = Join-Path $projectRoot ('Artifacts\Authoring-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $checkDirectory | Out-Null
 $logPath = Join-Path $checkDirectory 'player.log'
