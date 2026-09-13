@@ -1,6 +1,6 @@
 # Nya Ekaki 3D Windows v1 手動受入チェック
 
-この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/ReleaseCandidateV2/NyaForge.exe`。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
+この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/ReleaseCandidateV10/NyaForge.exe`（コード `43cb551`）。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
 
 ## 1. 実EditorWindow（Windows）
 
@@ -21,6 +21,7 @@
 7. 肩上げ、肘曲げ、前屈、着座相当のposeで、袖・襟・裾・胸周りの交差とweight崩れを確認する。
 8. native Save → アプリを閉じる → Explorerから再Openし、形状・材質・weight・参照保護・対象allowlistが一致することを確認する。
 9. 選択衣装だけのskinned packageを出力し、manifestのobjectId／mesh hash／skeleton hashを記録する。
+10. base-colorが取込時に縮小された場合、原画像サイズ・作業画像サイズ・MIME・hashをinspectionで確認する。Paintを編集しない状態ではGLB内の画像bytesが原画像と一致し、編集後はbounded previewへ切り替わることを確認する。
 
 ## 3. Unity受け取り
 
@@ -29,6 +30,7 @@
 - [ ] 衣装Aを適用 → Bへ更新 → Unity再起動 → 割当を読込し、Aの重複やownership喪失がない
 - [ ] 削除後に割当だけを読み込め、Undoで管理objectと資産が戻る
 - [ ] normal／MRの見た目、Repeat／Clamp、alphaを受け取り側で確認する
+- [ ] 未編集base-colorの原画像再出力と、編集後previewへのフォールバックをmanifest／GLBの画像MIME・寸法・hashで確認する
 
 ## 4. VRChat
 
