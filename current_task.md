@@ -6,7 +6,7 @@ GLB／VRM取込時に1024pxへ縮小する作業用Paintとは別に、元画像
 
 現段階ではGLB/VRM再出力は従来どおりbounded Paint previewを使う。未編集時に原画像bytesをそのまま出力する切替は、作業画像編集後の出力規則・sampler・メモリ予算を定めた次段タスクへ分離した。したがって既存projectや原画像sourceを持たないgraphから原画復元を装わない。
 
-Coreは **503 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b5cacb5bc01b44419c1aa19941174dd5`）。回帰にはsource nodeのwire roundtrip、bytesの不変性、形式・寸法・予算拒否、Polygon→skin派生での保持を含む。Unity Player／実RadDollV3／Bridge smokeは次のReleaseCandidateで再実行する。
+Coreは **503 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-45c53f2d644040f0895c7ae862ee6403`）。`Builds/ReleaseCandidateV7/NyaForge.exe`のAuthoring suiteも **PASS**（`Artifacts/Authoring-20260914-061617-c0c4367b5d8e4355bcb07bd74788102b/report.json`）。private RadDollV3実モデルの全mesh取込・Save/Open・GLB／VRM1・衣装packageとUnity 2022.3.22f1 Bridge受け取りも **PASS**（Player `Artifacts/Authoring-20260914-061650-d48dc5ba73ad4ac7b96378c8e8b4fa64/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-061934-292-5ea96cd5aebf48eeb9a7fd3a8540f1d0/bridge-report.json`）。
 
 ## 2026-09-14 NF-V1-09A: base-color縮小の明示
 
