@@ -37,6 +37,12 @@ Unity BridgeはStandard shaderへnormal mapとmetallic-roughness mapを割り当
 
 これはsemantic mapの実RadDollV3表示、tangent品質、occlusion/emissive、専用paint／bake、実VRChatの見た目を受入した記録ではない。NF-V1-09/10の残作業として、実sceneで明暗環境・UV・tangent・出力一致を目視確認する。
 
+## 2026-09-14 private RadDollV3 import/Bridge recheck
+
+private一時素材 `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm` を `Builds/SemanticPreviewV2/NyaForge.exe`へ指定し、単体取込と全mesh instance取込、EditMesh、native Save/Openを再確認した。全mesh経路は10 objects、bone 171、morph 35を保持し、Authoring suite **89 checks PASS**（`Artifacts/Authoring-20260914-001523-4437ec156ea94502aa336a06b3083dcd/report.json`）。続けて同reportの出力をUnity **2022.3.22f1** Bridgeへ渡し、**14 checks PASS**（`Artifacts/BridgeReceiver-20260914-001837-446-4ccca3e524ba4ababe56a253461f64c4/bridge-report.json`）。
+
+このVRMは取込時に`MATERIALS_NOT_RETAINED`と`EXTENSIONS_PARTIAL`を診断しており、semantic textureの実モデル表示を証明しない。private素材はpublic repositoryへ追加していない。実EditorWindowのマウス操作、RadDollV3 sceneへの衣装fit／weight／貫通、実VRChatは引き続き未受入とする。
+
 ## 2026-09-13 持込Windows v1案の照合結果
 
 ### 採用する点
