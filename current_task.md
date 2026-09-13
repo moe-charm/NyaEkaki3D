@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09C: 原画像sourceのinspection公開
+
+`forge_get_state`／graph inspectionから、原画像bytesを返さずに関連Paint node ID、原寸、MIME、encoded byte数、content hashを確認できるようにした。AIや再開時の検査が「previewへ縮小されたか」「原画像sourceが残っているか」を判定でき、raw bytesはnative project内にのみ保持する。Coreは **504 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-60347f235e944c8fbb390baa0893b5d9`）、Player V8 Authoring suiteも **PASS**（`Artifacts/Authoring-20260914-062402-ced59853197f4ea3bce7de5e211722a0/report.json`）。
+
 ## 2026-09-14 NF-V1-09B: base-color原画像sourceのnative保持
 
 GLB／VRM取込時に1024pxへ縮小する作業用Paintとは別に、元画像のPNG/JPEG bytes・MIME・原寸・hashを`image.original-source` nodeとしてnative graphへ保存するようにした。Save/Openとgraph wireの往復でbytesを再取得でき、Polygon→skin派生でもsource nodeを保持する。入力の上限は8192px・16MiBで、未対応形式は取込時に警告して省略する。
