@@ -4,11 +4,11 @@ ChatGPT Proの持込Windows v1案を現行mainへ照合し、[採用修正版](d
 
 ## 2026-09-14 Downloads版Windows v1案の再確認
 
-`C:\Users\tomoaki\Downloads\NyaForge-Windows-v1-Development-Plan.md`を検証対象コード`main`（`3d5de41`）と再照合した。**方針は妥当で、遠回りにはなっていない。** 既存の編集基盤を作り直さず、既存アバターへ衣装だけを渡す出口、造形→skinの一周、semantic texture、再適用、実受入を分ける順序は採用する。
+`C:\Users\tomoaki\Downloads\NyaForge-Windows-v1-Development-Plan.md`を検証対象コード`main`（`803eeb3`）と再照合した。**方針は妥当で、遠回りにはなっていない。** 既存の編集基盤を作り直さず、既存アバターへ衣装だけを渡す出口、造形→skinの一周、semantic texture、再適用、実受入を分ける順序は採用する。
 
 原案からの実務上の修正は採用修正版へ反映済みである。NF-V1-02を02A/02Bへ分割し、衣装package/receiver（03A）をG1へ前倒しし、実SDK・実VRChat・実マウスをCore/Player/合成Bridgeと混同しない。12週間・週20〜25時間は見積りの仮定として採用せず、最小受け渡しと一着の実測後に見直す。
 
-semantic normal/MRは現行実装で一周したため、ここから先はAO/emissive・全shader・FBX/BLEND・完全VRM・Quest/macOSを増やさず、NF-V1-01/03の受け取り環境とNF-V1-04〜08のカフ一着手動完走を優先する。実SDK probe済みの範囲と、実アバター／実VRChatでまだ受入していない範囲を分け、Core 493件PASSや合成Bridge PASSを実VRChat合格へ読み替えない。
+semantic normal/MRは現行実装で一周したため、ここから先はAO/emissive・全shader・FBX/BLEND・完全VRM・Quest/macOSを増やさず、NF-V1-01/03の受け取り環境とNF-V1-04〜08のカフ一着手動完走を優先する。実SDK probe済みの範囲と、実アバター／実VRChatでまだ受入していない範囲を分け、Core 494件PASSや合成Bridge PASSを実VRChat合格へ読み替えない。
 
 ## 2026-09-14 実VRChat SDK probe
 
