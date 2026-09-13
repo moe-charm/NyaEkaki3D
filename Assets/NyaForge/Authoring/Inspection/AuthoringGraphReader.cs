@@ -14,7 +14,7 @@ namespace NyaForge.Authoring.Inspection
             {
                 var state=AuthoringStateReader.Read(workspace,instance);var doc=workspace.Document;
                 var importDiagnostics = ReadImportDiagnostics(workspace);
-                var result=new JObject { ["instanceId"]=instance,["documentId"]=doc.DocumentId,["revision"]=doc.DocumentRevision,["stateHash"]=doc.StateHash,["activeObjectId"]=doc.ActiveObjectId,["objects"]=new JArray(),["graph"]=JValue.CreateNull() };
+                var result=new JObject { ["instanceId"]=instance,["documentId"]=doc.DocumentId,["revision"]=doc.DocumentRevision,["stateHash"]=doc.StateHash,["attachmentsHash"]=workspace.Attachments.ContentHash,["activeObjectId"]=doc.ActiveObjectId,["objects"]=new JArray(),["graph"]=JValue.CreateNull() };
                 if(doc.IsEmpty) return result;
                 result["objects"] = new JArray(doc.Objects.Select(item =>
                 {

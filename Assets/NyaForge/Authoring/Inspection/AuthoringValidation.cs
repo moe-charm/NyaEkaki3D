@@ -237,6 +237,7 @@ namespace NyaForge.Authoring.Inspection
                 ["documentId"] = workspace.Document.DocumentId,
                 ["revision"] = workspace.Document.DocumentRevision,
                 ["stateHash"] = workspace.Document.StateHash,
+                ["attachmentsHash"] = workspace.Attachments.ContentHash,
                 ["metrics"] = metrics,
                 ["objects"] = objectMetrics ?? new JArray(),
                 ["checks"] = checks,

@@ -1820,3 +1820,9 @@ Windows Player `Builds/StateIdentityV1/NyaForge.exe` のRadDollV3全mesh Authori
 候補ファイルの検索条件は`VRCPhysBone`／`VRCSDK`／`VRChat`へ限定し、NyaForge自身の`PhysBones` fixtureやbridge markerをSDK実体と誤認しないようにした。
 
 合成Unity project（`com.vrchat.base`＋`Assets/VRCPhysBone.cs`）では`candidate_found`、実Bridge receiverでは`unavailable`を返すことを確認した。実行中にPowerShell組み込みの`$Matches`と衝突する変数名も修正済みで、候補リスト生成が正常に完了する。
+
+# 2026-09-13 graph_inspect／validateのattachment identity整合
+
+`get_state`だけでなく、MCPが編集結果を詳細確認する`graph_inspect`と`validate`にも`attachmentsHash`を追加した。これで形状の`stateHash`と、rig・expression・Spring・PhysBones・secondary-motion等の保存済みattachmentを、状態確認経路ごとに同じ識別子で照合できる。空プロジェクトと不完全出力のCore回帰で値を固定し、従来の診断・metrics・statusは変更していない。
+
+Coreは **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-c45f173496074d3fb072ef7995e946b0`）。この変更は状態読取の契約整合を対象とし、Windows Player／Unity Bridge／実SDK・実VRChatの受け取りは既存の受入境界を引き継ぐ。

@@ -17,7 +17,7 @@ internal static partial class Program
             var before = workspace.Document.StateHash;
             var request = AuthoringValidationRequest.Read(new JObject { ["documentId"] = workspace.Document.DocumentId, ["expectedRevision"] = 0, ["profile"] = "pc" });
             var result = AuthoringValidationReader.Read(workspace, workspace.InstanceId, request);
-            Equal("unknown", (string)result["status"]); Equal(before, workspace.Document.StateHash); Equal(0L, (long)result["revision"]);
+            Equal("unknown", (string)result["status"]); Equal(before, workspace.Document.StateHash); Equal(0L, (long)result["revision"]); Equal(workspace.Attachments.ContentHash, (string)result["attachmentsHash"]);
         });
 
         Test("validation aggregates every object in a multi-object project", () =>

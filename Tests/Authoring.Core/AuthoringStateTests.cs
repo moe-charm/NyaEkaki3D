@@ -46,6 +46,7 @@ internal static partial class Program
             var empty=AuthoringWorkspace.CreateEmpty();True(AuthoringGraphReader.Read(empty,empty.InstanceId)["graph"].Type==Newtonsoft.Json.Linq.JTokenType.Null);
             string source,edit;var graph=PlaneGraph(out source,out edit);Ok(Execute(empty,AuthoringOperation.AddGraph(graph)));
             var before=AuthoringGraphReader.Read(empty,empty.InstanceId);Equal(graph.Nodes.Count,before["graph"]["nodes"].Count());
+            Equal(empty.Attachments.ContentHash,(string)before["attachmentsHash"]);
             Ok(Execute(empty,AuthoringOperation.Disconnect(edit,"mesh")));
             var after=AuthoringGraphReader.Read(empty,empty.InstanceId);True(!(bool)after["graph"]["evaluationComplete"]);True(after["graph"]["diagnostics"].Count()>0);
             var node=after["graph"]["nodes"].Single(n=>(string)n["nodeId"]==edit);True(node["meshOutput"].Type==Newtonsoft.Json.Linq.JTokenType.Null);
