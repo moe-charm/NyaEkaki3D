@@ -45,6 +45,21 @@ namespace NyaForge.UnityRuntime
             Check(importedRigSession != null && importedRigSession.GraphId == secondGraphId, "Active object switch selected the wrong second rig session");
             modelImportMeshIndex.SetValueWithoutNotify(0); modelImportSkinIndex.SetValueWithoutNotify(0);
             checks.Add("GLB import GUI: candidate inventory inspection, explicit mesh/skin selection, and graph-keyed multi-rig session switching");
+
+            string allDirectory = Path.Combine(output, "all-mesh-import"); Directory.CreateDirectory(allDirectory);
+            string allPath = Path.Combine(allDirectory, "multi-mesh.vrm"); File.WriteAllBytes(allPath, VrmVerificationFixture.CreateMultiMeshSelection());
+            ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null);
+            ImportAllModelInstances(allPath);
+            Check(workspace.Document.Objects.Count == 2 && workspace.Document.Objects.All(item => !item.IsStaticProfile), "All mesh instance import did not publish every graph object");
+            Check(importedRigSessions.Count == 2 && workspace.Document.Objects.Select(item => item.Graph.GraphId).All(importedRigSessions.ContainsKey), "All mesh instance import did not keep graph-keyed rig sessions");
+            var allState = workspace.Document.StateHash; var allMetadata = workspace.Attachments.ContentHash;
+            projectPath.SetValueWithoutNotify(Path.Combine(allDirectory, "project"));
+            Check(TrySaveProject(), "All mesh instance project could not save");
+            ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null); projectPath.SetValueWithoutNotify(Path.Combine(allDirectory, "project")); OpenProject();
+            Check(workspace.Document.Objects.Count == 2 && workspace.Document.StateHash == allState && workspace.Attachments.ContentHash == allMetadata, "All mesh instance Save/Open changed project state");
+            var reopenedRigTable = ImportedRigSessionsCodec.Read(workspace.Attachments.Read(ProjectAttachments.RigSessions));
+            Check(reopenedRigTable.Count == 2 && workspace.Document.Objects.Select(item => item.Graph.GraphId).All(reopenedRigTable.ContainsKey), "All mesh instance Save/Open lost graph-keyed rig sessions");
+            checks.Add("GLB / VRM all mesh instance import: body/hair-style mesh objects publish atomically and retain rig sessions through native Save/Open");
             foreach (bool legacy in new[] { false, true })
             {
                 string directory = Path.Combine(output, legacy ? "vrm0-import" : "vrm1-import");

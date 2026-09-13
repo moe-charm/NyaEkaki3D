@@ -1578,3 +1578,11 @@ source skin表示はSkinDeform位置のoverride後にgraphを再評価し、後�
 
 Core **460 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-57272bc5a1d74d37aed5a0f21cfab31f`）。Windows Player `Builds/ConsistencyFollowupV1/NyaForge.exe` のAuthoring suite（private一時RadDollV3 import指定、report `Artifacts/Authoring-20260913-074524-bcf817fd606e477eae95415f5f1d7032/report.json`）とUnity 2022.3.22f1 Bridge（`Artifacts/BridgeReceiver-20260913-074633-351-fcfd3de0c8c146328d42e82de7541f1b/bridge-report.json`）はPASS。実VRChat SDK、実マウス/DPI差、任意モデルの完全なnode transform互換は別受入境界として残す。
 
+## 2026-09-13 all-mesh-instance import workflow
+
+実アバターをbody・hair・衣装などの複数meshへ分けて編集できるよう、WorkbenchのGLB/VRM取込パネルへ「このファイルの全mesh instanceを取り込む」を追加した。各node instanceのmesh／skin対応とworld affineを保ったまま、static／skinned graphを候補ごとに検査し、一つのcommand batchで既存graph projectへ原子的に追加する。途中失敗、object上限64件超過、未対応入力では文書・metadata・Undoを変更しない。従来の候補を一つずつ取り込む導線は維持した。
+
+Core **469 passed / 0 failed**（`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`、artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f9109c8d3e9d491598ae0a1716b16940`）。Windows Player `Builds/AllMeshImportV1/NyaForge.exe` のAuthoring suiteは **PASS / 82 checks**（private一時RadDollV3 VRM smoke、合成multi-mesh取込のnative Save/Openとgraph-keyed rig session保持を含む、`Artifacts/Authoring-20260913-125940-84b3ec59c2f44150914ea23da3e7f4ec/report.json`）。同成果物のUnity **2022.3.22f1 Bridge**も **PASS**（`Artifacts/BridgeReceiver-20260913-130102-541-67238901e17f4faa92fe130cdae8b146/bridge-report.json`）。GUIナビゲーションも **PASS**（`Artifacts/Navigation-20260913-130116-c93b7acb2d5e41e7abd85b9d50814441/report.json`）。
+
+この回帰は合成fixtureとprivate実モデルの取込・保存・出力smokeであり、実マウス／DPI差、実VRChat内の見た目・PhysBones、異なるskeletonの自動結合、共有mesh／skin／morph参照、完全VRM出力は別受入境界として残す。次のカードは共有参照の明示仕様化か、版固定した実SDK受け取り検証のどちらか一つに絞る。
+

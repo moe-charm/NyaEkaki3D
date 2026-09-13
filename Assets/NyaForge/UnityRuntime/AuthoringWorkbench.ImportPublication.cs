@@ -78,6 +78,53 @@ namespace NyaForge.UnityRuntime
             RefreshVrmSpringStatus();
         }
 
+        void CommitImportedGraphs(IReadOnlyList<ImportedGraphBuild> builds)
+        {
+            if (builds == null || builds.Count == 0) throw new InvalidOperationException("取り込むgraphがありません。");
+            var existing = workspace.Attachments;
+            var owned = new Dictionary<string, byte[]>();
+            foreach (var name in existing.Hashes.Keys) owned[name] = existing.Read(name);
+
+            var secondarySessions = ReadSecondaryMotionSessions(workspace);
+            var diagnostics = new Dictionary<string, ImportedGlbDiagnostics>(StringComparer.Ordinal);
+            var oldDiagnostics = existing.Read(ProjectAttachments.ImportDiagnostics);
+            if (oldDiagnostics != null)
+                foreach (var item in ImportedGlbDiagnosticsCodec.Read(oldDiagnostics)) diagnostics[item.Key] = item.Value;
+
+            foreach (var build in builds)
+            {
+                var candidate = build.Candidate;
+                var secondary = BuildImportedSecondaryMotion(build.Graph, candidate.Rig, candidate.Springs);
+                if (secondary != null) secondarySessions[build.Graph.GraphId] = secondary;
+                if (candidate.GlbDiagnostics != null) diagnostics[build.Graph.GraphId] = candidate.GlbDiagnostics;
+            }
+
+            var operations = builds.Select(build => AuthoringOperation.AddGraph(build.Graph)).ToArray();
+            var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(operations), projection);
+            if (!result.Success) throw new InvalidOperationException(result.Code + ": " + result.Message);
+
+            foreach (var build in builds)
+            {
+                var candidate = build.Candidate;
+                if (candidate.Rig != null) importedRigSessions[build.Graph.GraphId] = candidate.Rig;
+                if (candidate.Expressions != null) importedVrmSessions[build.Graph.GraphId] = candidate.Expressions;
+                if (candidate.Springs != null) importedVrmSpringSessions[build.Graph.GraphId] = candidate.Springs;
+            }
+            if (importedRigSessions.Count > 0) owned[ProjectAttachments.RigSessions] = ImportedRigSessionsCodec.Write(importedRigSessions);
+            if (importedVrmSessions.Count > 0) owned[ProjectAttachments.Expressions] = VrmExpressionSessionsCodec.Write(importedVrmSessions);
+            if (importedVrmSpringSessions.Count > 0) owned[ProjectAttachments.Springs] = VrmSpringSessionsCodec.Write(importedVrmSpringSessions);
+            if (secondarySessions.Count > 0) owned[ProjectAttachments.SecondaryMotion] = SecondaryMotionSessionsCodec.Write(secondarySessions);
+            if (diagnostics.Count > 0) owned[ProjectAttachments.ImportDiagnostics] = ImportedGlbDiagnosticsCodec.Write(diagnostics.Values);
+
+            importedSecondaryMotionSessions.Clear();
+            foreach (var item in secondarySessions) importedSecondaryMotionSessions[item.Key] = item.Value;
+            workspace.SetAttachments(new ProjectAttachments(owned));
+            importedRigSession = builds.LastOrDefault(build => build.Candidate.Rig != null)?.Candidate.Rig;
+            RefreshImportedVrmSessionsForActiveGraph();
+            SelectSecondaryMotionForActiveGraph();
+            RefreshVrmSpringStatus();
+        }
+
         static SecondaryMotionAsset BuildImportedSecondaryMotion(AuthoringGraph graph, ImportedRigSession rig, VrmSpringSession springs)
         {
             if (rig == null || springs == null) return null;
