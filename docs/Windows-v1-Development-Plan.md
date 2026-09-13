@@ -1,6 +1,6 @@
 # Nya Ekaki 3D Windows v1 実行計画
 
-更新: 2026-09-14。検証対象コード: `main`（`ca346ee`）。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership marker・複数package管理・semantic texture previewの実装が進んでいる。Downloads版原案の再確認結果は[current_task](../current_task.md)へ記録した。
+更新: 2026-09-14。検証対象コード: `main`（`23a2b8a`）。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership marker・複数package管理・semantic texture previewの実装が進んでいる。Downloads版原案の再確認結果は[current_task](../current_task.md)へ記録した。
 
 本書は持込「NyaForge Windows v1 開発計画」をコード照合して修正した実行計画。受入済み報告ではない。製品全体の目標・C0〜C5の要件は[設計v2](NyaForge-Authoring-Design2.md)を維持し、本書はWindows衣装制作v1へ至る着手順を定める。v1だけの合格を製品全体や進行中goalの完了へ読み替えない。直近の状態は[current_task](../current_task.md)。現行mainではCore 496 passed / 0 failed、Windows Playerのsemantic texture preview、private RadDollV3全mesh import smoke、実SDKのRadDollV3 Skirt chain PhysBone設定probe、実FBXへのskinned-clothing package初回・再適用・native roundtrip smoke、実body meshを使ったsurface fit／weight transfer接続probe、semantic textureを含む合成Unity Bridgeの衣装package回帰まで確認済みで、通常GLBのTEXCOORD_1は`UNSUPPORTED_UV_SET`で明示停止する。範囲限定fitの平均値は選択頂点数を分母にし、`EvaluatedVertexCount`として検査記録へ出す。実マウス・実EditorWindow・全周fit／貫通・見た目・Build & Test・実VRChatは未受入である。
 
@@ -60,7 +60,7 @@ NF-V1のIDは持込提案との対応用に維持。状態は実装済み・合�
 | NF-V1-09A | 画像解像度・所有・出力品質 | 09 | 入力/作業/出力解像度とhashを表示・保存・reportへ。原本画像と縮小previewの分離を設計し、未編集原本保持/編集後出力の規則とメモリ予算を確定。元画像を失った既存projectから原画復元を装わない |
 | NF-V1-10 | normal/MR画像の一周 | 09、09A、03Aのshader決定 | 衣装の画像指定・プレビュー・native・出力・receiverで一致。normal方向/tangent、MRのG=roughness/B=metallic、linear値とsRGB色、alphaを検証。専用paint/AO/emissive/bakeは追加しない |
 | NF-V1-11 | 同一targetの複数object受入 | 03A、08、10 | 衣装2点＋小物1点を独立nodeで受取。同名骨/順序違い/別source負例。物理的mesh結合やdedupを必須にしない |
-| NF-V1-12 | Unity更新・再適用 | 03A。最終複数回帰は11 | ownership/journalを衣装へ拡張。更新A→B→再起動で重複なし。削除・取消・失敗・利用者変更の競合を検証。元avatar設定を保護 |
+| NF-V1-12 | Unity更新・再適用 | 03A。最終複数回帰は11 | ownership/journalを衣装へ拡張。同じObjectIdのStateHash更新でBoneId割当と既存管理参照を保持し、更新時の管理object付け替えをBridge回帰で確認済み。A→B→再起動の実EditorWindow操作、削除・取消・失敗・利用者変更の競合、元avatar設定保護は手動受入として残る |
 | NF-V1-13 | GUI/MCPとsnapshot整合 | 新commandごとに04/06/12と同時実施 | GUI/MCP同一command、古いrevision/二重要求/取消/編集中exportで破損や二重編集なし。出力対象とreport/hashが一致。G4末に再接続する計画にしない |
 | NF-V1-14 | 保存・復旧・旧版受入 | schema変更時から継続、RC時最終確認 | 既存transaction回帰を再利用。中断で最後の正常projectを保持し、破損・移行・復旧案内と許容損失範囲を確認 |
 | NF-V1-15 | 手動・長時間・別Windows | 一周可能なcandidate、最終は14 | DPI100/150/200%、IME/日本語/空白path、2時間編集、50回Open/Close、別PCと本人以外の手順テスト。条件・実測値・未実施を記録 |
