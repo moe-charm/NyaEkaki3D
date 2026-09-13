@@ -223,6 +223,43 @@ namespace NyaForge.UnityRuntime
             SetStatus("拡張GLB（全weight保持）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
         });
 
+        void ExportSelectedClothingPackage() => Try(() =>
+        {
+            var item = workspace?.Document?.ActiveObject;
+            if (item == null || item.IsStaticProfile || item.Graph == null)
+                throw new InvalidOperationException("選択衣装のskin graphを選択してください。");
+            var evaluation = item.EvaluateGraph();
+            if (!evaluation.IsComplete || evaluation.Output?.Mesh == null)
+                throw new InvalidOperationException("選択衣装のgraphが未完成です。");
+            var skeletonNode = item.Graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.Skeleton && node.Skeleton != null);
+            var bindingNode = item.Graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);
+            if (skeletonNode == null || bindingNode == null)
+                throw new InvalidOperationException("選択衣装へskeletonとskin-bindを先に接続してください。");
+            if (!evaluation.SkinBindingOutputs.TryGetValue(bindingNode.NodeId, out var bindingValue) || bindingValue?.Binding == null)
+                throw new InvalidOperationException("選択衣装のskin-bind評価結果を取得できません。");
+            var inverseMap = SkinnedInverseBindMatrices();
+            inverseMap.TryGetValue(item.ObjectId, out var inverseBinds);
+            var jointMap = SkinnedJointLocalTransforms();
+            jointMap.TryGetValue(item.ObjectId, out var jointLocals);
+            string root = Path.Combine(Path.GetFullPath(projectPath.value), "exports");
+            string packageDirectory = Path.Combine(root, "clothing-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            string temporaryGlbDirectory = packageDirectory + ".glb-staging-" + Guid.NewGuid().ToString("N");
+            try
+            {
+                var glb = GlbExportService.ExportSkinnedObject(workspace, workspace.InstanceId, workspace.Document.DocumentId,
+                    workspace.Document.DocumentRevision, item.ObjectId, temporaryGlbDirectory, false, inverseBinds, jointLocals);
+                byte[] glbBytes = File.ReadAllBytes(glb.Path);
+                string manifest = SkinnedClothingPackage.Export(packageDirectory, glbBytes, evaluation.Output.Mesh,
+                    skeletonNode.Skeleton, bindingValue.Binding, workspace.Document.DocumentId, item.ObjectId,
+                    item.Graph.GraphId, workspace.Document.StateHash, item.Graph.ContentHash);
+                SetStatus("選択衣装だけのskin packageを書き出しました: " + manifest + " · GLBとBoneId付きsidecarを同梱");
+            }
+            finally
+            {
+                if (Directory.Exists(temporaryGlbDirectory)) Directory.Delete(temporaryGlbDirectory, true);
+            }
+        });
+
         void ExportVrm1() => Try(() =>
         {
             var item = workspace?.Document?.ActiveObject;

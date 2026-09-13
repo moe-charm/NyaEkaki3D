@@ -168,6 +168,7 @@ namespace NyaForge.UnityRuntime
             side.Add(Button("標準GLB（表示形状）", ExportGlbStatic, "authoring-export-glb-static"));
             side.Add(Button("標準GLB（skin/morph保持）", ExportGlbSkinned, "authoring-export-glb-skinned"));
             side.Add(Button("拡張GLB（全weight保持）", ExportGlbSkinnedExtended, "authoring-export-glb-skinned-extended"));
+            side.Add(Button("選択衣装をskin packageで出力", ExportSelectedClothingPackage, "authoring-export-clothing-package"));
             side.Add(new Label("Unity用出力はnative機能を保持します。装着情報を含む作品はnative projectへ出力されます。標準GLBは互換用4 influence、拡張GLBは全weightを出力します。"));
             var vrmMetadata = new Foldout { text = "VRM 1.0 metadata", value = false, name = "authoring-vrm-metadata" };
             vrmName = new TextField("名前") { value = "NyaForge Avatar", name = "authoring-vrm-name" }; vrmMetadata.Add(vrmName);

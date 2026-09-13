@@ -7,9 +7,9 @@ ChatGPT Proの持込Windows v1案を現行 `41e73ac` に照合し、[採用修�
 | 順 | ID | 状態 | 次の具体作業・完了条件 |
 |---|---|---|---|
 | 1 | NF-V1-01 / 03 | 未着手 | 過去SDK 3.7.6一時検証とreceiver候補を確認。環境版・fixtureを固定し、衣装だけの出力対象、骨対応、所有領域と最小受取経路を決定 |
-| 2 | NF-V1-03A / 02A | receiver実装済み・未受入 / Core実装済み・未受入 | `SkinnedClothingReceiver`で既存Unity avatarへ初回適用。独立reader/実SDK/local VRChatで比較。現行static Bridge成功でskin適用を代用しない |
-| 3 | NF-V1-04 / 05 | 未実装 | 元Polygon graphを残し、UV/material/paint/出自対応を保持したskin用派生graphを一操作で生成。Undo・失敗無変更・保存再開 |
-| 4 | NF-V1-06 / 07 / 08 | 既存基盤あり・接続未完了 | 選択頂点/元body面領域/距離をfitとweightへ適用。参照保護・pose確認を経て自作カフ1点を手操作で完成 |
+| 2 | NF-V1-03A / 02A | receiver/package実装済み・合成受入済み / 外部未受入 | `SkinnedClothingReceiver`と`skinned-clothing-v1`で既存Unity avatarへ初回適用。実アバター骨map、独立reader/実SDK/local VRChatで比較。現行static Bridge成功でskin適用を代用しない |
+| 3 | NF-V1-04 / 05 | Core/UI実装済み・手動未受入 | 元Polygon graphを残し、UV/material/paint/出自対応を保持したskin用派生graphを一操作で生成。Undo・失敗無変更・保存再開を実マウスで確認 |
+| 4 | NF-V1-06 / 07 / 08 | 基盤/UI実装済み・実衣装未受入 | 選択頂点/元body面領域/距離をfitとweightへ適用。参照保護・pose確認を経て自作カフ1点を手操作で完成 |
 | 後続 | NF-V1-09〜16 / 02B | 未完了 | 画像原本/縮小契約→normal/MR→複数衣装・Unity再適用→長時間/手動/別環境→追加map/同期/RC受入。詳細依存は採用修正版参照 |
 
 GUI/MCP共通command（13）と保存・復旧（14）は各実装と同時に検証する。SDKや他者視点待ちでも、独立した04/06等のCore・GUI作業は継続できる。外部検査の未実施は未実施のまま残す。
@@ -19,6 +19,12 @@ GUI/MCP共通command（13）と保存・復旧（14）は各実装と同時に�
 `UnityBridge/Editor/SkinnedClothingReceiver.cs`を追加した。Coreの`MeshData`、`RestTransform`、`SkeletonDefinition`、`SkinBinding`を受け取り、指定した`avatarRoot`の子へ`SkinnedMeshRenderer`を一原子操作で生成する。頂点はrest transformを一度だけ適用してavatar root localへ変換し、bindposeは`bone.worldToLocalMatrix * avatarRoot.localToWorldMatrix`で作る。BoneId→Transformの完全な明示mapを要求し、階層外の骨、欠落map、binding不整合、material slot不一致を生成前に拒否する。Unity v1の`BoneWeight`へ黙って切り詰めず、5以上のinfluenceは`SKIN_INFLUENCES_UNSUPPORTED`で停止する。失敗時は生成したGameObject、Mesh、temporary Materialを片付け、成功時はUndoへ登録する。単一mesh/skin GLB向けの`ApplyGlb` convenienceも追加した。
 
 設計と呼出例は[`docs/UnityBridge-Skinned-Receiver.md`](docs/UnityBridge-Skinned-Receiver.md)へ固定した。Unity **6000.4.3f1** Windows Player `Builds/SkinnedReceiverV3/NyaForge.exe`の最終compile/buildは成功（`Logs/build-player-20260913-220242-336.log`、`NYAFORGE_PLAYER_OK`）。Authoring suiteは前版で **PASS**（`Artifacts/Authoring-20260913-220106-064b5f6684a94bb79259170c49bf156d/report.json`）。さらにUnity **2022.3.22f1**の使い捨てBridgeで合成2-bone avatarへ実適用し、親子配置、BoneId map、bindpose、4-slot BoneWeightを確認（`Artifacts/BridgeReceiver-20260913-220207-563-5bcbcc9c717347848520be7fa7248fc5/bridge-report.json`）。Coreは **488 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3d76f0258d544e368aa13b8021adf2a9`）。この証拠は合成Unity receiverまでであり、実アバターの骨map、VRChat SDK、実VRChat内の見た目・挙動は未確認のまま残す。
+
+## 2026-09-13 NF-V1-03A 衣装専用package
+
+GLB単体ではstable BoneIdを受取側へ安全に渡せないため、`SkinnedClothingPackage`（profile `skinned-clothing-v1`）を追加した。packageは衣装だけの`clothing.glb`、Coreの`SkeletonDefinition`、`SkinBinding`、document/object/graph/state hashをmanifestへ記録する。生成前にGLBのmesh content/topology/頂点・三角形数をsidecarと照合し、stagingを読み直してから原子公開する。受取時もmanifest・各payload hash・GLB再読込・skeleton/binding topologyを検査し、不一致ではsceneを変更しない。`SkinnedClothingReceiver.ApplyPackage`はこの検査済みpackageを明示BoneId mapで`SkinnedMeshRenderer`へ適用する。
+
+Workbenchへ「選択衣装をskin packageで出力」を追加し、参照avatarを同梱しない単一衣装GLB＋sidecarの出力導線を用意した。Core回帰へpackage roundtripを追加し **489 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-c9113b12b1124f209595d7b53cb3deb2`）。Unity **6000.4.3f1** Player `Builds/ClothingPackageV1/NyaForge.exe` build成功、Authoring suite **PASS**（`Artifacts/Authoring-20260913-221015-2432c87b173840109d91c173ced1204a/report.json`）、Unity **2022.3.22f1** Bridge **PASS**（`Artifacts/BridgeReceiver-20260913-221047-444-a39c269e70454264bbdd2df21fd9fbe4/bridge-report.json`）。これは合成fixtureでのpackage/receiver証拠で、実RadDollV3を対象にしたBoneId map・ownership更新・VRChat内表示は未受入として残す。
 
 ## 2026-09-13 NF-V1-06 / 05 のCore接続
 

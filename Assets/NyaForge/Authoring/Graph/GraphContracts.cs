@@ -110,6 +110,8 @@ namespace NyaForge.Authoring.Graph
     {
         public const int MaxNodes = 128, MaxEdges = 512;
         public string GraphId { get; }
+        /// <summary>Canonical content identity used by native persistence and delivery sidecars.</summary>
+        public string ContentHash { get { return GraphContentIdentity.Hash(this); } }
         public string OutputNodeId { get; }
         public IReadOnlyDictionary<string, GraphNode> Nodes { get; }
         public IReadOnlyList<GraphEdge> Edges { get; }

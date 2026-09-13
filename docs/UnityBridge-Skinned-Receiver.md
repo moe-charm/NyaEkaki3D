@@ -3,7 +3,10 @@
 `NyaForge.UnityBridge.Editor.SkinnedClothingReceiver` is the first Unity-side
 receiver for the Windows v1 clothing path. It creates a scene child with a
 `SkinnedMeshRenderer` from a Core `MeshData` + `SkeletonDefinition` +
-`SkinBinding` result.
+`SkinBinding` result. `SkinnedClothingPackage` adds the delivery path: a
+clothing-only GLB, stable skeleton sidecar, and stable binding sidecar are
+published together under one manifest and checked before the receiver creates
+anything.
 
 The receiver takes an explicit `IReadOnlyDictionary<string, Transform>` keyed
 by the Core `BoneId`. It never guesses a bone from a display name or from an
@@ -34,6 +37,9 @@ var result = SkinnedClothingReceiver.Apply(
 
 `ApplyGlb` is a convenience for the single-mesh/single-skin GLB profile and
 uses the Core importer before applying the same explicit receiver checks.
+`ApplyPackage` reads `skinned-clothing.nyaforge.json`, verifies all payload
+hashes and geometry identities, and then applies the sidecar skeleton/binding
+instead of trusting generated GLB bone IDs.
 Materials can be supplied per submesh; otherwise temporary Standard-shader
 materials are created for the viewer scene.
 

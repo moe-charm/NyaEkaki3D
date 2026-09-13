@@ -72,6 +72,29 @@ namespace NyaForge.Authoring
         public static GlbExportResult ExportSkinned(AuthoringWorkspace workspace, string instance, string document, long revision, string directory)
             => ExportSkinnedCore(workspace, instance, document, revision, directory, GlbExportProfile.SkinnedGeometry, null, false);
 
+        /// <summary>Writes only one graph object as a skinned GLB for clothing delivery.</summary>
+        /// <remarks>The source workspace is still observed for revision and attachment validation;
+        /// the emitted scene contains no avatar/reference object.</remarks>
+        public static GlbExportResult ExportSkinnedObject(AuthoringWorkspace workspace, string instance, string document,
+            long revision, string objectId, string directory, bool extended = false,
+            IReadOnlyList<SourceAffine> inverseBindMatrices = null,
+            IReadOnlyList<SourceAffine> jointLocalTransforms = null)
+        {
+            ValidateRequest(workspace, instance, document, revision, directory);
+            lock (workspace.Gate)
+            {
+                var item = workspace.Document.Objects.FirstOrDefault(value => value.ObjectId == objectId);
+                Checks.Require(item != null, "OBJECT_NOT_FOUND", "Skinned clothing export object is not present.");
+                var profile = extended ? GlbExportProfile.SkinnedGeometryExtended : GlbExportProfile.SkinnedGeometry;
+                var skinned = BuildSkinnedObject(item, null, inverseBindMatrices, jointLocalTransforms, profile);
+                var sourceDiagnostics = ReadSourceDiagnostics(workspace).Where(pair => pair.Value.GraphId == item.Graph.GraphId)
+                    .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+                var paths = Write(directory, new[] { skinned.Mesh }, new[] { skinned }, profile,
+                    workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash, sourceDiagnostics);
+                return new GlbExportResult(paths.GlbPath, paths.ReportPath, profile, 1, paths.NodeMap);
+            }
+        }
+
         /// <summary>Writes a skinned GLB while retaining a selected source node instance affine on the mesh node.</summary>
         public static GlbExportResult ExportSkinned(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, SourceAffine instanceWorldTransform)
             => ExportSkinnedCore(workspace, instance, document, revision, directory, GlbExportProfile.SkinnedGeometry, _ => instanceWorldTransform, true);

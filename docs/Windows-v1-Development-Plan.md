@@ -22,7 +22,7 @@
 | 論点 | 現行証拠 | 判定・作業 |
 |---|---|---|
 | 造形→skin | [AccessorySkinBindingAdapter](../Assets/NyaForge/Authoring/Graph/AccessorySkinBindingAdapter.cs)はEditMesh一つと一つの下流接続を要求。[GLB writer](../Assets/NyaForge/Authoring/Persistence/GlbExportService.cs)はMeshSource一つを要求しPolygon系nodeを許可しない | Polygon評価結果から派生MeshSource/EditMeshを作る接続が必要。許可node追加だけで済ませない |
-| Unity衣装受取 | [BakeImporter](../UnityBridge/Editor/BakeImporter.cs)はMeshFilter/MeshRendererとstatic prefabを生成。`UnityBridge`内にSkinnedMeshRendererの生成実装を確認できない | 骨付き衣装の既存avatar適用は未実装として03Aへ |
+| Unity衣装受取 | [SkinnedClothingReceiver](../UnityBridge/Editor/SkinnedClothingReceiver.cs)が明示BoneId mapからSkinnedMeshRendererを生成し、[skinned-clothing-v1 package](../Assets/NyaForge/Authoring/Persistence/SkinnedClothingPackage.cs)がGLB・skeleton・bindingをhash付きで束ねる | 合成Unity receiverまで実証済み。実アバターの骨map、ownership更新、実SDK/VRChatは03A/02Aの外部受入として残す |
 | nativeとUnity出力 | [ProjectExportService](../Assets/NyaForge/Authoring/Persistence/ProjectExportService.cs)はskin/morph/attachmentをnative packageへ振り分ける | native保存成功をUnity装着成功としない。参照bodyを除く出力対象指定も03Aの範囲 |
 | fit/weight制限 | [MeshSurfaceFit](../Assets/NyaForge/Authoring/Geometry/MeshSurfaceFit.cs)は全頂点・全avatar面を最近面へ投影し距離制限あり。[SkinWeightTransfer](../Assets/NyaForge/Authoring/Rig/SkinWeightTransfer.cs)の表面転送は全頂点・全avatar面を使い距離引数なし | 選択頂点・元body面領域・距離制限を双方へ接続する06を採用 |
 | 材質・解像度 | [ImportMaterials](../Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ImportMaterials.cs)はbase colorを縮小してPaintへ所有保存。[PaintImage](../Assets/NyaForge/Authoring/Paint/PaintImage.cs)は最大1024px | base color以外の画像slotは未対応。縮小の明示と画像所有契約を09Aへ |
@@ -48,7 +48,7 @@ NF-V1のIDは持込提案との対応用に維持。状態はすべて未完了�
 |---|---|---|---|
 | NF-V1-01 | receiver環境manifest・既存fixture棚卸し | なし | Player/receiver/SDK/UniVRM/shader/lock/OS/GPUとfixture・hash・保存場所を固定。過去の一時環境を再利用できるか確認。未導入項目は未確認と記録 |
 | NF-V1-03 | 衣装出力・骨対応・所有権契約 | 01の入力/target候補 | 参照body、納品allowlist、rest/骨対応、生成領域、更新key、競合/削除方針を定義。既存GLB＋sidecar／既存Bake拡張を比較し、receiverで実証する最小経路一つを選ぶ |
-| NF-V1-03A | 最小衣装packageと初回Unity適用 | 03 | 対象1体へ剛体小物1点・skin衣装1点を個別に渡す。参照bodyの非同梱、骨/IBM対応、管理領域のみの生成、事前検証、失敗時無変更を確認。既存読取・ownershipを再利用 |
+| NF-V1-03A | 最小衣装packageと初回Unity適用 | 03 | `skinned-clothing-v1`で衣装GLB・stable skeleton・bindingを個別に渡す。参照bodyの非同梱、BoneId map・IBM対応、事前hash検証、失敗時無変更を確認。合成Unity receiverまで実証済み。実アバター適用とownership更新は外部受入として残す |
 | NF-V1-02A | G1初回の独立reader・SDK・クライアント受入 | 01、03A（衣装ケース） | E01〜E05の現行対応分、E06のbase color/alpha、E08のlocal段階を確認。独立readerで骨/形状を比較。E07更新・未実装map・他者視点は後続へ明示的に分ける |
 | NF-V1-04 | Polygon造形確定command | 03の座標/出自契約 | 元graphを残し派生MeshSource/EditMesh graphを一括生成。UV seam/corner→render vertex対応、material/paint、元object/graph/revisionとhash、transformを保持。Undo一回、失敗無変更。新規skinへ進める |
 | NF-V1-05 | topology確定・属性依存 | 04 | skin/morph前に造形確定。既存skin/morphの未対応topology変更を事前拒否。再造形は新派生へ明示転送し旧派生を保持 |

@@ -35,6 +35,33 @@ internal static partial class Program
             Equal(workspace.Evaluate().Positions[0].X, imported.Mesh.Positions[0].X);
         });
 
+        Test("skinned clothing package exports one object with stable rig sidecars", () =>
+        {
+            var mesh = PrimitiveGeometry.Plane(.2f, .1f);
+            string rootId = GraphId(), sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), outputId = GraphId();
+            var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(rootId, "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
+            var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, rootId, 1f)));
+            var pose = PoseSet.Create(skeleton, new[] { new BonePose(rootId, PoseTransform.FromTranslation(new Vec3())) });
+            var graph = new AuthoringGraph(GraphId(),
+                new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
+            var workspace = AuthoringWorkspace.CreateEmpty(); Ok(Execute(workspace, AuthoringOperation.AddGraph(graph)));
+            string glbDirectory = Path.Combine(Root, "clothing-glb-" + Guid.NewGuid().ToString("N"));
+            var glb = GlbExportService.ExportSkinnedObject(workspace, workspace.InstanceId, workspace.Document.DocumentId,
+                workspace.Document.DocumentRevision, workspace.Document.ActiveObjectId, glbDirectory);
+            var evaluation = workspace.Document.ActiveObject.EvaluateGraph();
+            string packageDirectory = Path.Combine(Root, "clothing-package-" + Guid.NewGuid().ToString("N"));
+            string manifest = SkinnedClothingPackage.Export(packageDirectory, File.ReadAllBytes(glb.Path), evaluation.Output.Mesh,
+                skeleton, binding, workspace.Document.DocumentId, workspace.Document.ActiveObjectId, graph.GraphId,
+                workspace.Document.StateHash, graph.ContentHash);
+            var package = SkinnedClothingPackage.Read(manifest);
+            Equal(workspace.Document.ActiveObjectId, package.ObjectId);
+            Equal(graph.GraphId, package.GraphId); Equal(graph.ContentHash, package.GraphHash);
+            Equal(mesh.ContentHash, package.Mesh.ContentHash); Equal(skeleton.ContentHash, package.Skeleton.ContentHash);
+            Equal(binding.ContentHash, package.Binding.ContentHash); Equal(mesh.VertexCount, package.Mesh.VertexCount);
+            True(package.Glb.Length > 0 && package.Binding.Weights.Count == mesh.VertexCount);
+        });
+
         Test("GLB export report carries source import diagnostics", () =>
         {
             var workspace = AuthoringWorkspace.CreateFixture();

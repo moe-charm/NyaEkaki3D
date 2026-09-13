@@ -39,6 +39,20 @@ namespace NyaForge.UnityBridge.Editor
                 imported.Binding, avatarRoot, boneMap, objectName, materials);
         }
 
+        /// <summary>Reads and validates a clothing-only sidecar before creating the scene object.</summary>
+        public static Result ApplyPackage(
+            string manifestPath,
+            Transform avatarRoot,
+            IReadOnlyDictionary<string, Transform> boneMap,
+            string objectName = null,
+            Material[] materials = null)
+        {
+            if (string.IsNullOrWhiteSpace(manifestPath)) throw new ArgumentException("Package manifest is required.", "manifestPath");
+            var package = SkinnedClothingPackage.Read(manifestPath);
+            return Apply(package.Mesh, new RestTransform(1f, new Vec3()), package.Skeleton, package.Binding,
+                avatarRoot, boneMap, string.IsNullOrWhiteSpace(objectName) ? package.ObjectId : objectName, materials);
+        }
+
         public static Result Apply(
             MeshData mesh,
             RestTransform meshTransform,
