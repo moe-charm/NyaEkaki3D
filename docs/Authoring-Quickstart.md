@@ -34,6 +34,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthori
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthoring.ps1 -BuildName AllMeshRealV1 -ImportModel <モデルの絶対パス> -ImportAllModel -TimeoutSeconds 900
 ```
 
+実モデルから衣装packageを作ってBridge受け取りまで一括確認する場合は、Playerを先にビルドして次を実行します。入力VRM/GLBは指定した場所から読み込むだけで、公開リポジトリへコピーしません。既定のBridge検証はUnity 2022.3.22f1を使います。
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeRealClothing.ps1 -ModelPath <モデルの絶対パス> -BuildName ClothingPackageV2
+```
+
+このコマンドは実モデルの取込・編集・保存・GLB/VRM出力、選択衣装package、Unity Bridgeの適用確認を順番に行い、最後にPlayer reportとpackage manifestの場所を表示します。
+
 このfixture検証は取込と保存経路の自動確認であり、実アバターの見た目・実マウス操作・VRChat内の動作確認ではありません。
 
 ## 起動と編集
