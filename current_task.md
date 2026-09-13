@@ -1771,3 +1771,10 @@ Unity 6000.4.3f1の`Builds/AuthoringResponsiveV1/NyaForge.exe`でDense Paint計�
 同Playerでprivate一時RadDollV3 VRMの全mesh instance取込・頂点編集・native Save/Open・GLB出力を含むAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-161644-c1daec285f28438b870d2e5df732733c/report.json`）。Unity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-161901-669-68d3a0ef75924fdd8f100564689704de/bridge-report.json`）。1000×700 Navigationも **PASS**（`Artifacts/Navigation-20260913-161921-42b24c9738b1421f8e49fb1256e1f1c2/report.json`）。
 
 性能の正式な合否は機種別の測定が必要であり、実マウス・DPI差、UniVRM／VRChat受取、実VRChat内の外観・PhysBones挙動は別受入境界とする。
+# 2026-09-13 Authoring応答性の回帰固定
+
+Authoring画面を開いている間の60fps／OnDemand描画解除を、Dense Paint Player検証の明示条件として固定した。`Application.targetFrameRate >= 60` かつ `OnDemandRendering.renderFrameInterval == 1` でなければ、制作画面の回帰としてsuiteを失敗させる。通常viewerの待機省電力制御とは分離している。
+
+Unity 6000.4.3f1の`Builds/AuthoringResponsiveV2/NyaForge.exe`はビルド成功（`Logs/build-all-20260913-162013-417.log`）。Dense Paint回帰は **PASS**（`Artifacts/Authoring-20260913-162035-7c6436829ccb48ef8967a24b9c4824d6/report.json`）。同Playerでprivate一時RadDollV3 VRMの全mesh取込・頂点編集・native Save/Open・GLB出力を含むAuthoring suiteも **PASS**（`Artifacts/Authoring-20260913-162111-22190844683a40ba8e49ee9a4ae0b804/report.json`）。Unity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-162322-577-2235196b85fd4ed9bcb5c06550bfa253/bridge-report.json`）。
+
+これはPlayer一台の応答性回帰であり、機種別性能保証、実マウス・DPI差、UniVRM／VRChat受取、実VRChat内の外観・PhysBones挙動は別受入境界とする。

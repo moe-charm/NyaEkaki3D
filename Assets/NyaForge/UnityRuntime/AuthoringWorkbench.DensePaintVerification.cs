@@ -127,6 +127,8 @@ namespace NyaForge.UnityRuntime
             performance.targetFrameRate=Application.targetFrameRate;
             performance.vSyncCount=QualitySettings.vSyncCount;
             performance.renderFrameInterval=UnityEngine.Rendering.OnDemandRendering.renderFrameInterval;
+            Check(performance.targetFrameRate >= 60 && performance.renderFrameInterval == 1,
+                "Authoring viewport did not enable the responsive frame/render policy");
             performance.graphicsDevice=SystemInfo.graphicsDeviceName;
             performance.managedHeapBefore=GC.GetTotalMemory(false);
             performance.managedAllocatedBytesBefore=GC.GetAllocatedBytesForCurrentThread();
