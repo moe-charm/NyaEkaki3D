@@ -1703,3 +1703,7 @@ Frame修正後の最新Playerで、private一時RadDollV3 VRMの全mesh instance
 # 2026-09-13 VRM1出力手順のQuickstart追記
 
 現行WorkbenchにあるVRM 1.0 metadata入力と`VRM 1.0（humanoid）`出力ボタンの操作手順を`docs/Authoring-Quickstart.md`へ追加した。1つのskinned avatar graph、15必須humanoid骨、rest pose、license URL、出力先`exports/vrm1-日時-ID/`、SpringBone／未対応機能の境界を明記した。実VRChat／UniVRM受取確認は引き続き別受入項目である。
+
+# 2026-09-13 Development-Plan現行到達点の同期
+
+開始時点の比較表と現行mainの能力が混同されないよう、`docs/Development-Plan.md`へ現行到達点を追加した。実装・自動検証済みの範囲（graph／直接編集／Rig・weight／GLB・VRM取込／atomic全mesh／保存再開／GLB・初期VRM1出力／MCP／Bridge）と、手動受入・実VRChat受取・完全VRM・FBX/BLEND・自動fitを未完了境界として明記した。
