@@ -24,6 +24,15 @@
 
 狭い幅ではviewportの説明文が複数行になるため、実際の制作は1600論理px程度の広さを推奨する。実マウス・IME・Explorer、実RadDollV3全周fit、VRChatは未受入のまま残す。
 
+## 2026-09-14 NF-V1-09I: 通常ビューワーの入口回帰
+
+V24で通常ビューワーを`1280x800`で起動し、パック選択、キャンセル時の状態保持、確認セット、設定画面、制作画面への遷移と画面描画を再確認した。Authoring専用のDPIレイアウト修正が通常ナビゲーションへ影響していないことを確認した。
+
+- Player: `Builds/ReleaseCandidateV24/NyaForge.exe`
+- Navigation report: `Artifacts/Navigation-20260914-074515-633035562ad14daeac53226ed8626bff/report.json`（**PASS**）
+
+これはスクリプト化された入口回帰であり、実マウス、Explorer、IME、実RadDollV3の全周fit、VRChat内表示の手動受入ではない。
+
 ## 2026-09-14 NF-V1-09F: V19実RadDollV3一周スモーク
 
 最新V19 Playerへprivate一時RadDollV3 VRMを渡し、全mesh取込、EditMesh、native Save/Open、標準skinned GLB／VRM1出力、制御fixtureのskinned clothing package生成を再実行した。生成packageをUnity **2022.3.22f1** Bridgeへ渡し、stable BoneId、bind pose、avatar-local translation／rotation／scale、材質・semantic map、ownership更新・削除Undoを含む**16 checks PASS**で確認した。private入力は公開ツリーへコピーしていない。
