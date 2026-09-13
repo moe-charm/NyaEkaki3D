@@ -1627,3 +1627,6 @@ Unity 6000.4.3f1のWindows Player `Builds/ValidationUiV2/NyaForge.exe` をビル
 # 2026-09-13 validation UI real-model recheck
 
 最新 `Builds/ValidationUiV2/NyaForge.exe` で、private一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）を使った候補選択→EditMesh頂点編集→native Save/Open→標準skinned GLB出力→再取込を再確認した。Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-135407-87d2b19633744c218be890edbf327601/report.json`、画面 `authoring.png`）。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-135526-451-d3d9354f898c4191ac9cd27b56408543/bridge-report.json`）。private素材はpublic repositoryへ追加していない。これは自動Player経路の証拠で、実マウス・DPI差・実VRChat内受入とは分けて扱う。
+# 2026-09-13 validation UI all-mesh recheck
+
+最新 `Builds/ValidationUiV2/NyaForge.exe` でprivate一時RadDollV3 VRMの **全mesh instance取込** を実行し、body・hair等を複数graph objectとして公開した。全objectの頂点編集、native Save/Open、feature-preserving native export、拡張skinned GLB出力と再読込までのAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-135624-c8605946d44b464c94e50b95aa4a59d7/report.json`、画面 `authoring.png`）。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-135831-583-5cc12364c6b6485c8902bb5320ae5c3e/bridge-report.json`）。private素材はpublic repositoryへ追加していない。
