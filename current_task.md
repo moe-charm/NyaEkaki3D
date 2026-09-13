@@ -2,7 +2,7 @@
 
 ## 2026-09-14 参照保護のUndo/Redo同期
 
-参照body保護のattachmentをUndo/Redoした際、native attachmentの正本と制作対象パネルのトグルがずれる穴を修正した。GUIとMCPのhistory undo/redo後に`reference-protection.nyaforge.bin`を再読込し、保護中の頂点編集停止状態を維持する。Windows Player `Builds/RefProtectionUndo/NyaForge.exe`のAuthoring suiteは **83 checks PASS**（`Artifacts/Authoring-20260914-034002-538c4019d23045dd9010231eca7ee326/report.json`）。ON→Undo→Redo→頂点編集停止→Save/Open→解除まで自動回帰に含む。実EditorWindowの手動操作、実RadDollV3全周fit・貫通・見た目、VRChat内表示は未受入である。
+参照body保護のattachmentをUndo/Redoした際、native attachmentの正本と制作対象パネルのトグルがずれる穴を修正した。GUIとMCPのhistory undo/redo後に`reference-protection.nyaforge.bin`を再読込し、保護中の頂点編集停止状態を維持する。Windows Player `Builds/RefProtectionUndo/NyaForge.exe`のAuthoring suiteは **83 checks PASS**（`Artifacts/Authoring-20260914-034002-538c4019d23045dd9010231eca7ee326/report.json`）。ON→Undo→Redo→頂点編集停止→Save/Open→解除まで自動回帰に含む。Coreも **497 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ada9ea537fa9447595c259624ed75b3b`）。実EditorWindowの手動操作、実RadDollV3全周fit・貫通・見た目、VRChat内表示は未受入である。
 
 追加のBridge回帰を実施した。`NyaForgeSkinnedClothingBinding`へ同じObjectIdの新しいStateHashを保存しても、既存の生成object参照とstable BoneId割当を保持し、その後の更新で新objectへ一度だけ付け替えられることを確認した。Unity **2022.3.22f1**のBridge suite **15 checks PASS**（`Artifacts/BridgeReceiver-20260914-031910-021-7a155f84e2354bb3be94d816c8401c1a/bridge-report.json`）。これは更新時のownership参照回帰であり、実EditorWindowの手動操作・実RadDollV3全周fit・貫通・見た目・VRChat内受入とは分けて扱う。
 
