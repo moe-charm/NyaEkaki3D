@@ -35,6 +35,33 @@ internal static partial class Program
             Equal("fail", (string)result["status"]); Equal(2, (int)result["metrics"]["materials"]); Equal("fail", (string)result["checks"].Children<JObject>().Single(c => (string)c["name"] == "materials")["status"]);
         });
 
+        Test("validation counts one image resource once when material references it twice", () =>
+        {
+            var mesh = AuthoringFixtures.Panel(1);
+            var image = new NyaForge.Authoring.Paint.PaintImage(4, 4, new NyaForge.Authoring.Paint.Rgba32(220, 40, 80));
+            string source = GraphId(), paint = GraphId(), material = GraphId(), assignment = GraphId(), output = GraphId();
+            var graph = new AuthoringGraph(GraphId(), new[]
+            {
+                GraphNode.Source(source, mesh, new RestTransform(1, new Vec3())),
+                GraphNode.Paint(paint, 4, 4, image),
+                GraphNode.StandardMaterial(material),
+                GraphNode.AssignMaterial(assignment),
+                GraphNode.Output(output)
+            }, new[]
+            {
+                new GraphEdge(source, "mesh", paint, "mesh"),
+                new GraphEdge(paint, "image", material, "baseColor"),
+                new GraphEdge(source, "mesh", assignment, "mesh"),
+                new GraphEdge(material, "material", assignment, "material"),
+                new GraphEdge(assignment, "mesh", output, "mesh")
+            }, output);
+            var workspace = AuthoringWorkspace.CreateEmpty();
+            Ok(new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph))));
+            var request = AuthoringValidationRequest.Read(new JObject { ["documentId"] = workspace.Document.DocumentId, ["expectedRevision"] = workspace.Document.DocumentRevision, ["profile"] = "pc" });
+            var result = AuthoringValidationReader.Read(workspace, workspace.InstanceId, request);
+            Equal("pass", (string)result["status"]); Equal(1, (int)result["metrics"]["textures"]); Equal(4, (int)result["metrics"]["maxTextureDimension"]);
+        });
+
         Test("validation reports evaluated skin capacity instead of unknown", () =>
         {
             var mesh = AuthoringFixtures.Panel(1);

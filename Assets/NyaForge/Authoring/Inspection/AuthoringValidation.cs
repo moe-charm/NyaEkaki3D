@@ -137,11 +137,20 @@ namespace NyaForge.Authoring.Inspection
 
         static IEnumerable<PaintImage> Images(GraphMeshValue output)
         {
-            if (output.BaseColor?.Image != null) yield return output.BaseColor.Image;
-            if (output.Material?.BaseColor?.Image != null) yield return output.Material.BaseColor.Image;
+            // A material assignment deliberately keeps the resolved image on both
+            // the output's legacy BaseColor slot and Material.BaseColor. Count the
+            // owned image resource once so validation reflects actual texture usage,
+            // rather than the number of graph references to that resource.
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            IEnumerable<PaintImage> Unique(IEnumerable<PaintImage> candidates)
+            {
+                foreach (var image in candidates)
+                    if (image != null && seen.Add(Checks.Hash(PaintImageCodec.Write(image)))) yield return image;
+            }
+            foreach (var image in Unique(new[] { output.BaseColor?.Image, output.Material?.BaseColor?.Image })) yield return image;
             if (output.SlotMaterials != null)
                 foreach (var slot in output.SlotMaterials.Values)
-                    if (slot.Material.BaseColor?.Image != null) yield return slot.Material.BaseColor.Image;
+                    foreach (var image in Unique(new[] { slot.Material.BaseColor?.Image })) yield return image;
         }
 
         static void AddBound(JArray checks, string name, int actual, int limit, string label)

@@ -2,6 +2,10 @@
 
 提示されたレビュー（基準 `0d1e957`）のP1/P2は、現行main（`18706ff`）の実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。
 
+# 2026-09-13 validation texture resource deduplication
+
+材質接続後の評価値は同じbase-color画像を出力のlegacy `BaseColor` と `Material.BaseColor` の両方へ保持するため、出力チェックのtexture数がグラフ参照数を数えて実リソース数より多くなる場合があった。`AuthoringValidationReader` は画像hashを一度だけ数えるようにし、同一画像を材質から複数参照しても容量判定が過大にならないよう修正した。Coreへ重複参照の回帰を追加し、**465 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2ce6c7d8eaf547fbad1d9c8d09714515`）。Windows Player `Builds/ValidationTextureDedupV1/NyaForge.exe` の800x600 Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-091728-f26ad2de57b24a038163c89a57e89b8e/report.json`、画面 `authoring.png`）。同じ成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-091801-690-5b07e4e16c6e4f1e91c24785c6675491/bridge-report.json`）。
+
 # 2026-09-13 latest automated acceptance recheck
 
 現行HEAD `465ff78` でCoreを再実行し、**464 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-34dfcea0ab314363911a8ccaeac4a20b`）。`Builds/ValidationSkinV3/NyaForge.exe` の800x600 Authoring suiteも **PASS**（`Artifacts/Authoring-20260913-091250-cf3646192e704ab8bbb5eea32c568969/report.json`、画面 `authoring.png`）。同じPlayer検証成果物をUnity **2022.3.22f1** synthetic Bridgeへ渡した結果も **PASS**（`Artifacts/BridgeReceiver-20260913-091344-440-d19dee26d87b4d83a65334dc283d045d/bridge-report.json`）。これは自動回帰・合成receiverの証拠であり、実マウス/DPI差、実VRChat SDK/実アバター内の見た目受入とは分けて扱う。
