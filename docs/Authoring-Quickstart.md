@@ -77,6 +77,8 @@ Rigを試すときは、空の制作projectでgraph上部の **＋ Rigサンプ�
 2. 制作フォルダの `exports/bake-日時-ID/mesh.nyaforge-bake.json` が入口です。同じフォルダの `blobs/` も一緒に保持してください。
 3. 受け取り側UnityへCoreと[Unity Bridge](../UnityBridge/README.md)を入れ、出力manifestを読み込みます。
 
+衣装だけを既存avatarへ渡す場合は、skin-bind済みの衣装graph objectを選び、**選択衣装をskin packageで出力**を押します。`exports/clothing-日時-ID/skinned-clothing.nyaforge.json` が入口で、`clothing.glb`・`skeleton.nyaforge.bin`・`binding.nyaforge.bin`を同梱します。受け取り側Unityの **NyaForge Clothing** windowでmanifestを開き、avatar rootを指定してBoneId割当を確認してから適用します。このpackageは選択衣装だけを含み、参照avatar bodyは含めません。骨割当を変更して保存した場合も、既存の適用済み衣装のownership参照を保持して更新できます。
+
 標準GLBは出力プロファイルを分けています。**標準GLB（表示形状）** は評価済みの見た目だけ、**標準GLB（skin/morph保持）** はrest pose・identity transform・4 influenceの骨とPOSITION/NORMAL/TANGENT morph、**拡張GLB（全weight保持）** は最大32 influenceを全JOINTS_n/WEIGHTS_n setで出力します。skin系はいずれもトポロジー不変のEditMesh頂点編集を保持しますが、任意poseや非ゼロmorph変形は拒否します。各GLBフォルダには同じdocument ID・revision・state hash・profile・対象メッシュ件数とGLB本体のSHA-256を記録した `export-report.json` も生成されるため、出力がどの制作スナップショットから作られたか、レポートと本体が同じ組か確認できます。レポートには標準GLBで保持しないgraph／VRM metadataも明記します。GLB/VRMの入出力予算は128 MiB・1 mesh 200,000頂点で、native保存の16 MiB blob予算とは別です。
 
 static GLBは選択された評価結果を出力し、複数objectを含む場合もmeshごとのnode・材質slotを保持します。skinned GLBは同一skeleton hashならshared skinを使い、同一source由来でrest定義やinverse-bindが異なる場合はskin resourceを分けます。異なるsource skeletonの結合は拒否します。頂点、UV0、法線、接線、submeshと単位を保持し、Bridgeがメートル座標へ一度だけ変換してMesh/Material/Prefabを作ります。現在は法線と接線を保持する方針なので、大きい頂点編集後の陰影品質は別途調整が必要です。
