@@ -175,9 +175,28 @@ namespace NyaForge.UnityRuntime
             string fullPath = Path.GetFullPath(path);
             var info = new FileInfo(fullPath);
             if (!info.Exists) throw new FileNotFoundException("GLB / VRM file was not found.", fullPath);
-            if (info.Length > NyaForge.Authoring.AuthoringLimits.MaxGlbImportBytes)
-                throw new AuthoringException("BUDGET_EXCEEDED", "GLB / VRM file exceeds the 128 MiB import budget.");
-            return File.ReadAllBytes(fullPath);
+            const long maximum = NyaForge.Authoring.AuthoringLimits.MaxGlbImportBytes;
+            try
+            {
+                using (var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    if (stream.Length <= 0 || stream.Length > maximum)
+                        throw new AuthoringException("BUDGET_EXCEEDED", "GLB / VRM file exceeds the 128 MiB import budget.");
+                    int length = checked((int)stream.Length); var result = new byte[length]; int offset = 0;
+                    while (offset < result.Length)
+                    {
+                        int read = stream.Read(result, offset, result.Length - offset);
+                        if (read <= 0) throw new IOException("The GLB / VRM file ended before its declared length.");
+                        offset += read;
+                    }
+                    return result;
+                }
+            }
+            catch (AuthoringException) { throw; }
+            catch (FileNotFoundException) { throw new FileNotFoundException("GLB / VRM file was not found.", fullPath); }
+            catch (DirectoryNotFoundException) { throw new FileNotFoundException("GLB / VRM file was not found.", fullPath); }
+            catch (UnauthorizedAccessException error) { throw new AuthoringException("IMPORT_RESOURCE_UNAVAILABLE", "GLB / VRM file could not be read: " + error.Message); }
+            catch (IOException error) { throw new AuthoringException("IMPORT_RESOURCE_UNAVAILABLE", "GLB / VRM file could not be read: " + error.Message); }
         }
     }
 }
