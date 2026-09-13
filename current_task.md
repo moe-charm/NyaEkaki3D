@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09T: PerformanceV30標準作業解像度Authoring回帰
+
+性能修正後の候補 `Builds/PerformanceV30/NyaForge.exe` を1600×1000で単独起動し、制作UIの一周を再確認した。**PASS**（`Artifacts/Authoring-20260914-085112-29a398ddae9e48ae9eae2f21cb46aa34/report.json`、画面`authoring.png`）。制作対象の参照保護・納品対象・小物装着・Polygon編集入口、頂点表示、保存・出力一致の既存回帰が、標準作業解像度でも完了した。画面を目視し、右側の長いpanelはスクロール可能で、status footerとviewportを確認できた。
+
+自動suiteと生成画面の確認であり、実マウスによる頂点ドラッグ、IME／Explorer、実RadDollV3衣装の全周fit・貫通・見た目、VRChat Build & Test／実機表示は未受入として残る。
+
 ## 2026-09-14 NF-V1-09S: Unity Bridge更新クラッシュ後の復旧確認
 
 実衣装packageを含む直近Authoring成果物からUnity 2022.3.22f1のBridge receiverを作成し、materials／prefab／receipt更新の途中でプロセスを停止した後、別Unityプロセスで復旧するスイートを再実行した。**3経路すべてPASS**（receiver `Artifacts/BridgeReceiver-20260914-084825-088-5f7612902ab44ba68df4bdb8bc3edb8f`、`materials-recovery.json`／`prefab-recovery.json`／`receipt-recovery.json`）。途中checkpointのPID・phase一致、復旧後のbytes／meta復元、再試行成功を確認した。
