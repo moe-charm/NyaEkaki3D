@@ -1677,3 +1677,5 @@ Core **474 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-C
 Coreは **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-61489347c8a14bda811fa7cce7e2e1e6`）。`static GLB export accepts a display-corrected mesh override` 回帰を追加した。Windows Player `Builds/StaticDisplayV3/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-151801-205.log`）。private一時RadDollV3 VRMで、候補取込→EditMesh頂点編集→native Save/Open→標準skinned GLB再取込に加え、静的GLBの表示補正済み三角形座標照合まで含むAuthoring suiteが **PASS**（`Artifacts/Authoring-20260913-151822-e69b71eec5214ac9a17d65808cdb916b/report.json`、画面`authoring.png`）。
 
 今回の自動確認はCoreとWindows PlayerのCPU／GLB往復であり、実マウス・DPI差、UniVRM／VRChat SDK受け取り、実VRChat内の外観・挙動は別の手動受入境界として残す。private素材はpublic repositoryへ追加していない。
+
+追補: 同じPlayer check directoryを入力にUnity 2022.3.22f1 Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-152230-116-37b90f8d982042ad908a9036375297c3/bridge-report.json`）。
