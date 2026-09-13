@@ -173,7 +173,7 @@ namespace NyaForge.UnityRuntime
             vrmName = new TextField("名前") { value = "NyaForge Avatar", name = "authoring-vrm-name" }; vrmMetadata.Add(vrmName);
             vrmAuthors = new TextField("作者（カンマ区切り）") { value = "NyaForge", name = "authoring-vrm-authors" }; vrmMetadata.Add(vrmAuthors);
             vrmLicenseUrl = new TextField("license URL") { value = "", name = "authoring-vrm-license-url" }; vrmMetadata.Add(vrmLicenseUrl);
-            vrmMetadata.Add(new Label("VRM 1.0のhumanoid必須骨を検査します。license URLは作品の利用条件を指すURLを入力してください。解決できるmorph表情だけ出力し、material bind・LookAt・SpringBoneは出力しません。"));
+            vrmMetadata.Add(new Label("VRM 1.0のhumanoid必須骨を検査します。license URLは作品の利用条件を指すURLを入力してください。解決できるmorph表情と、詳細が揃ったVRM1のSpringBoneを出力します。material bind・LookAt・FirstPerson・MToon・animationは出力しません。"));
             side.Add(vrmMetadata);
             side.Add(Button("VRM 1.0（humanoid）", ExportVrm1, "authoring-export-vrm1"));
             confirmRow = new VisualElement { name = "authoring-confirm" }; confirmRow.style.display = DisplayStyle.None; side.Add(confirmRow);

@@ -1661,3 +1661,12 @@ Coreは **474 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 # 2026-09-13 P1修正後のprivate RadDollV3再確認
 
 public repositoryへ素材を追加せず、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`を入力にして、今回のP1修正後Playerで候補選択・編集・native Save/Open・標準skinned GLB出力・再取込を実行した。Windows Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-144320-e0bdb1af8a344640884475842253746f/report.json`、`authoring.png`）。同成果物のUnity 2022.3.22f1 Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-144450-130-658ed8b59fbb4075ace026dd047b0161/bridge-report.json`）。これはprivate実モデルでの自動確認で、骨回転・拡縮と編集ウェイトの個別目視、実VRChat／UniVRM受入は引き続き別境界とする。
+# 2026-09-13 VRM1実モデル書き出し確認とWindows一時パス修正
+
+実RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）を使い、候補選択→EditMesh頂点編集→native Save/Open→標準skinned GLB出力→再取込に続けて、保存済みプロジェクトを再オープンしたVRM 1.0出力を確認した。出力は `model.vrm` と `export-report.json` を持つ一つのrevision-pinned directoryとなり、`VrmMetadataReader`で`vrm1`・humanoid 29 nodeを再読込できた。RadDollV3はVRM 0.xのため、製品側の方針どおりVRM 0.x SpringBoneの自動変換はせず、検証ではそのsessionを明示的に除外した（出力reportの`springBone:false`）。
+
+この確認中、長いfixture／projectパスにVRM用のsource GLBとstaging suffixを二重に付けると、GLB report書込みがWindowsのパス長制約で失敗することを再現した。`VrmExportService`の一時source／stagingを要求先の隣接ディレクトリに短い名前で作り、最終出力だけを指定先へ移動するよう修正した。失敗時はstagingを削除し、既存の出力先を作らない契約を維持する。
+
+Core **474 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-854a809c2f964cc992be0c79f5e296f9`）。Unity 6000.4.3f1の最終Player `Builds/Vrm1RealFinal/NyaForge.exe` はビルド成功（`Logs/build-player-20260913-150428-392.log`）。実モデルのVRM1付きAuthoring suiteは `Builds/Vrm1RealV6/NyaForge.exe` で **PASS**（`Artifacts/Authoring-20260913-150125-27e7a01df65a458bbfee2ed5eec5fd18/report.json`、VRM出力を含む85 checks）。
+
+これはVRM1パッケージの実モデル自動確認であり、UniVRM／VRChat SDKへの受け取り、実VRChat内の見た目・SpringBone挙動、material bind・LookAt・FirstPerson・MToon・animation・任意拡張の完全出力、実マウス／DPI差の受入ではない。

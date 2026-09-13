@@ -8,6 +8,7 @@ param(
     [switch]$SecondaryMotionMcp,
     [switch]$GlbExportMcp,
     [switch]$ImportAllModel,
+    [switch]$VrmExport,
     [string]$McpProbe,
     [string]$ImportModel,
     [ValidateRange(30,900)][int]$TimeoutSeconds = 120
@@ -29,6 +30,7 @@ if ($ImportAllModel) {
     if (-not $ImportModel) { throw '-ImportAllModel requires -ImportModel.' }
     $arguments += @('--authoring-import-all-model', ('"{0}"' -f (Resolve-Path -LiteralPath $ImportModel).Path))
 }
+if ($VrmExport) { $arguments += '--authoring-vrm-export' }
 if ($SecondaryMotionMcp) {
     if (-not $McpProbe) { throw 'SecondaryMotionMcp requires -McpProbe.' }
     $arguments += '--authoring-secondary-mcp'

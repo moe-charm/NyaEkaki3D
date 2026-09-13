@@ -140,5 +140,43 @@ namespace NyaForge.UnityRuntime
             Check(TrySaveProject(), "All-mesh command-line smoke could not persist its clean continuation state.");
             OpenProject();
         }
+
+        void VerifyCommandLineVrmExport(string output, List<string> checks)
+        {
+            string project = Path.Combine(output, "real-model-project");
+            Check(File.Exists(Path.Combine(project, ProjectStore.ManifestName)), "VRM export check requires the persisted real-model project.");
+            // The preceding model smoke deliberately returns the Player to a
+            // clean empty project. Reopen the persisted avatar before invoking
+            // the VRM exporter so its graph-keyed rig/session data is active.
+            projectPath.SetValueWithoutNotify(project);
+            OpenProject();
+            // RadDollV3 is a VRM 0.x source. Keep the export check focused on
+            // the VRM 1.0 humanoid package; VRM 0.x SpringBone is intentionally
+            // not auto-converted by the production exporter.
+            if (importedVrmSpringSession?.Format == "vrm0")
+            {
+                importedVrmSpringSessions.Remove(workspace.Document.ActiveObject.Graph.GraphId);
+                importedVrmSpringSession = null;
+                checks.Add("real model VRM 0.x SpringBone was explicitly omitted from the VRM 1.0 export check");
+            }
+            vrmName.SetValueWithoutNotify("NyaForge real-model verification");
+            vrmAuthors.SetValueWithoutNotify("NyaForge");
+            vrmLicenseUrl.SetValueWithoutNotify("https://example.com/nyaforge-verification-license");
+            ExportVrm1();
+            string exports = Path.Combine(project, "exports");
+            var directories = Directory.Exists(exports) ? Directory.GetDirectories(exports, "vrm1-*") : Array.Empty<string>();
+            Check(directories.Length == 1, "Real model VRM 1.0 export did not create exactly one output directory.");
+            string model = Path.Combine(directories[0], VrmExportService.FileName);
+            string report = Path.Combine(directories[0], VrmExportService.ReportFileName);
+            Check(File.Exists(model) && File.Exists(report), "Real model VRM 1.0 export is missing model.vrm or export-report.json.");
+            var metadata = VrmMetadataReader.Read(File.ReadAllBytes(model));
+            Check(metadata.Format == "vrm1" && metadata.HumanoidNodes.Count >= 15, "Real model VRM 1.0 export did not retain humanoid metadata.");
+            checks.Add("real GLB/VRM command-line import: VRM 1.0 package export and metadata re-read");
+            // Leave the common fixture suite in its expected empty startup
+            // state after this opt-in export check.
+            string empty = Path.Combine(output, "real-model-empty");
+            projectPath.SetValueWithoutNotify(empty);
+            OpenProject();
+        }
     }
 }

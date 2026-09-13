@@ -187,8 +187,13 @@ namespace NyaForge.Authoring
                 Checks.Require(!Directory.Exists(directory) && !File.Exists(directory), "EXPORT_DESTINATION_EXISTS", "Export destination already exists.");
             }
 
-            string sourceDirectory = directory + ".source-glb-" + Guid.NewGuid().ToString("N");
-            string staging = directory + ".staging-" + Guid.NewGuid().ToString("N");
+            // Keep temporary paths beside the requested destination. Appending
+            // two long suffixes below a user/fixture path can exceed Windows'
+            // legacy MAX_PATH limit before the final package is moved.
+            string parentDirectory = Path.GetDirectoryName(directory) ?? ".";
+            string token = Guid.NewGuid().ToString("N").Substring(0, 12);
+            string sourceDirectory = Path.Combine(parentDirectory, ".nyaforge-vrm-src-" + token);
+            string staging = Path.Combine(parentDirectory, ".nyaforge-vrm-stage-" + token);
             try
             {
                 var glb = GlbExportService.ExportSkinnedWithTransforms(workspace, instance, document, revision, sourceDirectory, instanceWorldTransforms, inverseBindMatrices, jointLocalTransforms);
