@@ -24,6 +24,8 @@ Workbenchの衣装表面処理へ`avatar面ID（カンマ区切り・空欄=全�
 
 同じPlayer検証成果物をUnity **2022.3.22f1** Bridgeへ渡し、receiver verification **15 checks PASS**を再確認した。証拠は`Artifacts/BridgeReceiver-20260914-025117-261-ef07c59af2624fb9beb70a7c5a1409ad/bridge-report.json`。受け取り側の配置・ownership・semantic map回帰を含むが、実RadDollV3の全周fit・貫通・VRChat内表示は未受入である。
 
+同じ`WindowsFitMetrics` Playerへprivate一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）を指定し、実モデルの単体／全mesh instance取込、EditMesh頂点編集、native Save/Open、標準skin GLB再取込、VRM 1.0出力まで含むsuiteを **PASS**した。10 mesh instanceの編集可能化とfeature-preserving native exportを確認した証拠は`Artifacts/Authoring-20260914-025700-6f121300a2f5412f85f3339e36623660/report.json` と `authoring.png`。同成果物をUnity **2022.3.22f1** Bridgeへ渡したreceiver verificationも **PASS**（`Artifacts/BridgeReceiver-20260914-025952-761-5048146e313a4bd58ea2fa791936d1fd/bridge-report.json`）。これは実ファイル取込・保存・出力の自動smokeであり、実EditorWindowの手動操作、衣装の全周fit・貫通・見た目、VRChat内Build & Test／表示を完了扱いしない。
+
 レビューで挙がった `9855d43` 系のP1/P2を現行mainへ再照合した。対象は衣装受け取りの座標、割当保存、UV1、疎なmaterial slot、MR係数、カフ面向き、sampler共有、削除済み衣装の割当読込である。
 
 次の項目は現行実装と回帰で確認済みで、同じ修正を重ねて行わない。
