@@ -1723,3 +1723,11 @@ Coreは **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 # 2026-09-13 Save/Recovery crash検証
 
 保存・再開の安全性を強めるため、最新のFacePickPerfV1全mesh実モデルcheckを入力に`Test-NyaForgeCrashRecovery.ps1`を実行した。Unity 2022.3.22f1 Bridgeの通常検証に加え、materials／prefab／receiptの更新途中停止後にプロセスを再起動し、recovery状態を再読込できることを確認した。Bridge reportは **PASS**（`Artifacts/BridgeReceiver-20260913-154451-682-e8552774ca7b4d10ad51b1d0fc684fe3/bridge-report.json`）。recovery証跡3件（`materials-recovery.json`、`prefab-recovery.json`、`receipt-recovery.json`）もすべて **PASS**。元のチェック成果物・制作データは変更していない。
+
+# 2026-09-13 揺れ再生中のワールド座標キャッシュ修正
+
+揺れ再生中にメッシュ頂点を再利用して更新する経路で、描画メッシュだけが新しい位置になり、`WorldPoints`／`RenderWorldPoints`が前フレームの座標に残る問題を修正した。これにより、再生中の面選択・頂点選択・Frameの対象座標が、実際に表示しているspring出力と一致する。`SpringMeshBuffers`がavatar-local pointsからrootのワールド座標を更新し、互換spring出力の再利用経路で両キャッシュへ反映する。トポロジー・材質・Transformが変わる場合は従来どおりprojectionを再構築する。
+
+Unity 6000.4.3f1のWindows Player `Builds/SpringWorldCacheV1/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-154739-666.log`）。private一時RadDollV3 VRMを使ったAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-154803-9c4b28c5417b4ed4b41cd923de05ecc8/report.json`、画面`authoring.png`）。suiteにはVRM0/1 playback handlers、再生中の再利用メッシュ・編集点復元・GUI/MCP pause/resume/rebuild/reset/step、Save/Openでsimulationを除外する確認を含む。
+
+今回は実モデル自動suiteでの一連の再生・保存・編集経路を確認した。実マウス操作で再生中に面をクリックする手動受入、Unity Bridge／UniVRM／VRChat実機での描画・揺れ挙動は別途確認する。

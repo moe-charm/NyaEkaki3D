@@ -10,10 +10,11 @@ namespace NyaForge.UnityRuntime
         readonly Vector3[] vertices, normals;
         readonly Vector4[] tangents;
         internal readonly Vector3[] Points;
+        internal readonly Vector3[] WorldPoints;
 
         internal SpringMeshBuffers(MeshData source)
         {
-            vertices = new Vector3[source.VertexCount]; Points = new Vector3[source.VertexCount];
+            vertices = new Vector3[source.VertexCount]; Points = new Vector3[source.VertexCount]; WorldPoints = new Vector3[source.VertexCount];
             normals = new Vector3[source.Normals.Count]; tangents = new Vector4[source.Tangents.Count];
         }
 
@@ -35,6 +36,11 @@ namespace NyaForge.UnityRuntime
             if (normals.Length > 0) mesh.normals = normals; else mesh.RecalculateNormals();
             if (tangents.Length > 0) mesh.tangents = tangents;
             mesh.bounds = bounds;
+        }
+
+        internal void UpdateWorldPoints(Transform root)
+        {
+            for (int i = 0; i < Points.Length; i++) WorldPoints[i] = root.TransformPoint(Points[i]);
         }
 
         static bool Finite(Vector3 value) => !float.IsInfinity(value.x) && !float.IsInfinity(value.y) && !float.IsInfinity(value.z)

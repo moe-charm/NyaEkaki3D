@@ -14,7 +14,11 @@ namespace NyaForge.UnityRuntime
             if (current != null && ReferenceEquals(current, springProjection) && CompatibleSpringOutput(springAppearance, output))
             {
                 springBuffers.Apply(current.Mesh, output.Mesh, output.Transform);
-                current.Points = springBuffers.Points; current.MeshHash = output.Mesh.ContentHash;
+                springBuffers.UpdateWorldPoints(current.Root.transform);
+                current.Points = springBuffers.Points;
+                current.WorldPoints = springBuffers.WorldPoints;
+                current.RenderWorldPoints = springBuffers.WorldPoints;
+                current.MeshHash = output.Mesh.ContentHash;
                 springAppearance = output;
                 return;
             }
