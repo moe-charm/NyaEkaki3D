@@ -1907,3 +1907,8 @@ P2のうち、`SkinBinding.ContentHash`を追加してsource-skin表示cacheの�
 Core回帰は **479 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ed7711fa737a47f08e9273344f79148e`）。GLB node mapの実indexとVRM `licenseUrl=other`／`otherLicenseUrl`を追加検証した。Unity **6000.4.3f1**で `Builds/FeedbackFix2/NyaForge.exe`を再ビルドし、800x600 Authoring suite **PASS**（`Artifacts/Authoring-20260913-184138-af3460e8fe7d4089a66e76a55e9d4981/report.json`、画面 `authoring.png`）。
 
 実Unity SDK／実VRChat内の見た目・挙動、実マウス／DPI差、複数source skeletonの自動結合、完全VRM意味情報（texture transforms・animation等）は引き続き別受入境界とする。private素材はpublic repositoryへ追加していない。
+# 2026-09-13 real-model VRM1 output recheck after node-map fix
+
+Using private temporary input `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-RealModelSmoke\RadDollV3_VRM.vrm` with `Builds/FeedbackFix2/NyaForge.exe`, the 800x600 Authoring suite passed. The checks included command-line real GLB/VRM import, generated EditMesh and vertex edit, native Save/Open, standard skinned GLB export and reimport, then VRM 1.0 package export with metadata re-read. The output package preserved source skinned GLB topology, vertex/triangle counts, and skeleton cardinality. Evidence: `Artifacts/Authoring-20260913-184347-065d9267276c4e609d16320a0443080c/report.json` and `authoring.png`.
+
+This confirms the node-map and authored-token resolution path on the private model. VRM0 SpringBone was intentionally omitted from this VRM1 export check. Real UniVRM/VRChat runtime appearance and behavior, complete VRM extensions, automatic clothing fit/penetration repair, and manual mouse/DPI acceptance remain separate gates.
