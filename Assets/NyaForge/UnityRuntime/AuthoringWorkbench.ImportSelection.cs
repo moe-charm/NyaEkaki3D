@@ -73,7 +73,7 @@ namespace NyaForge.UnityRuntime
         void InspectModelSelection(string path)
         {
             if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("GLBファイルを選択してください。");
-            var inventory = GlbSceneInventoryReader.Read(File.ReadAllBytes(Path.GetFullPath(path)));
+            var inventory = GlbSceneInventoryReader.Read(ReadModelFile(path));
             SetModelImportChoices(inventory);
             int instanceIndex = modelImportInstanceIndex.value;
             if (instanceIndex >= 0 && instanceIndex >= inventory.Instances.Count) throw new InvalidOperationException("node instance index が範囲外です。候補を確認してください。");

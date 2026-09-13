@@ -2,6 +2,10 @@
 
 提示されたレビュー（基準 `0d1e957`）のP1/P2は、現行main（`96de87f`）の実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。
 
+# 2026-09-13 model import size preflight
+
+GLB/VRM取込の候補確認と本取込で、`File.ReadAllBytes` より前にファイル存在と128 MiB import budgetを検査する共通 `ReadModelFile` を追加した。上限超過ファイルを不要にメモリへ載せず、パス不存在も取込処理の診断へ統一する。新Player `Builds/ImportBudgetV1/NyaForge.exe` の800x600 Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-092556-4cd5f819b60e457aaad0727bf158020c/report.json`）。private一時RadDollV3 VRMの候補選択→EditMesh→native Save/Open→標準skinned GLB出力→再取込も **PASS**（`Artifacts/Authoring-20260913-092645-27e7a7c2541043f08144e248e38d4538/report.json`）。Unity **2022.3.22f1** synthetic Bridgeも両成果物で **PASS**（`Artifacts/BridgeReceiver-20260913-092629-232-47ea92d3e9ce4c9db054a917bd651be1/bridge-report.json`、`Artifacts/BridgeReceiver-20260913-092758-792-5ae5d0b2442047648736278ec2e77f7e/bridge-report.json`）。
+
 # 2026-09-13 GLB / VRM import labels
 
 取込機能はGLBとVRMの両方に対応しているため、制作画面の折りたたみ見出し、ファイル選択ボタン、graph object取込ボタンの表示を「GLB / VRM」へ統一した。内部の候補選択・保存・出力契約は変更していない。`Builds/ImportLabelV1/NyaForge.exe` の800x600 Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-092256-409e806db2ca462c875c481c54b16f22/report.json`、画面 `authoring.png`）。同じ成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-092326-908-354689949db74e6a869bb488cab0d506/bridge-report.json`）。

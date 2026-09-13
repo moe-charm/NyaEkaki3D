@@ -49,7 +49,7 @@ namespace NyaForge.UnityRuntime
         {
             if (workspace == null || (!workspace.Document.IsEmpty && workspace.Document.ActiveObject.IsStaticProfile)) throw new InvalidOperationException("GLB取り込みは空またはgraph projectで実行してください。");
             if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("GLBファイルを選択してください。");
-            var bytes = File.ReadAllBytes(Path.GetFullPath(path));
+            var bytes = ReadModelFile(path);
             VrmMetadata vrm = VrmMetadataReader.ContainsVrm(bytes) ? VrmMetadataReader.Read(bytes) : null;
             var inventory = GlbSceneInventoryReader.Read(bytes);
             int instanceIndex = SelectedModelInstanceIndex;
@@ -160,6 +160,17 @@ namespace NyaForge.UnityRuntime
         {
             try { return Path.GetDirectoryName(path); }
             catch (ArgumentException) { return null; }
+        }
+
+        /// <summary>Reject oversized model files before allocating their byte buffer.</summary>
+        static byte[] ReadModelFile(string path)
+        {
+            string fullPath = Path.GetFullPath(path);
+            var info = new FileInfo(fullPath);
+            if (!info.Exists) throw new FileNotFoundException("GLB / VRM file was not found.", fullPath);
+            if (info.Length > NyaForge.Authoring.AuthoringLimits.MaxGlbImportBytes)
+                throw new AuthoringException("BUDGET_EXCEEDED", "GLB / VRM file exceeds the 128 MiB import budget.");
+            return File.ReadAllBytes(fullPath);
         }
     }
 }
