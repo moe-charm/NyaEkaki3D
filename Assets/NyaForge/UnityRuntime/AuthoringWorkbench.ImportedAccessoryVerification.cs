@@ -6,6 +6,7 @@ using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Rig;
+using Newtonsoft.Json.Linq;
 
 namespace NyaForge.UnityRuntime
 {
@@ -122,6 +123,14 @@ namespace NyaForge.UnityRuntime
                 var glb = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId,
                     workspace.Document.DocumentRevision, glbDirectory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices());
                 Check(File.Exists(glb.Path), "Skin-bound accessory standard GLB export was not published");
+                Check(File.Exists(glb.ReportPath), "Skin-bound accessory GLB export report was not published");
+                var glbReport = JObject.Parse(File.ReadAllText(glb.ReportPath));
+                Check((string)glbReport["documentId"] == workspace.Document.DocumentId &&
+                    (long)glbReport["documentRevision"] == workspace.Document.DocumentRevision &&
+                    (string)glbReport["stateHash"] == workspace.Document.StateHash &&
+                    (string)glbReport["profile"] == GlbExportProfile.SkinnedGeometry.ToString() &&
+                    (int)glbReport["objectCount"] == workspace.Document.Objects.Count,
+                    "Skin-bound accessory GLB report did not pin the exported snapshot");
                 var exportedInventory = GlbSceneInventoryReader.Read(File.ReadAllBytes(glb.Path));
                 Check(exportedInventory.Instances.Count == 2 && exportedInventory.Instances.All(item => item.SkinIndex.HasValue),
                     "Skin-bound accessory GLB did not retain both avatar and clothing skin instances");

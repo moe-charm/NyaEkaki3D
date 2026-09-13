@@ -44,21 +44,21 @@ internal static partial class Program
             var posedGraph = changed.ReplaceNode(GraphNode.PoseNode(pose.NodeId, copiedPose));
             var posedWorkspace = AuthoringWorkspace.CreateEmpty();
             Ok(Execute(posedWorkspace, AuthoringOperation.AddGraph(posedGraph)));
-            string posedDirectory = Dir("accessory-pose-copy-native");
+            string posedDirectory = Dir("accessory-pose-copy-native-" + Guid.NewGuid().ToString("N"));
             ProjectStore.Save(posedDirectory, posedWorkspace, 0);
             var posedReopened = ProjectStore.Open(posedDirectory);
             Equal(posedWorkspace.Preview.Output.Mesh.ContentHash, posedReopened.Preview.Output.Mesh.ContentHash);
 
             var workspace = AuthoringWorkspace.CreateEmpty();
             Ok(Execute(workspace, AuthoringOperation.AddGraph(changed)));
-            string directory = Dir("accessory-skin-native");
+            string directory = Dir("accessory-skin-native-" + Guid.NewGuid().ToString("N"));
             ProjectStore.Save(directory, workspace, 0);
             var reopened = ProjectStore.Open(directory);
             var restored = reopened.Document.Objects[0].Graph;
             True(restored.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinBind));
             Equal(avatarObjectId, restored.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.PoseSource).PoseSourceObjectId);
             var glb = GlbExportService.ExportSkinned(workspace, workspace.InstanceId, workspace.Document.DocumentId,
-                workspace.Document.DocumentRevision, Dir("accessory-pose-source-glb-" + Guid.NewGuid().ToString("N")));
+                workspace.Document.DocumentRevision, System.IO.Path.Combine(Root, "accessory-pose-source-glb-" + Guid.NewGuid().ToString("N")));
             True(System.IO.File.Exists(glb.Path));
             Equal(workspace.Preview.Output.Mesh.ContentHash, reopened.Preview.Output.Mesh.ContentHash);
         });

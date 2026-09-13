@@ -1,3 +1,9 @@
+# 2026-09-13 GLB export snapshot report (final verification)
+
+標準GLB出力の同じフォルダへ `export-report.json` を原子的に同梱するようにした。レポートはversion、profile、単位・座標、document ID、document revision、state hash、対象ごとの頂点数・三角形数・submesh数・材質slot数、標準GLBで保持しないgraph／VRM metadataを記録する。GUIのステータスと外部MCPの成功レスポンスにもreportPathを返すため、GLB単体を別スナップショットの成果物と取り違えにくい。GLB本体とレポートは同一stagingから移動し、出力失敗時に中途半端な公開物を残さない。
+
+Coreは **468 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-9e9f78478bc945b6af161ff9d0a47c9c`）。静的GLB出力のレポートがdocument ID・state hash・profile・objectCountを保持すること、skin-bound衣装の標準GLBでもレポートを生成することを回帰した。Windows Player `Builds/ExportReportV3/NyaForge.exe` の800x600 Authoring suiteは **PASS、80 checks**（`Artifacts/Authoring-20260913-113941-7f5c0d76a5f846649c55f74f0d44bbbc/report.json`）で、外部MCP client→stdio sidecar→named pipe→PlayerのGLB export検証、success responseのreportPath、同一exportId再送拒否、document state不変を含む。Unity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-114329-943-c2610adafca54487be6c1717f853a994/bridge-report.json`）。reportのlimitationsにはrest pose、influence上限、graph/native metadata非埋込み、VRM extensions非出力を明記する。実VRChat受け入れ、標準VRM出力、実マウス/DPI差は引き続き別境界とする。
+
 # 2026-09-13 persist avatar pose-copy source across reopen
 
 skin-bind衣装へavatarの現在poseをコピーした後、複数avatar候補がある状態でnative projectを再読込しても同じ対象を選べるよう、graph metadata node `rig.pose-source` を追加した。PoseSourceはavatarのstable object IDだけを保持し、WorkbenchのRefresh時にattachment targetのfallbackとして使う。skin-bind時とposeコピー時に更新し、GraphBinaryCodec・Inspection・標準skinned GLB whitelistへ対応した。標準GLBはこの制作メタデータを持たないため、native project側でのみ復元する。

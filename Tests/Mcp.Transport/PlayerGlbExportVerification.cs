@@ -24,6 +24,7 @@ internal static class PlayerGlbExportVerification
         var first=await CallExport(client,export,token);
         if(!first.GetProperty("success").GetBoolean() || first.GetProperty("profile").GetString()!="StaticGeometry") throw new Exception("MCP GLB export failed: "+first);
         string path=first.GetProperty("glbPath").GetString()!; if(!File.Exists(path) || BitConverter.ToUInt32(File.ReadAllBytes(path),0)!=0x46546c67) throw new Exception("MCP GLB output is missing or invalid");
+        string report=first.GetProperty("reportPath").GetString()!; if(!File.Exists(report) || !File.ReadAllText(report).Contains(state.GetProperty("stateHash").GetString()!, StringComparison.Ordinal)) throw new Exception("MCP GLB export report is missing or does not pin state");
         var repeat=await CallExport(client,export,token);
         if(repeat.GetProperty("success").GetBoolean() || repeat.GetProperty("code").GetString()!="EXPORT_DESTINATION_EXISTS") throw new Exception("MCP GLB export replay overwrote destination");
         var after=await PlayerApplyVerification.Call(client,"forge_get_state",null,token);

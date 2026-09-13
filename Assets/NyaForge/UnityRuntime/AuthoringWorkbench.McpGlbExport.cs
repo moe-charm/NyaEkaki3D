@@ -29,7 +29,7 @@ namespace NyaForge.UnityRuntime
                     default: throw new AuthoringException("INVALID_GLB_EXPORT_REQUEST", "Unknown GLB export profile.");
                 }
                 SetStatus("AIから標準GLBを書き出しました：" + result.Path);
-                return new JObject { ["success"] = true, ["code"] = "OK", ["glbPath"] = result.Path, ["profile"] = result.Profile.ToString(), ["objectCount"] = result.ObjectCount, ["documentId"] = request.DocumentId, ["revision"] = request.ExpectedRevision, ["stateHash"] = workspace.Document.StateHash };
+                return new JObject { ["success"] = true, ["code"] = "OK", ["glbPath"] = result.Path, ["reportPath"] = result.ReportPath, ["profile"] = result.Profile.ToString(), ["objectCount"] = result.ObjectCount, ["documentId"] = request.DocumentId, ["revision"] = request.ExpectedRevision, ["stateHash"] = workspace.Document.StateHash };
             }
             catch (AuthoringException error) { return new JObject { ["success"] = false, ["code"] = error.Code, ["message"] = error.Message }; }
         }

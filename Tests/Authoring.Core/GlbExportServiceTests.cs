@@ -20,6 +20,12 @@ internal static partial class Program
             string directory = Path.Combine(Root, "glb-static-" + Guid.NewGuid().ToString("N"));
             var result = GlbExportService.ExportStatic(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory);
             True(File.Exists(result.Path)); Equal(GlbExportProfile.StaticGeometry, result.Profile); Equal(1, result.ObjectCount);
+            True(File.Exists(result.ReportPath));
+            var report = JObject.Parse(File.ReadAllText(result.ReportPath));
+            Equal(workspace.Document.DocumentId, (string)report["documentId"]!);
+            Equal(workspace.Document.StateHash, (string)report["stateHash"]!);
+            Equal("StaticGeometry", (string)report["profile"]!);
+            Equal(1, (int)report["objectCount"]!);
             var imported = GlbImporter.Read(File.ReadAllBytes(result.Path));
             Equal(workspace.Evaluate().VertexCount, imported.Mesh.VertexCount);
             Equal(workspace.Evaluate().TriangleCount, imported.Mesh.TriangleCount);

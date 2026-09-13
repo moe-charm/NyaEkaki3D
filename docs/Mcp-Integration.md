@@ -257,6 +257,6 @@ Windows-SIM03B-Capture3で実MCP client→stdio sidecar→named pipe→Playerを
 
 ## forge_export_glb（2026-09-13）
 
-- `forge_export_glb` を追加し、`static` / `skinned` / `skinned_extended` のprofileを明示して標準GLBを出力する。要求は`forge_get_state`の`saveTarget.directory`、`documentId`、`revision`、canonical GUIDの`exportId`を必要とし、出力先は`<saveTarget>/exports/glb-<exportId>/model.glb`へ固定する。
+- `forge_export_glb` を追加し、`static` / `skinned` / `skinned_extended` のprofileを明示して標準GLBを出力する。要求は`forge_get_state`の`saveTarget.directory`、`documentId`、`revision`、canonical GUIDの`exportId`を必要とし、出力先は`<saveTarget>/exports/glb-<exportId>/model.glb`へ固定する。成功レスポンスの`reportPath`には、GLBと同じdocument ID・revision・state hash・profile・対象件数と、graph／VRM metadataを保持しない境界を記録する。
 - GUIの `GlbExportService` と同じ出力serviceを使い、staticでは標準PBRと埋め込みbase-colorを保持する。skinnedではrest pose・identity transformの境界と4 influence／全weight境界を共用し、未対応texture・animation・VRM拡張を補完しない。
 - 同じexportIdの再送は既存出力先拒否となり、native documentのrevision/state hashは変更しない。外部MCP client→stdio sidecar→named pipe→Windows Playerの実通信でGLB magic、再送拒否、state不変を確認した。Player `Builds/McpGlbExportV3/NyaForge.exe`、Authoring report `Artifacts/Authoring-20260913-042411-d4ffa53ce78d430baf6b34abed2a7f72/report.json`、MCP transport buildがPASS。

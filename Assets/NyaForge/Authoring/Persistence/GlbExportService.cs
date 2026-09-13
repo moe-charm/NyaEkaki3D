@@ -15,16 +15,19 @@ namespace NyaForge.Authoring
     public sealed class GlbExportResult
     {
         public string Path { get; }
+        /// <summary>Bounded sidecar describing the exact native snapshot and profile used for this GLB.</summary>
+        public string ReportPath { get; }
         public GlbExportProfile Profile { get; }
         public int ObjectCount { get; }
-        internal GlbExportResult(string path, GlbExportProfile profile, int objectCount)
-        { Path = path; Profile = profile; ObjectCount = objectCount; }
+        internal GlbExportResult(string path, string reportPath, GlbExportProfile profile, int objectCount)
+        { Path = path; ReportPath = reportPath; Profile = profile; ObjectCount = objectCount; }
     }
 
     /// <summary>Writes standard glTF 2.0 GLB geometry without changing the native project.</summary>
     public static class GlbExportService
     {
         public const string FileName = "model.glb";
+        public const string ReportFileName = "export-report.json";
 
         public static GlbExportResult ExportStatic(AuthoringWorkspace workspace, string instance, string document, long revision, string directory)
         {
@@ -32,8 +35,9 @@ namespace NyaForge.Authoring
             lock (workspace.Gate)
             {
                 var objects = workspace.Document.Objects.Select(BuildStaticObject).ToArray();
-                string path = Write(directory, objects, (SkinnedObject[])null, GlbExportProfile.StaticGeometry);
-                return new GlbExportResult(path, GlbExportProfile.StaticGeometry, objects.Length);
+                var paths = Write(directory, objects, (SkinnedObject[])null, GlbExportProfile.StaticGeometry,
+                    workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash);
+                return new GlbExportResult(paths.GlbPath, paths.ReportPath, GlbExportProfile.StaticGeometry, objects.Length);
             }
         }
 
@@ -69,8 +73,9 @@ namespace NyaForge.Authoring
                 var skinned = workspace.Document.Objects.Select(item => BuildSkinnedObject(item, transformResolver == null ? null : transformResolver(item),
                     inverseBindMap != null && inverseBindMap.TryGetValue(item.ObjectId, out var inverseBind) ? inverseBind : null, profile)).ToArray();
                 ValidateSharedSkeleton(skinned);
-                string path = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, profile);
-                return new GlbExportResult(path, profile, skinned.Length);
+                var paths = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, profile,
+                    workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash);
+                return new GlbExportResult(paths.GlbPath, paths.ReportPath, profile, skinned.Length);
             }
         }
 
@@ -107,8 +112,9 @@ namespace NyaForge.Authoring
                 var skinned = workspace.Document.Objects.Select(item => BuildSkinnedObject(item, transformResolver == null ? null : transformResolver(item),
                     inverseBindMap != null && inverseBindMap.TryGetValue(item.ObjectId, out var inverseBind) ? inverseBind : null, GlbExportProfile.SkinnedGeometryExtended)).ToArray();
                 ValidateSharedSkeleton(skinned);
-                string path = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, GlbExportProfile.SkinnedGeometryExtended);
-                return new GlbExportResult(path, GlbExportProfile.SkinnedGeometryExtended, skinned.Length);
+                var paths = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, GlbExportProfile.SkinnedGeometryExtended,
+                    workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash);
+                return new GlbExportResult(paths.GlbPath, paths.ReportPath, GlbExportProfile.SkinnedGeometryExtended, skinned.Length);
             }
         }
 
@@ -230,7 +236,8 @@ namespace NyaForge.Authoring
         static PoseSet DefaultPose(SkeletonDefinition skeleton)
         { return PoseSet.Create(skeleton, skeleton.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head)))); }
 
-        static string Write(string directory, MeshObject[] objects, SkinnedObject[] skinned, GlbExportProfile profile)
+        static (string GlbPath, string ReportPath) Write(string directory, MeshObject[] objects, SkinnedObject[] skinned, GlbExportProfile profile,
+            string documentId, long documentRevision, string stateHash)
         {
             Checks.Require(objects != null && objects.Length > 0, "NO_EXPORTABLE_OBJECT", "No mesh objects were provided.");
             if (profile == GlbExportProfile.SkinnedGeometry || profile == GlbExportProfile.SkinnedGeometryExtended)
@@ -242,8 +249,34 @@ namespace NyaForge.Authoring
                 byte[] bytes = GlbWriter.BuildMany(objects, skinned, profile);
                 Checks.Require(bytes.Length <= AuthoringLimits.MaxGlbExportBytes, "BUDGET_EXCEEDED", "GLB output exceeds the 128 MiB budget.");
                 string path = Path.Combine(staging, FileName); File.WriteAllBytes(path, bytes);
+                string reportPath = Path.Combine(staging, ReportFileName);
+                var report = new JObject
+                {
+                    ["version"] = 1,
+                    ["profile"] = profile.ToString(),
+                    ["units"] = "meters",
+                    ["coordinates"] = Storage.Coordinates,
+                    ["documentId"] = documentId,
+                    ["documentRevision"] = documentRevision,
+                    ["stateHash"] = stateHash,
+                    ["objectCount"] = objects.Length,
+                    ["objects"] = new JArray(objects.Select(item => new JObject
+                    {
+                        ["objectId"] = item.Name,
+                        ["vertexCount"] = item.Mesh.VertexCount,
+                        ["triangleCount"] = item.Mesh.Submeshes.Sum(values => values.Length / 3),
+                        ["submeshCount"] = item.Mesh.Submeshes.Count,
+                        ["materialSlotCount"] = item.SlotMaterials?.Count ?? (item.Material == null && item.BaseColor == null ? 0 : 1)
+                    })),
+                    ["limitations"] = new JArray(profile == GlbExportProfile.StaticGeometry
+                        ? new[] { "graph and native metadata are not embedded", "VRM extensions are not emitted" }
+                        : profile == GlbExportProfile.SkinnedGeometry
+                            ? new[] { "rest pose only", "maximum four influences per vertex", "graph and native metadata are not embedded", "VRM extensions are not emitted" }
+                            : new[] { "rest pose only", "graph and native metadata are not embedded", "VRM extensions are not emitted" })
+                };
+                File.WriteAllText(reportPath, report.ToString(Newtonsoft.Json.Formatting.Indented) + "\n", new System.Text.UTF8Encoding(false));
                 string parent = Path.GetDirectoryName(directory); if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent); Directory.Move(staging, directory);
-                return Path.Combine(directory, FileName);
+                return (Path.Combine(directory, FileName), Path.Combine(directory, ReportFileName));
             }
             catch
             {

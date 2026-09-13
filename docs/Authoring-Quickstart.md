@@ -69,7 +69,7 @@ Rigを試すときは、空の制作projectでgraph上部の **＋ Rigサンプ�
 2. 制作フォルダの `exports/bake-日時-ID/mesh.nyaforge-bake.json` が入口です。同じフォルダの `blobs/` も一緒に保持してください。
 3. 受け取り側UnityへCoreと[Unity Bridge](../UnityBridge/README.md)を入れ、出力manifestを読み込みます。
 
-標準GLBは出力プロファイルを分けています。**標準GLB（表示形状）** は評価済みの見た目だけ、**標準GLB（skin/morph保持）** はrest pose・identity transform・4 influenceの骨とPOSITION/NORMAL/TANGENT morph、**拡張GLB（全weight保持）** は最大32 influenceを全JOINTS_n/WEIGHTS_n setで出力します。skin系はいずれもトポロジー不変のEditMesh頂点編集を保持しますが、任意poseや非ゼロmorph変形は拒否します。GLB/VRMの入出力予算は128 MiB・1 mesh 200,000頂点で、native保存の16 MiB blob予算とは別です。
+標準GLBは出力プロファイルを分けています。**標準GLB（表示形状）** は評価済みの見た目だけ、**標準GLB（skin/morph保持）** はrest pose・identity transform・4 influenceの骨とPOSITION/NORMAL/TANGENT morph、**拡張GLB（全weight保持）** は最大32 influenceを全JOINTS_n/WEIGHTS_n setで出力します。skin系はいずれもトポロジー不変のEditMesh頂点編集を保持しますが、任意poseや非ゼロmorph変形は拒否します。各GLBフォルダには同じdocument ID・revision・state hash・profile・対象メッシュ件数を記録した `export-report.json` も生成されるため、出力がどの制作スナップショットから作られたか確認できます。レポートには標準GLBで保持しないgraph／VRM metadataも明記します。GLB/VRMの入出力予算は128 MiB・1 mesh 200,000頂点で、native保存の16 MiB blob予算とは別です。
 
 出力対象は1つのstatic meshです。頂点、UV0、法線、接線、submeshと単位を保持し、Bridgeがメートル座標へ一度だけ変換してMesh/Material/Prefabを作ります。現在は法線と接線を保持する方針なので、大きい頂点編集後の陰影品質は別途調整が必要です。
 

@@ -60,7 +60,8 @@ namespace NyaForge.UnityRuntime
                             if(glbExport)
                             {
                                 var glbs=Directory.GetFiles(Path.Combine(projectPath.value,"exports"),"model.glb",SearchOption.AllDirectories);
-                                if(glbs.Length!=1 || BitConverter.ToUInt32(File.ReadAllBytes(glbs[0]),0)!=0x46546c67) failure="MCP GLB export missing or invalid";
+                                var reports=Directory.GetFiles(Path.Combine(projectPath.value,"exports"),"export-report.json",SearchOption.AllDirectories);
+                                if(glbs.Length!=1 || BitConverter.ToUInt32(File.ReadAllBytes(glbs[0]),0)!=0x46546c67 || reports.Length!=1 || !File.ReadAllText(reports[0]).Contains(workspace.Document.StateHash,StringComparison.Ordinal)) failure="MCP GLB export or pinned report is missing or invalid";
                             }
                             else if(!create && !secondary)
                             {

@@ -169,21 +169,21 @@ namespace NyaForge.UnityRuntime
         {
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-static-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
             var result = GlbExportService.ExportStatic(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory);
-            SetStatus("標準GLB（表示形状）を書き出しました: " + result.Path);
+            SetStatus("標準GLB（表示形状）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
         });
 
         void ExportGlbSkinned() => Try(() =>
         {
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
             var result = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices());
-            SetStatus("標準GLB（skin/morph保持）を書き出しました: " + result.Path);
+            SetStatus("標準GLB（skin/morph保持）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
         });
 
         void ExportGlbSkinnedExtended() => Try(() =>
         {
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-extended-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
             var result = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices());
-            SetStatus("拡張GLB（全weight保持）を書き出しました: " + result.Path);
+            SetStatus("拡張GLB（全weight保持）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
         });
 
         IReadOnlyDictionary<string, SourceAffine> SkinnedInstanceTransforms()
