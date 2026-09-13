@@ -1750,3 +1750,10 @@ Core回帰も **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/N
 Windows Player `Builds/LegacySessionGuardV2/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-160144-681.log`）。private一時RadDollV3 VRMを使った単体＋全mesh Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-160206-0372f66742b643aab57caf219ea6fe84/report.json`、画面`authoring.png`）。候補選択、複数mesh取込、graph-keyed metadata、native Save/Open、skin／extended GLB出力、VRM0/1 playback lifecycleを含む既存回帰を通過した。Coreも **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-fa8ff7533c224346bbdf9b8e398def7d`）。
 
 この検証は自動Player／Coreの証跡であり、legacy sidecarを意図的に複数graphへ混在させた手動fixture、実マウス・DPI差、UniVRM／VRChat受取、実VRChat内の見た目・PhysBones挙動は別受入境界とする。
+# 2026-09-13 取込metadataの原子commit
+
+取込候補の検証後にgraphを先に追加し、その後metadata codecが失敗すると対象だけ残る可能性を閉じた。単体／全mesh取込とも、rig・expression・Spring・secondary-motion・GLB diagnosticsを次状態のattachmentへ事前にシリアライズし、`ProjectAttachments`を構築してからAddGraph commandを実行する。codec・予算・hash検査で失敗した場合は文書、attachment、session辞書、Undo履歴を変更しない。成功後だけruntime session辞書とworkspace attachmentを公開する。
+
+Coreは **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-164ca8b20e1b46919318228bbab20ed2`）。Unity 6000.4.3f1のWindows Player `Builds/ImportAtomicV1/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-160853-398.log`）。private一時RadDollV3 VRMの単体＋全mesh Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-160919-4fff40e348e744e19ff68e3529e966f0/report.json`、画面`authoring.png`）。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-161135-894-38ef39ad8ded4282b5a0f5945d6795e2/bridge-report.json`）。
+
+codec失敗を意図的に注入する破損fixture、実マウス・DPI差、UniVRM／VRChat受取、実VRChat内の外観・PhysBones挙動は別受入境界とする。
