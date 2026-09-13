@@ -170,6 +170,12 @@ I04-Eのreport設計はAと同時に進め、完全取込の公開にはA〜Eの
 
 `GlbExportService` はnative制作データを変更せず、明示的な3 profileで標準glTF 2.0 GLBを生成する。
 
+### 静的GLBの表示形状（2026-09-13）
+
+`StaticGeometry` は、skinned sourceを取り込んだgraph objectについても、Workbenchの最終表示と同じsource-skin補正済みメッシュを出力する。補正には現在評価された`SkinBind`のweightを使い、取込時の古いbindingを再利用しない。したがって、頂点編集やweight編集を行った後も、画面の表示形状と「標準GLB（表示形状）」のgeometryが一致する。
+
+材質slotを持つmeshでは、各primitiveが参照する頂点だけへ局所リマップするため、再読込後の頂点数は元の共有頂点数と異なる場合がある。受入判定は頂点配列の件数ではなく、submeshごとの三角形数と頂点座標を比較する。skin・骨・morphを保持する必要がある場合は、`SkinnedGeometry`またはnative project exportを使う。
+
 GLB/VRMの入出力にはnative blobと分離した128 MiBファイル予算と、1 mesh 200,000頂点の共通予算を適用する。native graph/blobの16 MiB予算を広げる変更ではない。予算超過は出力先を作成せず診断する。
 
 | profile | 保持する情報 | 境界 |

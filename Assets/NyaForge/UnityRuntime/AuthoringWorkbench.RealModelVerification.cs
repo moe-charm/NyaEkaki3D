@@ -68,6 +68,34 @@ namespace NyaForge.UnityRuntime
                 Check(exportedImages > 0, "Real model skinned GLB output lost embedded base-color images.");
                 checks.Add("standard skinned GLB output retains embedded base-color images");
             }
+            var expectedStatic = SourceSkinDisplayValue(workspace.Preview.Evaluation, workspace.Document.ActiveObject.Graph) ?? workspace.Preview.Evaluation.Output;
+            string staticGlb = Path.Combine(project, "exports", "real-model-static");
+            var staticExport = GlbExportService.ExportStaticWithOverrides(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, staticGlb, StaticDisplayMeshesForExport());
+            var staticImported = GlbImporter.Read(File.ReadAllBytes(staticExport.Path));
+            Check(expectedStatic != null && expectedStatic.Mesh != null && staticImported.Mesh.TriangleCount == expectedStatic.Mesh.TriangleCount,
+                "Real model static GLB output changed the display mesh topology.");
+            // Material-slot export may compact each primitive to the vertices it
+            // actually references. Compare the emitted triangle positions in
+            // primitive order instead of requiring the original shared vertex
+            // domain to survive byte-for-byte.
+            float maxPositionDelta = 0f;
+            Check(staticImported.Mesh.Submeshes.Count == expectedStatic.Mesh.Submeshes.Count,
+                "Real model static GLB output changed the display mesh submesh layout.");
+            for (int submesh = 0; submesh < expectedStatic.Mesh.Submeshes.Count; submesh++)
+            {
+                var expectedIndices = expectedStatic.Mesh.Submeshes[submesh];
+                var actualIndices = staticImported.Mesh.Submeshes[submesh];
+                Check(actualIndices.Length == expectedIndices.Length,
+                    "Real model static GLB output changed a display mesh primitive.");
+                for (int index = 0; index < expectedIndices.Length; index++)
+                {
+                    var a = expectedStatic.Mesh.Positions[expectedIndices[index]];
+                    var b = staticImported.Mesh.Positions[actualIndices[index]];
+                    maxPositionDelta = Math.Max(maxPositionDelta, Math.Max(Math.Abs(a.X - b.X), Math.Max(Math.Abs(a.Y - b.Y), Math.Abs(a.Z - b.Z))));
+                }
+            }
+            Check(maxPositionDelta <= 1e-5f, "Real model static GLB output did not match the display-corrected vertex positions (max delta " + maxPositionDelta.ToString("R", System.Globalization.CultureInfo.InvariantCulture) + ").");
+            checks.Add("standard static GLB output matches the source-skin display mesh");
             checks.Add("real GLB/VRM command-line import: candidate selection, generated EditMesh, vertex edit, native Save/Open, standard skinned GLB output and reimport cardinality");
             // Return the verifier to a freshly persisted empty project so the
             // following fixture suite starts with a clean command history and

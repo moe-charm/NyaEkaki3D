@@ -21,7 +21,7 @@ namespace NyaForge.UnityRuntime
                 switch (request.Profile)
                 {
                     case GlbExportProfile.StaticGeometry:
-                        result = GlbExportService.ExportStatic(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory); break;
+                        result = GlbExportService.ExportStaticWithOverrides(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory, StaticDisplayMeshesForExport()); break;
                     case GlbExportProfile.SkinnedGeometry:
                         result = GlbExportService.ExportSkinnedWithTransforms(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms()); break;
                     case GlbExportProfile.SkinnedGeometryExtended:

@@ -30,11 +30,21 @@ namespace NyaForge.Authoring
         public const string ReportFileName = "export-report.json";
 
         public static GlbExportResult ExportStatic(AuthoringWorkspace workspace, string instance, string document, long revision, string directory)
+            => ExportStaticWithOverrides(workspace, instance, document, revision, directory, null);
+
+        /// <summary>Writes static geometry while allowing the Workbench to supply its display-corrected mesh per object.</summary>
+        public static GlbExportResult ExportStaticWithOverrides(AuthoringWorkspace workspace, string instance, string document, long revision, string directory,
+            IReadOnlyDictionary<string, GraphMeshValue> meshOverrides)
         {
             ValidateRequest(workspace, instance, document, revision, directory);
             lock (workspace.Gate)
             {
-                var objects = workspace.Document.Objects.Select(BuildStaticObject).ToArray();
+                var objects = workspace.Document.Objects.Select(item =>
+                {
+                    GraphMeshValue overrideValue = null;
+                    if (meshOverrides != null) meshOverrides.TryGetValue(item.ObjectId, out overrideValue);
+                    return BuildStaticObject(item, overrideValue);
+                }).ToArray();
                 var paths = Write(directory, objects, (SkinnedObject[])null, GlbExportProfile.StaticGeometry,
                     workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash);
                 return new GlbExportResult(paths.GlbPath, paths.ReportPath, GlbExportProfile.StaticGeometry, objects.Length);
@@ -179,13 +189,15 @@ namespace NyaForge.Authoring
             public IReadOnlyList<SourceAffine> JointLocalTransforms;
         }
 
-        static MeshObject BuildStaticObject(AuthoringObject item)
+        static MeshObject BuildStaticObject(AuthoringObject item, GraphMeshValue meshOverride = null)
         {
             var evaluation = item.EvaluateGraph();
             Checks.Require(evaluation.IsComplete && evaluation.Output != null && evaluation.Output.Mesh != null,
                 "GRAPH_INCOMPLETE", "Static GLB export requires a complete renderable graph.");
-            return new MeshObject { Mesh = evaluation.Output.Mesh, Transform = evaluation.Output.Transform, Name = item.ObjectId,
-                Material = evaluation.Output.Material, BaseColor = evaluation.Output.BaseColor, SlotMaterials = evaluation.Output.SlotMaterials };
+            var output = meshOverride ?? evaluation.Output;
+            Checks.Require(output.Mesh != null, "GRAPH_INCOMPLETE", "Static GLB export requires a complete renderable graph.");
+            return new MeshObject { Mesh = output.Mesh, Transform = output.Transform, Name = item.ObjectId,
+                Material = output.Material, BaseColor = output.BaseColor, SlotMaterials = output.SlotMaterials };
         }
 
         static SkinnedObject BuildSkinnedObject(AuthoringObject item, SourceAffine instanceWorldTransform, IReadOnlyList<SourceAffine> inverseBindMatrices, IReadOnlyList<SourceAffine> jointLocalTransforms, GlbExportProfile profile)

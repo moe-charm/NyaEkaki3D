@@ -1670,3 +1670,10 @@ public repositoryへ素材を追加せず、`C:/Users/tomoaki/AppData/Local/Temp
 Core **474 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-854a809c2f964cc992be0c79f5e296f9`）。Unity 6000.4.3f1の最終Player `Builds/Vrm1RealFinal/NyaForge.exe` はビルド成功（`Logs/build-player-20260913-150428-392.log`）。実モデルのVRM1付きAuthoring suiteは `Builds/Vrm1RealV6/NyaForge.exe` で **PASS**（`Artifacts/Authoring-20260913-150125-27e7a01df65a458bbfee2ed5eec5fd18/report.json`、VRM出力を含む85 checks）。
 
 これはVRM1パッケージの実モデル自動確認であり、UniVRM／VRChat SDKへの受け取り、実VRChat内の見た目・SpringBone挙動、material bind・LookAt・FirstPerson・MToon・animation・任意拡張の完全出力、実マウス／DPI差の受入ではない。
+# 2026-09-13 静的GLB表示形状の整合性修正
+
+レビューで指摘された「表示形状の静的GLBが表示と違う」経路を修正した。Workbenchの静的GLB出力とMCP静的GLB出力へ、source skin表示補正済みのgraph meshをobject単位で渡す`ExportStaticWithOverrides`を追加し、現在のSkinBind weightを使ってsource palette補正を再計算する。これにより、取込後の頂点編集・weight編集を含む最終表示形状を静的GLBへ反映する。材質slot出力はprimitiveごとに参照頂点を局所リマップするため、再読込時の共有頂点数が変わる場合を許容し、実モデル検証ではsubmeshごとの三角形座標を比較する。
+
+Coreは **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-61489347c8a14bda811fa7cce7e2e1e6`）。`static GLB export accepts a display-corrected mesh override` 回帰を追加した。Windows Player `Builds/StaticDisplayV3/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-151801-205.log`）。private一時RadDollV3 VRMで、候補取込→EditMesh頂点編集→native Save/Open→標準skinned GLB再取込に加え、静的GLBの表示補正済み三角形座標照合まで含むAuthoring suiteが **PASS**（`Artifacts/Authoring-20260913-151822-e69b71eec5214ac9a17d65808cdb916b/report.json`、画面`authoring.png`）。
+
+今回の自動確認はCoreとWindows PlayerのCPU／GLB往復であり、実マウス・DPI差、UniVRM／VRChat SDK受け取り、実VRChat内の外観・挙動は別の手動受入境界として残す。private素材はpublic repositoryへ追加していない。

@@ -33,6 +33,22 @@ internal static partial class Program
             Equal(workspace.Evaluate().Positions[0].X, imported.Mesh.Positions[0].X);
         });
 
+        Test("static GLB export accepts a display-corrected mesh override", () =>
+        {
+            var workspace = AuthoringWorkspace.CreateFixture();
+            var evaluated = GraphEvaluator.Evaluate(workspace.Document.ActiveObject.Graph).Output;
+            var positions = evaluated.Mesh.Positions.ToArray();
+            positions[0] = new Vec3(0.375f, positions[0].Y, positions[0].Z);
+            var corrected = evaluated.WithMesh(evaluated.Mesh.WithPositions(positions));
+            string directory = Path.Combine(Root, "glb-static-override-" + Guid.NewGuid().ToString("N"));
+            var result = GlbExportService.ExportStaticWithOverrides(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory,
+                new Dictionary<string, GraphMeshValue>(StringComparer.Ordinal) { [workspace.Document.ActiveObject.ObjectId] = corrected });
+            var imported = GlbImporter.Read(File.ReadAllBytes(result.Path));
+            Equal(corrected.Mesh.VertexCount, imported.Mesh.VertexCount);
+            Equal(corrected.Mesh.TriangleCount, imported.Mesh.TriangleCount);
+            Equal(0.375f, imported.Mesh.Positions[0].X);
+        });
+
         Test("GLB export validates the observed revision before creating output", () =>
         {
             var workspace = AuthoringWorkspace.CreateFixture();

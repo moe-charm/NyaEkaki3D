@@ -172,9 +172,30 @@ namespace NyaForge.UnityRuntime
         void ExportGlbStatic() => Try(() =>
         {
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-static-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            var result = GlbExportService.ExportStatic(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory);
+            var result = GlbExportService.ExportStaticWithOverrides(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, StaticDisplayMeshesForExport());
             SetStatus("標準GLB（表示形状）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
         });
+
+        IReadOnlyDictionary<string, GraphMeshValue> StaticDisplayMeshesForExport()
+        {
+            var result = new Dictionary<string, GraphMeshValue>(StringComparer.Ordinal);
+            if (workspace?.Document?.Objects == null) return result;
+            foreach (var item in workspace.Document.Objects)
+            {
+                if (item?.Graph == null || !importedRigSessions.TryGetValue(item.Graph.GraphId, out var session) || session?.SourceSkin == null)
+                    continue;
+                var evaluation = item == workspace.Document.ActiveObject ? workspace.Preview.Evaluation : item.EvaluateGraph();
+                try
+                {
+                    var bindingNode = item.Graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);
+                    var authoredBinding = bindingNode != null && evaluation.SkinBindingOutputs.TryGetValue(bindingNode.NodeId, out var bindingValue) ? bindingValue.Binding : bindingNode?.Binding;
+                    var corrected = SourceSkinGraphAdapter.ApplyToEvaluation(evaluation, item.Graph, session, authoredBinding);
+                    if (corrected?.Mesh != null) result[item.ObjectId] = corrected;
+                }
+                catch (AuthoringException) { }
+            }
+            return result;
+        }
 
         void ExportGlbSkinned() => Try(() =>
         {
