@@ -34,7 +34,7 @@
 - SDK probe証拠: `private/PhysBonesSdkProbe-20260914/sdk-probe-report.json`（`status: verified`）。private project・SDK DLL・private avatar素材は公開しない。
 - RadDollV3 Unity import probe: `private/PhysBonesSdkProbe-20260914/avatar-import-report2.json`（20 `SkinnedMeshRenderer`、279 transforms、renderer bone参照3420件、共通root `Hips`）。
 - RadDollV3実chain PhysBone probe: `private/PhysBonesSdkProbe-20260914/avatar-physbone-report.json`（`Skirt_B_1_1.L`→`Skirt_B_1_2.L`へ実`VRCPhysBone`設定済み）。衣装package適用、実scene全chain、Build & Test、実VRChatは未受入。
-- RadDollV3実衣装package probe: `private/PhysBonesSdkProbe-20260914/avatar-clothing-report.json`（低ポリカフ136頂点を`skinned-clothing-v1`として出力・読込し、`lower_arm.L`へ適用、rootBone／ownership marker確認）。再適用、保存／再読込、fit・貫通、Build & Test、実VRChatは未受入。
+- RadDollV3実衣装package probe: `private/PhysBonesSdkProbe-20260914/avatar-clothing-reapply-report.json`（低ポリカフ136頂点を`skinned-clothing-v1`として出力・読込し、`lower_arm.L`へ初回適用・再適用、Renderer数21、rootBone／ownership marker／binding更新確認）。native保存／再読込、fit・貫通、Build & Test、実VRChatは未受入。
 
 ## 使い方
 
