@@ -1,3 +1,6 @@
+# 2026-09-13 PhysBones SDK availability probe
+
+`Tools/Test-NyaForgePhysBonesSdk.ps1 -UnityProjectPath .`を読み取り専用で実行した。現行NyaForge Unity projectには`com.vrchat.*` dependencyとVRChat PhysBones componentファイルがなく、statusは`unavailable`。レポートは`Artifacts/PhysBonesSdkProbe-20260913.json`へ保存した。NyaForge自身のfixture／BridgeをSDK検出と誤認せず、実SDK受け取りはSDK導入後に再実行する境界を確認した。合成Bridgeとpublic Playerの動作は既存証拠を維持する。
 # 2026-09-13 GLB resource reader Player acceptance
 
 Windows Player `Builds/ResourceReadbackV1/NyaForge.exe`へ、出力後resource readbackを接続した版をビルド。通常Authoring suiteは **PASS / 82 checks**（`Artifacts/Authoring-20260913-205314-2f2e356e7262431b9caa43b1092df3f1/report.json`）で、標準GLB／skin出力の公開前再読込を含む既存導線を確認した。`-GlbExportMcp` suiteも **PASS / 82 checks**（`Artifacts/Authoring-20260913-205221-82004a3fb3534061ac7cce0657f3c04c/report.json`）で、MCP responseの`validation.glbResourceReaders=passed`を確認した。Unity **2022.3.22f1** Bridgeは **PASS**（`Artifacts/BridgeReceiver-20260913-205352-266-729bed7bb7184a7197c940242d0824fc/bridge-report.json`）。
