@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09: semantic textureのUV1適用停止
+
+Windows v1のGLB出力契約はUV0のみなのに、Workbenchのsemantic texture GUIだけがUV1を受け付けて後段出力で停止する経路を閉じた。UV1を選んだ新規normal／metallic-roughness画像の適用は`UNSUPPORTED_UV_SET`で無変更のまま拒否し、UV0へ戻した場合だけ適用できる。ヘルプ、Quickstart、開発計画、Player回帰の説明も同じ契約へ同期した。
+
+`Builds/ReleaseCandidateV3/NyaForge.exe`（Unity 6000.4.3f1）のAuthoring suiteは **PASS**（`Artifacts/Authoring-20260914-054918-f6707a4e6e0a4207acbf908a996b233b/report.json`）。回帰にはUV1拒否、UV0適用、normal/MRのnative Save/Open、scalar変更時のmap保持を含む。private RadDollV3の実取込・Save/Open・GLB／VRM1・衣装package生成とUnity 2022.3.22f1 Bridge受け取りも **PASS**（Player `Artifacts/Authoring-20260914-054956-1bd71cc231014a6cb0356b9491660687/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-055236-691-1e00049fdd234b74ab2bace7f7211042/bridge-report.json`）。GPUでの実材質画素比較、実EditorWindowのマウス／DPI、実VRChat表示は未受入として残る。
+
 ## 2026-09-14 feedback再照合: 9855d43 → 515183a
 
 提示された衣装受け取り・材質処理レビューを現行`main`へ再照合した。P1（移動avatarへの配置、更新時ownership参照、UV1欠落）とP2（sparse material slot、MR係数、Cuff winding、sampler共有、適用前／削除後の割当読込）は、後続実装と回帰で解消済みであるため、本番コードの重複修正は行っていない。詳細は[現行HEAD再照合](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-515183a.md)へ固定した。

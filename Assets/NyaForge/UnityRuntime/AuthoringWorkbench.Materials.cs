@@ -97,7 +97,7 @@ namespace NyaForge.UnityRuntime
         {
             semanticTexturePanel = new Foldout { text = "Normal / metallic-roughness画像", value = false, name = "semantic-texture-controls" };
             var panel = semanticTexturePanel;
-            var help = new Label("PNG/JPEGを選ぶと画像bytesを作品へ取り込み、PBRプレビューへ反映します。MRはglTFのB=metallic / G=roughnessです。");
+            var help = new Label("PNG/JPEGを選ぶと画像bytesを作品へ取り込み、PBRプレビューへ反映します。MRはglTFのB=metallic / G=roughnessです。Windows v1の書き出しはUV0のみ対応します。UV1は適用前にUV0へ戻してください。");
             help.style.whiteSpace = WhiteSpace.Normal; panel.Add(help);
             semanticTextureTexCoord = new DropdownField("UV", new List<string> { "UV0", "UV1" }, 0) { name = "semantic-texture-texcoord" }; panel.Add(semanticTextureTexCoord);
             normalTextureScale = new FloatField("Normal scale") { value = 1f, name = "semantic-normal-scale" }; panel.Add(normalTextureScale);
@@ -116,6 +116,7 @@ namespace NyaForge.UnityRuntime
             string path = semantic == MaterialTextureSemantic.Normal ? normalTexturePath.value : metallicRoughnessTexturePath.value;
             byte[] bytes = ReadSemanticTextureBytes(path, out string mimeType);
             int texCoord = semanticTextureTexCoord.index == 1 ? 1 : 0;
+            Checks.Require(texCoord == 0, "UNSUPPORTED_UV_SET", "Windows v1のsemantic textureはUV0のみ対応します。UV1は書き出せないため、UV0を選んでください。");
             MaterialTextureSlot slot = new MaterialTextureSlot(semantic, bytes, mimeType, texCoord,
                 semantic == MaterialTextureSemantic.Normal ? normalTextureScale.value : 1f);
             var existing = loadedMaterial.Textures;

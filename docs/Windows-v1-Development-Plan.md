@@ -2,7 +2,7 @@
 
 更新: 2026-09-14。検証対象コード: `main`（NF-V1-03B allowlist実装済み）。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership marker・複数package管理・semantic texture preview・納品対象allowlistの実装が進んでいる。Downloads版原案の再確認結果は[current_task](../current_task.md)へ記録した。
 
-本書は持込「NyaForge Windows v1 開発計画」をコード照合して修正した実行計画。受入済み報告ではない。製品全体の目標・C0〜C5の要件は[設計v2](NyaForge-Authoring-Design2.md)を維持し、本書はWindows衣装制作v1へ至る着手順を定める。v1だけの合格を製品全体や進行中goalの完了へ読み替えない。直近の状態は[current_task](../current_task.md)。現行main（`515183a`）ではCore 501 passed / 0 failed、`Builds/ReleaseCandidateV2/NyaForge.exe`のAuthoring suite、private RadDollV3全mesh import／Save/Open／GLB・VRM1 smoke、実SDKのRadDollV3 Skirt chain PhysBone設定probe、実FBXへのskinned-clothing package初回・再適用・native roundtrip smoke、実body meshを使ったsurface fit／weight transfer接続probe、semantic textureを含む合成Unity Bridgeの衣装package回帰、明示納品対象allowlistのGUI／MCP／GLB subsetとSave/Open回帰まで確認済みで、通常GLBのTEXCOORD_1は`UNSUPPORTED_UV_SET`で明示停止する。範囲限定fitの平均値は選択頂点数を分母にし、`EvaluatedVertexCount`として検査記録へ出す。実マウス・実EditorWindow・全周fit／貫通・見た目・Build & Test・実VRChatは未受入である。
+本書は持込「NyaForge Windows v1 開発計画」をコード照合して修正した実行計画。受入済み報告ではない。製品全体の目標・C0〜C5の要件は[設計v2](NyaForge-Authoring-Design2.md)を維持し、本書はWindows衣装制作v1へ至る着手順を定める。v1だけの合格を製品全体や進行中goalの完了へ読み替えない。直近の状態は[current_task](../current_task.md)。現行main（`c5f2dd2`）ではCore 501 passed / 0 failed、`Builds/ReleaseCandidateV3/NyaForge.exe`のAuthoring suite、private RadDollV3全mesh import／Save/Open／GLB・VRM1 smoke、実SDKのRadDollV3 Skirt chain PhysBone設定probe、実FBXへのskinned-clothing package初回・再適用・native roundtrip smoke、実body meshを使ったsurface fit／weight transfer接続probe、semantic textureを含む合成Unity Bridgeの衣装package回帰、明示納品対象allowlistのGUI／MCP／GLB subsetとSave/Open回帰まで確認済みで、通常GLBのTEXCOORD_1は`UNSUPPORTED_UV_SET`で明示停止する。semantic textureのGUIもUV1新規適用を拒否し、UV0へ戻してから保存・出力する契約を持つ。範囲限定fitの平均値は選択頂点数を分母にし、`EvaluatedVertexCount`として検査記録へ出す。実マウス・実EditorWindow・全周fit／貫通・見た目・Build & Test・実VRChatは未受入である。
 
 実RadDollV3 VRMの取込・編集・保存・GLB/VRM出力と、制御fixture衣装のpackage生成・Unity Bridge受け取りをまとめて確認する再実行入口は `Tools/Test-NyaForgeRealClothing.ps1`。package出力自体の証拠はcurrent_taskへ分けて記録し、実RadDollV3へ新規衣装を全周fitして見た目と貫通を受け入れる作業は別工程として残す。手動工程は [Windows v1 手動受入チェック](Windows-v1-Manual-Acceptance.md) に固定する。
 
@@ -30,7 +30,7 @@
 | 材質・解像度 | [ImportMaterials](../Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ImportMaterials.cs)はbase colorを縮小してPaintへ所有保存。[PaintImage](../Assets/NyaForge/Authoring/Paint/PaintImage.cs)は最大1024px | base colorの縮小契約とsemantic mapの画像所有・出力品質を09Aで受入。未対応の画像slotは明示する |
 | semantic texture | `MaterialTextureSlot`がnormal／metallic-roughnessのchannel・色空間・UV set・sampler・bytesを保持し、GLB writer/readerへ接続。材質GUIは既存mapをscalar変更時に保持し、Explorer/パスからの画像取込、契約表示、Windows PBR previewへnormal／MRを接続 | Coreのnative/GLB回帰、Player GUI取込・Save/Open・scalar保持、shader preview接続まで実装済み。Windows v1のsemantic mapはUV0を出荷対象とし、UV1は取込／出力時に`UNSUPPORTED_UV_SET`で明示停止する。semantic map付き単体Material Bakeは拒否しGLB/graphへ分ける。実RadDollV3 sceneのtangent/外観、出力一致、occlusion/emissive、実VRChatは外部受入・後続範囲 |
 | SDK検証 | [互換記録](PhysBones-SDK-Compatibility.md)とprivate probeにSDK 3.7.6の実component生成・写像・非対応値拒否の証拠あり。Authoring本体へSDKを同梱しない設計は維持 | 「実SDKを一度も試していない」は解消。実アバターscene、Build & Test、実VRChat受入は別途必要 |
-| 既存回帰 | 現行mainのCore496件、Playerのprivate RadDollV3往復、semantic textureを含む合成Unity Bridgeのpackage受入記録あり | 既存証拠は実マウス・実VRChatの成功を意味しない。変更箇所と外部受入を別に記録する |
+| 既存回帰 | 現行mainのCore501件、Playerのprivate RadDollV3往復、semantic textureを含む合成Unity Bridgeのpackage受入記録あり | 既存証拠は実マウス・実VRChatの成功を意味しない。変更箇所と外部受入を別に記録する |
 | 共有・更新基盤 | [共有方針](Shared-Resource-Policy.md)、BridgeのImportOwnership・UpdateJournal・PrefabManagedBindings | 同一target複数nodeと管理asset更新基盤を再利用。全mesh結合や全journalの新設は不要 |
 
 ## 3. v1の成果物と境界
@@ -59,7 +59,7 @@ NF-V1のIDは持込提案との対応用に維持。状態は実装済み・合�
 | NF-V1-06 | 範囲を指定するfit/weight | 03の座標/対象契約 | 衣装の選択頂点、元body面領域、距離を共通候補として使う。Workbenchのavatar面ID・衣装頂点ID入力、衣装頂点選択の取込、ビューポートavatar面raycastをfit／weightへ接続済み。fit測定は最近面のsigned clearanceによる裏側候補数・距離・頂点IDもGUI／MCPへ返す。範囲外は無変更、未選択頂点・weightを保持。これは三角形交差・貫通ゼロの証明ではなく、薄い表裏・袖/胴体・遠方の負例は実アバター手動受入へ残る。候補/未対応点/移動量を確認して確定 |
 | NF-V1-07 | 衣装検査GUIと参照保護 | 05、06 | rest編集/pose確認、bodyと衣装の表示、参照ロック、既存weight修正、固定pose群をGUIへ接続。参照object保護のnative保存・Open復元・Undo/Redo同期と頂点編集停止はPlayer回帰済み。実EditorWindowの手動操作、実アバターの全周fit・貫通・見た目は別受入として残す。新ブラシは一周で必要性が判明したものに限定 |
 | NF-V1-08 | 自作衣装1点の全工程 | 03A、07。外部判定は02A | `PolygonPrimitives.Cuff`で低ポリ手首カフのprimitive→造形→UV/paint→確定→weight→保存再開→Unity→VRChatを手順だけで再現。Player自動経路は確認済み、実アバター・実VRChat・販売品質は未受入 |
-| NF-V1-09 | 材質semantic slot設計 | 03 | 既存材質を拡張し、用途・色空間・channel・UV・sampler・adapter版を定義。Unity shader固有名はadapter。全面IR置換なし |
+| NF-V1-09 | 材質semantic slot設計 | 03 | 既存材質を拡張し、用途・色空間・channel・UV・sampler・adapter版を定義。Windows v1はUV0を出荷対象とし、GUIもUV1の新規適用を拒否する。Unity shader固有名はadapter。全面IR置換なし |
 | NF-V1-09A | 画像解像度・所有・出力品質 | 09 | 入力/作業/出力解像度とhashを表示・保存・reportへ。原本画像と縮小previewの分離を設計し、未編集原本保持/編集後出力の規則とメモリ予算を確定。元画像を失った既存projectから原画復元を装わない |
 | NF-V1-10 | normal/MR画像の一周 | 09、09A、03Aのshader決定 | 衣装の画像指定・プレビュー・native・出力・receiverで一致。normal方向/tangent、MRのG=roughness/B=metallic、linear値とsRGB色、alphaを検証。専用paint/AO/emissive/bakeは追加しない |
 | NF-V1-11 | 同一targetの複数object受入 | 03A、08、10 | 衣装2点＋小物1点を独立nodeで受取。同名骨/順序違い/別source負例。物理的mesh結合やdedupを必須にしない |
