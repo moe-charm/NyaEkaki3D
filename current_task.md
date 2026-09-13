@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09S: Unity Bridge更新クラッシュ後の復旧確認
+
+実衣装packageを含む直近Authoring成果物からUnity 2022.3.22f1のBridge receiverを作成し、materials／prefab／receipt更新の途中でプロセスを停止した後、別Unityプロセスで復旧するスイートを再実行した。**3経路すべてPASS**（receiver `Artifacts/BridgeReceiver-20260914-084825-088-5f7612902ab44ba68df4bdb8bc3edb8f`、`materials-recovery.json`／`prefab-recovery.json`／`receipt-recovery.json`）。途中checkpointのPID・phase一致、復旧後のbytes／meta復元、再試行成功を確認した。
+
+これはBridgeのowned asset更新を対象とする自動クラッシュ復旧であり、Nya Ekaki 3D本体の実EditorWindow強制終了、実VRChat Build & Test、別Windows環境での復旧を証明しない。private SDK・アバター素材はpublicへ追加していない。
+
 ## 2026-09-14 NF-V1-09R: 現行候補Playerの通常起動・ナビゲーション再確認
 
 現行候補 `Builds/PerformanceV30/NyaForge.exe` を標準fixture付きで通常起動し、1280×800のWindows Playerナビゲーション回帰を再実行した。**PASS**（`Artifacts/Navigation-20260914-084753-296013c54cbd4e36a6eed014577dbea7/report.json`）。pack選択、キャンセル保持、名前付きsession保存、dirty切替、壊れたpath保持、fresh packの既定表示、saved session復元、utility panelの折りたたみ、authoring入口、viewport領域を確認した。画像証跡は同ディレクトリの`main.png`／`sets.png`／`settings.png`。
