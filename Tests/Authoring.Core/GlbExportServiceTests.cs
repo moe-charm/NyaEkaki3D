@@ -422,6 +422,27 @@ internal static partial class Program
             True(normalBytes.SequenceEqual(imported.NormalTexture.CopyImageBytes())); True(metallicRoughnessBytes.SequenceEqual(imported.MetallicRoughnessTexture.CopyImageBytes()));
         });
 
+        Test("GLB export keeps sampler variants separate for a shared image", () =>
+        {
+            var mesh = AuthoringFixtures.Panel(1);
+            var bytes = PaintPng.Encode(new PaintImage(2, 1, new Rgba32(32, 128, 200, 255)));
+            var repeat = new MaterialTextureSampler(10497, 10497, 9987, 9729);
+            var clamp = new MaterialTextureSampler(33071, 33071, 9984, 9728);
+            var textures = new MaterialTextureSet(
+                new MaterialTextureSlot(MaterialTextureSemantic.Normal, bytes, "image/png", 0, 1f, repeat),
+                new MaterialTextureSlot(MaterialTextureSemantic.MetallicRoughness, bytes, "image/png", 0, 1f, clamp));
+            var parameters = new MaterialParameters(new Vec4(1, 1, 1, 1), .4f, .6f, new Vec3(), MaterialAlphaMode.Opaque, .5f, textures);
+            var glb = GlbWriter.Build(new[] { new GlbExportService.MeshObject { Mesh = mesh, Material = new GraphMaterialValue(parameters, null), Name = "sampler-variants" } }, null, GlbExportProfile.StaticGeometry);
+            var json = JObject.Parse(ReadJsonChunk(glb));
+            Equal(2, ((JArray)json["images"]!).Count);
+            Equal(2, ((JArray)json["textures"]!).Count);
+            Equal(2, ((JArray)json["samplers"]!).Count);
+            var material = (JObject)((JArray)json["materials"]!)[0]!;
+            int normalTexture = (int)material["normalTexture"]!["index"]!;
+            int mrTexture = (int)material["pbrMetallicRoughness"]!["metallicRoughnessTexture"]!["index"]!;
+            True(normalTexture != mrTexture);
+        });
+
         Test("VRM 1 package adds explicit humanoid metadata without changing GLB geometry", () =>
         {
             var mesh = AuthoringFixtures.Panel(1); var morph = MorphTarget.Create(mesh, GraphId(), "Happy", new[] { new MorphDelta(0, new Vec3(.01f, 0, 0)) });

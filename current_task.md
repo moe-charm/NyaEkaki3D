@@ -51,6 +51,8 @@ semantic textureはUV1のメッシュ保持が未実装のため、Windows v1の
 
 Workbenchのavatar表面weight初期化も、画面の`surface fit最大距離`を共有するbounded overloadへ接続した。衣装頂点が選択avatar表面から設定距離を超える場合は`WEIGHT_TRANSFER_DISTANCE`で文書を変更せず停止する。Unity Bridgeの変形avatar fixture（translation／90度rotation／scale）とMR scalar factor確認を含む検証を再実行し、Unity **2022.3.22f1** Bridge **passed**（`Artifacts/BridgeReceiver-20260914-013009-259-2321928ff3e44410beecb4d8d3abf222/bridge-report.json`）。変更は `cd9f139` としてorigin/mainへpush済み。
 
+sampler共有の回帰も追加し、同一画像bytesをRepeat／Clampで使うnormal／MR slotがGLB出力で別texture・別samplerとして保持されることを確認した。Coreは **494 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4c6a1a78819344e5b62b82cf8f4390ac`）。
+
 ## 2026-09-13 NF-V1-09/10 semantic texture contract
 
 `MaterialTextureSlot`／`MaterialTextureSet`を追加し、normal／metallic-roughness画像について、semantic、PNG/JPEG bytes、色空間（linear）、channel契約、UV set、normal scale、glTF samplerをtyped payloadとして保持するようにした。GLB取込は埋め込み画像と安全なローカル相対URIを解決し、native graph binaryは画像をblobとして所有してSave/Openする。GLB出力はnormalTextureとmetallicRoughnessTexture、samplerを再生成し、Coreで画像bytes・channel前提・sampler・native roundtripを確認した。通常のMaterial Bakeはこの情報を落とさないよう事前拒否する。
