@@ -40,6 +40,12 @@ GUI/MCP共通command（13）と保存・復旧（14）は各実装と同時に�
 
 この順序なら、環境待ちの外部検査を正直にBLOCKEDとして保持しつつ、現在の編集基盤を使って制作一周へ進める。v1の出荷判定はNF-V1-15/16まで完了するまで行わない。
 
+## 2026-09-13 現行Playerのprivate RadDollV3回帰
+
+`Builds/ClothingOwnershipV1/NyaForge.exe`へprivate一時RadDollV3 VRMを指定し、全mesh取込→EditMesh頂点編集→native Save/Open→標準skinned GLB／VRM出力まで再実行した。**91 checks PASS**（`Artifacts/Authoring-20260913-225717-54b8d7c9f0bc4ed8a7fa5c93574b5656/report.json`、画面 `authoring.png`）。同じPlayer reportと衣装packageをUnity **2022.3.22f1** Bridgeへ渡し、package／receiver／ownership／削除参照回帰も **PASS**（`Artifacts/BridgeReceiver-20260913-230018-288-e08b8d8aba4a41f99f34f6a0cd2f34b1/bridge-report.json`）。
+
+これは最新コードのファイル経路と合成Bridgeの証拠で、EditorWindowの実マウス操作、Undoで削除を復元する実scene、実VRChat SDK／Build & Test／他者視点の受入を完了扱いしない。private素材はpublic repositoryへ追加していない。
+
 ## 2026-09-13 NF-V1-03A 最小Unity skin衣装receiver
 
 `UnityBridge/Editor/SkinnedClothingReceiver.cs`を追加した。Coreの`MeshData`、`RestTransform`、`SkeletonDefinition`、`SkinBinding`を受け取り、指定した`avatarRoot`の子へ`SkinnedMeshRenderer`を一原子操作で生成する。頂点はrest transformを一度だけ適用してavatar root localへ変換し、bindposeは`bone.worldToLocalMatrix * avatarRoot.localToWorldMatrix`で作る。BoneId→Transformの完全な明示mapを要求し、階層外の骨、欠落map、binding不整合、material slot不一致を生成前に拒否する。Unity v1の`BoneWeight`へ黙って切り詰めず、5以上のinfluenceは`SKIN_INFLUENCES_UNSUPPORTED`で停止する。失敗時は生成したGameObject、Mesh、temporary Materialを片付け、成功時はUndoへ登録する。単一mesh/skin GLB向けの`ApplyGlb` convenienceも追加した。
