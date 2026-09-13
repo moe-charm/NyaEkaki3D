@@ -74,6 +74,7 @@ internal static partial class Program
             Near(.025f, measured.MaxDisplacement);
             Near(measured.MaxProjectionDistance, measured.AverageProjectionDistance);
             Near(measured.MaxDisplacement, measured.AverageDisplacement);
+            Equal(clothing.VertexCount, measured.EvaluatedVertexCount);
             var legacy = MeshSurfaceFit.ProjectPositions(clothing, new RestTransform(1, new Vec3(0, 0, .02f)),
                 avatar, new RestTransform(1, new Vec3()), .005f, .1f);
             True(fitted.SequenceEqual(legacy));
@@ -146,6 +147,18 @@ internal static partial class Program
                 partialWeights.Weights[2].Count == 1 && partialWeights.Weights[2][0].BoneId == root &&
                 Math.Abs(partialWeights.Weights[2][0].Weight - 1f) < 1e-6f))
                 throw new Exception("Surface weight transfer did not preserve an unselected clothing vertex");
+
+            var variedClothing = new MeshData(
+                new[] { new Vec3(.02f, .02f, .02f), new Vec3(.04f, .02f, .04f), new Vec3(.02f, .04f, .08f) },
+                Enumerable.Repeat(new Vec3(0, 0, 1), 3).ToArray(),
+                Enumerable.Repeat(new Vec4(1, 0, 0, 1), 3).ToArray(),
+                new[] { new Vec2(0, 0), new Vec2(1, 0), new Vec2(0, 1) },
+                new[] { new[] { 0, 1, 2 } });
+            var selectedFit = MeshSurfaceFit.Project(variedClothing, new RestTransform(1, new Vec3()),
+                avatar, new RestTransform(1, new Vec3()), 0f, .5f, new[] { 0, 2 }, null);
+            Equal(2, selectedFit.EvaluatedVertexCount);
+            Near(.05f, selectedFit.AverageProjectionDistance);
+            Near(.05f, selectedFit.AverageDisplacement);
         });
 
         Test("static accessory can become a root-initialized avatar skin graph", () =>

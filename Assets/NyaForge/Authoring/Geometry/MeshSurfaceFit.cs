@@ -17,9 +17,12 @@ namespace NyaForge.Authoring.Geometry
         public float MaxDisplacement { get; }
         /// <summary>Mean world-space displacement caused by the fit, in metres.</summary>
         public float AverageDisplacement { get; }
+        /// <summary>Number of clothing vertices evaluated by this fit.</summary>
+        public int EvaluatedVertexCount { get; }
 
         internal MeshSurfaceFitResult(Vec3[] positions, int movedVertexCount, float maxProjectionDistance,
-            float averageProjectionDistance, float maxDisplacement, float averageDisplacement)
+            float averageProjectionDistance, float maxDisplacement, float averageDisplacement,
+            int evaluatedVertexCount)
         {
             Positions = positions ?? throw new ArgumentNullException(nameof(positions));
             MovedVertexCount = movedVertexCount;
@@ -27,6 +30,7 @@ namespace NyaForge.Authoring.Geometry
             AverageProjectionDistance = averageProjectionDistance;
             MaxDisplacement = maxDisplacement;
             AverageDisplacement = averageDisplacement;
+            EvaluatedVertexCount = evaluatedVertexCount;
         }
     }
 
@@ -75,6 +79,7 @@ namespace NyaForge.Authoring.Geometry
             var projection = new MeshSurfaceProjection(avatarMesh, avatarTransform, avatarTriangleIndices);
             var result = new Vec3[clothingMesh.VertexCount];
             int moved = 0;
+            int evaluated = 0;
             double projectionDistanceTotal = 0d, displacementTotal = 0d;
             float maxProjectionDistance = 0f, maxDisplacement = 0f;
             for (int vertex = 0; vertex < clothingMesh.VertexCount; vertex++)
@@ -85,6 +90,7 @@ namespace NyaForge.Authoring.Geometry
                     continue;
                 }
                 Vec3 worldPoint = clothingTransform.ToAvatarPoint(clothingMesh.Positions[vertex]);
+                evaluated++;
                 MeshSurfaceHit hit = projection.FindClosest(worldPoint);
                 double projectionDistanceSquared = hit.DistanceSquared;
                 Checks.Require(projectionDistanceSquared <= (double)maxDistance * maxDistance,
@@ -108,10 +114,10 @@ namespace NyaForge.Authoring.Geometry
                 displacementTotal += displacementLength;
                 if (displacementLength > 1e-7f) moved++;
             }
-            float count = clothingMesh.VertexCount;
+            float count = evaluated;
             return new MeshSurfaceFitResult(result, moved, maxProjectionDistance,
                 count == 0 ? 0f : (float)(projectionDistanceTotal / count), maxDisplacement,
-                count == 0 ? 0f : (float)(displacementTotal / count));
+                count == 0 ? 0f : (float)(displacementTotal / count), evaluated);
         }
 
         public static Vec3[] ProjectPositions(

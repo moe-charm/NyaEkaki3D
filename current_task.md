@@ -18,6 +18,8 @@ Workbenchの衣装表面処理へ`avatar面ID（カンマ区切り・空欄=全�
 
 最新のavatar面選択overlay版PlayerをBridgeへ渡し、Unity **2022.3.22f1**のreceiver verification **15 checks PASS**を確認した。skinned clothingの変形avatar local/world配置、ownership cleanup、複数package管理、semantic normal／MR変換を再回帰した。証拠は`Artifacts/BridgeReceiver-20260914-024250-790-c36011a940cf4582bc68b98879a5e807/bridge-report.json`。Bridge合格は合成fixture受入であり、実RadDollV3全周fit・貫通・見た目・VRChat内表示を含まない。
 
+範囲限定fitの検査値を修正した。`MeshSurfaceFitResult`が`EvaluatedVertexCount`を持ち、衣装頂点を一部選択した場合も平均投影距離・平均移動量を評価対象だけで割る。Coreは **496 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-71e6fe78f2374cec9bdf5dcab47aa0e3`）。これでfit結果の表示値が未選択頂点数に薄められず、範囲限定操作の確認記録へ使える。実アバター全周の貫通判定・見た目受入は別途必要である。
+
 レビューで挙がった `9855d43` 系のP1/P2を現行mainへ再照合した。対象は衣装受け取りの座標、割当保存、UV1、疎なmaterial slot、MR係数、カフ面向き、sampler共有、削除済み衣装の割当読込である。
 
 次の項目は現行実装と回帰で確認済みで、同じ修正を重ねて行わない。
