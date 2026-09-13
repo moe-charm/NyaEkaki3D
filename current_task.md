@@ -1,3 +1,9 @@
+# 2026-09-13 private RadDollV3 real-model recheck
+
+private一時フォルダに置いたRadDollV3のVRMを、Windows Player `Builds/LegacyMigrationV1/NyaForge.exe`へコマンドライン指定して、実モデルの取込→編集用メッシュ生成→頂点編集→native Save/Open→標準skinned GLB出力・再取込まで確認した。suiteは **86 checks PASS**（`Artifacts/Authoring-20260913-195054-b6babce0d79e4d9bba30bf86eac229cb/report.json`、画面 `authoring.png`）。privateモデル自体はリポジトリへ追加していない。
+
+この結果は実モデルのファイル経路が通ることの確認であり、実マウス／DPI差、実VRChat内の見た目・PhysBones、全アバターの自動フィット品質は別受入境界として残す。
+
 # 2026-09-13 review feedback recheck: 4fcd0fd
 
 # 2026-09-13 legacy sidecar migration acceptance
