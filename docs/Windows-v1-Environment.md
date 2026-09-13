@@ -1,6 +1,6 @@
 # Windows v1 検証環境マニフェスト
 
-記録日: 2026-09-14。検証対象コード: `main` `200872b`。直近Core証拠の実行対象commitは同commit。これは出荷環境の保証ではなく、同じ検証を再実行するための基準である。
+記録日: 2026-09-14。検証対象コード: `main` `0a54311`。直近Core証拠の実行対象commitは同commit。これは出荷環境の保証ではなく、同じ検証を再実行するための基準である。
 
 ## 現在固定できているもの
 
@@ -20,7 +20,7 @@
 
 ## fixtureと証拠
 
-- Core: `dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj`。検証対象mainで **505 passed / 0 failed**（最新artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-bb8fe25bca8746b6b5b2529ec239e427`、GLB材質・衣装ownership・JPEG原画像MIME・bytes保持回帰を含む）。最新package fixtureはpublic repositoryへ置かず、一時artifactへ出力する。
+- Core: `dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj`。検証対象mainで **506 passed / 0 failed**（最新artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-d95cc0756d7f4197b67fd9d3ac7f0e7e`、Cuffの幾何winding／normal一致、GLB材質・衣装ownership・JPEG原画像MIME・bytes保持回帰を含む）。最新package fixtureはpublic repositoryへ置かず、一時artifactへ出力する。
 - Navigation: V24 `1280x800`の通常ビューワー入口回帰は`Artifacts/Navigation-20260914-074515-633035562ad14daeac53226ed8626bff/report.json`でPASS。
 - Windows Player: `Builds/ReleaseCandidateV10/NyaForge.exe`で確認したprivate一時RadDollV3 VRMの全mesh取込→EditMesh→native Save/Open→標準skinned GLB／VRM出力、semantic texture、原画像source inspection、未編集base-color原画像再出力の証拠は従来artifactを参照する。高DPI UI回帰は`Builds/ReleaseCandidateV28/NyaForge.exe`、実RadDollV3一周スモークは`Builds/ReleaseCandidateV23/NyaForge.exe`で追加確認した。Player reportは`Artifacts/Authoring-20260914-071904-d5dacd0d18284842a6f1ed2868f3c07d/report.json`、Unity Bridge 16 checksは`Artifacts/BridgeReceiver-20260914-072421-931-2f5e73fbea2d4c288580e5fc6d654b80/bridge-report.json`、高DPI画面証跡は`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-manual-v28-1080.png`である。
 - Unity Bridge: 上記Player reportと衣装packageを使った合成receiver回帰。`Artifacts/BridgeReceiver-20260914-063802-587-d17638bb920544bcb4192f9ef4b84e43/bridge-report.json`（PASS）。packageのBoneId、bindpose、材質、ownership、semantic map適用を含む。
