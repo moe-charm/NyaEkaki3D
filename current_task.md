@@ -1,5 +1,15 @@
 # 2026-09-13 review feedback recheck: 4fcd0fd
 
+# 2026-09-13 pasted review recheck: c4a2748 -> 267a734
+
+今回のレビュー（基準 `c4a2748`）を現行HEAD `267a734`へ再照合した。指摘されたP1の3件は、先行実装と追加回帰で閉じた。
+
+- VRMのhumanoid／expression／Spring node参照は、GLB生成時の`GlbExportNodeMap`を`VrmExportService`が解決して実nodeへ変換する。骨名が異なる15本のhumanoidを、BoneId順と著者順をずらしたfixtureで出力し、各humanBones nodeが同名の実nodeを指す回帰を追加した。
+- 複数skinはstable `BoneId`とBoneId単位のinverse-bind／joint local対応を使い、skinごとに順序が`[Root, Child]`／`[Child, Root]`でもJOINTSが正しい骨名へ対応する回帰を追加した。同一rest定義は一つのskin resourceを共有する。
+- 旧形式のexpression／Spring sidecarは、単一graphまたはgraphId付きlegacy rigでだけ割当て、複数graphで曖昧な場合は未割当のまま通知する。旧VRM Aへ通常GLB Bを追加して保存する経路はgraph単位tableへ移行する既存実装を正とし、混線を成功扱いにしない。
+
+Coreは **485 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-80d67a19fece437b83c5a7c4907c28bf`）。追加回帰は実node参照と骨順入替えを含む。Windows Player／実VRChat内での最終見た目、実マウス／DPI、旧形式実ファイルの手動操作は別受入境界として残す。
+
 提示されたレビュー（基準commit `4fcd0fd`）を現行HEAD `c4a2748`へ再照合した。P1の4件は現行mainで修正済みで、重複修正は行わない。
 
 - 複数モデル保存／再読込のmetadata混線: `ProjectActions.OpenProject`がgraph IDごとのrig／expression／Springを解決・検証してからworkspaceを置換する。旧single-session形式で割当先が曖昧な場合は未割当として停止し、混線を成功扱いにしない。

@@ -456,6 +456,72 @@ internal static partial class Program
             True(!Directory.Exists(rejected));
         });
 
+        Test("VRM 1 export resolves authored humanoid tokens to the emitted node map", () =>
+        {
+            // Keep the authored order deliberately different from BoneId order
+            // and use distinct bone names for every required humanoid entry.
+            var names = VrmExportMetadata.RequiredHumanBones.Reverse().ToArray();
+            var bones = names.Select((name, index) => new BoneDefinition(
+                (index + 1).ToString("00000000-0000-0000-0000-000000000000"), name, "",
+                new Vec3(index * .01f, 0, 0), new Vec3(index * .01f, .05f, 0))).ToArray();
+            var skeleton = new SkeletonDefinition(bones);
+            var mesh = AuthoringFixtures.Panel(1);
+            string sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), outputId = GraphId();
+            var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount)
+                .Select(i => new SkinBinding.VertexWeightInput(i, bones[0].BoneId, 1f)));
+            var pose = PoseSet.Create(skeleton, bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head))));
+            var graph = new AuthoringGraph(GraphId(),
+                new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
+            var workspace = AuthoringWorkspace.CreateEmpty(); Ok(Execute(workspace, AuthoringOperation.AddGraph(graph)));
+            var authoredTokens = names.Select((name, index) => new { name, index }).ToDictionary(item => item.name, item => item.index + 1, StringComparer.Ordinal);
+            var metadata = new VrmExportMetadata("Node mapped avatar", new[] { "NyaForge" }, "https://example.com/license", authoredTokens, usesAuthoredNodeTokens: true);
+            string directory = Path.Combine(Root, "vrm-node-map-" + Guid.NewGuid().ToString("N"));
+            var result = VrmExportService.ExportVrm1(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, metadata);
+            var root = JObject.Parse(ReadJsonChunk(File.ReadAllBytes(result.Path)));
+            var nodes = (JArray)root["nodes"]!;
+            var humanBones = (JObject)root["extensions"]!["VRMC_vrm"]!["humanoid"]!["humanBones"]!;
+            foreach (var name in names)
+            {
+                int node = (int)humanBones[name]!["node"]!;
+                Equal(name, (string)((JObject)nodes[node])!["name"]!);
+            }
+        });
+
+        Test("skinned GLB export keeps shared skin weights correct when authored bone order differs", () =>
+        {
+            string rootId = "00000000-0000-0000-0000-000000000001";
+            string childId = "00000000-0000-0000-0000-000000000002";
+            var rootBone = new BoneDefinition(rootId, "Root", "", new Vec3(), new Vec3(0, .1f, 0));
+            var childBone = new BoneDefinition(childId, "Child", rootId, new Vec3(0, .1f, 0), new Vec3(0, .2f, 0));
+            var firstSkeleton = new SkeletonDefinition(new[] { rootBone, childBone });
+            var secondSkeleton = new SkeletonDefinition(new[] { childBone, rootBone });
+            AuthoringGraph BuildGraph(MeshData mesh, SkeletonDefinition rig, string weightedBone)
+            {
+                string sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), outputId = GraphId();
+                var binding = SkinBinding.Create(mesh, rig, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, weightedBone, 1f)));
+                var pose = PoseSet.Create(rig, rig.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head))));
+                return new AuthoringGraph(GraphId(),
+                    new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, rig), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                    new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
+            }
+            var workspace = AuthoringWorkspace.CreateEmpty();
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(BuildGraph(AuthoringFixtures.Panel(1), firstSkeleton, rootId))));
+            string firstObjectId = workspace.Document.ActiveObject.ObjectId;
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(BuildGraph(PrimitiveGeometry.Plane(.2f, .1f), secondSkeleton, childId))));
+            string secondObjectId = workspace.Document.ActiveObject.ObjectId;
+            string directory = Path.Combine(Root, "glb-skinned-reordered-bones-" + Guid.NewGuid().ToString("N"));
+            var result = GlbExportService.ExportSkinnedExtended(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory);
+            var bytes = File.ReadAllBytes(result.Path); var json = JObject.Parse(ReadJsonChunk(bytes));
+            Equal(1, ((JArray)json["skins"]!).Count);
+            var nodes = (JArray)json["nodes"]!;
+            int MeshIndex(string objectId) => (int)((JObject)nodes[result.NodeMap.MeshNodes[objectId]])!["mesh"]!;
+            var importedFirst = GlbSkinImporter.Read(bytes, MeshIndex(firstObjectId), 0);
+            var importedSecond = GlbSkinImporter.Read(bytes, MeshIndex(secondObjectId), 0);
+            Equal("Root", importedFirst.Skeleton.ById[importedFirst.Binding.Weights[0].Single().BoneId].Name);
+            Equal("Child", importedSecond.Skeleton.ById[importedSecond.Binding.Weights[0].Single().BoneId].Name);
+        });
+
         Test("MCP GLB export request is revision pinned and profile strict", () =>
         {
             string instance = Guid.NewGuid().ToString("D"), document = Guid.NewGuid().ToString("D"), export = Guid.NewGuid().ToString("D");
