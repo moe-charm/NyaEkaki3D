@@ -150,6 +150,10 @@ namespace NyaForge.Authoring.Import
             Checks.Require(primitive != null, "INVALID_IMPORT", "GLB primitive is invalid.");
             Checks.Require(primitive["mode"] == null || Int(primitive, "mode", 4, 4) == 4, "UNSUPPORTED_FORMAT", "Only triangle primitives are supported.");
             var attributes = (JObject)primitive["attributes"]; Checks.Require(attributes != null, "INVALID_IMPORT", "GLB primitive attributes are required.");
+            // Windows v1 retains only TEXCOORD_0. Refuse an otherwise valid
+            // TEXCOORD_1 input instead of silently dropping the second UV set
+            // and producing a mesh whose material may sample the wrong data.
+            Checks.Require(attributes["TEXCOORD_1"] == null, "UNSUPPORTED_UV_SET", "GLB TEXCOORD_1 is not supported in Windows v1; use TEXCOORD_0 or remove the extra UV set.");
             Checks.Require(attributes["JOINTS_0"] == null && attributes["WEIGHTS_0"] == null, "UNSUPPORTED_FORMAT", "Skin attributes are not imported yet.");
             int positionAccessor = AccessorId(attributes, "POSITION"); var positions = Vec3Accessor(accessors, views, bin, positionAccessor, "position");
             var normals = OptionalVec3(attributes, "NORMAL", accessors, views, bin, positions.Length, "normal");

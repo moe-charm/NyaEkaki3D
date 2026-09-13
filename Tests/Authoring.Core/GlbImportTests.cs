@@ -43,6 +43,29 @@ internal static partial class Program
             var selected = GlbImporter.Read(bytes, 1); var first = GlbImporter.Read(bytes, 0); Equal(1, selected.MeshIndex); Equal("AccessorySmile", selected.Morphs.Targets[0].Name); True(first.Morphs.Targets[0].TargetId != selected.Morphs.Targets[0].TargetId); Equal(ChecksHashForTest(bytes), selected.SourceHash);
             Expect("INVALID_IMPORT", () => GlbImporter.Read(bytes, -1)); Expect("INVALID_IMPORT", () => GlbImporter.Read(bytes, 2));
         });
+        Test("GLB importer rejects an unretained TEXCOORD_1 set", () =>
+        {
+            var source = BuildGlb(); var root = JObject.Parse(ReadJsonChunk(source)); var bin = ReadBinChunk(source);
+            int offset = bin.Length;
+            using (var extra = new MemoryStream()) using (var writer = new BinaryWriter(extra))
+            {
+                for (int i = 0; i < 4; i++) { writer.Write(i == 1 || i == 2 ? 1f : 0f); writer.Write(i >= 2 ? 1f : 0f); }
+                var combined = bin.Concat(extra.ToArray()).ToArray();
+                ((JObject)root["buffers"]![0]!)!["byteLength"] = combined.Length;
+                ((JArray)root["bufferViews"]!).Add(new JObject { ["buffer"] = 0, ["byteOffset"] = offset, ["byteLength"] = extra.Length });
+                ((JArray)root["accessors"]!).Add(new JObject { ["bufferView"] = ((JArray)root["bufferViews"]!).Count - 1, ["componentType"] = 5126, ["count"] = 4, ["type"] = "VEC2" });
+                var primitive = (JObject)((JArray)((JObject)((JArray)root["meshes"]!)[0]!) ["primitives"]!)[0]!;
+                ((JObject)primitive["attributes"]!)["TEXCOORD_1"] = ((JArray)root["accessors"]!).Count - 1;
+                var bytes = BuildGlbContainer(Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), combined);
+                Expect("UNSUPPORTED_UV_SET", () => GlbImporter.Read(bytes));
+                // The same contract applies when the selected mesh is skinned:
+                // the skin importer routes geometry through this static adapter.
+                root["skins"] = new JArray(new JObject { ["joints"] = new JArray(0) });
+                root["nodes"] = new JArray(new JObject { ["mesh"] = 0, ["skin"] = 0 });
+                var skinned = BuildGlbContainer(Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), combined);
+                Expect("UNSUPPORTED_UV_SET", () => GlbSkinImporter.Read(skinned, 0, 0));
+            }
+        });
         Test("GLB importer applies a selected node affine frame to geometry and morphs", () =>
         {
             var root = JObject.Parse(ReadJsonChunk(BuildGlb()));

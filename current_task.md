@@ -2,6 +2,10 @@
 
 ## 2026-09-14 FeedbackFixV5 レビュー照合
 
+通常GLBのUV1欠落を黙って許さない契約を追加した。`GlbImporter.ReadPrimitive`は`TEXCOORD_1`入力を`UNSUPPORTED_UV_SET`で拒否し、skinned importerも同じ静的形状経路を通るため同じ結果になる。Core回帰を追加し、UV0のみをWindows v1出荷範囲とすることをREADMEへ明記した。Coreは **496 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-da3659c1953a4c0991cd05296c52ef23`）。
+
+この変更を含むWindows Playerを`Builds/WindowsV1Uv1/NyaForge.exe`へ別出力し、Authoring suiteを **83 checks PASS**した。Unity **6000.4.3f1**、GPU NVIDIA GeForce RTX 4090。証拠は`Artifacts/Authoring-20260914-022032-05bcf10ef0bb4ea08953cc45436bf119/report.json` と `authoring.png`。Player受入は通常GLBのUV1停止契約を含む自動経路の確認であり、実マウス・実RadDollV3全周fit・VRChat内表示とは別である。
+
 レビューで挙がった `9855d43` 系のP1/P2を現行mainへ再照合した。対象は衣装受け取りの座標、割当保存、UV1、疎なmaterial slot、MR係数、カフ面向き、sampler共有、削除済み衣装の割当読込である。
 
 次の項目は現行実装と回帰で確認済みで、同じ修正を重ねて行わない。
@@ -10,9 +14,9 @@
 |---|---|---|
 | avatar移動後の衣装配置 | avatar-local座標を保持し、receiver rootへ一度だけ親子付け | 変形avatarのUnity Bridge fixture |
 | 衣装更新時の割当参照 | Bone割当の再利用と生成object所有をObjectIdで分離 | `MatchesAssignment`、更新・削除・再適用回帰 |
-| UV1の欠落 | Windows v1はUV0契約。UV1 semantic slotは書込み前に`UNSUPPORTED_UV_SET`で停止 | Core import/export回帰 |
+| UV1の欠落 | Windows v1はUV0契約。通常GLB／UV1 semantic slotとも`UNSUPPORTED_UV_SET`で停止し、黙って破棄しない | Core import/export回帰 |
 | sparse material slot | 使用submeshだけをslot mapへ残し、slot番号と入力portを保持 | Core sparse slot GLB roundtrip |
-| MR係数・sampler・カフ winding | shader係数、sampler hash、quad windingを修正 | Core 495件、Player/Bridge fixture |
+| MR係数・sampler・カフ winding | shader係数、sampler hash、quad windingを修正 | Core 496件、Player/Bridge fixture |
 | 適用前・削除後の割当読込 | 生成objectの存在とassignment identityを分離 | Unity Bridge binding回帰 |
 
 残る受入境界は、実RadDollV3 sceneでの衣装表面fit／surface weight転送、実EditorWindowのマウス操作とDPI、fit後の貫通・見た目、VRChat Build & Test／実機表示である。これらはCoreや合成Bridgeの合格へ読み替えず、`NF-V1-03A`、`NF-V1-04〜08`、`NF-V1-10`の手動受入カードとして扱う。次は実アバターのbody rendererを基準にしたfit／weight測定をprivate probeへ追加し、公開リポジトリにはSDK・素材・private sceneを入れず証拠だけを記録する。
@@ -33,7 +37,7 @@ ChatGPT Proの持込Windows v1案を現行mainへ照合し、[採用修正版](d
 
 原案からの実務上の修正は採用修正版へ反映済みである。NF-V1-02を02A/02Bへ分割し、衣装package/receiver（03A）をG1へ前倒しし、実SDK・実VRChat・実マウスをCore/Player/合成Bridgeと混同しない。12週間・週20〜25時間は見積りの仮定として採用せず、最小受け渡しと一着の実測後に見直す。
 
-semantic normal/MRは現行実装で一周したため、ここから先はAO/emissive・全shader・FBX/BLEND・完全VRM・Quest/macOSを増やさず、NF-V1-01/03の受け取り環境とNF-V1-04〜08のカフ一着手動完走を優先する。実SDK probe済みの範囲と、実アバター／実VRChatでまだ受入していない範囲を分け、Core 495件PASSや合成Bridge PASSを実VRChat合格へ読み替えない。
+semantic normal/MRは現行実装で一周したため、ここから先はAO/emissive・全shader・FBX/BLEND・完全VRM・Quest/macOSを増やさず、NF-V1-01/03の受け取り環境とNF-V1-04〜08のカフ一着手動完走を優先する。実SDK probe済みの範囲と、実アバター／実VRChatでまだ受入していない範囲を分け、Core 496件PASSや合成Bridge PASSを実VRChat合格へ読み替えない。
 
 ## 2026-09-14 実VRChat SDK probe
 
