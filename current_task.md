@@ -1816,3 +1816,7 @@ Windows Player `Builds/StateIdentityV1/NyaForge.exe` のRadDollV3全mesh Authori
 # 2026-09-13 PhysBones SDK受け取りpreflight
 
 実VRChat SDKをまだ導入していないWindows環境でも、受け取り先Unity projectの依存とPhysBone候補を先に確認できる読み取り専用`Tools/Test-NyaForgePhysBonesSdk.ps1`を追加した。target manifestの`ComponentTypeName`、`com.vrchat.*`依存、Unity-owned source/package locations内のPhysBone候補ファイルをJSONへ記録する。候補検出は型形状の完全一致や実component生成を保証せず、Unity Bridgeの事前診断と実SDK／実アバター受入へ明示的につなぐ。`-RequireSdk`で候補不足をCI上の失敗として扱える。
+
+候補ファイルの検索条件は`VRCPhysBone`／`VRCSDK`／`VRChat`へ限定し、NyaForge自身の`PhysBones` fixtureやbridge markerをSDK実体と誤認しないようにした。
+
+合成Unity project（`com.vrchat.base`＋`Assets/VRCPhysBone.cs`）では`candidate_found`、実Bridge receiverでは`unavailable`を返すことを確認した。実行中にPowerShell組み込みの`$Matches`と衝突する変数名も修正済みで、候補リスト生成が正常に完了する。

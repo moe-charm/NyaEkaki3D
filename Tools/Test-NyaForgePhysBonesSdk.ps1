@@ -58,23 +58,23 @@ if ($TargetManifestPath) {
 }
 
 # Search only Unity-owned source/package locations. This is a read-only probe;
-# it never imports packages or edits the project. File names are retained in the
-# report so a missing SDK is distinguishable from a type-shape mismatch later.
+# it never imports packages or edits the project. Use VRChat-specific names so
+# NyaForge's own PhysBones fixture/bridge files cannot count as an SDK signal.
 $searchRoots = @(
     (Join-Path $project 'Assets'),
     (Join-Path $project 'Packages'),
     (Join-Path $project 'Library\PackageCache')
 ) | Where-Object { Test-Path -LiteralPath $_ -PathType Container }
-$matches = New-Object System.Collections.Generic.List[string]
+$componentFiles = New-Object System.Collections.Generic.List[string]
 foreach ($root in $searchRoots) {
     $files = Get-ChildItem -LiteralPath $root -Recurse -File -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -match 'VRCPhysBone|PhysBone' } |
+        Where-Object { $_.Name -match 'VRCPhysBone|VRCSDK|VRChat' } |
         Select-Object -First 64
     foreach ($file in $files) {
-        $matches.Add($file.FullName.Substring($project.Length).TrimStart('\', '/'))
+        $componentFiles.Add($file.FullName.Substring($project.Length).TrimStart('\', '/'))
     }
 }
-$report.componentMatches = @($matches | Sort-Object -Unique)
+$report.componentMatches = @($componentFiles | Sort-Object -Unique)
 
 if ($report.status -eq 'unavailable' -and $report.sdkPackageIds.Count -gt 0 -and $report.componentMatches.Count -gt 0) {
     $report.status = 'candidate_found'

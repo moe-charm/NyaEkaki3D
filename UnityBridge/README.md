@@ -46,7 +46,7 @@ receiver検証はSDK形状fixtureによる合成確認です。実際のVRChat S
   -OutputPath '.\Artifacts\physbones-sdk-preflight.json'
 ```
 
-`status`が`candidate_found`でも、型の完全一致やメンバー変換を保証するものではありません。続けてUnityの **事前診断（書き込みなし）** とBridge受け取りを実行します。SDKが見つからない場合は`unavailable`として理由と不足候補をJSONへ残します。`-RequireSdk`を付けると、候補が無い環境をCIや手順確認で失敗扱いにできます。
+`status`が`candidate_found`でも、VRChat固有ファイル名を検出した段階であり、型の完全一致やメンバー変換を保証するものではありません。続けてUnityの **事前診断（書き込みなし）** とBridge受け取りを実行します。SDKが見つからない場合は`unavailable`として理由と不足候補をJSONへ残します。`-RequireSdk`を付けると、候補が無い環境をCIや手順確認で失敗扱いにできます。
 
 受け取り側では **Tools > NyaForge > Import PhysBones Target...** を開き、manifestを選択します。表示されたstable BoneIdごとにavatarのTransformを手動で割り当て、必要なcollider groupへComponentを指定します。「現在の割当を保存」でavatar rootへ`NyaForgePhysBonesBinding`を追加し、manifest hash・target／SDK・profile／skeleton hashとともにscene／prefabへ保存できます。次回は同じavatar rootとpackageを選び、「保存済み割当を読み込む」で復元します。identityが一致しないpackageは読み込まず、再対応を促します。その後「作成／更新」または「管理対象だけを更新」を実行します。windowは名前自動検索や暗黙のbone index変換を行いません。
 
