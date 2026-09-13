@@ -176,6 +176,8 @@ I04-Eのreport設計はAと同時に進め、完全取込の公開にはA〜Eの
 
 材質slotを持つmeshでは、各primitiveが参照する頂点だけへ局所リマップするため、再読込後の頂点数は元の共有頂点数と異なる場合がある。受入判定は頂点配列の件数ではなく、submeshごとの三角形数と頂点座標を比較する。skin・骨・morphを保持する必要がある場合は、`SkinnedGeometry`またはnative project exportを使う。
 
+最終結果の読み取り専用projectionは、mesh頂点をローカル座標で保持し、root Transformへ`RestTransform`を一度だけ適用する。`WorldPoints`とFrameのboundsも同じ座標系を使い、rigid attachmentの親poseと二重に位置・拡縮を掛けない。
+
 GLB/VRMの入出力にはnative blobと分離した128 MiBファイル予算と、1 mesh 200,000頂点の共通予算を適用する。native graph/blobの16 MiB予算を広げる変更ではない。予算超過は出力先を作成せず診断する。
 
 | profile | 保持する情報 | 境界 |

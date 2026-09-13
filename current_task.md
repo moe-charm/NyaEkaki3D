@@ -1685,3 +1685,9 @@ Coreは **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 チョーカーなどのrigid attachment後に面クリック判定がずれるP2を修正した。`PickFace`のレイ判定へ、描画と同じ`OwnedMeshProjection.WorldPoints`を渡し、装着rootの位置・回転を含むワールド座標で三角形を検査する。編集用のpolygon face ID対応は従来どおり維持する。
 
 Unity 6000.4.3f1のWindows Player `Builds/StaticDisplayFinal/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-152337-934.log`）。private一時RadDollV3 VRMを使ったAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-152359-5a2f78a3cbc740d19ef14517744e2a64/report.json`、画面`authoring.png`）。静的GLB表示形状照合を含む前回のBridge検証もPASS済み（`Artifacts/BridgeReceiver-20260913-152230-116-37b90f8d982042ad908a9036375297c3/bridge-report.json`）。
+
+# 2026-09-13 最終結果projectionの二重Transform修正
+
+レビューで指摘されたFrame中心／ズームずれを再確認し、`FinalResultProjection`の二重Transformを修正した。以前は頂点へ`RestTransform`を適用した`Points`を、同じ変換を持つrootで再度変換していた。現在はmesh頂点をローカル座標で保持し、root Transformを一度だけ適用する。attachment時は親のrigid poseをそのまま継承するため、位置・回転・拡縮が二重適用されない。Frameのboundsにも同じWorldPointsを使う。
+
+Unity 6000.4.3f1のWindows Player `Builds/FrameFixV1/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-152738-593.log`）。private一時RadDollV3 VRMでのAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-152800-7a096f00b6a4406aadd30f5653c68d14/report.json`）。1000x700のNavigation suiteも **PASS**（`Artifacts/Navigation-20260913-152926-06083e8c9bda4195b974481f8094d716/report.json`、`settings.png`で文字欠けなしを確認）。

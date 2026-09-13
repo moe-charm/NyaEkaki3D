@@ -23,14 +23,12 @@ namespace NyaForge.UnityRuntime
                 root.transform.SetParent(parent, false);
                 root.transform.localScale = Vector3.one * value.Transform.Scale;
                 root.transform.localPosition = OwnedMeshProjection.ToUnity(value.Transform.Translation);
-                if (attachmentPose.HasValue)
-                {
-                    root.transform.localPosition = Vector3.zero;
-                    root.transform.localRotation = Quaternion.identity;
-                }
                 root.AddComponent<MeshFilter>().sharedMesh = Mesh;
                 root.AddComponent<MeshRenderer>().sharedMaterials = Enumerable.Repeat(material, value.Mesh.Submeshes.Count).ToArray();
-                Points = value.Mesh.Positions.Select(p => OwnedMeshProjection.ToUnity(value.Transform.ToAvatarPoint(p))).ToArray();
+                // The final root carries the authored value transform. Keep the
+                // points local so FramingPoints and rendering apply that transform
+                // exactly once; the parent already carries any attachment pose.
+                Points = value.Mesh.Positions.Select(OwnedMeshProjection.ToUnity).ToArray();
                 WorldPoints = Points.Select(point => root.transform.TransformPoint(point)).ToArray();
             }
             catch { UnityEngine.Object.Destroy(Mesh); throw; }
