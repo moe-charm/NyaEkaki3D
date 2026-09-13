@@ -1,3 +1,6 @@
+# 2026-09-13 GLB export source diagnostics report
+
+GLB export reportへnative `import-diagnostics.nyaforge.json` のsource diagnostic recordsを同梱した。source hash・mesh/skin/node locator・保持不可理由を`sourceDiagnostics`へコピーし、出力本体と同じstagingで確認できる。DiagnosticsReportV1のWindows Playerをビルドし、Authoring suiteは **PASS / 82 checks**（`Artifacts/Authoring-20260913-201906-0b40216d38fe4ca3aa8f495abd4c8a6e/report.json`）。private一時RadDollV3 VRMでは **89 checks PASS**（`Artifacts/Authoring-20260913-201938-1c022050469e4a80a0b25347cb17a4f5/report.json`）し、標準GLB reportの`sourceDiagnostics` 1件、衣装付きGLB reportの2件を再読込確認した。VRM1 reportはprofile制限を既存の`limitations`へ分離している。Player build logは`Logs/build-player-20260913-201842-396.log`。
 # 2026-09-13 surface fit metrics real RadDollV3 recheck
 
 `Builds/FitMetricsV1/NyaForge.exe`へprivate一時RadDollV3 VRMを指定し、取込→EditMesh頂点編集→native Save/Open→標準skinned GLB出力・再取込→初期VRM 1.0 package出力・metadata再読込を再確認した。Authoring suiteは **89 checks PASS**（`Artifacts/Authoring-20260913-201357-6d1e26f92eb5478d8b0123685f9b7103/report.json`、画面 `authoring.png`）。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-201553-781-4e63a53bcd2148eba8a8db1fbcd9d30e/bridge-report.json`）。private素材はpublic repositoryへ追加していない。

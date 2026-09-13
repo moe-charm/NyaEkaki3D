@@ -33,6 +33,25 @@ internal static partial class Program
             Equal(workspace.Evaluate().Positions[0].X, imported.Mesh.Positions[0].X);
         });
 
+        Test("GLB export report carries source import diagnostics", () =>
+        {
+            var workspace = AuthoringWorkspace.CreateFixture();
+            string graphId = workspace.Document.ActiveObject.Graph.GraphId;
+            var diagnostics = new ImportedGlbDiagnostics(graphId, Checks.Hash(new byte[] { 4, 2, 1 }), 3, null,
+                new[] { new GlbImportDiagnostic("ANIMATIONS_NOT_RETAINED", "animations", false, "animation is reported only") }, 7);
+            workspace.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]>
+            {
+                [ProjectAttachments.ImportDiagnostics] = ImportedGlbDiagnosticsCodec.Write(new[] { diagnostics })
+            }));
+            string directory = Path.Combine(Root, "glb-diagnostics-report-" + Guid.NewGuid().ToString("N"));
+            var result = GlbExportService.ExportStatic(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory);
+            var report = JObject.Parse(File.ReadAllText(result.ReportPath));
+            var record = ((JArray)report["sourceDiagnostics"]!).Single() as JObject;
+            Equal(graphId, (string)record!["graphId"]!);
+            Equal("ANIMATIONS_NOT_RETAINED", (string)record["diagnostics"]![0]!["code"]!);
+            Equal("animations", (string)record["diagnostics"]![0]!["path"]!);
+        });
+
         Test("static GLB export accepts a display-corrected mesh override", () =>
         {
             var workspace = AuthoringWorkspace.CreateFixture();

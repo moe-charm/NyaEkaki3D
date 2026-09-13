@@ -63,7 +63,8 @@ namespace NyaForge.Authoring
                     return BuildStaticObject(item, overrideValue);
                 }).ToArray();
                 var paths = Write(directory, objects, (SkinnedObject[])null, GlbExportProfile.StaticGeometry,
-                    workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash);
+                    workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash,
+                    ReadSourceDiagnostics(workspace));
                 return new GlbExportResult(paths.GlbPath, paths.ReportPath, GlbExportProfile.StaticGeometry, objects.Length, paths.NodeMap);
             }
         }
@@ -103,7 +104,8 @@ namespace NyaForge.Authoring
                     jointTransformMap != null && jointTransformMap.TryGetValue(item.ObjectId, out var joints) ? joints : null, profile)).ToArray();
                 ValidateSharedSkeleton(skinned);
                 var paths = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, profile,
-                    workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash);
+                    workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash,
+                    ReadSourceDiagnostics(workspace));
                 return new GlbExportResult(paths.GlbPath, paths.ReportPath, profile, skinned.Length, paths.NodeMap);
             }
         }
@@ -144,7 +146,8 @@ namespace NyaForge.Authoring
                     jointTransformMap != null && jointTransformMap.TryGetValue(item.ObjectId, out var joints) ? joints : null, GlbExportProfile.SkinnedGeometryExtended)).ToArray();
                 ValidateSharedSkeleton(skinned);
                 var paths = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, GlbExportProfile.SkinnedGeometryExtended,
-                    workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash);
+                    workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash,
+                    ReadSourceDiagnostics(workspace));
                 return new GlbExportResult(paths.GlbPath, paths.ReportPath, GlbExportProfile.SkinnedGeometryExtended, skinned.Length, paths.NodeMap);
             }
         }
@@ -206,6 +209,14 @@ namespace NyaForge.Authoring
             public IReadOnlyList<SourceAffine> JointLocalTransforms;
             public IReadOnlyDictionary<string, SourceAffine> InverseBindByBone;
             public IReadOnlyDictionary<string, SourceAffine> JointLocalByBone;
+        }
+
+        static IReadOnlyDictionary<string, ImportedGlbDiagnostics> ReadSourceDiagnostics(AuthoringWorkspace workspace)
+        {
+            var bytes = workspace.Attachments.Read(ProjectAttachments.ImportDiagnostics);
+            return bytes == null
+                ? new Dictionary<string, ImportedGlbDiagnostics>(StringComparer.Ordinal)
+                : ImportedGlbDiagnosticsCodec.Read(bytes);
         }
 
         static MeshObject BuildStaticObject(AuthoringObject item, GraphMeshValue meshOverride = null)
@@ -292,7 +303,8 @@ namespace NyaForge.Authoring
         { return PoseSet.Create(skeleton, skeleton.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head)))); }
 
         static (string GlbPath, string ReportPath, GlbExportNodeMap NodeMap) Write(string directory, MeshObject[] objects, SkinnedObject[] skinned, GlbExportProfile profile,
-            string documentId, long documentRevision, string stateHash)
+            string documentId, long documentRevision, string stateHash,
+            IReadOnlyDictionary<string, ImportedGlbDiagnostics> sourceDiagnostics)
         {
             Checks.Require(objects != null && objects.Length > 0, "NO_EXPORTABLE_OBJECT", "No mesh objects were provided.");
             if (profile == GlbExportProfile.SkinnedGeometry || profile == GlbExportProfile.SkinnedGeometryExtended)
@@ -324,6 +336,19 @@ namespace NyaForge.Authoring
                         ["submeshCount"] = item.Mesh.Submeshes.Count,
                         ["materialSlotCount"] = item.SlotMaterials?.Count ?? (item.Material == null && item.BaseColor == null ? 0 : 1)
                     })),
+                    ["sourceDiagnostics"] = new JArray((sourceDiagnostics ?? new Dictionary<string, ImportedGlbDiagnostics>(StringComparer.Ordinal)).Values
+                        .OrderBy(item => item.GraphId, StringComparer.Ordinal).Select(item => new JObject
+                        {
+                            ["graphId"] = item.GraphId,
+                            ["sourceHash"] = item.SourceHash,
+                            ["meshIndex"] = item.MeshIndex,
+                            ["skinIndex"] = item.SkinIndex.HasValue ? (JToken)new JValue(item.SkinIndex.Value) : JValue.CreateNull(),
+                            ["nodeIndex"] = item.NodeIndex.HasValue ? (JToken)new JValue(item.NodeIndex.Value) : JValue.CreateNull(),
+                            ["diagnostics"] = new JArray(item.Diagnostics.Select(d => new JObject
+                            {
+                                ["code"] = d.Code, ["path"] = d.Path, ["isBlocking"] = d.IsBlocking, ["message"] = d.Message
+                            }))
+                        })),
                     ["limitations"] = new JArray(profile == GlbExportProfile.StaticGeometry
                         ? new[] { "graph and native metadata are not embedded", "VRM extensions are not emitted" }
                         : profile == GlbExportProfile.SkinnedGeometry
