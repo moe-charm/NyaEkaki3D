@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09Q: 9855d43衣装・材質フィードバック再照合（現行HEAD）
+
+提示された`9855d43`基準のP1 3件／P2 5件を、現行HEAD `f010146`へ再照合した。avatar移動後の座標、衣装更新時のownership、UV1の明示拒否、sparse material slot、MR係数、Cuff winding、sampler variant、適用前・削除後の割当読込はいずれも後続実装と回帰で解消済みで、本番コードの重複修正は行っていない。詳細は[現行HEAD再照合](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-f010146.md)へ固定した。
+
+再確認としてCore **505 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-bb8fe25bca8746b6b5b2529ec239e427`）、private Unity 2022.3.22f1のRadDollV3 probe **passed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealAvatar-e341c4481e0c4480bde9a31c8706573e/report.json`）、V30 Windows Player Authoring suite **PASS**（`Artifacts/Authoring-20260914-083803-8d33406704a64fa58853d2c5220bdfb6/report.json`）を確認した。実EditorWindowのマウス・IME・Explorer、全周fit・貫通ゼロ・見た目、VRChat Build & Test／実機表示は未受入のまま別工程とする。
+
 ## 2026-09-14 NF-V1-09P: V30性能修正後のAuthoring回帰
 
 `pose-arms-up`を持たないfixtureでも性能計測できるようにしたV30 Player `Builds/PerformanceV30/NyaForge.exe`で、Authoring suiteを1080×700で再実行した。**PASS**（`Artifacts/Authoring-20260914-083803-8d33406704a64fa58853d2c5220bdfb6/report.json`、`authoring.png`）。性能計測の修正が制作UI・保存・出力回帰へ影響していないことを確認した。
