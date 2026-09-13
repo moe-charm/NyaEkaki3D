@@ -119,6 +119,11 @@ namespace NyaForge.UnityRuntime
                 Check(workspace.Document.StateHash == beforeFitInspection && workspace.Document.DocumentRevision == beforeFitInspectionRevision &&
                     status.text.Contains("変更なし") && status.text.Contains("評価 2頂点"),
                     "Surface fit inspection changed the document or omitted the evaluated vertex count");
+                var fitInspection = SurfaceFitInspectionState();
+                Check((bool)fitInspection["available"] && (string)fitInspection["objectId"] == accessoryObjectId &&
+                    (string)fitInspection["targetObjectId"] == avatarObjectId && (int)fitInspection["evaluatedVertexCount"] == 2 &&
+                    ((Newtonsoft.Json.Linq.JArray)fitInspection["clothingVertexIds"]).Count == 2,
+                    "Surface fit inspection state did not retain its pinned identity and selection");
                 TransferAccessorySurfaceWeights();
                 boundGraph = workspace.Document.ActiveObject.Graph;
                 bound = boundGraph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.SkinBind);

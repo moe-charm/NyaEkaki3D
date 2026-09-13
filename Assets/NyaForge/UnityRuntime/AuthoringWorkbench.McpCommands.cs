@@ -10,6 +10,7 @@ namespace NyaForge.UnityRuntime
         {
             if(request.Method=="vertices_inspect") return request.Vertices.Read(workspace,pipeInstance);
             if(request.Method=="faces_inspect") return request.Faces.ReadFaces(workspace,pipeInstance);
+            if(request.Method=="surface_fit_inspect") return SurfaceFitInspectionForMcp();
             if(request.Method=="validate") return AuthoringValidationReader.Read(workspace,pipeInstance,request.Validation);
             if(request.Method=="export") return ExportMcpProject(request.Export);
             if(request.Method=="export_glb") return ExportMcpGlb(request.GlbExport);
@@ -26,6 +27,7 @@ namespace NyaForge.UnityRuntime
                 state["deliveryAllowlistExplicit"] = deliveryAllowedObjectIds.Count > 0;
                 state["activeObjectReferenceProtected"] = workspace != null && !workspace.Document.IsEmpty &&
                     referenceProtectedObjectIds.Contains(workspace.Document.ActiveObjectId);
+                state["surfaceFitInspection"] = SurfaceFitInspectionState();
                 return state;
             }
             if(request.Method=="capture") return CaptureMcpEvidence();

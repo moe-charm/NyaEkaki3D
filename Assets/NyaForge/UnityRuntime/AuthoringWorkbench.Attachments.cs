@@ -7,6 +7,7 @@ using NyaForge.Authoring.Geometry;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Rig;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -29,6 +30,20 @@ namespace NyaForge.UnityRuntime
         readonly List<string> attachmentBoneIds = new List<string>();
         string attachmentTargetChoice;
         string attachmentChoiceOwner;
+        string surfaceFitInspectionObjectId = "";
+        string surfaceFitInspectionTargetObjectId = "";
+        string surfaceFitInspectionStateHash = "";
+        long surfaceFitInspectionRevision = -1;
+        int surfaceFitInspectionEvaluatedVertexCount;
+        int surfaceFitInspectionMovedVertexCount;
+        float surfaceFitInspectionMaxProjectionDistance;
+        float surfaceFitInspectionAverageProjectionDistance;
+        float surfaceFitInspectionMaxDisplacement;
+        float surfaceFitInspectionAverageDisplacement;
+        float surfaceFitInspectionOffset;
+        float surfaceFitInspectionMaxDistance;
+        int[] surfaceFitInspectionTriangleIds;
+        int[] surfaceFitInspectionVertexIds;
 
         void BuildAttachments(VisualElement parent)
         {
@@ -475,39 +490,110 @@ namespace NyaForge.UnityRuntime
         IEnumerable<int> ClothingVertexSelection() => ParseIndexSelection(
             accessoryClothingVertexIds == null ? "" : accessoryClothingVertexIds.value, "衣装頂点ID");
 
+        sealed class SurfaceFitMeasurement
+        {
+            public MeshSurfaceFitResult Result;
+            public string TargetObjectId;
+            public string Region;
+            public string Vertices;
+            public int[] TriangleIds;
+            public int[] VertexIds;
+            public float Offset;
+            public float MaxDistance;
+        }
+
+        SurfaceFitMeasurement MeasureAccessorySurfaceFit()
+        {
+            if (!IsGraph) throw new InvalidOperationException("衣装のgraph objectを選択してください。");
+            int targetIndex = attachmentTarget.index;
+            if (targetIndex < 0 || targetIndex >= attachmentTargetIds.Count) throw new InvalidOperationException("fit検査対象avatarを選択してください。");
+            var target = FindObject(attachmentTargetIds[targetIndex]);
+            if (target == null || target.Graph == null) throw new InvalidOperationException("fit検査対象avatarが見つかりません。");
+            var avatarBind = target.Graph.Nodes.Values.SingleOrDefault(item => item.TypeId == BuiltinNodes.SkinBind && item.Binding != null);
+            if (avatarBind == null) throw new InvalidOperationException("avatarへ有効なSkinBindがありません。");
+            var avatarEvaluation = target.EvaluateGraph();
+            if (!avatarEvaluation.MeshInputs.TryGetValue(avatarBind.NodeId, out var avatarMeshValue) || avatarMeshValue?.Mesh == null)
+                throw new InvalidOperationException("avatarのrest mesh評価結果を取得できません。");
+            var graph = workspace.Document.ActiveObject.Graph;
+            var edit = graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.EditMesh);
+            if (edit == null) throw new InvalidOperationException("衣装へEditMeshを先に用意してください。");
+            var evaluation = workspace.Preview.Evaluation;
+            if (!evaluation.MeshOutputs.TryGetValue(edit.NodeId, out var editValue) || editValue?.Mesh == null)
+                throw new InvalidOperationException("衣装EditMeshの評価結果を取得できません。");
+            float offset = accessoryFitOffsetMm.value / 1000f;
+            float maxDistance = accessoryFitMaxDistanceMm.value / 1000f;
+            var surfaceTriangles = SurfaceTriangleSelection()?.ToArray();
+            var clothingVertices = ClothingVertexSelection()?.ToArray();
+            var fit = MeshSurfaceFit.Project(editValue.Mesh, editValue.Transform,
+                avatarMeshValue.Mesh, avatarMeshValue.Transform, offset, maxDistance, clothingVertices, surfaceTriangles);
+            string region = surfaceTriangles == null ? "全三角形" : surfaceTriangles.Length.ToString(CultureInfo.InvariantCulture) + "面領域";
+            string vertices = clothingVertices == null ? "全頂点" : clothingVertices.Length.ToString(CultureInfo.InvariantCulture) + "頂点";
+            surfaceFitInspectionObjectId = workspace.Document.ActiveObjectId;
+            surfaceFitInspectionTargetObjectId = target.ObjectId;
+            surfaceFitInspectionStateHash = workspace.Document.StateHash;
+            surfaceFitInspectionRevision = workspace.Document.DocumentRevision;
+            surfaceFitInspectionEvaluatedVertexCount = fit.EvaluatedVertexCount;
+            surfaceFitInspectionMovedVertexCount = fit.MovedVertexCount;
+            surfaceFitInspectionMaxProjectionDistance = fit.MaxProjectionDistance;
+            surfaceFitInspectionAverageProjectionDistance = fit.AverageProjectionDistance;
+            surfaceFitInspectionMaxDisplacement = fit.MaxDisplacement;
+            surfaceFitInspectionAverageDisplacement = fit.AverageDisplacement;
+            surfaceFitInspectionOffset = offset;
+            surfaceFitInspectionMaxDistance = maxDistance;
+            surfaceFitInspectionTriangleIds = surfaceTriangles;
+            surfaceFitInspectionVertexIds = clothingVertices;
+            return new SurfaceFitMeasurement { Result = fit, TargetObjectId = target.ObjectId, Region = region, Vertices = vertices,
+                TriangleIds = surfaceTriangles, VertexIds = clothingVertices, Offset = offset, MaxDistance = maxDistance };
+        }
+
         void InspectAccessorySurfaceFit()
         {
             Try(() =>
             {
-                if (!IsGraph) throw new InvalidOperationException("衣装のgraph objectを選択してください。");
-                int targetIndex = attachmentTarget.index;
-                if (targetIndex < 0 || targetIndex >= attachmentTargetIds.Count) throw new InvalidOperationException("fit検査対象avatarを選択してください。");
-                var target = FindObject(attachmentTargetIds[targetIndex]);
-                if (target == null || target.Graph == null) throw new InvalidOperationException("fit検査対象avatarが見つかりません。");
-                var avatarBind = target.Graph.Nodes.Values.SingleOrDefault(item => item.TypeId == BuiltinNodes.SkinBind && item.Binding != null);
-                if (avatarBind == null) throw new InvalidOperationException("avatarへ有効なSkinBindがありません。");
-                var avatarEvaluation = target.EvaluateGraph();
-                if (!avatarEvaluation.MeshInputs.TryGetValue(avatarBind.NodeId, out var avatarMeshValue) || avatarMeshValue?.Mesh == null)
-                    throw new InvalidOperationException("avatarのrest mesh評価結果を取得できません。");
-                var graph = workspace.Document.ActiveObject.Graph;
-                var edit = graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.EditMesh);
-                if (edit == null) throw new InvalidOperationException("衣装へEditMeshを先に用意してください。");
-                var evaluation = workspace.Preview.Evaluation;
-                if (!evaluation.MeshOutputs.TryGetValue(edit.NodeId, out var editValue) || editValue?.Mesh == null)
-                    throw new InvalidOperationException("衣装EditMeshの評価結果を取得できません。");
-                float offset = accessoryFitOffsetMm.value / 1000f;
-                float maxDistance = accessoryFitMaxDistanceMm.value / 1000f;
-                var surfaceTriangles = SurfaceTriangleSelection();
-                var clothingVertices = ClothingVertexSelection();
-                var fit = MeshSurfaceFit.Project(editValue.Mesh, editValue.Transform,
-                    avatarMeshValue.Mesh, avatarMeshValue.Transform, offset, maxDistance, clothingVertices, surfaceTriangles);
-                string region = surfaceTriangles == null ? "全三角形" : surfaceTriangles.Count().ToString(CultureInfo.InvariantCulture) + "面領域";
-                string vertices = clothingVertices == null ? "全頂点" : clothingVertices.Count().ToString(CultureInfo.InvariantCulture) + "頂点";
-                SetStatus("fit状態を測定しました（変更なし、" + region + "、" + vertices + "、評価 " + fit.EvaluatedVertexCount + "頂点、" +
+                var measurement = MeasureAccessorySurfaceFit();
+                var fit = measurement.Result;
+                SetStatus("fit状態を測定しました（変更なし、" + measurement.Region + "、" + measurement.Vertices + "、評価 " + fit.EvaluatedVertexCount + "頂点、" +
                     fit.MovedVertexCount + "頂点が移動する候補、最大投影距離 " + (fit.MaxProjectionDistance * 1000f).ToString("0.###") +
                     " mm、平均 " + (fit.AverageProjectionDistance * 1000f).ToString("0.###") + " mm、最大移動量 " +
                     (fit.MaxDisplacement * 1000f).ToString("0.###") + " mm）。貫通と見た目はposeで確認してください。" );
             });
+        }
+
+        internal JObject SurfaceFitInspectionForMcp()
+        {
+            var measurement = MeasureAccessorySurfaceFit();
+            var state = SurfaceFitInspectionState();
+            state["measuredTargetObjectId"] = measurement.TargetObjectId;
+            return state;
+        }
+
+        internal JObject SurfaceFitInspectionState()
+        {
+            bool available = workspace != null && !workspace.Document.IsEmpty &&
+                workspace.Document.ActiveObjectId == surfaceFitInspectionObjectId &&
+                workspace.Document.DocumentRevision == surfaceFitInspectionRevision &&
+                workspace.Document.StateHash == surfaceFitInspectionStateHash;
+            var result = new JObject { ["available"] = available };
+            if (!available)
+            {
+                result["reason"] = string.IsNullOrEmpty(surfaceFitInspectionStateHash) ? "not_measured" : "stale_after_document_change";
+                return result;
+            }
+            result["objectId"] = surfaceFitInspectionObjectId;
+            result["targetObjectId"] = surfaceFitInspectionTargetObjectId;
+            result["revision"] = surfaceFitInspectionRevision;
+            result["stateHash"] = surfaceFitInspectionStateHash;
+            result["evaluatedVertexCount"] = surfaceFitInspectionEvaluatedVertexCount;
+            result["movedVertexCount"] = surfaceFitInspectionMovedVertexCount;
+            result["maxProjectionDistanceMetres"] = surfaceFitInspectionMaxProjectionDistance;
+            result["averageProjectionDistanceMetres"] = surfaceFitInspectionAverageProjectionDistance;
+            result["maxDisplacementMetres"] = surfaceFitInspectionMaxDisplacement;
+            result["averageDisplacementMetres"] = surfaceFitInspectionAverageDisplacement;
+            result["offsetMetres"] = surfaceFitInspectionOffset;
+            result["maxDistanceMetres"] = surfaceFitInspectionMaxDistance;
+            result["avatarTriangleIds"] = surfaceFitInspectionTriangleIds == null ? JValue.CreateNull() : new JArray(surfaceFitInspectionTriangleIds);
+            result["clothingVertexIds"] = surfaceFitInspectionVertexIds == null ? JValue.CreateNull() : new JArray(surfaceFitInspectionVertexIds);
+            return result;
         }
 
         void FitAccessoryToAvatarSurface()

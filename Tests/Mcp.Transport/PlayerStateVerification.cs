@@ -21,8 +21,12 @@ internal static class PlayerStateVerification
         using(var capabilityJson=JsonDocument.Parse(string.Join("",capabilityReply.Content.OfType<TextContentBlock>().Select(t=>t.Text))))
         {
             var capabilities=capabilityJson.RootElement;
-            if(capabilities.GetProperty("instanceId").GetString()!=args[1] || !capabilities.GetProperty("remoteEditing").GetBoolean() || capabilities.GetProperty("nodeDefinitions").GetArrayLength()==0) throw new Exception("Invalid live capabilities");
+            if(capabilities.GetProperty("instanceId").GetString()!=args[1] || !capabilities.GetProperty("remoteEditing").GetBoolean() || capabilities.GetProperty("nodeDefinitions").GetArrayLength()==0 || !capabilities.GetProperty("remoteMethods").EnumerateArray().Any(value=>value.GetString()=="surface_fit_inspect")) throw new Exception("Invalid live capabilities");
         }
+        // The plain fixture has no avatar target, so the read-only fit endpoint
+        // must fail with a structured MCP error instead of mutating the graph.
+        var fitReply=await client.CallToolAsync("forge_surface_fit_inspect",cancellationToken:token);
+        if(fitReply.IsError!=true) throw new Exception("Surface fit inspection unexpectedly succeeded without an avatar target");
         // Repeated calls exercise disconnect/reconnect on the same live Player listener.
         var graphReply=await client.CallToolAsync("forge_graph_inspect",cancellationToken:token);
         if(graphReply.IsError==true) throw new Exception("Graph inspection failed");

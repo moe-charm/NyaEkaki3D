@@ -2,6 +2,13 @@
 
 2026-09-12。設計v2 §8の外部C#プロセス構成。Windowsでは公式C# SDKを使うsidecarがstdioでtoolを公開し、明示したNyaForge instanceのnamed pipeへ一要求ずつ転送する。現在は制作・inspection・Evidenceとsecondary-motion previewのtoolが実Playerへ接続済み。未対応のSDK機能を成功扱いにしない。
 
+## avatar表面fitの読み取り専用検査（2026-09-14）
+
+- `forge_surface_fit_inspect`を追加した。NyaForge画面で選択中の衣装graph、avatar対象、avatar面領域、衣装頂点領域、fit offset、最大距離をそのまま使い、`MeshSurfaceFit`の評価頂点数・移動候補数・投影距離・移動量をJSONで返す。
+- 結果には対象object／avatar object、document revision、state hash、選択ID、距離設定を含める。測定はread-onlyで、編集後はidentity不一致として`available=false`になる。`forge_get_state`にも最新測定の`surfaceFitInspection`を含める。
+- これは候補形状の数値確認であり、貫通なし・見た目・実VRChat受入を意味しない。対象選択や実操作の受入は手動ゲートとして分離する。
+- Core **500 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-77e02612365640a6aee6fe85279025f1`）、MCP transport **3項目PASS**、Windows Player `Builds/SurfaceFitMcpV2/NyaForge.exe`のAuthoring suite **PASS**（`Artifacts/Authoring-20260914-051130-1df80f3be5004be09adaf8676f5c47ab/report.json`）。外部MCP→Playerも **PASS**（`Artifacts/Authoring-20260914-051234-b73a2b0a64cd4ae38e4e504789fc11d5/report.json`）。private RadDollV3 VRMの実モデル取込・保存・出力とUnity Bridge受け取りも **PASS**（Player `Artifacts/Authoring-20260914-051445-63e3b9aef9e94755b6206d3ae1804685/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-051725-815-0909406889fd4b9bbc9248e5aad43ce5/bridge-report.json`）。
+
 ## 面材質割り当てと複数slot inspection（2026-09-12）
 
 - `mesh.assign-materials` は `parameters.slots` の整数配列を受け、重複・型違いを拒否し、疎なslot番号を保持する。

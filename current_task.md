@@ -1,5 +1,13 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-06: avatar表面fitのMCP読み取り検査
+
+GUIにあった「fit状態を測定（変更なし）」と同じ bounded `MeshSurfaceFit`を、sidecarの`forge_surface_fit_inspect`から呼べるようにした。現在選択中の衣装graph／avatar target／avatar面領域／衣装頂点領域／offset／最大距離を使い、評価頂点数、移動候補数、投影距離、移動量、対象object ID、revision、state hash、選択IDを返す。測定はread-onlyで、編集後はdocument identityが変わるため`available=false`になる。`forge_get_state`にも`surfaceFitInspection`を含め、AIが直前の測定の有効性を確認できるようにした。
+
+Coreのcapabilities／IPC回帰は **500 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-77e02612365640a6aee6fe85279025f1`）。MCP transportは **3項目PASS**、Windows Player `Builds/SurfaceFitMcpV2/NyaForge.exe`のAuthoring suiteは **PASS**（`Artifacts/Authoring-20260914-051130-1df80f3be5004be09adaf8676f5c47ab/report.json`）。外部MCP→Playerの実通信は同Playerで **PASS**（`Artifacts/Authoring-20260914-051234-b73a2b0a64cd4ae38e4e504789fc11d5/report.json`）。さらにprivate RadDollV3 VRMを指定した実モデル取込・保存・GLB/VRM出力とUnity Bridge受け取りも **PASS**（Player `Artifacts/Authoring-20260914-051445-63e3b9aef9e94755b6206d3ae1804685/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-051725-815-0909406889fd4b9bbc9248e5aad43ce5/bridge-report.json`）。通常fixtureでavatar targetなしの呼出しが構造化エラーとなること、既存の制作経路が継続すること、実モデル経路へ影響がないことを確認した。
+
+これは候補形状の数値検査で、貫通なし・見た目・実RadDollV3全周fit・VRChat受入は示さない。実モデルでの成功レスポンスと、実EditorWindowのマウス／DPI受入を次の外部確認として残す。
+
 ## 2026-09-14 feedback再照合: 9855d43 → bd30224
 
 今回のレビューは、基準 `9855d43` のP1（受け取りavatar移動後の配置、`SaveBindings`後のownership参照、UV1欠落）とP2（sparse material slot、MR係数、Cuff winding、sampler共有、適用前／削除後の割当読込）を指摘している。現行 `main` の `bd30224` へ再照合したところ、P1/P2はすでに後続修正と回帰で閉じており、同じ本番コードを重複修正しない。

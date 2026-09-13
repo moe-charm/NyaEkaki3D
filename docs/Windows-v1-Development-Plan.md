@@ -64,7 +64,7 @@ NF-V1のIDは持込提案との対応用に維持。状態は実装済み・合�
 | NF-V1-10 | normal/MR画像の一周 | 09、09A、03Aのshader決定 | 衣装の画像指定・プレビュー・native・出力・receiverで一致。normal方向/tangent、MRのG=roughness/B=metallic、linear値とsRGB色、alphaを検証。専用paint/AO/emissive/bakeは追加しない |
 | NF-V1-11 | 同一targetの複数object受入 | 03A、08、10 | 衣装2点＋小物1点を独立nodeで受取。同名骨/順序違い/別source負例。物理的mesh結合やdedupを必須にしない |
 | NF-V1-12 | Unity更新・再適用 | 03A。最終複数回帰は11 | ownership/journalを衣装へ拡張。同じObjectIdのStateHash更新でBoneId割当と既存管理参照を保持し、更新時の管理object付け替えをBridge回帰で確認済み。A→B→再起動の実EditorWindow操作、削除・取消・失敗・利用者変更の競合、元avatar設定保護は手動受入として残る |
-| NF-V1-13 | GUI/MCPとsnapshot整合 | 新commandごとに04/06/12と同時実施 | GUI/MCP同一command、古いrevision/二重要求/取消/編集中exportで破損や二重編集なし。出力対象とreport/hashが一致。G4末に再接続する計画にしない |
+| NF-V1-13 | GUI/MCPとsnapshot整合 | 新commandごとに04/06/12と同時実施 | GUI/MCP同一command、古いrevision/二重要求/取消/編集中exportで破損や二重編集なし。read-onlyの`forge_surface_fit_inspect`はGUIと同じbounded候補計算を使い、対象identity・選択ID・距離・移動量を返す。出力対象とreport/hashが一致。G4末に再接続する計画にしない |
 | NF-V1-14 | 保存・復旧・旧版受入 | schema変更時から継続、RC時最終確認 | 既存transaction回帰を再利用。中断で最後の正常projectを保持し、破損・移行・復旧案内と許容損失範囲を確認 |
 | NF-V1-15 | 手動・長時間・別Windows | 一周可能なcandidate、最終は14 | DPI100/150/200%、IME/日本語/空白path、2時間編集、50回Open/Close、別PCと本人以外の手順テスト。条件・実測値・未実施を記録 |
 | NF-V1-02B | 追加機能と同期の外部受入 | 10、11、12 | E06追加map、E07再適用、E08private uploadと他者視点を確認。E01〜E05も変更の影響範囲を回帰。VRChat受入未完了のまま対応済みとしない |

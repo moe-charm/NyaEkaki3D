@@ -65,9 +65,11 @@ internal static partial class Program
         Test("read protocol rejects coercion and capabilities derive from registry",()=>
         {
             var w=AuthoringWorkspace.CreateEmpty();var cap=AuthoringReadService.Read(w,w.InstanceId,"capabilities");
-            Equal(NyaForge.Authoring.Graph.BuiltinNodes.Definitions.Count,cap["nodeDefinitions"].Count());True((bool)cap["remoteEditing"]);
+            Equal(NyaForge.Authoring.Graph.BuiltinNodes.Definitions.Count,cap["nodeDefinitions"].Count());True((bool)cap["remoteEditing"]);True(cap["remoteMethods"].Values<string>().Contains("surface_fit_inspect"));
             var request=new Newtonsoft.Json.Linq.JObject { ["version"]=1,["requestId"]=System.Guid.NewGuid().ToString("D"),["expectedInstanceId"]=w.InstanceId,["method"]="capabilities" };
             var valid=System.Text.Encoding.UTF8.GetBytes(request.ToString());Equal("capabilities",AuthoringIpcRequest.Parse(valid).Method);
+            request["method"]="surface_fit_inspect";Equal("surface_fit_inspect",AuthoringIpcRequest.Parse(System.Text.Encoding.UTF8.GetBytes(request.ToString())).Method);
+            request["method"]="capabilities";
             request["version"]="1";Expect("INVALID_REQUEST",()=>AuthoringIpcRequest.Parse(System.Text.Encoding.UTF8.GetBytes(request.ToString())));
             request["version"]=1;request["extra"]=true;Expect("INVALID_REQUEST",()=>AuthoringIpcRequest.Parse(System.Text.Encoding.UTF8.GetBytes(request.ToString())));
             Expect("UNSUPPORTED_METHOD",()=>AuthoringReadService.Read(w,w.InstanceId,"execute_code"));
