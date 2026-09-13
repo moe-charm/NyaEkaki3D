@@ -56,6 +56,7 @@ namespace NyaForge.Authoring.Graph
         public MaterialTextureSampler Sampler { get; }
         public string ContentHash { get; }
         readonly byte[] encodedBytes;
+        public int EncodedByteCount { get { return encodedBytes.Length; } }
 
         public MaterialTextureSlot(MaterialTextureSemantic semantic, byte[] encodedBytes, string mimeType,
             int texCoord = 0, float normalScale = 1f, MaterialTextureSampler sampler = null)

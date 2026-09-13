@@ -25,6 +25,10 @@ Unity BridgeはStandard shaderへnormal mapとmetallic-roughness mapを割り当
 
 `PolygonPrimitives.Cuff`とWorkbenchの「手首カフ形状を追加」を追加した。内外面・上下キャップを持つ閉じた低ポリシェル（既定32分割、128編集頂点、128 quad）で、既存のPolygonEdit、頂点移動、native Save/Open、単体Bakeへ接続している。Coreは **493 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-1a4ae1d1c3f74cbea9a742fe8707b919`）、Windows Player `Builds/CuffTemplateV2/NyaForge.exe` build成功（`Logs/build-player-20260913-234616-199.log`）、Authoring suite **83 checks PASS**（`Artifacts/Authoring-20260913-234636-1f3341077d154d6ba757a0ed6a853e78/report.json`）。同じPlayerへprivate一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）を指定したsuiteも **87 checks PASS**（`Artifacts/Authoring-20260913-235344-c86ee71d2d9f474ca4351e8177b9878f/report.json`）、その出力を渡したUnity **2022.3.22f1** Bridgeも **14 checks PASS**（`Artifacts/BridgeReceiver-20260913-235804-254-9102b0a2b95d496cb31f350808aab159/bridge-report.json`）。これは制作開始点と実モデル自動smokeの証拠であり、実RadDollV3 sceneへのfit・weight・貫通確認、実EditorWindow操作、実VRChat内の見た目・負荷、販売品質を証明しない。
 
+## 2026-09-14 semantic texture GUI保持
+
+材質パネルのscalar変更が既存のnormal／metallic-roughness slotを新しい`MaterialParameters`へ引き継ぐよう修正し、保持中のMIME、encoded byte数、UV set、normal scale、`B=metallic/G=roughness`契約をパネルへ表示するようにした。既存のmaterial GUI回帰を含むWindows Player `Builds/SemanticTextureGuiV1/NyaForge.exe`は **83 checks PASS**（`Logs/build-player-20260913-235951-041.log`、`Artifacts/Authoring-20260914-000015-f3a9f6cc77494025a7486cf07d36c707/report.json`）。これはsemantic mapの編集UIや実shader外観を完成扱いするものではなく、取込済みmapの保持と確認表示を追加した段階である。
+
 ## 2026-09-13 持込Windows v1案の照合結果
 
 ### 採用する点

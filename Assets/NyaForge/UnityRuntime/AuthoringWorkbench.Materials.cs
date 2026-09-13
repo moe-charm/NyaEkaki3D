@@ -15,6 +15,7 @@ namespace NyaForge.UnityRuntime
         Button addMaterial;
         DropdownField materialChoice,materialAlphaMode;
         TextField materialTint,materialEmission;
+        Label semanticTextureInfo;
         FloatField materialOpacity,materialMetallic,materialRoughness,materialEmissionStrength,materialCutoff;
         readonly List<string> materialIds=new List<string>();
         string selectedMaterial="",loadedTint,loadedEmission;
@@ -50,6 +51,7 @@ namespace NyaForge.UnityRuntime
                 field.RegisterValueChangedCallback(_=>CancelMaterialGesture());
             }
             materialFields.Add(Button("材質の変更を適用",()=>Try(ApplyMaterial),"material-apply"));
+            semanticTextureInfo=new Label { name="material-semantic-textures" }; semanticTextureInfo.style.whiteSpace=WhiteSpace.Normal; materialFields.Add(semanticTextureInfo);
             var help=new Label("基本色と発光色はsRGB。画像に基本色を掛けて表示します。材質は作品へ保存でき、対応するUnity用profileへ書き出せます。");
             help.style.whiteSpace=WhiteSpace.Normal;materialFields.Add(help);
         }
@@ -77,7 +79,9 @@ namespace NyaForge.UnityRuntime
             if(materialEmission.value==loadedEmission)
                 emission=strength==loadedEmissionStrength ? loadedMaterial.Emission : loadedEmissionStrength>0 ? loadedMaterial.Emission*(strength/loadedEmissionStrength) : MaterialLinear(materialEmission.value)*strength;
             else emission=MaterialLinear(materialEmission.value)*strength;
-            var parameters=new MaterialParameters(new Vec4(tint.X,tint.Y,tint.Z,materialOpacity.value),materialMetallic.value,materialRoughness.value,emission,(MaterialAlphaMode)materialAlphaMode.index,materialCutoff.value);
+            // Editing scalar material values must retain imported semantic maps.
+            // They belong to the material node, not to the UI fields being edited.
+            var parameters=new MaterialParameters(new Vec4(tint.X,tint.Y,tint.Z,materialOpacity.value),materialMetallic.value,materialRoughness.value,emission,(MaterialAlphaMode)materialAlphaMode.index,materialCutoff.value,loadedMaterial.Textures);
             if(parameters.ContentHash==loadedMaterial.ContentHash) return;
             Execute(AuthoringOperation.UpdateNode(GraphNode.StandardMaterial(selectedMaterial,parameters)));
         }
@@ -99,6 +103,16 @@ namespace NyaForge.UnityRuntime
             loadedEmission=MaterialHex(loadedEmissionStrength>0 ? p.Emission*(1/loadedEmissionStrength) : new Vec3(1,1,1));
             materialEmission.SetValueWithoutNotify(loadedEmission);materialEmissionStrength.SetValueWithoutNotify(loadedEmissionStrength);
             materialAlphaMode.SetValueWithoutNotify(materialAlphaMode.choices[(int)p.AlphaMode]);materialCutoff.SetValueWithoutNotify(p.AlphaCutoff);materialCutoff.SetEnabled(p.AlphaMode==MaterialAlphaMode.Cutout);
+            semanticTextureInfo.text=SemanticTextureSummary(p.Textures);
+        }
+
+        static string SemanticTextureSummary(MaterialTextureSet textures)
+        {
+            if (textures==null || textures.IsEmpty) return "semantic map: なし（normal / metallic-roughness）";
+            var entries=new List<string>();
+            if (textures.Normal!=null) entries.Add("normal: "+textures.Normal.MimeType+" / "+textures.Normal.EncodedByteCount.ToString("N0")+" bytes / UV"+textures.Normal.TexCoord+" / scale "+textures.Normal.NormalScale.ToString("0.###"));
+            if (textures.MetallicRoughness!=null) entries.Add("metallic-roughness: "+textures.MetallicRoughness.MimeType+" / "+textures.MetallicRoughness.EncodedByteCount.ToString("N0")+" bytes / UV"+textures.MetallicRoughness.TexCoord);
+            return "保持中のsemantic map\n"+string.Join("\n",entries)+"\nnormal: tangent-space / MR: B=metallic, G=roughness";
         }
     }
 }
