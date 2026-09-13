@@ -1,3 +1,7 @@
+# 2026-09-13 native UI acceptance bridge check
+
+提示されたレビュー（基準 `0d1e957`）のP1/P2は、現行main（`18706ff`）の実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。
+
 # 2026-09-13 material output guidance
 
 材質パネルに残っていた「材質付きUnity出力は開発中」という古い案内を、対応するUnity用profileへ書き出せる説明へ更新した。実装範囲とGUI案内の不一致を解消し、Windows Player `Builds/MaterialMessagingV1/NyaForge.exe` の800x600 Authoring suite **78 checks PASS**（`Artifacts/Authoring-20260913-090623-889afe772a2a44dba831a8fab5c80adf/report.json`）で既存操作の回帰がないことを確認した。
