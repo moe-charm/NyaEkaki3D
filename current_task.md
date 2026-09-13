@@ -22,6 +22,8 @@ Workbenchの衣装表面処理へ`avatar面ID（カンマ区切り・空欄=全�
 
 このCore変更を含むUnity **6000.4.3f1** Playerを`Builds/WindowsFitMetrics/NyaForge.exe`へ別出力し、Authoring suite **83 checks PASS**を確認した。証拠は`Artifacts/Authoring-20260914-025023-dc782617ee3a4acc8ae12e856b1f1a39/report.json` と `authoring.png`。これは自動fixtureでのコンパイル・UI回帰であり、実マウス・実RadDollV3全周fit・貫通・VRChat内表示とは別である。
 
+同じPlayer検証成果物をUnity **2022.3.22f1** Bridgeへ渡し、receiver verification **15 checks PASS**を再確認した。証拠は`Artifacts/BridgeReceiver-20260914-025117-261-ef07c59af2624fb9beb70a7c5a1409ad/bridge-report.json`。受け取り側の配置・ownership・semantic map回帰を含むが、実RadDollV3の全周fit・貫通・VRChat内表示は未受入である。
+
 レビューで挙がった `9855d43` 系のP1/P2を現行mainへ再照合した。対象は衣装受け取りの座標、割当保存、UV1、疎なmaterial slot、MR係数、カフ面向き、sampler共有、削除済み衣装の割当読込である。
 
 次の項目は現行実装と回帰で確認済みで、同じ修正を重ねて行わない。
