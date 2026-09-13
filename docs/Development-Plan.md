@@ -2,6 +2,8 @@
 
 製品名は **Nya Ekaki 3D**。本文中の `NyaForge` は、既存のコード・パッケージ・namespaceを示す互換上の内部名です。
 
+2026-09-13 開発順の更新: [Windows v1実行計画](Windows-v1-Development-Plan.md)を採用した。直近はreceiver環境・衣装受け渡し契約→最小の剛体/skin衣装適用→Polygon造形確定→範囲限定fit/weight→自作衣装一周を優先する。本書の過去の「次はI04-A」「C2全身制作から進む」等は着手指示として再利用しない。製品全体のC0〜C5は維持し、v1完了とは分ける。最新状態は[current_task](../current_task.md)冒頭。
+
 更新: 2026-09-13。C0-R／C1-A、C1-Bの形状・UV編集、C1-CのPaint graphに加え、小物形状のGUI一周、layer/mask/PNG取り込み、3D paintと初期Surface往復まで検証記録あり。GLB／VRM出力はscene・resource readerのreadback validation、source diagnostics、snapshot pinを備え、VRM node-mapはhumanoid・表情・SpringBoneの参照回帰まで確認した。3D描画の準備をGUIから非同期化し、準備後の描画とviewport更新をPlayerで検証。最新の実装・証拠・再開手順と残件はcurrent_taskへ集約する。以下の終了条件は段階ごとの開発契約であり、C1全体の完了を意味しない。
 製品目標と技術契約は [設計v2](NyaForge-Authoring-Design2.md) が正本。この文書はローカル実装への適用順を定める。初期対応OSはWindows。macOS対応は今回の工程へ加えない。
 
@@ -9,7 +11,7 @@
 
 上段のC1開始時比較表は履歴として保持し、現行mainの能力は`current_task.md`を正本とする。現在はtyped graph、Polygon／UV／Paint／Material、頂点・辺・面編集、Rig／weight paint、GLB／VRM取込、複数mesh instanceの原子的取込、stable BoneId装着、native Save/Open、表示形状／skin／extended GLB出力、初期VRM1出力、MCP、Unity Bridgeまで実装・自動検証済みである。RadDollV3実モデルでの単体・全mesh取込、編集、保存再開、出力、1000×700 Navigationも確認している。
 
-次の完了判定は、実マウス・DPI個体差の手動受入と、UniVRM／VRChatでの実受取・外観・挙動確認を分けて実施する。完全VRM意味情報、FBX／BLEND直接取込、自動fit／貫通修正、任意pose/morph変換は現在の初期profileの範囲外であり、対応済みと表示しない。
+次の完了判定には、Polygonからskin用派生graphへの接続、衣装だけを既存Unity avatarへ適用するreceiver、転送領域/距離制限、画像の縮小/原本契約という未完了の実装も含む。手動受入だけが残っている状態ではない。実マウス・DPI、独立reader、実SDK、実VRChatはそれぞれ検証する。完全VRM意味情報、FBX／BLEND直接取込、自動fit／貫通修正、任意pose/morph変換は現在の初期profileの範囲外であり、対応済みと表示しない。
 
 2026-09-12レビュー追記: Rig / VRMの読込・保存・SpringBone計算で再現不具合が見つかった。次のVRM adapter / GUI接続の前に [current_task.mdの修正タスク](../current_task.md) を実施する。[レビュー記録](reviews/2026-09-12-Rig-Vrm-Review.md)に再現条件と完了条件をまとめた。以下の過去のCore / Player合格記録は、この追加検査での不具合解消を意味しない。製品目標とC0〜C5の範囲は変更しない。
 

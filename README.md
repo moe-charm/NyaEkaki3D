@@ -13,6 +13,7 @@ For a public import smoke without private avatar assets, run `Tools/New-NyaForge
 ## Start here
 
 - [Current development task and verification results](current_task.md)
+- [Windows v1 execution plan and acceptance gates](docs/Windows-v1-Development-Plan.md)
 - [Documentation index and authority](docs/README.md)
 - [Authoring design v2](docs/NyaForge-Authoring-Design2.md)
 - [Implementation gaps and next development slices](docs/Development-Plan.md)

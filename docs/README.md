@@ -7,6 +7,7 @@
 | 文書 | 役割 |
 |---|---|
 | [current_task.md](../current_task.md) | 現在の作業、直近の完了事項、次に着手する範囲 |
+| [Windows v1実行計画](Windows-v1-Development-Plan.md) | Pro持込提案の採用修正版。衣装一周を先行するNF-V1-01〜16、初回/最終受入、依存修正と現行コードの不足 |
 | [揺れ・布adapter計画](Secondary-Motion-Plan.md) | PhysBones優先、MagicaCloth2任意評価、SIM-01〜07と完了条件 |
 | [source affine基盤](Source-Affine.md) | 行列・法線/接線・数値検査とnode/保存接続の次工程 |
 | [モデル交換仕様](Model-Interchange-Spec.md) | 取込・情報保持・native正本・出力・モジュール分割とI04完了条件 |
@@ -58,7 +59,7 @@
 | [Paint基盤](../Assets/NyaForge/Authoring/Paint/README.md) | 画像tile・brush・色空間・UV binding、typed graphとnative保存。GUIコードあり、操作検証はcurrent_task参照 |
 | [C1-C Paint整理前記録](history/2026-09-11-C1C-Paint-Before-Preparation.md) | Paint基盤とgraph統合の証拠。GUI追加前の記述を含む過去記録 |
 
-読む順序は `current_task.md` → 開発計画 → 設計v2の該当節 → 対象コード。全体設計に機能が載っていても、実装済みとは限らない。持込設計の固定コミット調査と、ローカルの未コミット実装を区別する。
+読む順序は `current_task.md` 冒頭 → Windows v1実行計画 → 設計v2の該当節 → 対象コード。開発計画には従来のC0〜C5の契約と経緯を残す。全体設計に機能が載っていても、実装済みとは限らない。持込設計の固定コミット調査と、ローカルの未コミット実装を区別する。
 
 [C1-C Paint GUI・再割当・依存表示の履歴](history/2026-09-11-C1C-Paint-Dependencies.md)には、PNG出力前の実装と検証を保存している。
 
