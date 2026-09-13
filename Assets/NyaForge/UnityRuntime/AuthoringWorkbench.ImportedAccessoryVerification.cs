@@ -72,11 +72,27 @@ namespace NyaForge.UnityRuntime
                 BindAccessoryToAvatar();
                 var boundGraph = workspace.Document.ActiveObject.Graph;
                 var bound = boundGraph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.SkinBind);
+                string rootBindingHash = bound.Binding.ContentHash;
                 Check(boundGraph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinDeform) &&
                     bound.Binding.Weights.Count == workspace.Preview.Evaluation.MeshOutputs.Values.First(value => value.Mesh != null).Mesh.VertexCount &&
                     bound.Binding.Weights.Values.SelectMany(values => values).Select(value => value.BoneId).Distinct().Count() == 1 &&
                     bound.Binding.Weights.Values.All(values => values.Count == 1 && Math.Abs(values[0].Weight - 1f) < 1e-6f),
                     "Accessory skin-bind did not initialize all vertices to the selected avatar root");
+
+                // The clothing panel exposes a deterministic bone-segment
+                // proximity seed after the explicit Root initialization. Keep
+                // this as a separate action so the artist can inspect and
+                // correct the result in Rig before committing a pose/export.
+                attachmentTargetChoice = avatarObjectId;
+                RefreshAttachmentControls();
+                TransferAccessoryWeights();
+                boundGraph = workspace.Document.ActiveObject.Graph;
+                bound = boundGraph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.SkinBind);
+                Check(bound.Binding.ContentHash != rootBindingHash && bound.Binding.Weights.Count > 0,
+                    "Accessory automatic weight initialization did not update the SkinBind node");
+                Check(bound.Binding.Weights.Values.All(values => values.Count >= 1 && values.Count <= 4 &&
+                    Math.Abs(values.Sum(value => value.Weight) - 1f) < 1e-5f),
+                    "Accessory automatic weights were not normalized within the four-influence limit");
 
                 // Exercise the same explicit pose-copy action exposed by the
                 // Workbench. Move the source avatar, copy its evaluated pose

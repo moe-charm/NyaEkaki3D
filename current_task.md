@@ -1919,3 +1919,9 @@ This confirms the node-map and authored-token resolution path on the private mod
 Core回帰は **480 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0d70cc4826e642758fddfe38da6debad`）。自動weightの決定性、全頂点の正規化、最大4 influence、不正falloff拒否を追加確認した。Unity **6000.4.3f1**で `Builds/WeightTransferV1/NyaForge.exe` をビルドし、800x600 Authoring suite **PASS**（`Artifacts/Authoring-20260913-185032-5f9e24cf1ea146f8a6a4c2005557dbb5/report.json`、画面 `authoring.png`）。
 
 自動fit・貫通修正、nearest-surface transfer、衣装の実アバター内見た目、手動mouse/DPI受入は別タスクとして残す。
+
+# 2026-09-13 自動weight初期化のWorkbench回帰
+
+小物ワークフローへ、Root 100%初期化の後に「自動weight初期化（骨近傍）」を実行する検証を追加した。自動初期化がSkinBindの内容hashを更新し、全頂点を1〜4本の正のinfluenceへ正規化した状態で、後続のpose copy・native Save/Open・skinned GLB出力へ進めることを確認する。自動結果は骨segment距離による初期値であり、fit・貫通判定・販売品質を保証しないため、Rig panelでの確認・手修正を引き続き必須とする。
+
+Coreは **480 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-60e729da5dfc4547899e81182d56c397`）。Unity **6000.4.3f1** Windows Player `Builds/AutoWeightV2/NyaForge.exe` のAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-185647-a0e9524d71b94715aab9d5249cbf41ad/report.json`、画面 `authoring.png`）。
