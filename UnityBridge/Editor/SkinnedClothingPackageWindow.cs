@@ -271,8 +271,14 @@ namespace NyaForge.UnityBridge.Editor
             }
             var mesh = marker.Mesh;
             var materials = marker.Materials.Where(material => material != null).Distinct().ToArray();
-            var textures = materials.Select(material => material.mainTexture)
-                .Where(texture => texture != null && texture != Texture2D.whiteTexture).Distinct().ToArray();
+            var textures = new HashSet<Texture>();
+            foreach (var material in materials)
+            {
+                if (material == null) continue;
+                AddOwnedTexture(textures, material.mainTexture);
+                if (material.HasProperty("_BumpMap")) AddOwnedTexture(textures, material.GetTexture("_BumpMap"));
+                if (material.HasProperty("_MetallicGlossMap")) AddOwnedTexture(textures, material.GetTexture("_MetallicGlossMap"));
+            }
             int group = Undo.GetCurrentGroup();
             Undo.SetCurrentGroupName(undoName);
             // Capture the references before destroying the GameObject. Each
@@ -284,6 +290,9 @@ namespace NyaForge.UnityBridge.Editor
             if (mesh != null) Undo.DestroyObjectImmediate(mesh);
             Undo.CollapseUndoOperations(group);
         }
+
+        static void AddOwnedTexture(HashSet<Texture> textures, Texture texture)
+        { if (texture != null && texture != Texture2D.whiteTexture) textures.Add(texture); }
 
         internal static void DestroyManagedObjectImmediately(GameObject generated)
         {

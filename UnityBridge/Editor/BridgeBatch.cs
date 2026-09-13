@@ -310,20 +310,25 @@ namespace NyaForge.UnityBridge.Editor
             Require(shader != null, "Unity Standard shader is unavailable for clothing ownership Undo fixture.");
             var material = new Material(shader) { name = "Owned Clothing Undo Material" };
             var texture = new Texture2D(2, 2) { name = "Owned Clothing Undo Texture" };
+            var normal = new Texture2D(2, 2) { name = "Owned Clothing Undo Normal" };
+            var metallicGloss = new Texture2D(2, 2) { name = "Owned Clothing Undo MetallicGloss" };
             material.mainTexture = texture;
+            material.SetTexture("_BumpMap", normal);
+            material.SetTexture("_MetallicGlossMap", metallicGloss);
             try
             {
                 var marker = generated.AddComponent<NyaForgeSkinnedClothingManaged>();
                 marker.Bind(Guid.NewGuid().ToString("D"), new string('b', 64), mesh, new[] { material });
                 SkinnedClothingPackageWindow.DestroyManagedObjectWithUndo(generated, "Verify NyaForge clothing ownership Undo");
-                Require(generated == null && mesh == null && material == null && texture == null,
+                Require(generated == null && mesh == null && material == null && texture == null && normal == null && metallicGloss == null,
                     "Managed clothing Undo fixture was not destroyed as one ownership set.");
                 Undo.PerformUndo();
                 Require(generated != null, "Managed clothing Undo did not restore the generated object.");
                 var restored = generated.GetComponent<NyaForgeSkinnedClothingManaged>();
-                Require(restored != null && restored.Mesh != null && restored.Materials.Length == 1 && restored.Materials[0] != null && restored.Materials[0].mainTexture != null,
+                Require(restored != null && restored.Mesh != null && restored.Materials.Length == 1 && restored.Materials[0] != null && restored.Materials[0].mainTexture != null &&
+                    restored.Materials[0].GetTexture("_BumpMap") != null && restored.Materials[0].GetTexture("_MetallicGlossMap") != null,
                     "Managed clothing Undo did not restore owned mesh/material/texture assets.");
-                checks.Add("Managed clothing deletion destroys owned mesh/material/texture together and restores them with one Undo.");
+                checks.Add("Managed clothing deletion destroys owned mesh/material/normal/MR textures together and restores them with one Undo.");
             }
             finally
             {
@@ -331,6 +336,8 @@ namespace NyaForge.UnityBridge.Editor
                 if (mesh != null) Object.DestroyImmediate(mesh);
                 if (material != null) Object.DestroyImmediate(material);
                 if (texture != null) Object.DestroyImmediate(texture);
+                if (normal != null) Object.DestroyImmediate(normal);
+                if (metallicGloss != null) Object.DestroyImmediate(metallicGloss);
                 if (avatar != null) Object.DestroyImmediate(avatar);
                 Undo.ClearAll();
             }
