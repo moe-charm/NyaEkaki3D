@@ -10,6 +10,10 @@ private一時RadDollV3 VRMを元データのままリポジトリへ追加せず
 
 外部base-color画像URIのパーセントエンコードを復号してから相対パス検査するようにした。`%2E`などの通常のファイル名表記を受け入れ、復号後の絶対パス・remote URI・NUL・`..`によるモデルフォルダ外への脱出は従来どおり拒否する。Coreは **469 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b8622a14fdb142c39010cbe5384e2ddc`）。Windows Player `Builds/UriV1/NyaForge.exe`の800x600 Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-123450-fc13e67f9c3e4363bd1c0caf022fdc99/report.json`）、Unity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-123523-876-0e11abb8f3a742218f2efb42f0cbc413/bridge-report.json`）。
 
+# 2026-09-13 bounded external image read and real-model recheck
+
+外部画像の読み込みを16MiB上限付きFileStreamへ変更し、読み込み中のファイル差し替えや権限／I/O失敗を未処理例外にせず、`IMAGE_BUDGET_EXCEEDED`／`EXTERNAL_RESOURCE_MISSING`／`EXTERNAL_RESOURCE_UNAVAILABLE`として返すようにした。Core回帰は **469 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-850b459bf65e440e9ef0d7ca4d4f93ab`）。`Builds/UriV2/NyaForge.exe`でprivate一時RadDollV3の外部base-color画像付きVRMを再取込し、EditMesh、native Save/Open、標準GLB出力まで **PASS**（`Artifacts/Authoring-20260913-123800-52cd3d9e8cf54109836ec1e79f6d2d89/report.json`）。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-123916-047-006f669c0bf4403491a4577693bd5ac2/bridge-report.json`）。
+
 # 2026-09-13 external base-color image import
 
 GLB/VRM取込へ、モデルファイルと同じフォルダ配下の安全な相対URIによるbase-color画像を追加した。外部画像はnative Paintへ即時コピーしてSave/Open後も元ファイルへ依存しない。モデルフォルダ外への`..`、data URI、remote URI、欠落ファイル、16MiB超は明示エラーにする。埋め込み画像と既存のサイズ縮小経路は維持し、警告文と交換仕様書を実際の保持範囲へ更新した。

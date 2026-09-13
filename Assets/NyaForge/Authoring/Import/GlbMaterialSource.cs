@@ -131,10 +131,33 @@ namespace NyaForge.Authoring.Import
             catch (Exception error) when (error is ArgumentException || error is NotSupportedException) { throw new AuthoringException("INVALID_IMPORT", "External image URI is not a valid local path."); }
             Checks.Require(full.StartsWith(root, StringComparison.OrdinalIgnoreCase), "UNSUPPORTED_FORMAT", "External image URI escapes the model directory.");
             var info = new FileInfo(full); Checks.Require(info.Exists, "EXTERNAL_RESOURCE_MISSING", "External base color image was not found: " + uri);
-            Checks.Require(info.Length > 0 && info.Length <= 16 * 1024 * 1024, "IMAGE_BUDGET_EXCEEDED", "External base color image exceeds the 16 MiB image budget.");
             if (string.IsNullOrWhiteSpace(mimeType)) mimeType = MimeType(Path.GetExtension(full));
             Checks.Require(mimeType == "image/png" || mimeType == "image/jpeg", "UNSUPPORTED_FORMAT", "Only PNG and JPEG external base color images are supported.");
-            return File.ReadAllBytes(full);
+            return ReadBoundedExternalBytes(full, uri);
+        }
+
+        static byte[] ReadBoundedExternalBytes(string path, string uri)
+        {
+            const int maximum = 16 * 1024 * 1024;
+            try
+            {
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    Checks.Require(stream.Length > 0 && stream.Length <= maximum, "IMAGE_BUDGET_EXCEEDED", "External base color image exceeds the 16 MiB image budget.");
+                    int length = checked((int)stream.Length); var result = new byte[length]; int offset = 0;
+                    while (offset < result.Length)
+                    {
+                        int read = stream.Read(result, offset, result.Length - offset);
+                        if (read <= 0) throw new IOException("The external image ended before its declared length.");
+                        offset += read;
+                    }
+                    return result;
+                }
+            }
+            catch (FileNotFoundException) { throw new AuthoringException("EXTERNAL_RESOURCE_MISSING", "External base color image was not found: " + uri); }
+            catch (DirectoryNotFoundException) { throw new AuthoringException("EXTERNAL_RESOURCE_MISSING", "External base color image was not found: " + uri); }
+            catch (UnauthorizedAccessException error) { throw new AuthoringException("EXTERNAL_RESOURCE_UNAVAILABLE", "External base color image could not be read: " + error.Message); }
+            catch (IOException error) { throw new AuthoringException("EXTERNAL_RESOURCE_UNAVAILABLE", "External base color image could not be read: " + error.Message); }
         }
 
         static string MimeType(string extension)

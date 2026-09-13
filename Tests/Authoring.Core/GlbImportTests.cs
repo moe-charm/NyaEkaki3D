@@ -144,6 +144,7 @@ internal static partial class Program
             root["images"]![0]!["uri"] = "textures/red%2Epng";
             var encoded = GlbImporter.ReadFromDirectory(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None)), 0, directory);
             True(encoded.Materials.Single().CopyBaseColorImageBytes().SequenceEqual(image));
+            Expect("EXTERNAL_RESOURCE_UNAVAILABLE", () => GlbImporter.Read(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None))));
             root["images"]![0]!["uri"] = "../outside.png";
             Expect("UNSUPPORTED_FORMAT", () => GlbImporter.ReadFromDirectory(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None)), 0, directory));
             root["images"]![0]!["uri"] = "%2E%2E/outside.png";
