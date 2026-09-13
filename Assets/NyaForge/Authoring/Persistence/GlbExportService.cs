@@ -319,7 +319,8 @@ namespace NyaForge.Authoring
                 // Validate the exact bytes before publishing the destination. This
                 // keeps a malformed writer result from appearing as a successful
                 // export even when a later consumer would reject it.
-                GlbSceneInventoryReader.Read(bytes);
+                var inventory = GlbSceneInventoryReader.Read(bytes);
+                ValidateResourceReadback(bytes, inventory);
                 string path = Path.Combine(staging, FileName); File.WriteAllBytes(path, bytes);
                 string reportPath = Path.Combine(staging, ReportFileName);
                 var report = new JObject
@@ -354,7 +355,7 @@ namespace NyaForge.Authoring
                                 ["code"] = d.Code, ["path"] = d.Path, ["isBlocking"] = d.IsBlocking, ["message"] = d.Message
                             }))
                         })),
-                    ["validation"] = new JObject { ["glbSceneInventory"] = "passed" },
+                    ["validation"] = new JObject { ["glbSceneInventory"] = "passed", ["glbResourceReaders"] = "passed" },
                     ["limitations"] = new JArray(profile == GlbExportProfile.StaticGeometry
                         ? new[] { "graph and native metadata are not embedded", "VRM extensions are not emitted" }
                         : profile == GlbExportProfile.SkinnedGeometry
@@ -370,6 +371,34 @@ namespace NyaForge.Authoring
                 if (Directory.Exists(staging)) Directory.Delete(staging, true);
                 throw;
             }
+        }
+
+        static void ValidateResourceReadback(byte[] bytes, GlbSceneInventory inventory)
+        {
+            // Validate each emitted resource through the same bounded readers
+            // used by import. This catches an exporter that writes a structurally
+            // valid scene whose mesh/skin accessors the authoring pipeline cannot
+            // reopen. Read each resource once even when several nodes alias it.
+            var skinned = new HashSet<string>(StringComparer.Ordinal);
+            var staticMeshes = new HashSet<int>();
+            foreach (var instance in inventory.Instances)
+            {
+                if (instance.SkinIndex.HasValue)
+                {
+                    string key = instance.MeshIndex.ToString(System.Globalization.CultureInfo.InvariantCulture) + ":" + instance.SkinIndex.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    if (skinned.Add(key)) GlbSkinImporter.Read(bytes, instance.MeshIndex, instance.SkinIndex.Value);
+                }
+                else
+                {
+                    if (staticMeshes.Add(instance.MeshIndex)) GlbImporter.Read(bytes, instance.MeshIndex);
+                }
+            }
+            // A mesh resource may be present without a node instance. The
+            // inventory deliberately preserves that distinction, so validate
+            // those resources too instead of silently skipping them.
+            var instancedMeshes = new HashSet<int>(inventory.Instances.Select(instance => instance.MeshIndex));
+            foreach (var mesh in inventory.Meshes)
+                if (!instancedMeshes.Contains(mesh.MeshIndex)) GlbImporter.Read(bytes, mesh.MeshIndex);
         }
     }
 

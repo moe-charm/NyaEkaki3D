@@ -1,3 +1,13 @@
+# 2026-09-13 GLB resource reader Player acceptance
+
+Windows Player `Builds/ResourceReadbackV1/NyaForge.exe`へ、出力後resource readbackを接続した版をビルド。通常Authoring suiteは **PASS / 82 checks**（`Artifacts/Authoring-20260913-205314-2f2e356e7262431b9caa43b1092df3f1/report.json`）で、標準GLB／skin出力の公開前再読込を含む既存導線を確認した。`-GlbExportMcp` suiteも **PASS / 82 checks**（`Artifacts/Authoring-20260913-205221-82004a3fb3534061ac7cce0657f3c04c/report.json`）で、MCP responseの`validation.glbResourceReaders=passed`を確認した。Unity **2022.3.22f1** Bridgeは **PASS**（`Artifacts/BridgeReceiver-20260913-205352-266-729bed7bb7184a7197c940242d0824fc/bridge-report.json`）。
+
+最初の180秒試行はPlayer終了待ちがタイムアウトしたが、reportはPASSを書いていた。長めの再試行では正常終了したため、最終証拠は後者を採用する。実VRChat内の外観・挙動、実マウス／DPI個体差、完全VRM意味情報は引き続き別受入境界。
+# 2026-09-13 GLB resource readback validation
+
+GLB公開前の検証をscene inventoryだけから、同じ再開経路で使う`GlbImporter`／`GlbSkinImporter`まで拡張した。出力内のmesh resourceとmesh/skin組合せを重複なく再読込し、instanceのないmesh resourceも検査する。読み手が開けないaccessorやskinを構造上有効なGLBとして公開しない。reportの`validation.glbResourceReaders=passed`へ記録し、既存のstaging原子公開とVRM metadata readbackは維持した。
+
+Coreは **486 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-586f32e241be43a7a9de93e1c4721e5b`）。Unity／VRChat実機の描画・挙動は別受入境界で、reader再読込はNyaForgeのresource互換性を示す検査に限定する。
 # 2026-09-13 c4a2748 feedback regression hardening
 
 提示レビューのP1（VRMの実node参照、複数skinの骨順差、旧形式VRMへ通常GLBを追加した移行）を現行mainへ再確認し、既存の実装に加えて、VRM 1 exportのnode-map回帰を表情morph bindとSpringBone jointまで拡張した。humanoid・表情・揺れが同じ実出力nodeへ解決され、骨名やmesh nodeを取り違えないことを検証する。`ProjectActions`のstable authored tokenコメントも、実writer順序に依存しない説明へ修正した。

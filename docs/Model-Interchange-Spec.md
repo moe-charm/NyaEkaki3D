@@ -184,7 +184,7 @@ I04-Eのreport設計はAと同時に進め、完全取込の公開にはA〜Eの
 
 面選択用のrender頂点ワールド座標はprojection構築時にキャッシュする。高密度meshのクリックごとに全頂点配列を再生成せず、UV seam分割を含むrender domainと編集用vertex domainを分けて扱う。
 
-GLB/VRMの入出力にはnative blobと分離した128 MiBファイル予算と、1 mesh 200,000頂点の共通予算を適用する。native graph/blobの16 MiB予算を広げる変更ではない。予算超過は出力先を作成せず診断する。
+GLB/VRMの入出力にはnative blobと分離した128 MiBファイル予算と、1 mesh 200,000頂点の共通予算を適用する。native graph/blobの16 MiB予算を広げる変更ではない。予算超過は出力先を作成せず診断する。GLB出力は公開前にscene inventoryだけでなく、各mesh resourceを`GlbImporter`、各mesh/skin組合せを`GlbSkinImporter`で一度ずつ再読込し、reportの`validation.glbResourceReaders=passed`へ記録する。これはNyaForgeで再開可能なresource形式の検証であり、Unity／VRChat実機の外観受入を代替しない。
 
 | profile | 保持する情報 | 境界 |
 |---|---|---|
