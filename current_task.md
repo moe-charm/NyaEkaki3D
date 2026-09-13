@@ -1657,3 +1657,7 @@ Coreは **473 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 Coreは **474 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ac362427c5f54bdb8a20ef3a6200159b`）。新規回帰はVRM SpringBone packageの再読込とshape保持を確認した。Unity 6000.4.3f1のWindows Player `Builds/P1FixV4/NyaForge.exe` はコンパイル・ビルド成功。Authoring全件自動suiteは600秒設定で **PASS**（`Artifacts/Authoring-20260913-144051-aa589a686bcd48f4a8893525316f52ea/report.json`、`authoring.png`）。同成果物のUnity 2022.3.22f1 Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-144125-134-189a9721c1684d6cbc8707751a808f89/bridge-report.json`）。
 
 未完了境界は、実モデルでの今回の保存後matrix／ウェイト編集目視、実VRChat／UniVRM受入、VRM material bind・LookAt・FirstPerson・MToon・animation・任意拡張、異なるskeleton結合、自動fit・貫通修正。次回は短い専用fixtureでP1の保存→再読込→GLB再取込をPlayer検証し、長時間suiteと分けて証拠化する。
+
+# 2026-09-13 P1修正後のprivate RadDollV3再確認
+
+public repositoryへ素材を追加せず、`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`を入力にして、今回のP1修正後Playerで候補選択・編集・native Save/Open・標準skinned GLB出力・再取込を実行した。Windows Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-144320-e0bdb1af8a344640884475842253746f/report.json`、`authoring.png`）。同成果物のUnity 2022.3.22f1 Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-144450-130-658ed8b59fbb4075ace026dd047b0161/bridge-report.json`）。これはprivate実モデルでの自動確認で、骨回転・拡縮と編集ウェイトの個別目視、実VRChat／UniVRM受入は引き続き別境界とする。
