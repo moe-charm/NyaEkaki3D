@@ -16,6 +16,8 @@ Workbenchの衣装表面処理へ`avatar面ID（カンマ区切り・空欄=全�
 
 面領域の解除操作をボタン化し、「avatar面領域を解除（全三角形）」で入力欄・選択集合・overlayを一度にクリアできるようにした。最新`Builds/WindowsSurfaceClear/NyaForge.exe`（Unity **6000.4.3f1**）のAuthoring suite **83 checks PASS**（`Artifacts/Authoring-20260914-024400-8ba2a334092c4dd6b93351665a7b9e5f/report.json` と `authoring.png`）。
 
+最新のavatar面選択overlay版PlayerをBridgeへ渡し、Unity **2022.3.22f1**のreceiver verification **15 checks PASS**を確認した。skinned clothingの変形avatar local/world配置、ownership cleanup、複数package管理、semantic normal／MR変換を再回帰した。証拠は`Artifacts/BridgeReceiver-20260914-024250-790-c36011a940cf4582bc68b98879a5e807/bridge-report.json`。Bridge合格は合成fixture受入であり、実RadDollV3全周fit・貫通・見た目・VRChat内表示を含まない。
+
 レビューで挙がった `9855d43` 系のP1/P2を現行mainへ再照合した。対象は衣装受け取りの座標、割当保存、UV1、疎なmaterial slot、MR係数、カフ面向き、sampler共有、削除済み衣装の割当読込である。
 
 次の項目は現行実装と回帰で確認済みで、同じ修正を重ねて行わない。
