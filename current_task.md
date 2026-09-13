@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09N: V29実RadDollV3一周とBridge受け取り
+
+private一時VRM `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`を公開ツリーへコピーせず、`Builds/ReleaseCandidateV29/NyaForge.exe`へ直接渡した。全mesh instance取込、EditMesh、native Save/Open、skinned GLB／VRM1出力、衣装package生成を含む **93 checks PASS**（`Artifacts/Authoring-20260914-082145-4f42a375b1224914af0782043c15f279/report.json`）。生成packageをUnity **2022.3.22f1**のBridgeへ渡し、**16 checks PASS**（`Artifacts/BridgeReceiver-20260914-082703-724-7cf712d873094c299d5e03ef390fb8b5/bridge-report.json`）。
+
+全mesh取込中はプロセスが応答状態を維持し、一時的に約4.6GBのPrivate Memoryを観測した。今回の値はRadDollV3の画像・全meshを一括展開した単一RTX 4090環境の観測で、通常編集時や別GPUの性能保証ではない。NF-V1-15の軽量性計測では、全mesh取込と通常編集を分けた計測条件にする。実EditorWindowのマウス・IME・Explorer、衣装全周の貫通ゼロ・見た目、VRChat Build & Test／実機表示は未受入として残る。
+
 ## 2026-09-14 NF-V1-09M: Authoring検証の多重起動ガード
 
 同じReleaseCandidate Playerを2画面で同時にAuthoring検証すると、共有runtime資源の競合で両方がタイムアウトすることが分かった。`Tools/Test-NyaForgeAuthoring.ps1`へ同じ`BuildName`の`NyaForge.exe`検出を追加し、検証開始前に「順番に実行」エラーを返すようにした。製品Playerのコードや保存形式は変更していない。
