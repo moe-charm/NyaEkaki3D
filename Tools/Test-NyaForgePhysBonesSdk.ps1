@@ -4,7 +4,10 @@ param(
     [string]$UnityProjectPath,
     [string]$TargetManifestPath,
     [string]$OutputPath,
-    [switch]$RequireSdk
+    [switch]$RequireSdk,
+    [switch]$RunUnityProbe,
+    [string]$UnityPath,
+    [ValidateRange(30, 1800)][int]$TimeoutSeconds = 600
 )
 
 $ErrorActionPreference = 'Stop'
@@ -20,6 +23,7 @@ $report = [ordered]@{
     sdkPackageIds = @()
     componentTypeName = $null
     componentMatches = @()
+    unityProbe = $null
     diagnostics = @()
 }
 
@@ -80,8 +84,51 @@ if ($report.status -eq 'unavailable' -and $report.sdkPackageIds.Count -gt 0 -and
     $report.status = 'candidate_found'
     $report.diagnostics += 'VRChat package and PhysBone-named files were found. Run the Unity receiver preflight to validate the exact component type and member shape.'
 }
-elseif ($report.status -eq 'unavailable') {
+elseif ($report.status -eq 'unavailable' -and -not $RunUnityProbe) {
     $report.diagnostics += 'Install the VRChat SDK through the project package workflow, then rerun this read-only probe.'
+}
+
+if ($RunUnityProbe) {
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+        throw 'RunUnityProbe requires a valid Unity project with Packages/manifest.json.'
+    }
+    if ([string]::IsNullOrWhiteSpace($UnityPath)) {
+        $unityCommand = Get-Command Unity.exe -ErrorAction SilentlyContinue
+        if ($unityCommand) { $UnityPath = $unityCommand.Source }
+        else { throw 'RunUnityProbe requires -UnityPath or Unity.exe on PATH.' }
+    }
+    $unityExe = (Resolve-Path -LiteralPath $UnityPath -ErrorAction Stop).Path
+    $probeRoot = Join-Path ([IO.Path]::GetTempPath()) ('NyaForge-PhysBonesSdkProbe-' + [Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $probeRoot | Out-Null
+    $probeReport = Join-Path $probeRoot 'report.json'
+    $probeLog = Join-Path $probeRoot 'unity.log'
+    $probeArgs = @('-batchmode', '-nographics', '-quit', '-projectPath', $project,
+        '-executeMethod', 'NyaForge.UnityBridge.Editor.PhysBonesSdkIntegrationVerification.Run',
+        '--nyaforge-report', $probeReport, '-logFile', $probeLog)
+    $probeProcess = Start-Process -FilePath $unityExe -ArgumentList $probeArgs -WindowStyle Hidden -PassThru
+    if (-not $probeProcess.WaitForExit($TimeoutSeconds * 1000)) {
+        $probeProcess.Kill()
+        throw "Unity SDK probe timed out. See $probeLog"
+    }
+    if (-not (Test-Path -LiteralPath $probeReport -PathType Leaf)) {
+        throw "Unity SDK probe report missing (exit $($probeProcess.ExitCode)). See $probeLog"
+    }
+    $probe = Get-Content -LiteralPath $probeReport -Raw | ConvertFrom-Json
+    $report.unityProbe = [ordered]@{
+        status = [string]$probe.status
+        reportPath = $probeReport
+        logPath = $probeLog
+        componentType = [string]$probe.componentType
+        checks = @($probe.checks)
+    }
+    if ([string]$probe.status -eq 'passed') {
+        $report.status = 'verified'
+        $report.diagnostics += 'The explicit Unity probe resolved and configured a real PhysBones component.'
+    }
+    else {
+        $report.status = 'probe_failed'
+        $report.diagnostics += 'The explicit Unity probe failed; inspect unityProbe.reportPath and unityProbe.logPath.'
+    }
 }
 
 $json = $report | ConvertTo-Json -Depth 5
@@ -94,6 +141,6 @@ if ($OutputPath) {
 }
 else { Write-Output $json }
 
-if ($RequireSdk -and $report.status -notin @('candidate_found')) {
+if ($RequireSdk -and $report.status -notin @('candidate_found', 'verified')) {
     throw "VRChat PhysBone SDK was not found or could not be identified. Status: $($report.status)"
 }

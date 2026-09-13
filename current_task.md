@@ -1834,3 +1834,11 @@ Coreは **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 実SDK probe **PASS**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-20260913-5e7f66bbf32a464286e9a84465f5a79c/physbones-sdk-report-16.json`）。Core **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-cebf69dc5bb5449d9e10ffe45b43746b`）。Unity 6000.4.3f1 Windows Player build **PASS**（`Builds/PhysBonesSdkCompatV1/NyaForge.exe`、`Logs/build-all-20260913-172701-801.log`）。同PlayerのAuthoring suite **PASS**（`Artifacts/Authoring-20260913-172731-2a6d0733c50c48f4a71c37ccaee5a9a3/report.json`）、Unity 2022.3.22f1 Bridge **PASS**（`Artifacts/BridgeReceiver-20260913-172802-343-45a35a51b0ff4f50885efa1dde54ecfd/bridge-report.json`）。
 
 残る境界は、実アバターを使った揺れの見た目、VRChat Build & Test／実機、Quest制約、実マウス／DPI差。SDK DLLとprivate素材はpublic repositoryへ追加しない。
+
+# 2026-09-13 PhysBones実SDK probeの再利用化
+
+一時検証スクリプトだけに依存しないよう、`UnityBridge/Editor/PhysBonesSdkIntegrationVerification.cs`を追加した。SDK導入済みの受け取り側Unity projectで、`PhysBonesSdkIntegrationVerification.Run`を明示実行すると、実行時型解決、capability列挙、非破壊preflight、実`VRCPhysBone`生成・stable root設定を一度に確認できる。`Tools/Test-NyaForgePhysBonesSdk.ps1 -RunUnityProbe -RequireSdk`から呼び出し、レポートとUnityログは一時フォルダへ出す。SDKなしの通常Player／Core起動ではこのprobeを自動実行しない。
+
+再利用probeを実際のSDK 3.7.6 projectで再実行し、`status=verified`（probe `status=passed`）を確認した。レポートは `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-script-20260913.json`。SDK DLL、対象project、private素材はリポジトリへ追加しない。
+
+Core／Windows Player／Unity Bridgeの直前PASS証跡は前項のPhysBones SDK受け取り写像を正とする。実アバターの揺れ、VRChat Build & Test／実機、Quest制約、実マウス／DPI差は未完了境界として継続する。
