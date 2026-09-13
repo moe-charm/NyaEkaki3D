@@ -23,7 +23,7 @@ Unity BridgeはStandard shaderへnormal mapとmetallic-roughness mapを割り当
 
 ## 2026-09-13 NF-V1-08 カフ試作テンプレート
 
-`PolygonPrimitives.Cuff`とWorkbenchの「手首カフ形状を追加」を追加した。内外面・上下キャップを持つ閉じた低ポリシェル（既定32分割、128編集頂点、128 quad）で、既存のPolygonEdit、頂点移動、native Save/Open、単体Bakeへ接続している。Coreは **493 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-1a4ae1d1c3f74cbea9a742fe8707b919`）、Windows Player `Builds/CuffTemplateV2/NyaForge.exe` build成功（`Logs/build-player-20260913-234616-199.log`）、Authoring suite **83 checks PASS**（`Artifacts/Authoring-20260913-234636-1f3341077d154d6ba757a0ed6a853e78/report.json`）。これは制作開始点の自動回帰であり、実RadDollV3へのfit・weight・貫通確認、実Unity scene、実VRChat内の見た目・負荷、販売品質を証明しない。
+`PolygonPrimitives.Cuff`とWorkbenchの「手首カフ形状を追加」を追加した。内外面・上下キャップを持つ閉じた低ポリシェル（既定32分割、128編集頂点、128 quad）で、既存のPolygonEdit、頂点移動、native Save/Open、単体Bakeへ接続している。Coreは **493 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-1a4ae1d1c3f74cbea9a742fe8707b919`）、Windows Player `Builds/CuffTemplateV2/NyaForge.exe` build成功（`Logs/build-player-20260913-234616-199.log`）、Authoring suite **83 checks PASS**（`Artifacts/Authoring-20260913-234636-1f3341077d154d6ba757a0ed6a853e78/report.json`）。同じPlayerへprivate一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）を指定したsuiteも **87 checks PASS**（`Artifacts/Authoring-20260913-235344-c86ee71d2d9f474ca4351e8177b9878f/report.json`）、その出力を渡したUnity **2022.3.22f1** Bridgeも **14 checks PASS**（`Artifacts/BridgeReceiver-20260913-235804-254-9102b0a2b95d496cb31f350808aab159/bridge-report.json`）。これは制作開始点と実モデル自動smokeの証拠であり、実RadDollV3 sceneへのfit・weight・貫通確認、実EditorWindow操作、実VRChat内の見た目・負荷、販売品質を証明しない。
 
 ## 2026-09-13 持込Windows v1案の照合結果
 
