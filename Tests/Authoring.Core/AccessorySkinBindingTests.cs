@@ -24,6 +24,38 @@ internal static partial class Program
             Expect("INVALID_WEIGHT", () => SkinWeightTransfer.ByBoneProximity(mesh, skeleton, 0f));
         });
 
+        Test("clothing surface transfer interpolates avatar triangle weights", () =>
+        {
+            var avatar = PrimitiveGeometry.Plane(.2f, .2f);
+            var clothing = new MeshData(
+                new[] { new Vec3(0, 0, 0), new Vec3(.04f, 0, 0), new Vec3(0, .04f, 0) },
+                new[] { new Vec3(0, 0, -1), new Vec3(0, 0, -1), new Vec3(0, 0, -1) },
+                new[] { new Vec4(1, 0, 0, -1), new Vec4(1, 0, 0, -1), new Vec4(1, 0, 0, -1) },
+                new[] { new Vec2(0, 0), new Vec2(1, 0), new Vec2(0, 1) },
+                new[] { new[] { 0, 1, 2 } });
+            string root = GraphId(), upper = GraphId();
+            var skeleton = new SkeletonDefinition(new[] {
+                new BoneDefinition(root, "Root", "", new Vec3(0, 0, 0), new Vec3(0, .1f, 0)),
+                new BoneDefinition(upper, "Upper", root, new Vec3(0, .1f, 0), new Vec3(0, .2f, 0))
+            });
+            var raw = new[] {
+                new SkinBinding.VertexWeightInput(0, root, 1), new SkinBinding.VertexWeightInput(1, upper, 1),
+                new SkinBinding.VertexWeightInput(2, upper, 1), new SkinBinding.VertexWeightInput(3, root, 1)
+            };
+            var avatarBinding = SkinBinding.Create(avatar, skeleton, raw);
+            var first = SkinWeightTransfer.BySurfaceProjection(clothing, new RestTransform(1, new Vec3(0, 0, .02f)),
+                avatar, new RestTransform(1, new Vec3()), avatarBinding, skeleton, 2);
+            var second = SkinWeightTransfer.BySurfaceProjection(clothing, new RestTransform(1, new Vec3(0, 0, .02f)),
+                avatar, new RestTransform(1, new Vec3()), avatarBinding, skeleton, 2);
+            Equal(first.ContentHash, second.ContentHash);
+            True(first.Weights.Values.All(values => values.Count >= 1 && values.Count <= 2 && Math.Abs(values.Sum(value => value.Weight) - 1f) < 1e-6f));
+            True(first.Weights.Values.Any(values => values.Count == 2));
+            Expect("INFLUENCE_LIMIT", () => SkinWeightTransfer.BySurfaceProjection(clothing, new RestTransform(1, new Vec3()), avatar,
+                new RestTransform(1, new Vec3()), avatarBinding, skeleton, 0));
+            Expect("SKIN_TOPOLOGY_CHANGED", () => SkinWeightTransfer.BySurfaceProjection(clothing, new RestTransform(1, new Vec3()),
+                AuthoringFixtures.Panel(1), new RestTransform(1, new Vec3()), avatarBinding, skeleton, 2));
+        });
+
         Test("static accessory can become a root-initialized avatar skin graph", () =>
         {
             var mesh = AuthoringFixtures.Panel(1);

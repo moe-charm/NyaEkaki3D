@@ -1939,3 +1939,13 @@ Coreは **481 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 Workbenchの事前検査だけに依存しないよう、`VrmExportService.ExportVrm1`自身でもmetadata対象avatarのskeleton hashを基準に全graph objectを検査するようにした。異なるskeletonを直接API／MCPから渡した場合も`VRM_SKELETON_MISMATCH`で出力先を作らず停止する。Coreへ混在拒否の回帰を追加した。
 
 Coreは **481 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f4b22134d2eb49308a09ca54c0780028`）。Unity **6000.4.3f1** Windows Player `Builds/VrmClothingV3/NyaForge.exe` のAuthoring suiteも **PASS**（`Artifacts/Authoring-20260913-190629-7f5413cf3b194f06a17f4fcb25a9015e/report.json`）。
+
+# 2026-09-13 avatar表面からの衣装weight初期化
+
+骨segment距離だけでなく、avatarのrest mesh表面から衣装weightを初期化できる経路を追加した。`MeshSurfaceProjection`がavatar meshを不変スナップショットとしてBVH化し、衣装各頂点のavatar空間位置から最近三角形を決定する。最近三角形3頂点の既存SkinBindingをバリセントリック係数で補間し、最大4本へ決定的に並べて正規化する。変形前のavatar mesh／現在のavatar bindingを使うため、pose済み表示メッシュを誤って参照しない。位置合わせ・自動fit・貫通修正を行う機能ではないため、Rig確認とpose確認を必須とする。
+
+衣装パネルへ **自動weight初期化（avatar表面）** を追加し、avatarのrest meshとSkinBindが解決できるときだけ有効化した。従来の **自動weight初期化（骨近傍）** はフォールバックとして残した。Coreへ最近三角形補間の決定性、正規化、最大influence、stale binding拒否を追加し、Workbenchのavatar＋static GLB衣装回帰でもRoot初期化→骨近傍→avatar表面→pose copy→Save/Open→GLB/VRM出力を確認した。
+
+Coreは **482 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b1f45c67d67b48e8a8a943b09ee8aeec`）。Unity **6000.4.3f1** Windows Player `Builds/SurfaceWeightV1/NyaForge.exe` のビルドは成功（`Logs/build-player-20260913-191751-692.log`）。同PlayerのAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-192030-2dbe35b99eae47609522395e4f39c436/report.json`、画面 `authoring.png`）。最初の120秒実行はsuite全体が収まらずタイムアウトしたため、同じ検証をTimeoutSeconds 300で再実行して完了を確認した。private素材・生成物・SDKはpublic repositoryへ追加していない。
+
+実アバター衣装の表面対応品質、体形差への自動fit、貫通修正、実マウス／DPI差、実VRChat内の見た目・PhysBones挙動は引き続き別受入境界とする。

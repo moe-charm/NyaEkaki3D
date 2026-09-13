@@ -93,6 +93,17 @@ namespace NyaForge.UnityRuntime
                 Check(bound.Binding.Weights.Values.All(values => values.Count >= 1 && values.Count <= 4 &&
                     Math.Abs(values.Sum(value => value.Weight) - 1f) < 1e-5f),
                     "Accessory automatic weights were not normalized within the four-influence limit");
+                string boneBindingHash = bound.Binding.ContentHash;
+                attachmentTargetChoice = avatarObjectId;
+                RefreshAttachmentControls();
+                TransferAccessorySurfaceWeights();
+                boundGraph = workspace.Document.ActiveObject.Graph;
+                bound = boundGraph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.SkinBind);
+                Check(bound.Binding.ContentHash != boneBindingHash && bound.Binding.Weights.Count > 0,
+                    "Accessory avatar-surface weight initialization did not update the SkinBind node");
+                Check(bound.Binding.Weights.Values.All(values => values.Count >= 1 && values.Count <= 4 &&
+                    Math.Abs(values.Sum(value => value.Weight) - 1f) < 1e-5f),
+                    "Accessory avatar-surface weights were not normalized within the four-influence limit");
 
                 // Exercise the same explicit pose-copy action exposed by the
                 // Workbench. Move the source avatar, copy its evaluated pose
@@ -177,7 +188,7 @@ namespace NyaForge.UnityRuntime
                 var vrmInventory = GlbSceneInventoryReader.Read(File.ReadAllBytes(vrmModel));
                 Check(vrmInventory.Instances.Count == 2 && vrmInventory.Instances.All(instance => instance.SkinIndex.HasValue),
                     "Skin-bound clothing VRM output did not retain both skinned mesh instances");
-                checks.Add("separate VRM avatar + static GLB accessory: EditMesh, rigid BoneId attachment, Save/Open, Root-initialized and automatic skin-bind, explicit avatar pose copy + Save/Open, multi-object GLB/VRM export");
+                checks.Add("separate VRM avatar + static GLB accessory: EditMesh, rigid BoneId attachment, Save/Open, Root-initialized, bone-proximity and avatar-surface weight initialization, explicit avatar pose copy + Save/Open, multi-object GLB/VRM export");
             }
             finally { ReplaceWorkspace(previous, previousPath); }
         }
