@@ -1,3 +1,10 @@
+# 2026-09-13 pasted feedback recheck on current HEAD d440900
+
+添付されたレビュー（基準 `0d1e957`）を現行HEAD `d440900`へ再照合した。レビューのP1（複数graph metadataの混線、source skin二重変形、skinned node affine、inverse-bind欠落、装着後クリックずれ）は、現行のgraph単位session、SkinDeform入力差し替え後の再評価、skinned affineの監査保持、元行列の標準／拡張GLB出力、`WorldPoints`統一で対応済み。P2（linear material／metallic既定値、局所material slot、装着先保持、PhysBones source hash、揺れUndo、GLB共通root・morph bounds、normal/tangent morph）も回帰へ含まれている。
+
+現行HEADで `dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore` を再実行し **469 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-1d49dba164734af09d72b54d1fd85b6f`）。`Builds/FeedbackRecheckV1/NyaForge.exe` のprivate一時RadDollV3 VRM取込→EditMesh→native Save/Open→標準skinned GLB出力→再取込を含むWindows Authoring suiteは **82 checks PASS**（`Artifacts/Authoring-20260913-124716-f48f3153e47d44cb8b3d10c6ef2ff315/report.json`、画面 `authoring.png`）。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-124847-559-1100e92cfca44765b56a0a95d61954be/bridge-report.json`）。private素材はpublic repositoryへ追加していない。
+
+レビュー本文にある未修正という判定は古いcommit基準のため、同じ修正を重ねていない。実マウス／DPI差／Explorer実クリック、実VRChat内の見た目・PhysBones、実SDK受入、自動fit・貫通修正、異なるskeletonの結合、完全な外部texture・animation・VRM拡張保持、標準VRM出力は引き続き別境界とする。
 # 2026-09-13 real-model external base-color import recheck
 
 private一時RadDollV3 VRMを元データのままリポジトリへ追加せず、base-color画像1枚を`textures/rad-doll-base.png`へ分離したGLB/VRM入力（相対URI、画像2,713,743 bytes、`bufferView`なし）を生成して、外部base-color経路を実モデルで確認した。Windows Player `Builds/ExternalImageRealV1/NyaForge.exe` の800x600 Authoring suiteは **PASS、全チェック完了**（`Artifacts/Authoring-20260913-122518-c59cfd830965477faae7b40c245413e1/report.json`、画面 `authoring.png`）。この経路では候補選択、外部画像付きVRM取込、既存の編集、native Save/Open、標準GLB出力まで通過した。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-122636-976-32e1c3b7b48b4226bca2ab84bbe41c9b/bridge-report.json`）。元VRM・分離画像・生成入力は`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-RealModelExternal-bdae4b667e6f41c792b056f8a23a9ab2`に置き、public repositoryへ追加していない。実VRChat内の見た目・挙動、標準VRM出力、完全な追加texture map/animation/VRM拡張保持、自動fit・貫通修正、実マウス/DPI差は引き続き未検証境界とする。
