@@ -1864,3 +1864,10 @@ VRM 1.0初期profileの実モデル受入を強化し、`VerifyCommandLineVrmExp
 private一時RadDollV3 VRMを使ったWindows Player `Builds/VrmRealGeometryV1/NyaForge.exe` のAuthoring suiteは **PASS・88 checks**（`Artifacts/Authoring-20260913-175341-bff0e1119a8443c18770a3eea7f2b6df/report.json`）。VRM 1.0 metadata再読込、source skinned GLBとのgeometry／骨数一致、native Save/Open、GLB出力を確認した。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-175531-361-e30d839270284c66b41684879f7add00/bridge-report.json`）。private素材・生成VRMはpublic repositoryへ追加していない。
 
 VRM 1.0のmaterial bind・LookAt・FirstPerson・MToon・animation・任意拡張、VRM 0.x SpringBone変換、実VRChat内の見た目・挙動、実マウス／DPI差は引き続き別受入境界とする。
+# 2026-09-13 all-mesh source locator Save/Open回帰
+
+全mesh instance取込でも、graphごとのGLB source locator（source hash・mesh index・skin index）がnative Save/Open後に失われたり別resourceへずれたりしないことを実モデル回帰へ追加した。`VerifyCommandLineAllModelImport`はdiagnostics attachmentを再読込し、元inventoryのinstance数・source hash・mesh/skin locator集合と比較する。同一mesh resourceを複数nodeが参照する入力でも、graph objectを潰さず出所を追跡できる境界を保つ。
+
+private一時RadDollV3 VRMを使ったWindows Player `Builds/AllModelLocatorV1/NyaForge.exe` のAuthoring suiteは **PASS・87 checks**（`Artifacts/Authoring-20260913-175755-355fae7f46f34d2884f677bf6e3a832c/report.json`）。全mesh instance取込、各graph EditMesh、native Save/Open、locator一致、native export、拡張skinned GLB出力を確認した。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-180013-231-0bb75aeca3664743a70c922a437e19c5/bridge-report.json`）。private素材・生成物はpublic repositoryへ追加していない。
+
+共有mesh／morphの完全共有保持、異なるsource skeletonの結合、実マウス／DPI差、実VRChat内の見た目・PhysBones挙動、完全VRM意味情報は引き続き別受入境界とする。

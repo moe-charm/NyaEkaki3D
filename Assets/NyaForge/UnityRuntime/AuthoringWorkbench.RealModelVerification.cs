@@ -138,6 +138,18 @@ namespace NyaForge.UnityRuntime
             var rigBytes = workspace.Attachments.Read(ProjectAttachments.RigSessions);
             var reopenedRigs = rigBytes == null ? new Dictionary<string, ImportedRigSession>(StringComparer.Ordinal) : ImportedRigSessionsCodec.Read(rigBytes);
             Check(reopenedRigs.Count == expectedRigs && workspace.Document.Objects.Where(item => !item.IsStaticProfile).All(item => reopenedRigs.ContainsKey(item.Graph.GraphId)), "All-mesh command-line Save/Open lost graph-keyed rig sessions.");
+            var diagnosticsBytes = workspace.Attachments.Read(ProjectAttachments.ImportDiagnostics);
+            Check(diagnosticsBytes != null, "All-mesh command-line Save/Open lost GLB source locators.");
+            var diagnostics = ImportedGlbDiagnosticsCodec.Read(diagnosticsBytes);
+            Check(diagnostics.Count == expected && diagnostics.Values.All(item => item.SourceHash == inventory.SourceHash), "All-mesh command-line source locator count or hash changed after Save/Open.");
+            var expectedLocatorValues = inventory.Instances.Count > 0
+                ? inventory.Instances.Select(item => item.MeshIndex + ":" + (item.SkinIndex.HasValue ? item.SkinIndex.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "-1"))
+                : inventory.Meshes.Select((item, index) => index + ":-1");
+            var expectedLocators = expectedLocatorValues
+                .OrderBy(value => value, StringComparer.Ordinal).ToArray();
+            var actualLocators = diagnostics.Values.Select(item => item.MeshIndex + ":" + (item.SkinIndex.HasValue ? item.SkinIndex.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "-1"))
+                .OrderBy(value => value, StringComparer.Ordinal).ToArray();
+            Check(expectedLocators.SequenceEqual(actualLocators), "All-mesh command-line source locators changed mesh/skin selection after Save/Open.");
 
             string package = Path.Combine(output, "all-model-package");
             var exported = ProjectExportService.Export(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, package);
