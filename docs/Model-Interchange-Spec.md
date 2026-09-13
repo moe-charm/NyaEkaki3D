@@ -99,7 +99,7 @@ flowchart LR
 
 - 全 `JOINTS_n / WEIGHTS_n` セット、正規化表現、非ゼロ影響を検査して保持する。重複joint/負値/非有限値は診断し、正規化時の差を測る。
 - morphはmeshごとのtarget順/名前/identityと初期weightを保持する。POSITION/NORMAL/TANGENT対応を別に記録し、一部だけ読めたことを全target保持としない。
-- 材質slot、primitiveへの割当、texture参照、UV set、sampler、alpha等を対応表で保持する。NyaForge内部に材質機能があっても、外部材質importが完成した証拠にはならない。現行のGLB readerは選択primitiveの基本PBR係数（baseColorFactorをlinear化、metallic/roughness、emissive、alpha）をnative `StandardMaterial`／`AssignMaterials`へルーティングし、埋め込みまたはモデルフォルダ内の安全な相対URIによるbase colorのPNG/JPEGをnative Paintノードへ保存する。remote/data URI、モデルフォルダ外の相対URI、metallic-roughness/normal/occlusion/emissive画像、sampler、追加拡張は未保持または拒否として診断する。
+- 材質slot、primitiveへの割当、texture参照、UV set、sampler、alpha等を対応表で保持する。NyaForge内部に材質機能があっても、外部材質importが完成した証拠にはならない。現行のGLB readerは選択primitiveの基本PBR係数（baseColorFactorをlinear化、metallic/roughness、emissive、alpha）をnative `StandardMaterial`／`AssignMaterials`へルーティングし、埋め込みまたはモデルフォルダ内の安全な相対URIによるbase colorのPNG/JPEGをnative Paintノードへ保存する。外部URIはpercent encodingを復号してから相対性・traversalを検査し、16MiB上限付きstreamで読み込む。remote/data URI、モデルフォルダ外の相対URI、metallic-roughness/normal/occlusion/emissive画像、sampler、追加拡張は未保持または拒否として診断する。
 - glTF animationとVRM表情/揺れ設定は別の機能。animation未実装時は存在を報告し、現在poseで代用しない。
 - 既知のVRM拡張でも内部フィールドごとに能力を判定する。metaの利用条件/permissions、lookAt、firstPerson、expressionの材質/texture binding・制御flag等も在庫に含める。拡張名を認識しただけで全情報保持と表示しない。未保持・未解決の意味情報がある場合は完全VRM出力を拒否し、勝手に既定値や許諾条件を作らない。
 - Unity/VRChat固有component、shader、設定はBridge側の所有境界へ残す。FBXから失われたVRM metadataを骨名だけで復元しない。
