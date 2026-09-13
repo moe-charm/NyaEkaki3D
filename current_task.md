@@ -1,3 +1,6 @@
+# 2026-09-13 VRM export source diagnostics report
+
+`VrmExportService.ExportVrm1`にも、現行graphに対応するnative import diagnosticsを`sourceDiagnostics`として同梱した。GLB内部の一時reportを削除しても、VRM成果物だけでsource hash／mesh・skin・node locator／保持不可理由を追跡できる。Coreは **486 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f2418aa50b504420a11a771ea515f1ba`）。`Builds/DiagnosticsReportV2/NyaForge.exe`でprivate RadDollV3 VRMの取込→編集→Save/Open→GLB／VRM出力・再読込を **89 checks PASS**（`Artifacts/Authoring-20260913-202425-f2aef0e5518240d2b5f8d3cb81455ff3/report.json`）し、標準GLB／衣装付きGLB／VRMの各reportに対応するsource diagnosticsが残ることを確認した。private素材はpublic repositoryへ追加していない。
 # 2026-09-13 GLB export source diagnostics report
 
 GLB export reportへnative `import-diagnostics.nyaforge.json` のsource diagnostic recordsを同梱した。source hash・mesh/skin/node locator・保持不可理由を`sourceDiagnostics`へコピーし、出力本体と同じstagingで確認できる。DiagnosticsReportV1のWindows Playerをビルドし、Authoring suiteは **PASS / 82 checks**（`Artifacts/Authoring-20260913-201906-0b40216d38fe4ca3aa8f495abd4c8a6e/report.json`）。private一時RadDollV3 VRMでは **89 checks PASS**（`Artifacts/Authoring-20260913-201938-1c022050469e4a80a0b25347cb17a4f5/report.json`）し、標準GLB reportの`sourceDiagnostics` 1件、衣装付きGLB reportの2件を再読込確認した。VRM1 reportはprofile制限を既存の`limitations`へ分離している。Player build logは`Logs/build-player-20260913-201842-396.log`。

@@ -214,9 +214,10 @@ namespace NyaForge.Authoring
         static IReadOnlyDictionary<string, ImportedGlbDiagnostics> ReadSourceDiagnostics(AuthoringWorkspace workspace)
         {
             var bytes = workspace.Attachments.Read(ProjectAttachments.ImportDiagnostics);
-            return bytes == null
-                ? new Dictionary<string, ImportedGlbDiagnostics>(StringComparer.Ordinal)
-                : ImportedGlbDiagnosticsCodec.Read(bytes);
+            if (bytes == null) return new Dictionary<string, ImportedGlbDiagnostics>(StringComparer.Ordinal);
+            var graphIds = new HashSet<string>(workspace.Document.Objects.Where(item => item.Graph != null).Select(item => item.Graph.GraphId), StringComparer.Ordinal);
+            return ImportedGlbDiagnosticsCodec.Read(bytes).Where(pair => graphIds.Contains(pair.Key))
+                .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
         }
 
         static MeshObject BuildStaticObject(AuthoringObject item, GraphMeshValue meshOverride = null)

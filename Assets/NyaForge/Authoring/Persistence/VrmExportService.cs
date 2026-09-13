@@ -226,6 +226,7 @@ namespace NyaForge.Authoring
                     ["vrmHash"] = Checks.Hash(vrmBytes),
                     ["objectCount"] = workspace.Document.Objects.Count,
                     ["metadata"] = new JObject { ["name"] = metadata.Name, ["version"] = metadata.Version, ["authors"] = new JArray(metadata.Authors), ["licenseUrl"] = "other", ["otherLicenseUrl"] = metadata.LicenseUrl, ["humanoidBoneCount"] = metadata.HumanoidNodes.Count, ["expressionCount"] = metadata.Expressions.Count, ["springBone"] = metadata.Springs != null },
+                    ["sourceDiagnostics"] = ReadSourceDiagnostics(workspace),
                     ["limitations"] = new JArray("VRM 1.0 humanoid/meta, resolved morphTargetBinds and optional VRMC_springBone 1.0 are emitted", "material binds, texture transforms, lookAt, firstPerson and animation are not emitted by this profile", "rest pose only", "graph and native metadata are not embedded")
                 };
                 File.WriteAllText(reportPath, report.ToString(Newtonsoft.Json.Formatting.Indented) + "\n", new UTF8Encoding(false));
@@ -242,6 +243,26 @@ namespace NyaForge.Authoring
             {
                 if (Directory.Exists(sourceDirectory)) Directory.Delete(sourceDirectory, true);
             }
+        }
+
+        static JArray ReadSourceDiagnostics(AuthoringWorkspace workspace)
+        {
+            var bytes = workspace.Attachments.Read(ProjectAttachments.ImportDiagnostics);
+            if (bytes == null) return new JArray();
+            var graphIds = new HashSet<string>(workspace.Document.Objects.Where(item => item.Graph != null).Select(item => item.Graph.GraphId), StringComparer.Ordinal);
+            return new JArray(ImportedGlbDiagnosticsCodec.Read(bytes).Values.Where(item => graphIds.Contains(item.GraphId))
+                .OrderBy(item => item.GraphId, StringComparer.Ordinal).Select(item => new JObject
+                {
+                    ["graphId"] = item.GraphId,
+                    ["sourceHash"] = item.SourceHash,
+                    ["meshIndex"] = item.MeshIndex,
+                    ["skinIndex"] = item.SkinIndex.HasValue ? (JToken)new JValue(item.SkinIndex.Value) : JValue.CreateNull(),
+                    ["nodeIndex"] = item.NodeIndex.HasValue ? (JToken)new JValue(item.NodeIndex.Value) : JValue.CreateNull(),
+                    ["diagnostics"] = new JArray(item.Diagnostics.Select(d => new JObject
+                    {
+                        ["code"] = d.Code, ["path"] = d.Path, ["isBlocking"] = d.IsBlocking, ["message"] = d.Message
+                    }))
+                }));
         }
 
         static VrmExportMetadata ResolveAuthoredNodeTokens(VrmExportMetadata source, GlbExportNodeMap map, string objectId)

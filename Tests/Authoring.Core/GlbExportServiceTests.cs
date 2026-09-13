@@ -418,12 +418,20 @@ internal static partial class Program
                 new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
                 new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
             var workspace = AuthoringWorkspace.CreateEmpty(); Ok(Execute(workspace, AuthoringOperation.AddGraph(graph)));
+            var sourceDiagnostic = new ImportedGlbDiagnostics(graph.GraphId, Checks.Hash(new byte[] { 9, 4 }), 1, 0,
+                new[] { new GlbImportDiagnostic("EXTENSIONS_PARTIAL", "extensionsUsed", false, "extension is not emitted by this profile") });
+            workspace.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]>
+            {
+                [ProjectAttachments.ImportDiagnostics] = ImportedGlbDiagnosticsCodec.Write(new[] { sourceDiagnostic })
+            }));
             var mapping = VrmExportMetadata.RequiredHumanBones.ToDictionary(name => name, _ => 1, StringComparer.Ordinal);
             var metadata = new VrmExportMetadata("Exported avatar", new[] { "NyaForge" }, "https://example.com/license", mapping);
             string directory = Path.Combine(Root, "vrm-export-" + Guid.NewGuid().ToString("N"));
             var result = VrmExportService.ExportVrm1(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, metadata);
             True(File.Exists(result.Path)); True(File.Exists(result.ReportPath)); Equal(1, result.ObjectCount);
             var report = JObject.Parse(File.ReadAllText(result.ReportPath)); Equal("Vrm1Humanoid", (string)report["profile"]!); Equal(Checks.Hash(File.ReadAllBytes(result.Path)), (string)report["vrmHash"]!);
+            Equal(1, ((JArray)report["sourceDiagnostics"]!).Count);
+            Equal("EXTENSIONS_PARTIAL", (string)report["sourceDiagnostics"]![0]!["diagnostics"]![0]!["code"]!);
             Equal("vrm1", VrmMetadataReader.Read(File.ReadAllBytes(result.Path)).Format);
         });
 
