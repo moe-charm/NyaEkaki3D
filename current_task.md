@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 feedback再照合: 9855d43 → 8f6377a
+
+提示された衣装受け取り・材質処理レビューを現行 `main` `8f6377a` へ再照合した。P1（移動avatarへの配置、更新時ownership参照、UV1欠落）とP2（sparse material slot、MR係数、Cuff winding、sampler共有、適用前／削除後の割当読込）は後続実装と回帰で解消済みで、本番コードの重複修正は行っていない。詳細は [レビュー再照合](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-8f6377a.md) に固定した。
+
+Coreは **500 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-15eb0ee4b498457c9ea5ae2114c3a829`）。これは自動経路の再確認で、実EditorWindowのマウス／DPI、実RadDollV3への新規衣装全周fit・貫通・見た目、VRChat Build & Test／実機表示は未受入として残す。
+
 ## 2026-09-14 NF-V1-06: avatar表面fitのMCP読み取り検査
 
 GUIにあった「fit状態を測定（変更なし）」と同じ bounded `MeshSurfaceFit`を、sidecarの`forge_surface_fit_inspect`から呼べるようにした。現在選択中の衣装graph／avatar target／avatar面領域／衣装頂点領域／offset／最大距離を使い、評価頂点数、移動候補数、投影距離、移動量、対象object ID、revision、state hash、選択IDを返す。測定はread-onlyで、編集後はdocument identityが変わるため`available=false`になる。`forge_get_state`にも`surfaceFitInspection`を含め、AIが直前の測定の有効性を確認できるようにした。
