@@ -33,7 +33,7 @@ Unity BridgeはStandard shaderへnormal mapとmetallic-roughness mapを割り当
 
 材質のsemantic normal／metallic-roughness slotをWorkbenchのPBR previewへ接続した。normalはlinear画像として`_BumpMap`へ設定し、normal scaleとUV0/UV1を反映する。metallic-roughnessはglTFの`B=metallic / G=roughness`をUnity Standard shader用の`R=metallic / A=smoothness`へ変換して`_MetallicGlossMap`へ設定する。glTF samplerのwrap/filterもUnity previewへ反映する（Unityの単一wrapMode制約によりWrapTは保持値をそのまま描画できない）。
 
-所有textureは`BaseColorSurface`のmaterial lifecycleと同じ寿命で破棄し、semantic slotを保持したscalar材質編集後も再生成する。UV1、normal、MRのshader keywordを含むWindows Player `Builds/SemanticPreviewV2/NyaForge.exe`をビルドし、Authoring suite **PASS**（83 checks、`Artifacts/Authoring-20260914-001305-87fea821f8dc47809c5ad43a45b17917/report.json`、画面 `authoring.png`）を確認した。
+所有textureは`BaseColorSurface`のmaterial lifecycleと同じ寿命で破棄し、semantic slotを保持したscalar材質編集後も再生成する。UV1、normal、MRのshader keywordを含むWindows Player `Builds/SemanticPreviewV3/NyaForge.exe`をビルドし、1pxのnormal／MR fixtureによるGPU preview、MR channel変換、Undo/Redoを含むAuthoring suite **PASS**（83 checks、`Artifacts/Authoring-20260914-002103-0fbd93211f7f4541a6ed90fe1ce6c7b3/report.json`、画面 `authoring.png`）を確認した。
 
 これはsemantic mapの実RadDollV3表示、tangent品質、occlusion/emissive、専用paint／bake、実VRChatの見た目を受入した記録ではない。NF-V1-09/10の残作業として、実sceneで明暗環境・UV・tangent・出力一致を目視確認する。
 

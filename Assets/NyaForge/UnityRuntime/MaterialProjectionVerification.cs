@@ -37,6 +37,12 @@ namespace NyaForge.UnityRuntime
                 }
                 finally { RenderTexture.active=previous;UnityEngine.Object.Destroy(pixels); }
             }
+            byte[] Png(Color32 color)
+            {
+                var image = new Texture2D(1, 1, TextureFormat.RGBA32, false, false);
+                try { image.SetPixels32(new[] { color }); image.Apply(false, false); return image.EncodeToPNG(); }
+                finally { UnityEngine.Object.Destroy(image); }
+            }
             try
             {
                 string source=Guid.NewGuid().ToString("D"),paint=Guid.NewGuid().ToString("D"),material=Guid.NewGuid().ToString("D"),assign=Guid.NewGuid().ToString("D"),output=Guid.NewGuid().ToString("D");
@@ -85,10 +91,24 @@ namespace NyaForge.UnityRuntime
                 Require(red.r>red.g*1.5f && red.r>red.b*1.5f,"Texture and tint did not produce red lighting");
                 Require(Math.Abs(red.r-rough.r)+Math.Abs(red.g-rough.g)+Math.Abs(red.b-rough.b)>.0001f,"Roughness had no visible lighting effect");
                 Require(Math.Abs(red.r-metal.r)+Math.Abs(red.g-metal.g)+Math.Abs(red.b-metal.b)>.0001f,"Metallic had no visible lighting effect");
+                var semantic = new MaterialTextureSet(
+                    new MaterialTextureSlot(MaterialTextureSemantic.Normal, Png(new Color32(128,128,255,255)), "image/png", 0, .65f),
+                    new MaterialTextureSlot(MaterialTextureSemantic.MetallicRoughness, Png(new Color32(10,64,200,255)), "image/png"));
+                var semanticParameters = new MaterialParameters(new Vec4(1,1,1,1), .1f, .8f, new Vec3(), MaterialAlphaMode.Opaque, .5f, semantic);
+                Require(commands.Execute(workspace.NewCommand(AuthoringOperation.UpdateNode(GraphNode.StandardMaterial(material,semanticParameters))),projection).Success,"Semantic material update failed");
+                var semanticMaterial = renderer.sharedMaterial;
+                var normalMap = semanticMaterial.GetTexture("_BumpMap") as Texture2D;
+                var metallicGlossMap = semanticMaterial.GetTexture("_MetallicGlossMap") as Texture2D;
+                Require(semanticMaterial.IsKeywordEnabled("_NORMALMAP") && normalMap != null && Math.Abs(semanticMaterial.GetFloat("_BumpScale")-.65f)<.0001f,"Normal semantic map was not connected to the PBR preview");
+                Require(semanticMaterial.IsKeywordEnabled("_METALLICGLOSSMAP") && metallicGlossMap != null,"Metallic-roughness semantic map was not connected to the PBR preview");
+                var converted = metallicGlossMap.GetPixels32()[0];
+                Require(converted.r==200 && converted.a==191,"Metallic-roughness channel conversion differs (expected B->R and inverted G->A)");
+                Require(commands.Execute(workspace.NewCommand(AuthoringOperation.Undo()),projection).Success && !renderer.sharedMaterial.IsKeywordEnabled("_NORMALMAP") && !renderer.sharedMaterial.IsKeywordEnabled("_METALLICGLOSSMAP"),"Semantic material Undo did not release preview maps");
+                Require(commands.Execute(workspace.NewCommand(AuthoringOperation.Redo()),projection).Success && renderer.sharedMaterial.IsKeywordEnabled("_NORMALMAP") && renderer.sharedMaterial.IsKeywordEnabled("_METALLICGLOSSMAP"),"Semantic material Redo did not restore preview maps");
                 var bare=AuthoringFixtures.Panel(1);var bareHash=bare.ContentHash;var displayOnly=OwnedMeshProjection.CreateMesh(bare);
                 try { Require(displayOnly.normals.Length==bare.VertexCount && bare.ContentHash==bareHash,"Display normal generation changed the source or left lighting normals missing"); }
                 finally { UnityEngine.Object.Destroy(displayOnly); }
-                checks.Add("Standard material projection: owned shader/texture, roughness mapping, opaque/cutout/blend GPU pixels, viewport alpha, mesh reuse, Undo/Redo and rollback with pending paint");
+                checks.Add("Standard material projection: owned shader/texture, roughness mapping, semantic normal/MR preview and channel conversion, opaque/cutout/blend GPU pixels, viewport alpha, mesh reuse, Undo/Redo and rollback with pending paint");
             }
             finally { projection.Dispose();camera.targetTexture=null;target.Release();UnityEngine.Object.Destroy(target);UnityEngine.Object.Destroy(cameraObject);UnityEngine.Object.Destroy(root); }
         }
