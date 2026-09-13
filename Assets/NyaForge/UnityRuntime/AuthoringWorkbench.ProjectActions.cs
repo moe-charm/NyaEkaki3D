@@ -255,7 +255,11 @@ namespace NyaForge.UnityRuntime
             jointMap.TryGetValue(item.ObjectId, out var jointLocals);
             string root = Path.Combine(Path.GetFullPath(projectPath.value), "exports");
             string packageDirectory = Path.Combine(root, "clothing-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            string temporaryGlbDirectory = packageDirectory + ".glb-staging-" + Guid.NewGuid().ToString("N");
+            // Keep the temporary GLB staging path short. The package export
+            // itself already adds an atomic staging suffix; nesting another
+            // long GUID below a deep project path can exceed MAX_PATH on
+            // Windows before the package is published.
+            string temporaryGlbDirectory = Path.Combine(root, ".glb-" + Guid.NewGuid().ToString("N").Substring(0, 8));
             try
             {
                 var glb = GlbExportService.ExportSkinnedObject(workspace, workspace.InstanceId, workspace.Document.DocumentId,

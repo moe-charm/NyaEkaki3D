@@ -196,6 +196,19 @@ namespace NyaForge.UnityRuntime
                 string skinProject = Path.Combine(output, "imported-accessory-skin-project");
                 projectPath.SetValueWithoutNotify(skinProject); SaveProject();
                 string skinHash = workspace.Document.StateHash;
+                // Exercise the production clothing-only export button. The
+                // avatar remains a separate document object; only this
+                // skin-bound accessory is packaged for the receiver.
+                ExportSelectedClothingPackage();
+                var clothingManifests = Directory.GetFiles(Path.Combine(skinProject, "exports"),
+                    SkinnedClothingPackage.ManifestFileName, SearchOption.AllDirectories);
+                Check(clothingManifests.Length == 1, "Selected skin-bound accessory package was not published exactly once");
+                var clothingPackage = SkinnedClothingPackage.Read(clothingManifests[0]);
+                var clothingMesh = workspace.Document.ActiveObject.EvaluateGraph().Output.Mesh;
+                Check(clothingPackage.ObjectId == accessoryObjectId && clothingPackage.DocumentId == workspace.Document.DocumentId &&
+                    clothingPackage.StateHash == workspace.Document.StateHash && clothingPackage.Mesh.TopologyHash == clothingMesh.TopologyHash,
+                    "Selected clothing package did not pin the active object, document and mesh topology");
+                checks.Add("selected skin-bound accessory exports a self-contained clothing package with stable object/document hashes");
                 string skinExport = ProjectExportService.Export(workspace, workspace.InstanceId, workspace.Document.DocumentId,
                     workspace.Document.DocumentRevision, Path.Combine(skinProject, "exports", "native-skin")).ManifestPath;
                 Check(File.Exists(skinExport), "Skin-bound accessory native export was not published");

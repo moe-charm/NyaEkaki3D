@@ -163,19 +163,31 @@ namespace NyaForge.UnityBridge.Editor
             var package = SkinnedClothingPackage.Read(manifestPath);
             var avatar = new GameObject("NyaForge Package Fixture Avatar");
             var map = new Dictionary<string, Transform>();
-            foreach (var bone in package.Skeleton.Bones)
+            // A package is allowed to retain the source skeleton order; do
+            // not assume parents precede children when constructing this
+            // disposable receiver fixture.
+            var pendingBones = package.Skeleton.Bones.ToList();
+            while (pendingBones.Count > 0)
             {
-                var target = new GameObject(bone.Name);
-                var parent = string.IsNullOrEmpty(bone.ParentBoneId) ? avatar.transform : map[bone.ParentBoneId];
-                target.transform.SetParent(parent, false);
-                var localHead = bone.Head;
-                if (!string.IsNullOrEmpty(bone.ParentBoneId))
+                bool progressed = false;
+                foreach (var bone in pendingBones.ToArray())
                 {
-                    var parentBone = package.Skeleton.ById[bone.ParentBoneId];
-                    localHead = new Vec3(bone.Head.X - parentBone.Head.X, bone.Head.Y - parentBone.Head.Y, bone.Head.Z - parentBone.Head.Z);
+                    if (!string.IsNullOrEmpty(bone.ParentBoneId) && !map.ContainsKey(bone.ParentBoneId)) continue;
+                    var target = new GameObject(bone.Name);
+                    var parent = string.IsNullOrEmpty(bone.ParentBoneId) ? avatar.transform : map[bone.ParentBoneId];
+                    target.transform.SetParent(parent, false);
+                    var localHead = bone.Head;
+                    if (!string.IsNullOrEmpty(bone.ParentBoneId))
+                    {
+                        var parentBone = package.Skeleton.ById[bone.ParentBoneId];
+                        localHead = new Vec3(bone.Head.X - parentBone.Head.X, bone.Head.Y - parentBone.Head.Y, bone.Head.Z - parentBone.Head.Z);
+                    }
+                    target.transform.localPosition = new Vector3(localHead.X, localHead.Y, localHead.Z);
+                    map.Add(bone.BoneId, target.transform);
+                    pendingBones.Remove(bone);
+                    progressed = true;
                 }
-                target.transform.localPosition = new Vector3(localHead.X, localHead.Y, localHead.Z);
-                map.Add(bone.BoneId, target.transform);
+                Require(progressed, "Clothing package skeleton contains a missing parent or cycle.");
             }
             try
             {

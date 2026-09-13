@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-04: 実RadDollV3モデルでの取込・保存・出力スモーク
+
+private一時ファイル `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm` を公開リポジトリへコピーせず、Windows Player `Builds/ClothingPackageV2/NyaForge.exe` へ直接渡した。全mesh instance取込、生成EditMesh、頂点編集、native Save/Open、標準skinned GLB再取込、VRM 1.0出力と再読込、選択衣装だけのself-contained skin package出力を含む **93 checks PASS**（`Artifacts/Authoring-20260914-042600-7aeeea6d09ce44e89edab7860000261c/report.json`）。10 mesh instanceを編集可能化し、feature-preserving native export roundtrip、VRM metadata、衣装packageのobject/document/mesh hashを確認した。衣装package用一時GLB stagingはWindowsの深い作業パスでMAX_PATHを超えない短い場所へ分離した。RadDollV3はVRM 0.xのため、元のSpringBoneをVRM 1.0へ自動変換できることはこの検査の合格条件に含めず、明示的に省略した。
+
+同じ検査成果物から生成した衣装packageをUnity Bridge receiverへ渡し、**15 checks PASS**（`Artifacts/BridgeReceiver-20260914-043011-431-fc514eaa25d54e90a479d52e014c3ab3/bridge-report.json`）。package skeletonが親子順でない場合も受入fixture側で安定して構築できるようにし、skinned clothingのBoneId map、移動・回転・scale付きavatar root、ownership更新・削除復元、semantic normal／MR変換を再確認した。これは実ファイルの機械的経路を通した証拠であり、実EditorWindowのマウス操作、衣装の全周fit・貫通・見た目、VRChat Build & Test／実機表示は別受入として残る。
+
 ## 2026-09-14 NF-V1-03B: 納品対象allowlistをGUI／MCP／GLBへ接続
 
 `DeliveryAllowlistCodec`（`NAWL` v1）と `delivery-allowlist.nyaforge.bin` attachmentを追加し、明示したobject ID集合をnative snapshotへ保存する。制作対象パネルの **選択中を納品対象に含める** トグル、MCP `get_state` の `deliveryAllowlistObjectIds`／`deliveryAllowlistExplicit`、GUI／MCPの静的・skinned・extended GLBおよびmulti-object exportへ同じ選択集合を渡す。allowlistが空なら全object候補、明示時は指定objectだけを出力し、manifest／GLB reportのobject件数・IDへ反映する。参照保護objectはallowlistへ追加できず、保護bodyを含む出力は出力先作成前に `REFERENCE_EXPORT_BLOCKED` で停止する。VRM 1.0のavatar＋衣装同梱とnative project backupは意図的な全体出力として対象外である。
