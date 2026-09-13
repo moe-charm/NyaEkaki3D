@@ -1699,3 +1699,7 @@ Frame修正後の最新Playerで、private一時RadDollV3 VRMの全mesh instance
 # 2026-09-13 ドキュメントのVRM出力範囲同期
 
 `docs/Authoring-Quickstart.md`の古い「標準VRM export未実装」という記述を、現行実装へ更新した。現在はVRM 1.0の初期profile（humanoid/meta、解決可能なmorph bind、詳細付きVRM1 SpringBone）を出力できる。一方、material bind・LookAt・FirstPerson・MToon・animation・任意拡張と、VRM 0.xの自動変換は引き続き対象外で、完全VRM出力とは扱わない。
+
+# 2026-09-13 VRM1出力手順のQuickstart追記
+
+現行WorkbenchにあるVRM 1.0 metadata入力と`VRM 1.0（humanoid）`出力ボタンの操作手順を`docs/Authoring-Quickstart.md`へ追加した。1つのskinned avatar graph、15必須humanoid骨、rest pose、license URL、出力先`exports/vrm1-日時-ID/`、SpringBone／未対応機能の境界を明記した。実VRChat／UniVRM受取確認は引き続き別受入項目である。

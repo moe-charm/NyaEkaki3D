@@ -79,6 +79,8 @@ Rigを試すときは、空の制作projectでgraph上部の **＋ Rigサンプ�
 
 static GLBは選択された評価結果を出力し、複数objectを含む場合もmeshごとのnode・材質slotを保持します。skinned GLBは同一skeleton hashならshared skinを使い、同一source由来でrest定義やinverse-bindが異なる場合はskin resourceを分けます。異なるsource skeletonの結合は拒否します。頂点、UV0、法線、接線、submeshと単位を保持し、Bridgeがメートル座標へ一度だけ変換してMesh/Material/Prefabを作ります。現在は法線と接線を保持する方針なので、大きい頂点編集後の陰影品質は別途調整が必要です。
 
+VRM 1.0を出力する場合は、humanoidのskinned avatar graph objectを1つだけactiveにし、右側の **VRM 1.0 metadata** を開きます。タイトル・作者・license URL（`https://` または `http://`）を入力して **VRM 1.0（humanoid）** を押すと、制作フォルダの`exports/vrm1-日時-ID/`へ`model.vrm`と`export-report.json`が作られます。rest pose、対応する15必須humanoid骨、対応可能なmorphが必要です。VRM1由来で詳細形状が揃うSpringBoneは出力できます。VRM 0.x SpringBoneの自動変換、material bind・LookAt・FirstPerson・MToon・animation・任意拡張は対象外なので、レポートの制限欄を確認してください。
+
 ## 現在の範囲
 
 実装済み: 空project、typed graph、Plane/EditMesh/Polygon/Mirror/UV/Paint/Material、頂点・面編集、Undo/Redo、schema 4 native保存（旧schema読込互換）、画像付きBake、Rig skeleton/skin binding/pose/skin-deform、weight paint、GLB/VRMのstatic／skin取込、stable BoneId装着、標準GLB出力、MCP、Unity Bridgeでの受け取り。
