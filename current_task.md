@@ -1707,3 +1707,9 @@ Frame修正後の最新Playerで、private一時RadDollV3 VRMの全mesh instance
 # 2026-09-13 Development-Plan現行到達点の同期
 
 開始時点の比較表と現行mainの能力が混同されないよう、`docs/Development-Plan.md`へ現行到達点を追加した。実装・自動検証済みの範囲（graph／直接編集／Rig・weight／GLB・VRM取込／atomic全mesh／保存再開／GLB・初期VRM1出力／MCP／Bridge）と、手動受入・実VRChat受取・完全VRM・FBX/BLEND・自動fitを未完了境界として明記した。
+
+# 2026-09-13 面選択のrender頂点／UV seam対応
+
+面クリック判定を編集点配列から分離し、`PolygonRendering.Mesh`のrender頂点を使うよう補強した。UV seamで同じ制作頂点が複数render頂点へ分割される場合も配列範囲を誤らず、装着rootのワールドTransformを描画と同じく一度だけ適用する。Quickstartへ挙動を追記した。
+
+Unity 6000.4.3f1のWindows Player `Builds/FacePickFixV2/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-153738-772.log`）。private一時RadDollV3 VRMを使うAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-153802-08b46c08414f48148c6070fba145c34b/report.json`）。1000x700 Navigationも **PASS**（`Artifacts/Navigation-20260913-153928-dc07eec7a79c4c0ea09f7c2534f038aa/report.json`）。

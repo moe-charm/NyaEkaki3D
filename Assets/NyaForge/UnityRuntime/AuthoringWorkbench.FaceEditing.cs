@@ -90,11 +90,16 @@ namespace NyaForge.UnityRuntime
             var rect = view.worldBound;
             var ray = camera.ViewportPointToRay(new Vector3((panelPosition.x - rect.x) / rect.width, 1 - (panelPosition.y - rect.y) / rect.height, 0));
             float nearest = float.PositiveInfinity; ulong? hit = null; int triangle = 0;
-            // The ray is in camera/world space. Use the same world-space points
-            // that the mesh renderer uses so rigidly attached accessories (for
-            // example a choker) keep face picking aligned after attachment.
-            var points = projection.WorldPoints;
-            foreach (var submesh in value.Mesh.Submeshes)
+            // The ray is in camera/world space. Use render vertices (rather than
+            // the editing-point list, which can be shorter when UV seams split
+            // vertices) and apply the same attachment root as the renderer.
+            var renderMesh = value.PolygonRendering.Mesh;
+            var rootTransform = projection.DisplayObject != null ? projection.DisplayObject.transform : null;
+            var points = renderMesh.Positions.Select(point =>
+                rootTransform == null
+                    ? OwnedMeshProjection.ToUnity(value.Transform.ToAvatarPoint(point))
+                    : rootTransform.TransformPoint(OwnedMeshProjection.ToUnity(value.Transform.ToAvatarPoint(point)))).ToArray();
+            foreach (var submesh in renderMesh.Submeshes)
                 for (int i = 0; i < submesh.Length; i += 3, triangle++)
                 {
                     var a = points[submesh[i]]; var b = points[submesh[i + 1]]; var c = points[submesh[i + 2]];
