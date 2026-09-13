@@ -393,11 +393,14 @@ namespace NyaForge.UnityRuntime
                 var evaluation = workspace.Preview.Evaluation;
                 if (!evaluation.MeshOutputs.TryGetValue(edit.NodeId, out var editValue) || editValue?.Mesh == null)
                     throw new InvalidOperationException("衣装EditMeshの評価結果を取得できません。");
+                float maxDistance = accessoryFitMaxDistanceMm.value / 1000f;
                 var transferred = SkinWeightTransfer.BySurfaceProjection(editValue.Mesh, editValue.Transform,
-                    avatarMeshValue.Mesh, avatarMeshValue.Transform, avatarBindingValue.Binding, skeleton, 4);
+                    avatarMeshValue.Mesh, avatarMeshValue.Transform, avatarBindingValue.Binding, skeleton, 4,
+                    maxDistance, null);
                 Execute(AuthoringOperation.UpdateNode(GraphNode.SkinBindNode(bind.NodeId, transferred)));
                 attachmentTargetChoice = target.ObjectId;
-                SetStatus("avatar表面の最近三角形から衣装weightを補間しました。Rig panelで必ず動作確認・手修正してください。自動fitや貫通判定は別機能です。");
+                SetStatus("avatar表面の最近三角形から衣装weightを補間しました（最大距離 " +
+                    accessoryFitMaxDistanceMm.value.ToString("0.###") + " mm）。Rig panelで必ず動作確認・手修正してください。自動fitや貫通判定は別機能です。");
             });
         }
 

@@ -256,6 +256,10 @@ namespace NyaForge.UnityBridge.Editor
                 var converted = ((Texture2D)material.GetTexture("_MetallicGlossMap")).GetPixel(0, 0);
                 Near(converted.r, 200f / 255f, "Metallic-roughness metallic channel conversion");
                 Near(converted.a, 191f / 255f, "Metallic-roughness roughness-to-smoothness conversion");
+                var semanticPackage = SkinnedClothingPackage.Read(manifest);
+                if (semanticPackage.Materials.Any(source => source != null && source.MetallicRoughnessTexture != null))
+                    Near(material.GetFloat("_Metallic"), semanticPackage.Materials.First(source => source != null && source.MetallicRoughnessTexture != null).Parameters.Metallic,
+                        "Metallic-roughness scalar factor");
                 checks.Add("Semantic normal/MR package maps and glTF-to-Unity channel conversion passed.");
             }
             finally
@@ -298,8 +302,9 @@ namespace NyaForge.UnityBridge.Editor
                 Require(binding.TryGetBone(rootId, out var resolved) && resolved == bone.transform,
                     "Skinned clothing BoneId binding lookup failed.");
                 binding.ClearGeneratedObject();
-                Require(binding.GeneratedObject == null && !binding.MatchesObject(objectId),
-                    "Skinned clothing binding did not clear the managed generated object.");
+                Require(binding.GeneratedObject == null && !binding.MatchesObject(objectId) && binding.MatchesAssignment(objectId) &&
+                    binding.TryGetBone(rootId, out resolved) && resolved == bone.transform,
+                    "Skinned clothing binding did not retain the assignment after clearing the managed generated object.");
                 VerifySkinnedClothingManagedUndo(checks);
                 checks.Add("Skinned clothing ownership marker preserves package identity, explicit BoneId map, and independent bindings for multiple packages on one avatar.");
             }
