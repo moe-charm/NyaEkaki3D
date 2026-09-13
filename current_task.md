@@ -1731,3 +1731,11 @@ Coreは **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 Unity 6000.4.3f1のWindows Player `Builds/SpringWorldCacheV1/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-154739-666.log`）。private一時RadDollV3 VRMを使ったAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-154803-9c4b28c5417b4ed4b41cd923de05ecc8/report.json`、画面`authoring.png`）。suiteにはVRM0/1 playback handlers、再生中の再利用メッシュ・編集点復元・GUI/MCP pause/resume/rebuild/reset/step、Save/Openでsimulationを除外する確認を含む。
 
 今回は実モデル自動suiteでの一連の再生・保存・編集経路を確認した。実マウス操作で再生中に面をクリックする手動受入、Unity Bridge／UniVRM／VRChat実機での描画・揺れ挙動は別途確認する。
+
+# 2026-09-13 複数graphでのlegacy VRM sidecar誤結合ガード
+
+GraphId付きsession tableがある現行projectでは既にobject単位でmetadataを解決しているが、旧形式の単一VRM sidecarが残っている場合に、複数graphの選択中objectへ推測で割り当てないようOpen経路を強化した。legacy expression／Springは、graphが1つの場合、または同梱legacy rigがactive graphを明示する場合だけ互換fallbackを許可し、それ以外はgraph-keyed tableだけを正本として扱う。これによりVRM avatar Aと通常GLB Bを同一projectへ保存した後、B選択時にAのexpression／Springを混ぜる経路を閉じた。既存の単一graph legacy projectとschema 4 tableは維持する。
+
+Unity 6000.4.3f1のWindows Player `Builds/LegacySessionGuardV1/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-155431-565.log`）。private一時RadDollV3 VRMを使った単体＋全mesh Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-155503-e7bd9bac89c34afa9da61b58b3ceef4f/report.json`）。候補選択、複数mesh取込、graph-keyed rig/session、native Save/Open、skin／extended GLB出力、VRM0/1 playback lifecycleを含む既存回帰を通過した。
+
+Core回帰も **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-fd7df009a97b4f20b7b165ec691d24c4`）。この変更はUnity Open互換ガードのため、Coreの件数は前回と同じ。実VRChat／UniVRM受取、legacy sidecarを意図的に複数graphへ混在させる破損fixtureの手動確認は別境界とする。

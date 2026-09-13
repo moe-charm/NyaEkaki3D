@@ -101,9 +101,16 @@ namespace NyaForge.UnityRuntime
             // A legacy project can have a single metadata blob and no graph id at all
             // (the save-failure guard intentionally exercises this shape). Keep that
             // payload available to the Workbench instead of dropping it on refresh.
-            if (expressionSession == null && expressionBytes != null && !VrmExpressionSessionsCodec.IsTable(expressionBytes))
+            // A legacy single-session sidecar has no graph key. It is safe to
+            // use only when the project has one graph, or when its companion
+            // legacy rig explicitly names the active graph. Never let an
+            // ambiguous legacy payload become the metadata for whichever
+            // object happens to be selected after a multi-object Open.
+            bool legacySessionCanBind = next.Document.Objects.Count <= 1 ||
+                (rigSession != null && selectedGraphId != null && rigSession.GraphId == selectedGraphId);
+            if (expressionSession == null && expressionBytes != null && !VrmExpressionSessionsCodec.IsTable(expressionBytes) && legacySessionCanBind)
                 expressionSession = VrmExpressionSessionCodec.Read(expressionBytes);
-            if (springSession == null && springBytes != null && !VrmSpringSessionsCodec.IsTable(springBytes))
+            if (springSession == null && springBytes != null && !VrmSpringSessionsCodec.IsTable(springBytes) && legacySessionCanBind)
                 springSession = VrmSpringSessionCodec.Read(springBytes);
             var physBonesDocument = physBonesBytes == null ? null : PhysBonesTargetCodec.ReadDocument(physBonesBytes);
             SecondaryMotionDocument secondaryMotionDocument = null;
