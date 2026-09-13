@@ -43,6 +43,11 @@ instead of trusting generated GLB bone IDs.
 Materials can be supplied per submesh; otherwise temporary Standard-shader
 materials are created for the viewer scene.
 
+The disposable Bridge regression can exercise this exact package path by
+passing `-ClothingPackageManifest <path>` to
+`Tools/Test-NyaForgeUnityBridge.ps1`. The option is intentionally optional so
+the base Bridge fixture remains independent of any private clothing asset.
+
 This is a receiver-side Unity scene operation. It does not claim VRChat SDK or
 VRChat runtime acceptance, PhysBones conversion, automatic body fitting,
 material/shader equivalence, or final VRM semantic export. Those remain later

@@ -68,6 +68,8 @@ namespace NyaForge.UnityBridge.Editor
                 VerifyPhysBonesBridge(checks);
                 VerifyPhysBonesBinding(checks);
                 VerifySkinnedClothingReceiver(checks);
+                string clothingPackage = OptionalArgument(args, "--nyaforge-clothing-package");
+                if (!string.IsNullOrEmpty(clothingPackage)) VerifySkinnedClothingPackage(clothingPackage, checks);
                 if (Array.IndexOf(args,"--nyaforge-surface") >= 0)
                     VerifySurface(RequiredArgument(args,"--nyaforge-surface"),checks,folders);
                 if (Array.IndexOf(args,"--nyaforge-material") >= 0)
@@ -135,6 +137,47 @@ namespace NyaForge.UnityBridge.Editor
                 Require(result.Mesh.boneWeights.Length == 3 && result.Mesh.boneWeights[1].boneIndex0 == 1 && result.Mesh.boneWeights[1].weight0 > .99f,
                     "Skinned receiver BoneWeight mapping is incorrect.");
                 checks.Add("SkinnedClothingReceiver creates an explicit BoneId-mapped SkinnedMeshRenderer with bindposes and four-slot weights.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(avatar);
+                Object.DestroyImmediate(material);
+            }
+        }
+
+        static void VerifySkinnedClothingPackage(string manifestPath, List<string> checks)
+        {
+            var package = SkinnedClothingPackage.Read(manifestPath);
+            var avatar = new GameObject("NyaForge Package Fixture Avatar");
+            var map = new Dictionary<string, Transform>();
+            foreach (var bone in package.Skeleton.Bones)
+            {
+                var target = new GameObject(bone.Name);
+                var parent = string.IsNullOrEmpty(bone.ParentBoneId) ? avatar.transform : map[bone.ParentBoneId];
+                target.transform.SetParent(parent, false);
+                var localHead = bone.Head;
+                if (!string.IsNullOrEmpty(bone.ParentBoneId))
+                {
+                    var parentBone = package.Skeleton.ById[bone.ParentBoneId];
+                    localHead = new Vec3(bone.Head.X - parentBone.Head.X, bone.Head.Y - parentBone.Head.Y, bone.Head.Z - parentBone.Head.Z);
+                }
+                target.transform.localPosition = new Vector3(localHead.X, localHead.Y, localHead.Z);
+                map.Add(bone.BoneId, target.transform);
+            }
+            var shader = Shader.Find("Standard");
+            Require(shader != null, "Unity Standard shader is unavailable for clothing package fixture.");
+            var material = new Material(shader);
+            try
+            {
+                var result = SkinnedClothingReceiver.ApplyPackage(manifestPath, avatar.transform, map, "Package Fixture Clothing", new[] { material });
+                string rootBoneId = null;
+                foreach (var bone in package.Skeleton.Bones)
+                    if (string.IsNullOrEmpty(bone.ParentBoneId)) { rootBoneId = bone.BoneId; break; }
+                Require(result.Renderer.sharedMesh != null && result.Renderer.bones.Length == package.Skeleton.Bones.Count,
+                    "Skinned clothing package did not create the expected renderer.");
+                Require(result.Renderer.sharedMesh.vertexCount == package.Mesh.VertexCount && result.Renderer.rootBone == map[rootBoneId],
+                    "Skinned clothing package geometry or root mapping changed.");
+                checks.Add("Skinned clothing package hashes, sidecars and ApplyPackage scene creation passed.");
             }
             finally
             {
@@ -266,6 +309,11 @@ namespace NyaForge.UnityBridge.Editor
         {
             for (int i = 0; i < args.Length - 1; i++) if (args[i] == name) return args[i + 1];
             throw new ArgumentException("Missing argument: " + name);
+        }
+        static string OptionalArgument(string[] args, string name)
+        {
+            for (int i = 0; i < args.Length - 1; i++) if (args[i] == name) return args[i + 1];
+            return null;
         }
         static Vector3 Vector(Vec3 value) { return new Vector3(value.X, value.Y, value.Z); }
         static void Near(Vector3 actual, Vector3 expected, string message)

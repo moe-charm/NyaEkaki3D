@@ -9,6 +9,7 @@ param(
     [switch]$RenderSurface,
     [switch]$MaterialFixture,
     [switch]$MultiMaterialFixture,
+    [string]$ClothingPackageManifest,
     [ValidateRange(60, 7200)]
     [int]$TimeoutSeconds = 1200,
     [switch]$ShowLog
@@ -130,6 +131,11 @@ if ($MultiMaterialFixture) {
     if (-not (Test-Path -LiteralPath $multiPath -PathType Leaf)) { throw "Multi-material fixture missing: $multiPath" }
     $arguments=@($arguments | Where-Object { $_ -ne '-nographics' })
     $arguments+=@('--nyaforge-materials', ('"{0}"' -f $multiPath))
+}
+if ($ClothingPackageManifest) {
+    $clothingPackagePath = (Resolve-Path -LiteralPath $ClothingPackageManifest).Path
+    if (-not (Test-Path -LiteralPath $clothingPackagePath -PathType Leaf)) { throw "Clothing package manifest missing: $clothingPackagePath" }
+    $arguments += @('--nyaforge-clothing-package', ('"{0}"' -f $clothingPackagePath))
 }
 Write-Output "Log: $logPath"
 Write-Output "Report: $reportPath"
