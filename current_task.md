@@ -22,6 +22,10 @@
 
 装着先Dropdownの変更イベントが表示ラベル（`graph · <id>`）をstable object IDとして保持していたため、Refresh後に選択が先頭へ戻る経路を修正した。選択肢のindexから内部IDを保存し、表示ラベルと契約IDを分離した。回帰では異なるskeleton sessionを持つ2つのavatar graph objectを用意し、2番目の対象を選択→Refreshしても選択値が保持されることを確認した。`Builds/AttachmentTargetRetentionV1/NyaForge.exe` の800x600 Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-095046-9bd3831ed6124ff7bfd59ea819ab6f37/report.json`）。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-095216-432-f3e7c59ba0794f8ab91d312b43f99e28/bridge-report.json`）。
 
+# 2026-09-13 attachment target retention real-model recheck
+
+Dropdown保持修正後の `Builds/AttachmentTargetRetentionV1/NyaForge.exe` でprivate一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）を再検証した。800x600 Authoring suiteは **81 checks PASS**（取込候補選択、EditMesh頂点編集、native Save/Open、標準skinned GLB出力と再取込を含む、`Artifacts/Authoring-20260913-095259-96c5ddad45374685ac91e3fc8f4bc3d3/report.json`）。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-095436-336-6aa7dd710b6442c382c2746cbdcf75a6/bridge-report.json`）。private素材はpublic repositoryへ追加していない。
+
 # 2026-09-13 native UI acceptance bridge check
 
 提示されたレビュー（基準 `0d1e957`）のP1/P2は、実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。
