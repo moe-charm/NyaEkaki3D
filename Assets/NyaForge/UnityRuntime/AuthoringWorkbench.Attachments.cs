@@ -22,6 +22,8 @@ namespace NyaForge.UnityRuntime
         FloatField accessoryFitOffsetMm, accessoryFitMaxDistanceMm;
         TextField accessorySurfaceTriangleIds;
         TextField accessoryClothingVertexIds;
+        Toggle accessorySurfacePickMode;
+        readonly HashSet<int> selectedAvatarSurfaceTriangles = new HashSet<int>();
         Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPolygonMaterialize, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessoryPoseCopy, accessoryUseSelectedVertices;
         readonly List<string> attachmentTargetIds = new List<string>();
         readonly List<string> attachmentBoneIds = new List<string>();
@@ -62,6 +64,9 @@ namespace NyaForge.UnityRuntime
             accessorySurfaceTriangleIds = new TextField("avatar面ID（カンマ区切り・空欄=全て）") { name = "object-surface-triangle-ids" };
             accessorySurfaceTriangleIds.tooltip = "avatarのrest meshを三角形の通し番号で限定します。面IDはsubmesh順に0から数え、空欄なら全三角形を対象にします。fitとweightで同じ領域を使います。";
             attachmentPanel.Add(accessorySurfaceTriangleIds);
+            accessorySurfacePickMode = new Toggle("クリックでavatar面を選択（Shiftで追加）") { name = "object-surface-pick-mode" };
+            accessorySurfacePickMode.tooltip = "有効にするとビューポートのavatar面をクリックして領域を作ります。衣装頂点のクリック選択は一時停止します。";
+            attachmentPanel.Add(accessorySurfacePickMode);
             accessoryClothingVertexIds = new TextField("衣装頂点ID（カンマ区切り・空欄=全て）") { name = "object-surface-clothing-vertex-ids" };
             accessoryClothingVertexIds.tooltip = "衣装EditMeshの頂点IDを限定します。空欄なら全頂点を対象にし、指定時は未選択頂点の位置・weightを保持します。";
             attachmentPanel.Add(accessoryClothingVertexIds);
@@ -170,7 +175,7 @@ namespace NyaForge.UnityRuntime
             if (!IsGraph)
             {
                 attachmentStatus.text = "装着: graph objectを選択してください。";
-                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryPolygonMaterialize.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); accessoryUseSelectedVertices.SetEnabled(false); return;
+                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryPolygonMaterialize.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); accessoryUseSelectedVertices.SetEnabled(false); accessorySurfacePickMode.SetEnabled(false); return;
             }
             var targets = workspace.Document.Objects.Where(item => item.ObjectId != workspace.Document.ActiveObjectId && item.Graph != null).ToArray();
             attachmentTargetIds.AddRange(targets.Select(item => item.ObjectId));
@@ -217,6 +222,7 @@ namespace NyaForge.UnityRuntime
                 workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.EditMesh) &&
                 TargetAvatarSurfaceAvailable(target);
             accessorySurfaceFit.SetEnabled(canSurfaceFit);
+            accessorySurfacePickMode.SetEnabled(canSurfaceFit);
             bool hasSkinPose = workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.SkinBind) &&
                 workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.Pose);
             accessoryPoseCopy.SetEnabled(target != null && skeleton != null && hasSkinPose);
@@ -350,6 +356,47 @@ namespace NyaForge.UnityRuntime
                     throw new InvalidOperationException("現在の選択にEditMeshの頂点範囲外が含まれています。EditMeshを表示して選択してください。");
                 accessoryClothingVertexIds.SetValueWithoutNotify(string.Join(",", indices));
                 SetStatus("現在の衣装頂点選択をfit／weight対象へ設定しました（" + indices.Length.ToString(CultureInfo.InvariantCulture) + "頂点）。");
+            });
+        }
+
+        bool SurfaceTrianglePickingActive => accessorySurfacePickMode != null && accessorySurfacePickMode.value && accessorySurfacePickMode.enabledSelf;
+
+        void PickAvatarSurfaceTriangle(Vector2 panelPosition, bool add)
+        {
+            Try(() =>
+            {
+                if (!SurfaceTrianglePickingActive) return;
+                int targetIndex = attachmentTarget.index;
+                if (targetIndex < 0 || targetIndex >= attachmentTargetIds.Count) throw new InvalidOperationException("面を選ぶavatarを指定してください。");
+                var avatar = FindObject(attachmentTargetIds[targetIndex]);
+                var evaluation = avatar?.EvaluateGraph();
+                var value = evaluation?.Output;
+                if (value?.Mesh == null) throw new InvalidOperationException("avatarのrest mesh評価結果を取得できません。");
+                var rect = view.worldBound;
+                var ray = camera.ViewportPointToRay(new Vector3((panelPosition.x - rect.x) / rect.width,
+                    1 - (panelPosition.y - rect.y) / rect.height, 0));
+                var points = value.Mesh.Positions.Select(point => stage.transform.TransformPoint(
+                    OwnedMeshProjection.ToUnity(value.Transform.ToAvatarPoint(point)))).ToArray();
+                float nearest = float.PositiveInfinity; int hit = -1, triangle = 0;
+                foreach (var submesh in value.Mesh.Submeshes)
+                    for (int i = 0; i < submesh.Length; i += 3, triangle++)
+                    {
+                        var a = points[submesh[i]]; var b = points[submesh[i + 1]]; var c = points[submesh[i + 2]];
+                        var e1 = b - a; var e2 = c - a; var p = Vector3.Cross(ray.direction, e2); float determinant = Vector3.Dot(e1, p);
+                        if (Mathf.Abs(determinant) < 1e-10f) continue;
+                        float inverse = 1 / determinant; var t = ray.origin - a; float u = Vector3.Dot(t, p) * inverse;
+                        if (u < 0 || u > 1) continue; var q = Vector3.Cross(t, e1); float v = Vector3.Dot(ray.direction, q) * inverse;
+                        if (v < 0 || u + v > 1) continue; float distance = Vector3.Dot(e2, q) * inverse;
+                        if (distance >= 0 && distance < nearest) { nearest = distance; hit = triangle; }
+                    }
+                var current = SurfaceTriangleSelection();
+                selectedAvatarSurfaceTriangles.Clear();
+                if (current != null) foreach (int id in current) selectedAvatarSurfaceTriangles.Add(id);
+                if (!add) selectedAvatarSurfaceTriangles.Clear();
+                if (hit >= 0 && (!add || !selectedAvatarSurfaceTriangles.Remove(hit))) selectedAvatarSurfaceTriangles.Add(hit);
+                accessorySurfaceTriangleIds.SetValueWithoutNotify(string.Join(",", selectedAvatarSurfaceTriangles.OrderBy(id => id)));
+                SetStatus(selectedAvatarSurfaceTriangles.Count == 0 ? "avatar面の選択を解除しました。" :
+                    "avatar面領域を更新しました（" + selectedAvatarSurfaceTriangles.Count.ToString(CultureInfo.InvariantCulture) + "面）。fit／weightへ共通適用されます。");
             });
         }
 

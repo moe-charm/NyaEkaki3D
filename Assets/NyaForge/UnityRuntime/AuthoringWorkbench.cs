@@ -210,7 +210,7 @@ namespace NyaForge.UnityRuntime
             {
                 if (RigWeightPaintActive && rigPainting && e.button == 0) { EndRigWeightStroke(); view.ReleasePointer(e.pointerId); e.StopPropagation(); return; }
                 if (orbiting && orbitButton == 0 && Vector2.Distance(pointerStart, e.position) < 4)
-                { if(CutPathPicking) PickCutPathPoint(e.position);else PickVertex(e.position,e.shiftKey); }
+                { if(SurfaceTrianglePickingActive) PickAvatarSurfaceTriangle(e.position,e.shiftKey);else if(CutPathPicking) PickCutPathPoint(e.position);else PickVertex(e.position,e.shiftKey); }
                 orbiting = false; view.ReleasePointer(e.pointerId);
             });
             view.RegisterCallback<PointerCaptureOutEvent>(_ => { orbiting = false; if (rigPainting) EndRigWeightStroke(); });

@@ -10,6 +10,8 @@ Workbenchの衣装表面処理へ`avatar面ID（カンマ区切り・空欄=全�
 
 さらに`衣装頂点ID（カンマ区切り・空欄=全て）`を追加し、指定頂点だけをfit／surface weight更新する経路へ接続した。未選択頂点の位置と既存weightを保持し、選択頂点・avatar面領域・最大距離の検証を一つの操作で行う。「現在の衣装頂点選択を適用対象にする」ボタンでビューポート選択を同じ入力へ取り込める。Coreは **496 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-13b58921c12044f9af20c2af39255a97`）。最新`Builds/WindowsSurfaceRegion3/NyaForge.exe`（Unity **6000.4.3f1**）のAuthoring suiteも **83 checks PASS**（`Artifacts/Authoring-20260914-023409-a1b227311bbd4c12ae710e341c55a860/report.json` と `authoring.png`）。これは選択範囲の自動経路確認で、実マウスによる面／頂点選択、実RadDollV3全周fit・貫通・見た目、VRChat内表示は未受入である。
 
+さらに`クリックでavatar面を選択（Shiftで追加）`モードを追加した。ビューポート上の非アクティブavatarをraycastし、選んだ三角形の通し番号をfit／weight共通のavatar面IDへ反映する。Authoring suiteでavatar三角形0のクリック選択、衣装頂点選択の取込、領域限定fit／weightを確認した。`Builds/WindowsSurfacePick/NyaForge.exe`（Unity **6000.4.3f1**）と **83 checks PASS**の証拠は`Artifacts/Authoring-20260914-023827-3c92db189ce045c9b79442c0ce4cf207/report.json` と `authoring.png`。raycastは自動fixtureでの確認であり、実マウスのDPI／視点操作、実RadDollV3全周fit・貫通・見た目、VRChat内表示は未受入である。
+
 レビューで挙がった `9855d43` 系のP1/P2を現行mainへ再照合した。対象は衣装受け取りの座標、割当保存、UV1、疎なmaterial slot、MR係数、カフ面向き、sampler共有、削除済み衣装の割当読込である。
 
 次の項目は現行実装と回帰で確認済みで、同じ修正を重ねて行わない。

@@ -98,7 +98,18 @@ namespace NyaForge.UnityRuntime
                     .Select(value => value.BoneId + ":" + value.Weight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).ToArray();
                 attachmentTargetChoice = avatarObjectId;
                 RefreshAttachmentControls();
-                accessorySurfaceTriangleIds.SetValueWithoutNotify("0");
+                accessorySurfaceTriangleIds.SetValueWithoutNotify("");
+                accessorySurfacePickMode.SetValueWithoutNotify(true);
+                Frame();
+                var avatarSurfaceValue = workspace.Document.Objects.Single(item => item.ObjectId == avatarObjectId).EvaluateGraph().Output;
+                var avatarSurfaceIndices = avatarSurfaceValue.Mesh.Submeshes[0];
+                var avatarSurfaceCenter = (avatarSurfaceValue.Mesh.Positions[avatarSurfaceIndices[0]] +
+                    avatarSurfaceValue.Mesh.Positions[avatarSurfaceIndices[1]] + avatarSurfaceValue.Mesh.Positions[avatarSurfaceIndices[2]]) * (1f / 3f);
+                var avatarSurfaceWorldCenter = stage.transform.TransformPoint(
+                    OwnedMeshProjection.ToUnity(avatarSurfaceValue.Transform.ToAvatarPoint(avatarSurfaceCenter)));
+                PickAvatarSurfaceTriangle(VertexPanelPoint(avatarSurfaceWorldCenter), false);
+                Check(accessorySurfaceTriangleIds.value == "0", "Viewport avatar face picking did not select triangle 0");
+                accessorySurfacePickMode.SetValueWithoutNotify(false);
                 Select(new[] { 0, 1 });
                 UseSelectedClothingVertices();
                 Check(accessoryClothingVertexIds.value == "0,1", "Selected clothing vertices were not copied into the surface tool");
