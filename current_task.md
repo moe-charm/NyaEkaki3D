@@ -26,6 +26,12 @@ GLB単体ではstable BoneIdを受取側へ安全に渡せないため、`Skinne
 
 Workbenchへ「選択衣装をskin packageで出力」を追加し、参照avatarを同梱しない単一衣装GLB＋sidecarの出力導線を用意した。Core回帰へpackage roundtripを追加し **489 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0e7fef07df9f44388c5cc53b4c7559bd`）。Unity **6000.4.3f1** Player `Builds/ClothingPackageV1/NyaForge.exe` build成功、Authoring suite **PASS**（`Artifacts/Authoring-20260913-221015-2432c87b173840109d91c173ced1204a/report.json`）。受け取り側には`Tools/NyaForge/Import Skinned Clothing Package...`を追加し、manifestのファイル選択、全BoneIdの明示割当、事前診断、`NyaForgeSkinnedClothingBinding`への保存、同じObjectIdだけの管理対象更新をGUIから行えるようにした。`Builds/SkinnedClothingUiV1/NyaForge.exe`のWindows Player buildとAuthoring suite **PASS**（`Artifacts/Authoring-20260913-222609-001bc53b37b345c69077dd4ac18f1f15/report.json`）。Bridge検証へpackage manifestの任意入力とownership marker回帰を追加し、Unity **2022.3.22f1**でpackageのmanifest・GLB・skeleton・binding hash検証後に`ApplyPackage`が合成avatarへSkinnedMeshRendererを生成するところまで **PASS**（`Artifacts/BridgeReceiver-20260913-222408-639-9fc9ab8fccb7407a87a3be3792d17ca0/bridge-report.json`）。これは合成fixtureでのpackage/receiver証拠で、実RadDollV3を対象にしたBoneId map・ownership更新・VRChat内表示は未受入として残す。
 
+## 2026-09-13 skinned clothing受け取りGUIの回帰
+
+`SkinnedClothingPackageWindow`と`NyaForgeSkinnedClothingBinding`を含む最新mainを、private一時RadDollV3 VRMで全mesh取込→頂点編集→native Save/Open→skinned GLB／VRM出力まで再確認した。Windows Player `Builds/SkinnedClothingUiV1/NyaForge.exe`のAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-222748-9e3c43e5f65f4973adcc7c55265e9c8a/report.json`）。Coreは **489 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0e7fef07df9f44388c5cc53b4c7559bd`）。同じcheck directoryとpackage manifestをUnity **2022.3.22f1** Bridgeへ渡し、receiver/package/ownership回帰も **PASS**（`Artifacts/BridgeReceiver-20260913-223057-746-4081b1618e9241d890e6e365274348c5/bridge-report.json`）。private素材はpublic repositoryへ追加していない。
+
+この回帰はPlayer／Core／合成Bridgeの自動証拠であり、EditorWindowを実マウスで操作した受入、実RadDollV3 sceneへのBoneId割当、ownership更新のUndo、VRChat SDK／Build & Test／実機表示は外部受入として残す。
+
 ## 2026-09-13 NF-V1-06 / 05 のCore接続
 
 fitと表面weight転送へ、avatar側の対象三角形を明示的に限定する入力と、転送時の最大距離検査を追加した。三角形番号は`MeshData.Submeshes`を平坦化した順で、選択範囲を別の面へ暗黙に広げない。範囲外・空選択は事前に拒否し、距離超過は`SURFACE_FIT_DISTANCE`／`WEIGHT_TRANSFER_DISTANCE`で停止する。従来の全表面APIは互換overloadとして維持した。
