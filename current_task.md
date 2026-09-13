@@ -6,6 +6,8 @@ Polygonで作ったチョーカー／カフを先にstable BoneIdへ剛体装着
 
 Coreへ「polygon materialization bakes rigid attachment placement into the skin derivative」を追加し、**500 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0e7b280081cf4990b228925d8bdce824`）。Unity Player `Builds/ChokerMaterializeV1/NyaForge.exe`もビルド成功し、既存Authoring suite **PASS**（`Artifacts/Authoring-20260914-045048-0b2598a47f3f4dfdb7ba4f2094d6f631/report.json`）。実RadDollV3全周fit・貫通・見た目、実EditorWindowの手動操作、VRChat内受入は引き続き別カードである。
 
+同Playerへprivate RadDollV3 VRMを指定した`Tools/Test-NyaForgeRealClothing.ps1`も、実モデル取込・Save/Open・GLB/VRM出力と制御fixture衣装packageを含む **93 checks PASS**（`Artifacts/Authoring-20260914-045332-fa48a54fe9f044459110786b215c38ed/report.json`）。生成packageをUnity **2022.3.22f1** Bridgeへ渡した受入も **16 checks PASS**（`Artifacts/BridgeReceiver-20260914-045612-318-b3e42ed672214df7bffd44908c7e6f1a/bridge-report.json`）。この実モデルrunは衣装全周fitの代替ではなく、取込・保存・出力・受け取りの回帰である。
+
 ## 2026-09-14 feedback triage: 9855d43レビューの再照合
 
 外部レビューで挙がったP1 3件（avatar-local配置、`SaveBindings`の管理参照、UV1欠落）とP2 5件（sparse material slot、MR係数、Cuff winding、sampler共有、適用前／削除後の割当読込）を現行`main`（`0a52e45`）へ再照合した。いずれも既存修正と回帰で解消済みで、本番コードの重複修正は行わない。対応の詳細は[レビュー再照合](docs/reviews/2026-09-14-Feedback-9855d43-Triage.md)へ固定した。
