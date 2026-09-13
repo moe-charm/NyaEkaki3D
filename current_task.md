@@ -53,6 +53,12 @@ Workbenchのavatar表面weight初期化も、画面の`surface fit最大距離`�
 
 sampler共有の回帰も追加し、同一画像bytesをRepeat／Clampで使うnormal／MR slotがGLB出力で別texture・別samplerとして保持されることを確認した。Coreは **494 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4c6a1a78819344e5b62b82cf8f4390ac`）。
 
+## 2026-09-14 FeedbackFixV3 Player / Bridge再確認
+
+`Builds/FeedbackFixV3/NyaForge.exe`を再ビルドし、公開fixtureのAuthoring suiteを **87 checks PASS**（`Artifacts/Authoring-20260914-013238-f89ac9f44a4a477c95e0b2164e790098/report.json`）で確認した。同じPlayerへprivate一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）を渡した取込→EditMesh→Save/Open→GLB／VRM出力の一周も **87 checks PASS**（`Artifacts/Authoring-20260914-013547-1dcae8e2d8fa488aadb65df48e29ab19/report.json`）。この成果物をUnity **2022.3.22f1** Bridgeへ渡し、変形avatar root・衣装package・semantic mapを含む receiver回帰も **passed**（`Artifacts/BridgeReceiver-20260914-014007-246-cb45920700374422aecbbd5e2c582ebb/bridge-report.json`）。
+
+これは自動Playerと合成／private smokeの証拠であり、実マウス・DPI差、実RadDollV3 sceneでの衣装fit／貫通、Build & Test、実VRChat内の見た目・負荷を完了扱いしない。private素材・SDKはpublic repositoryへ追加していない。
+
 ## 2026-09-13 NF-V1-09/10 semantic texture contract
 
 `MaterialTextureSlot`／`MaterialTextureSet`を追加し、normal／metallic-roughness画像について、semantic、PNG/JPEG bytes、色空間（linear）、channel契約、UV set、normal scale、glTF samplerをtyped payloadとして保持するようにした。GLB取込は埋め込み画像と安全なローカル相対URIを解決し、native graph binaryは画像をblobとして所有してSave/Openする。GLB出力はnormalTextureとmetallicRoughnessTexture、samplerを再生成し、Coreで画像bytes・channel前提・sampler・native roundtripを確認した。通常のMaterial Bakeはこの情報を落とさないよう事前拒否する。
