@@ -1614,3 +1614,8 @@ Windows Player `Builds/AllMeshRealV1/NyaForge.exe` の実RadDollV3 Authoring sui
 出力前のValidationがactive objectだけを見ていたため、body＋衣装の組合せでtriangle・vertex・材質・画像・骨格数を過小評価する経路を修正した。現在は全objectを同じdocument revisionで評価し、どれか一つでも未完了／stale／面なしなら `unknown` とする。負荷値は全objectの合計、同一skeleton hashは一度だけ数え、別skeletonは重複出力分を加算する。既存のfit判定がunknownである境界は維持した。
 
 Coreは **471 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-cffa6324e716435794fde74d1fefdfef`）。2つのstatic objectを作り、triangle 8・render vertex 16として集計される回帰を追加した。Windows Player `Builds/MultiObjectValidationV1/NyaForge.exe` のAuthoring suiteは **PASS / 80 checks**（`Artifacts/Authoring-20260913-134148-d06d092bc9ce4b538a559653169febaf/report.json`）。Unity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-134221-106-41ca7637e04d4e719c2ef6b97fdab020/bridge-report.json`）。
+# 2026-09-13 validation panel readability
+
+「出力チェック」の結果表示を、判定だけの横並び文字列から、実測metrics・各check・警告を一行ずつ表示する形式へ変更した。複数objectの集計値（triangles、renderVertices、materials、textures、bones等）が保存前に読み取りやすくなり、unknown時の理由も同じ欄へ表示する。ドキュメントや制作データは変更しない。
+
+Unity 6000.4.3f1のWindows Player `Builds/ValidationUiV1/NyaForge.exe` をビルドし、1280x800 Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-134900-bff15d3d95da44119750676e20bff74a/report.json`、画面 `authoring.png`）。同じ成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-134937-440-25ae2cadbe9042eb8525367e45f91011/bridge-report.json`）。Coreは変更なしで直近 **471 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ffdc185b64364eaca06099e90ddc39fb`）。画像は自動Playerの初期制作画面で、実マウス・DPI個体差の受入とは分けて扱う。

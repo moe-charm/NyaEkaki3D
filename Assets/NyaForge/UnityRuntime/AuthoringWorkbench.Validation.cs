@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring.Inspection;
 using Newtonsoft.Json.Linq;
@@ -36,17 +37,37 @@ namespace NyaForge.UnityRuntime
                 var result = AuthoringValidationReader.Read(workspace, workspace.InstanceId, request);
                 string status = (string)result["status"];
                 var checks = result["checks"]?.Values<JObject>() ?? Enumerable.Empty<JObject>();
-                validationResult.text = "判定: " + status + "\n" + string.Join(" / ", checks.Select(FormatValidationCheck));
+                validationResult.text = FormatValidationResult(result, status, checks);
                 SetStatus("出力チェック: " + status);
             });
+        }
+
+        static string FormatValidationResult(JObject result, string status, IEnumerable<JObject> checks)
+        {
+            var lines = new List<string> { "判定: " + status };
+            var metrics = result["metrics"] as JObject;
+            if (metrics != null)
+            {
+                string[] names = { "triangles", "renderVertices", "materials", "textures", "maxTextureDimension", "bones", "maxInfluences" };
+                foreach (var name in names)
+                    if (metrics[name] != null) lines.Add(name + ": " + (string)metrics[name]);
+            }
+            foreach (var check in checks) lines.Add(FormatValidationCheck(check));
+            var warnings = result["warnings"]?.Values<string>().Where(value => !string.IsNullOrWhiteSpace(value)).ToArray();
+            if (warnings != null && warnings.Length > 0)
+            {
+                lines.Add("警告:");
+                lines.AddRange(warnings.Select(value => "・" + value));
+            }
+            return string.Join("\n", lines);
         }
 
         static string FormatValidationCheck(JObject check)
         {
             string text = (string)check["name"] + ": " + (string)check["status"];
-            return check["actual"] != null && check["limit"] != null
-                ? text + " (" + (string)check["actual"] + "/" + (string)check["limit"] + ")"
-                : text;
+            if (check["actual"] != null && check["limit"] != null)
+                text += " (" + (string)check["actual"] + "/" + (string)check["limit"] + ")";
+            return check["reason"] != null ? text + " — " + (string)check["reason"] : text;
         }
 
         void RefreshValidation()
