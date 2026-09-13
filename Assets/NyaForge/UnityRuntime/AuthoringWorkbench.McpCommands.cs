@@ -1,3 +1,4 @@
+using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Inspection;
 using Newtonsoft.Json.Linq;
@@ -17,8 +18,12 @@ namespace NyaForge.UnityRuntime
             {
                 var state=AuthoringReadService.Read(workspace,pipeInstance,request.Method); state["saveTarget"]=McpSaveTarget();
                 var protectedIds = new JArray();
-                foreach (var id in referenceProtectedObjectIds) protectedIds.Add(id);
+                foreach (var id in referenceProtectedObjectIds.OrderBy(id => id, System.StringComparer.Ordinal)) protectedIds.Add(id);
                 state["referenceProtectedObjectIds"] = protectedIds;
+                var deliveryIds = new JArray();
+                foreach (var id in deliveryAllowedObjectIds.OrderBy(id => id, System.StringComparer.Ordinal)) deliveryIds.Add(id);
+                state["deliveryAllowlistObjectIds"] = deliveryIds;
+                state["deliveryAllowlistExplicit"] = deliveryAllowedObjectIds.Count > 0;
                 state["activeObjectReferenceProtected"] = workspace != null && !workspace.Document.IsEmpty &&
                     referenceProtectedObjectIds.Contains(workspace.Document.ActiveObjectId);
                 return state;
@@ -57,6 +62,7 @@ namespace NyaForge.UnityRuntime
             {
                 RefreshSecondaryMotionAttachmentFromWorkspace();
                 RefreshReferenceProtectionFromWorkspace();
+                RefreshDeliveryAllowlistFromWorkspace();
             }
             selection.RemoveWhere(i=>i<0 || i>=projection.Points.Length);projection.Select(selection);Refresh();
             return result;

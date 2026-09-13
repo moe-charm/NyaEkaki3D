@@ -14,7 +14,7 @@
 
 ビューワーでは生成済みのパックと確認セットを開けます。制作画面の **GLBモデルを取り込む** を開くと、Windowsのファイル選択からGLB/VRMを選び、候補のmesh・skin・node instanceを確認して制作対象へ追加できます。static meshとskin付きmeshのどちらもEditMesh段から頂点編集を始められます。別graph objectとして取り込んだ小物はstable BoneIdへ装着でき、同じパネルの **衣装をavatar骨格へskin-bind（Root初期化）** で選択avatarの骨格をコピーし、全頂点をRootへ初期化できます。avatarにrest meshとskin bindingがある場合は **自動weight初期化（avatar表面）** を使うと最近三角形上の既存avatar weightを補間できます。avatar表面を使えない場合は **自動weight初期化（骨近傍）** がrest骨segment距離から最大4本を作るフォールバックです。いずれも初期値なので、Rig panelのweight混合・weight paintとpose確認で袖や裾などを必ず調整します。FBX・BLEND・Unity prefabの直接取り込みは未実装です。
 
-bodyを基準に衣装を調整するときは、制作対象パネルでavatar objectを選び **選択中を参照として保護（編集不可）** をオンにします。保護したobjectは表示・選択・保存・出力できますが、頂点・材質・リグ・graphの変更を停止します。保護IDはnative projectの `reference-protection.nyaforge.bin` へ保存され、開き直しても復元されます。編集する場合は同じトグルをオフにしてください。これは誤編集防止の境界であり、実EditorWindowの手動操作とVRChat内の見た目確認は別の受入です。
+bodyを基準に衣装を調整するときは、制作対象パネルでavatar objectを選び **選択中を参照として保護（編集不可）** をオンにします。保護したobjectは表示・選択・保存できますが、頂点・材質・リグ・graphの変更と汎用納品出力を停止します。衣装objectを選び **選択中を納品対象に含める** をオンにすると、指定したobjectだけがGLB／multi-object納品へ入ります。allowlistはnative projectの `delivery-allowlist.nyaforge.bin` へ保存され、開き直しても復元されます。保護IDは `reference-protection.nyaforge.bin` へ保存されます。編集する場合は同じ保護トグルをオフにしてください。これは誤編集・誤出力防止の境界であり、実EditorWindowの手動操作とVRChat内の見た目確認は別の受入です。
 
 実素材を用意せず取込経路だけを確認する場合は、リポジトリの公開fixtureを生成できます。PowerShellで次を実行すると、静的mesh 0と2骨skinned mesh 1を含む小さなGLBが `Artifacts/NyaForgeGlbFixture/clothing-fixture.glb` に作られます。
 

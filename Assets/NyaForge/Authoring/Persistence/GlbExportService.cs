@@ -52,11 +52,17 @@ namespace NyaForge.Authoring
         /// <summary>Writes static geometry while allowing the Workbench to supply its display-corrected mesh per object.</summary>
         public static GlbExportResult ExportStaticWithOverrides(AuthoringWorkspace workspace, string instance, string document, long revision, string directory,
             IReadOnlyDictionary<string, GraphMeshValue> meshOverrides)
+            => ExportStaticWithOverrides(workspace, instance, document, revision, directory, meshOverrides, null);
+
+        /// <summary>Writes static geometry for an explicit object subset.</summary>
+        public static GlbExportResult ExportStaticWithOverrides(AuthoringWorkspace workspace, string instance, string document, long revision, string directory,
+            IReadOnlyDictionary<string, GraphMeshValue> meshOverrides, IReadOnlyCollection<string> objectIds)
         {
             ValidateRequest(workspace, instance, document, revision, directory);
             lock (workspace.Gate)
             {
-                var objects = workspace.Document.Objects.Select(item =>
+                var selected = SelectObjects(workspace.Document, objectIds);
+                var objects = selected.Select(item =>
                 {
                     GraphMeshValue overrideValue = null;
                     if (meshOverrides != null) meshOverrides.TryGetValue(item.ObjectId, out overrideValue);
@@ -111,9 +117,19 @@ namespace NyaForge.Authoring
             IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointLocalTransforms = null)
             => ExportSkinnedCore(workspace, instance, document, revision, directory, GlbExportProfile.SkinnedGeometry,
                 item => instanceWorldTransforms != null && instanceWorldTransforms.TryGetValue(item.ObjectId, out var value) ? value : null, false,
-                instanceWorldTransforms, inverseBindMatrices, jointLocalTransforms);
+                instanceWorldTransforms, inverseBindMatrices, jointLocalTransforms, null);
 
-        static GlbExportResult ExportSkinnedCore(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, GlbExportProfile profile, Func<AuthoringObject, SourceAffine> transformResolver, bool singleTransformMode, IReadOnlyDictionary<string, SourceAffine> transformMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointTransformMap = null)
+        /// <summary>Writes skinned GLB for an explicit object subset.</summary>
+        public static GlbExportResult ExportSkinnedWithTransforms(AuthoringWorkspace workspace, string instance, string document, long revision, string directory,
+            IReadOnlyDictionary<string, SourceAffine> instanceWorldTransforms,
+            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMatrices,
+            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointLocalTransforms,
+            IReadOnlyCollection<string> objectIds)
+            => ExportSkinnedCore(workspace, instance, document, revision, directory, GlbExportProfile.SkinnedGeometry,
+                item => instanceWorldTransforms != null && instanceWorldTransforms.TryGetValue(item.ObjectId, out var value) ? value : null, false,
+                instanceWorldTransforms, inverseBindMatrices, jointLocalTransforms, objectIds);
+
+        static GlbExportResult ExportSkinnedCore(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, GlbExportProfile profile, Func<AuthoringObject, SourceAffine> transformResolver, bool singleTransformMode, IReadOnlyDictionary<string, SourceAffine> transformMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointTransformMap = null, IReadOnlyCollection<string> objectIds = null)
         {
             ValidateRequest(workspace, instance, document, revision, directory);
             lock (workspace.Gate)
@@ -122,7 +138,8 @@ namespace NyaForge.Authoring
                     "GLB_SKIN_MULTI_INSTANCE_TRANSFORM", "A selected node instance transform is only valid for a single-object export.");
                 if (transformMap != null)
                     Checks.Require(transformMap.Keys.All(id => workspace.Document.Objects.Any(item => item.ObjectId == id)), "GLB_SKIN_INSTANCE_TRANSFORM", "A skinned instance transform references an unknown graph object.");
-                var skinned = workspace.Document.Objects.Select(item => BuildSkinnedObject(item, transformResolver == null ? null : transformResolver(item),
+                var selected = SelectObjects(workspace.Document, objectIds);
+                var skinned = selected.Select(item => BuildSkinnedObject(item, transformResolver == null ? null : transformResolver(item),
                     inverseBindMap != null && inverseBindMap.TryGetValue(item.ObjectId, out var inverseBind) ? inverseBind : null,
                     jointTransformMap != null && jointTransformMap.TryGetValue(item.ObjectId, out var joints) ? joints : null, profile)).ToArray();
                 ValidateSharedSkeleton(skinned);
@@ -153,9 +170,19 @@ namespace NyaForge.Authoring
             IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointLocalTransforms = null)
             => ExportSkinnedExtendedCore(workspace, instance, document, revision, directory,
                 item => instanceWorldTransforms != null && instanceWorldTransforms.TryGetValue(item.ObjectId, out var value) ? value : null, false,
-                instanceWorldTransforms, inverseBindMatrices, jointLocalTransforms);
+                instanceWorldTransforms, inverseBindMatrices, jointLocalTransforms, null);
 
-        static GlbExportResult ExportSkinnedExtendedCore(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, Func<AuthoringObject, SourceAffine> transformResolver, bool singleTransformMode, IReadOnlyDictionary<string, SourceAffine> transformMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointTransformMap = null)
+        /// <summary>Writes extended skinned GLB for an explicit object subset.</summary>
+        public static GlbExportResult ExportSkinnedExtendedWithTransforms(AuthoringWorkspace workspace, string instance, string document, long revision, string directory,
+            IReadOnlyDictionary<string, SourceAffine> instanceWorldTransforms,
+            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMatrices,
+            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointLocalTransforms,
+            IReadOnlyCollection<string> objectIds)
+            => ExportSkinnedExtendedCore(workspace, instance, document, revision, directory,
+                item => instanceWorldTransforms != null && instanceWorldTransforms.TryGetValue(item.ObjectId, out var value) ? value : null, false,
+                instanceWorldTransforms, inverseBindMatrices, jointLocalTransforms, objectIds);
+
+        static GlbExportResult ExportSkinnedExtendedCore(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, Func<AuthoringObject, SourceAffine> transformResolver, bool singleTransformMode, IReadOnlyDictionary<string, SourceAffine> transformMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointTransformMap = null, IReadOnlyCollection<string> objectIds = null)
         {
             ValidateRequest(workspace, instance, document, revision, directory);
             lock (workspace.Gate)
@@ -164,7 +191,8 @@ namespace NyaForge.Authoring
                     "GLB_SKIN_MULTI_INSTANCE_TRANSFORM", "A selected node instance transform is only valid for a single-object export.");
                 if (transformMap != null)
                     Checks.Require(transformMap.Keys.All(id => workspace.Document.Objects.Any(item => item.ObjectId == id)), "GLB_SKIN_INSTANCE_TRANSFORM", "A skinned instance transform references an unknown graph object.");
-                var skinned = workspace.Document.Objects.Select(item => BuildSkinnedObject(item, transformResolver == null ? null : transformResolver(item),
+                var selected = SelectObjects(workspace.Document, objectIds);
+                var skinned = selected.Select(item => BuildSkinnedObject(item, transformResolver == null ? null : transformResolver(item),
                     inverseBindMap != null && inverseBindMap.TryGetValue(item.ObjectId, out var inverseBind) ? inverseBind : null,
                     jointTransformMap != null && jointTransformMap.TryGetValue(item.ObjectId, out var joints) ? joints : null, GlbExportProfile.SkinnedGeometryExtended)).ToArray();
                 ValidateSharedSkeleton(skinned);
@@ -190,6 +218,18 @@ namespace NyaForge.Authoring
             for (int i = 1; i < objects.Count; i++)
                 common.IntersectWith(objects[i].Skeleton.Bones.Select(bone => bone.BoneId));
             Checks.Require(common.Count > 0, "GLB_SKIN_SHARED_SKELETON", "Skinned multi-object GLB export requires a shared source skeleton or explicit attachment conversion.");
+        }
+
+        static IReadOnlyList<AuthoringObject> SelectObjects(AuthoringDocument document, IReadOnlyCollection<string> objectIds)
+        {
+            if (objectIds == null) return document.Objects;
+            Checks.Require(objectIds.Distinct(StringComparer.Ordinal).Count() == objectIds.Count,
+                "INVALID_DELIVERY_ALLOWLIST", "Delivery object IDs must be unique.");
+            var ids = new HashSet<string>(objectIds, StringComparer.Ordinal);
+            Checks.Require(ids.Count > 0, "NO_DELIVERY_OBJECTS", "At least one delivery object is required.");
+            var result = document.Objects.Where(item => ids.Contains(item.ObjectId)).ToArray();
+            Checks.Require(result.Length == ids.Count, "DELIVERY_ALLOWLIST_STALE", "Delivery allowlist references an object that is not present.");
+            return result;
         }
 
         static void ValidateRequest(AuthoringWorkspace workspace, string instance, string document, long revision, string directory)

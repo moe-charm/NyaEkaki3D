@@ -1,5 +1,23 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-03B: 納品対象allowlistをGUI／MCP／GLBへ接続
+
+`DeliveryAllowlistCodec`（`NAWL` v1）と `delivery-allowlist.nyaforge.bin` attachmentを追加し、明示したobject ID集合をnative snapshotへ保存する。制作対象パネルの **選択中を納品対象に含める** トグル、MCP `get_state` の `deliveryAllowlistObjectIds`／`deliveryAllowlistExplicit`、GUI／MCPの静的・skinned・extended GLBおよびmulti-object exportへ同じ選択集合を渡す。allowlistが空なら全object候補、明示時は指定objectだけを出力し、manifest／GLB reportのobject件数・IDへ反映する。参照保護objectはallowlistへ追加できず、保護bodyを含む出力は出力先作成前に `REFERENCE_EXPORT_BLOCKED` で停止する。VRM 1.0のavatar＋衣装同梱とnative project backupは意図的な全体出力として対象外である。
+
+Coreは **499 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-baa1cf057c514b848d2215c38ef9dc84`）。allowlist codecのSave/Open、multi-object subset、skinned GLB subsetとreport IDを回帰した。Windows Player `Builds/DeliveryAllowlistV1b/NyaForge.exe` のAuthoring suiteは **83 checks PASS**（`Artifacts/Authoring-20260914-041130-a387f05c5a0e438aab81a14911a67c52/report.json`）。参照body＋衣装の2 objectで、body保護→汎用GLB停止→衣装だけをallowlist指定→GLB `objectCount=1`→Save/Open後復元を確認した。同Player成果物のUnity **2022.3.22f1** Bridge receiverも **15 checks PASS**（`Artifacts/BridgeReceiver-20260914-041200-656-5c980b0258074607a08e769232248cf3/bridge-report.json`）。
+
+実EditorWindowでのクリック選択、実RadDollV3への衣装package適用、受け取り側でのmanifest／report対象IDの手動照合は残る。実マウス・DPI差、全周fit・貫通・見た目、VRChat Build & Test／実機表示も別受入とする。
+
+## 2026-09-14 NF-V1-03B: 納品対象allowlistの永続化
+
+参照bodyだけを保護しても、汎用GLB／multi-object出力はworkspace全体を列挙できるため、納品対象を明示できるようにした。`DeliveryAllowlistCodec`（`NAWL` v1）を追加し、object ID集合をsorted・重複なしで検査して `delivery-allowlist.nyaforge.bin` へ保存する。Project snapshotはattachment上限を9件へ更新し、旧schemaのsidecar移行とnative Save/Openへ接続した。
+
+制作対象パネルの **選択中を納品対象に含める** トグル、MCP `get_state` の `deliveryAllowlistObjectIds`／`deliveryAllowlistExplicit`、GUI／MCPの静的・skinned・extended GLBおよびmulti-object exportへ同じobject集合を接続した。allowlistが空なら従来どおり全objectが候補で、1つでも明示すると指定objectだけをGLB／multi-object manifestへ出力する。参照保護objectをallowlistへ追加できず、既存の汎用出力でも保護objectが選ばれていれば `REFERENCE_EXPORT_BLOCKED` で出力先作成前に停止する。VRM 1.0のavatar＋衣装同梱とnative project backupは意図的な全体出力のため対象外である。
+
+Coreは **498 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-5de02eeb46d14bb78b556ea62bdcd117`）。allowlist codecのnative Save/Open往復を含む。Windows Player `Builds/DeliveryAllowlistV1/NyaForge.exe` はビルド成功し、Authoring suite **83 checks PASS**（`Artifacts/Authoring-20260914-040059-38d6557651d0434d895a8666067a1d95/report.json`）。2 objectのうち参照bodyを保護して汎用GLBが停止し、衣装側だけをallowlistへ追加してGLB `objectCount=1`で出力、Save/Open後にallowlistが復元される回帰を確認した。
+
+残るNF-V1-03Bの外部受入は、実EditorWindowでのクリック選択、実RadDollV3への衣装package適用、manifest／reportの対象IDを受け取り側で照合する手動確認である。実マウス・DPI差、全周fit・貫通・見た目、VRChat Build & Test／実機表示は引き続き別受入とする。
+
 ## 2026-09-14 feedback triage: 9855d43レビューの再照合と汎用出力ガード
 
 外部レビューの対象は `9855d43` で、現行 `main`（`ed27950`）より前の基準だった。P1の3件は現行mainで解消済みである。受け取り側のavatar-local配置（移動・回転・scaleを含む）は `e250372` と Bridge 回帰、同じObjectIdの新StateHash保存で生成object参照を保持する更新経路は `23a2b8a`、UV1を黙って落とさず `UNSUPPORTED_UV_SET`で停止する経路は `7ea1cc5` で確認した。P2の材質slot、MR係数、Cuff winding、sampler共有、ownership markerもそれぞれ既存Core／Bridge回帰へ接続済みである。
@@ -8,7 +26,7 @@
 
 Windows Player `Builds/RefExportGuard/NyaForge.exe` をビルドし、Authoring suite **83 checks PASS**（`Artifacts/Authoring-20260914-035018-fd13f91381904083aad2e1cd01a66071/report.json`）。2 objectの参照保護後に静的GLB出力がメッセージを返し、`exports`を作成しない回帰を含む。Coreは **497 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-63ab3b928d7f42a9acf0dbbf029f8085`）。
 
-永続的な納品allowlistをGUI／MCP／manifestへ保存し、保存・再開・Undo後も同じobject集合を出力する作業は **NF-V1-03B** として切り出した。実EditorWindowの手動操作、実RadDollV3全周fit・貫通・見た目、VRChat Build & Test／実機表示は引き続き外部受入である。
+永続的な納品allowlistは後続の **NF-V1-03B** で実装し、GUI／MCP／manifest出力、Save/Open、選択対象のGLB回帰まで確認済み。実EditorWindowの手動操作、実RadDollV3全周fit・貫通・見た目、VRChat Build & Test／実機表示は引き続き外部受入である。
 
 ## 2026-09-14 MCPへ参照保護状態を公開
 

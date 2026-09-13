@@ -266,6 +266,7 @@ namespace NyaForge.UnityRuntime
                     RefreshSecondaryMotionAttachmentFromWorkspace();
                     RefreshImportedVrmSessionsFromWorkspace();
                     RefreshReferenceProtectionFromWorkspace();
+                    RefreshDeliveryAllowlistFromWorkspace();
                 }
                 var guiWatch=measureCommands ? System.Diagnostics.Stopwatch.StartNew() : null;
                 selection.RemoveWhere(i => i < 0 || i >= projection.Points.Length);

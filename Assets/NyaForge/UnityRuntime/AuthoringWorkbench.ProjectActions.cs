@@ -48,6 +48,7 @@ namespace NyaForge.UnityRuntime
             ClearImportedSecondaryMotion();
             workspace = next; commands = new AuthoringCommandService(workspace);
             RefreshReferenceProtectionFromWorkspace();
+            RefreshDeliveryAllowlistFromWorkspace();
             saveIncomplete = false;
             savedDirectory = loadedPath == null ? null : Path.GetFullPath(loadedPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             projectPath.SetValueWithoutNotify(loadedPath ?? Path.Combine(Application.persistentDataPath, "Authoring", "Project-" + Guid.NewGuid().ToString("N").Substring(0, 8)));
@@ -172,8 +173,9 @@ namespace NyaForge.UnityRuntime
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "bake-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
             if (workspace.Document.Objects.Count > 1 && !ProjectExportService.RequiresNativeProjectExport(workspace.Document))
             {
+                var deliveryIds = DeliveryObjectIdsForExport();
                 EnsureGenericDeliveryExportAllowed();
-                string manifest = MultiObjectExportService.Export(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory).ManifestPath;
+                string manifest = MultiObjectExportService.Export(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, deliveryIds).ManifestPath;
                 SetStatus("Unity用に複数対象を書き出しました: " + manifest);
             }
             else
@@ -185,9 +187,10 @@ namespace NyaForge.UnityRuntime
 
         void ExportGlbStatic() => Try(() =>
         {
+            var deliveryIds = DeliveryObjectIdsForExport();
             EnsureGenericDeliveryExportAllowed();
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-static-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            var result = GlbExportService.ExportStaticWithOverrides(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, StaticDisplayMeshesForExport());
+            var result = GlbExportService.ExportStaticWithOverrides(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, StaticDisplayMeshesForExport(), deliveryIds);
             SetStatus("標準GLB（表示形状）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
         });
 
@@ -214,17 +217,19 @@ namespace NyaForge.UnityRuntime
 
         void ExportGlbSkinned() => Try(() =>
         {
+            var deliveryIds = DeliveryObjectIdsForExport();
             EnsureGenericDeliveryExportAllowed();
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            var result = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms());
+            var result = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms(), deliveryIds);
             SetStatus("標準GLB（skin/morph保持）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
         });
 
         void ExportGlbSkinnedExtended() => Try(() =>
         {
+            var deliveryIds = DeliveryObjectIdsForExport();
             EnsureGenericDeliveryExportAllowed();
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-extended-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            var result = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms());
+            var result = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms(), deliveryIds);
             SetStatus("拡張GLB（全weight保持）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
         });
 

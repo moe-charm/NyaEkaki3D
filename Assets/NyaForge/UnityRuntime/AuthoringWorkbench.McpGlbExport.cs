@@ -17,16 +17,17 @@ namespace NyaForge.UnityRuntime
                 string directory = Path.Combine(root, "exports", "glb-" + request.ExportId);
                 if (Directory.Exists(directory) || File.Exists(directory))
                     return new JObject { ["success"] = false, ["code"] = "EXPORT_DESTINATION_EXISTS", ["directory"] = directory };
+                var deliveryIds = DeliveryObjectIdsForExport();
                 EnsureGenericDeliveryExportAllowed();
                 GlbExportResult result;
                 switch (request.Profile)
                 {
                     case GlbExportProfile.StaticGeometry:
-                        result = GlbExportService.ExportStaticWithOverrides(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory, StaticDisplayMeshesForExport()); break;
+                        result = GlbExportService.ExportStaticWithOverrides(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory, StaticDisplayMeshesForExport(), deliveryIds); break;
                     case GlbExportProfile.SkinnedGeometry:
-                        result = GlbExportService.ExportSkinnedWithTransforms(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms()); break;
+                        result = GlbExportService.ExportSkinnedWithTransforms(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms(), deliveryIds); break;
                     case GlbExportProfile.SkinnedGeometryExtended:
-                        result = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms()); break;
+                        result = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms(), deliveryIds); break;
                     default: throw new AuthoringException("INVALID_GLB_EXPORT_REQUEST", "Unknown GLB export profile.");
                 }
                 SetStatus("AIから標準GLBを書き出しました：" + result.Path);

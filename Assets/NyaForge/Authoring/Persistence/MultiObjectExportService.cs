@@ -62,8 +62,8 @@ namespace NyaForge.Authoring
         public string StateHash { get; }
         public int ObjectCount { get; }
 
-        internal MultiObjectExportResult(string manifestPath, AuthoringDocument document)
-        { ManifestPath = manifestPath; DocumentId = document.DocumentId; Revision = document.DocumentRevision; StateHash = document.StateHash; ObjectCount = document.Objects.Count; }
+        internal MultiObjectExportResult(string manifestPath, AuthoringDocument document, int objectCount)
+        { ManifestPath = manifestPath; DocumentId = document.DocumentId; Revision = document.DocumentRevision; StateHash = document.StateHash; ObjectCount = objectCount; }
     }
 
     /// <summary>Packages one immutable multi-object document as independently readable object exports.</summary>
@@ -73,6 +73,11 @@ namespace NyaForge.Authoring
         public const string ManifestName = "multi-object.nyaforge-bake.json";
 
         public static MultiObjectExportResult Export(AuthoringWorkspace workspace, string instance, string document, long revision, string directory)
+            => Export(workspace, instance, document, revision, directory, null);
+
+        /// <summary>Exports an explicit subset of document objects without mutating the source workspace.</summary>
+        public static MultiObjectExportResult Export(AuthoringWorkspace workspace, string instance, string document, long revision, string directory,
+            IReadOnlyCollection<string> allowedObjectIds)
         {
             if (workspace == null) throw new ArgumentNullException(nameof(workspace));
             directory = Storage.DirectoryPath(directory);
@@ -82,7 +87,8 @@ namespace NyaForge.Authoring
                 Checks.Require(workspace.InstanceId == instance, "STALE_INSTANCE", "Export targets another instance.");
                 Checks.Require(workspace.Document.DocumentId == document, "DOCUMENT_CHANGED", "Export targets another document.");
                 Checks.Require(workspace.Document.DocumentRevision == revision, "REVISION_CONFLICT", "Document changed before export.");
-                Checks.Require(workspace.Document.Objects.Count > 1, "MULTI_OBJECT_REQUIRED", "Use the single-object export for a document with one object.");
+                var objects = SelectObjects(workspace.Document, allowedObjectIds);
+                Checks.Require(objects.Count > 1, "MULTI_OBJECT_REQUIRED", "Use the single-object export for a document with one object.");
                 Checks.Require(!ProjectExportService.RequiresNativeProjectExport(workspace.Document), "ATTACHMENT_NATIVE_EXPORT_REQUIRED", "This document contains metadata that requires a native project export.");
                 Checks.Require(!Directory.Exists(directory) && !File.Exists(directory), "EXPORT_DESTINATION_EXISTS", "Export destination already exists.");
 
@@ -92,7 +98,7 @@ namespace NyaForge.Authoring
                     Directory.CreateDirectory(staging);
                     var items = new List<MultiObjectExportItem>();
                     int index = 0;
-                    foreach (var item in workspace.Document.Objects)
+                    foreach (var item in objects)
                     {
                         var singleDocument = new AuthoringDocument(workspace.Document.DocumentId, workspace.Document.Name,
                             workspace.Document.DocumentRevision, new[] { item }, item.ObjectId, false);
@@ -118,7 +124,7 @@ namespace NyaForge.Authoring
                     Storage.AtomicWrite(manifestPath, Storage.JsonBytes(manifest), false);
                     Directory.CreateDirectory(Path.GetDirectoryName(directory));
                     Directory.Move(staging, directory);
-                    return new MultiObjectExportResult(Path.Combine(directory, ManifestName), workspace.Document);
+                    return new MultiObjectExportResult(Path.Combine(directory, ManifestName), workspace.Document, objects.Count);
                 }
                 catch
                 {
@@ -126,6 +132,18 @@ namespace NyaForge.Authoring
                     throw;
                 }
             }
+        }
+
+        static IReadOnlyList<AuthoringObject> SelectObjects(AuthoringDocument document, IReadOnlyCollection<string> allowedObjectIds)
+        {
+            if (allowedObjectIds == null) return document.Objects;
+            Checks.Require(allowedObjectIds.Distinct(StringComparer.Ordinal).Count() == allowedObjectIds.Count,
+                "INVALID_DELIVERY_ALLOWLIST", "Delivery object IDs must be unique.");
+            var ids = new HashSet<string>(allowedObjectIds, StringComparer.Ordinal);
+            Checks.Require(ids.Count > 0, "NO_DELIVERY_OBJECTS", "At least one delivery object is required.");
+            var result = document.Objects.Where(item => ids.Contains(item.ObjectId)).ToArray();
+            Checks.Require(result.Length == ids.Count, "DELIVERY_ALLOWLIST_STALE", "Delivery allowlist references an object that is not present.");
+            return result;
         }
 
         public static MultiObjectExportDocument Read(string manifestPath)

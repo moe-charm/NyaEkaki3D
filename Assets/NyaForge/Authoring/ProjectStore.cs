@@ -19,7 +19,7 @@ namespace NyaForge.Authoring
                     string path = Path.Combine(directory, ManifestName);
                     long version = 0;
                     bool snapshot = workspace.Attachments.Hashes.Count > 0 || workspace.SavedAttachmentsHash != ProjectAttachments.Empty.ContentHash
-                        || File.Exists(Path.Combine(directory, ProjectAttachments.Expressions)) || File.Exists(Path.Combine(directory, ProjectAttachments.Springs)) || File.Exists(Path.Combine(directory, ProjectAttachments.Rig)) || File.Exists(Path.Combine(directory, ProjectAttachments.RigSessions)) || File.Exists(Path.Combine(directory, ProjectAttachments.PhysBones)) || File.Exists(Path.Combine(directory, ProjectAttachments.SecondaryMotion)) || File.Exists(Path.Combine(directory, ProjectAttachments.ReferenceProtection)) || File.Exists(Path.Combine(directory, ProjectAttachments.ImportDiagnostics));
+                        || File.Exists(Path.Combine(directory, ProjectAttachments.Expressions)) || File.Exists(Path.Combine(directory, ProjectAttachments.Springs)) || File.Exists(Path.Combine(directory, ProjectAttachments.Rig)) || File.Exists(Path.Combine(directory, ProjectAttachments.RigSessions)) || File.Exists(Path.Combine(directory, ProjectAttachments.PhysBones)) || File.Exists(Path.Combine(directory, ProjectAttachments.SecondaryMotion)) || File.Exists(Path.Combine(directory, ProjectAttachments.ReferenceProtection)) || File.Exists(Path.Combine(directory, ProjectAttachments.DeliveryAllowlist)) || File.Exists(Path.Combine(directory, ProjectAttachments.ImportDiagnostics));
                     bool graphProfile = !workspace.Document.IsEmpty && !workspace.Document.ActiveObject.IsStaticProfile;
                     if (File.Exists(path))
                     {

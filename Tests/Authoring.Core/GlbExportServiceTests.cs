@@ -201,6 +201,16 @@ internal static partial class Program
             Equal(2, transformedNodes.Length);
             True(transformedNodes.All(node => node["matrix"] is JArray && ((JArray)node["matrix"]!).Count == 16));
 
+            string subsetDirectory = Path.Combine(Root, "glb-skinned-subset-" + Guid.NewGuid().ToString("N"));
+            string selectedObjectId = workspace.Document.Objects[1].ObjectId;
+            var subset = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId,
+                workspace.Document.DocumentRevision, subsetDirectory, transforms, null, null, new[] { selectedObjectId });
+            Equal(1, subset.ObjectCount);
+            var subsetJson = JObject.Parse(ReadJsonChunk(File.ReadAllBytes(subset.Path)));
+            Equal(1, ((JArray)subsetJson["meshes"]!).Count);
+            var subsetReport = JObject.Parse(File.ReadAllText(subset.ReportPath));
+            Equal(selectedObjectId, (string)subsetReport["objects"]![0]!["objectId"]!);
+
             var foreign = new SkeletonDefinition(new[] { new BoneDefinition(GraphId(), "ForeignRoot", "", new Vec3(), new Vec3(0, .1f, 0)) });
             var mixedWorkspace = AuthoringWorkspace.CreateEmpty();
             Ok(Execute(mixedWorkspace, AuthoringOperation.AddGraph(BuildGraph(first, skeleton))));
