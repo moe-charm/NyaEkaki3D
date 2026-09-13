@@ -29,6 +29,14 @@ Unity BridgeはStandard shaderへnormal mapとmetallic-roughness mapを割り当
 
 材質パネルのscalar変更が既存のnormal／metallic-roughness slotを新しい`MaterialParameters`へ引き継ぐよう修正し、保持中のMIME、encoded byte数、UV set、normal scale、`B=metallic/G=roughness`契約をパネルへ表示するようにした。既存のmaterial GUI回帰を含むWindows Player `Builds/SemanticTextureGuiV1/NyaForge.exe`は **83 checks PASS**（`Logs/build-player-20260913-235951-041.log`、`Artifacts/Authoring-20260914-000015-f3a9f6cc77494025a7486cf07d36c707/report.json`）。これはsemantic mapの編集UIや実shader外観を完成扱いするものではなく、取込済みmapの保持と確認表示を追加した段階である。
 
+## 2026-09-14 semantic texture authoring preview
+
+材質のsemantic normal／metallic-roughness slotをWorkbenchのPBR previewへ接続した。normalはlinear画像として`_BumpMap`へ設定し、normal scaleとUV0/UV1を反映する。metallic-roughnessはglTFの`B=metallic / G=roughness`をUnity Standard shader用の`R=metallic / A=smoothness`へ変換して`_MetallicGlossMap`へ設定する。glTF samplerのwrap/filterもUnity previewへ反映する（Unityの単一wrapMode制約によりWrapTは保持値をそのまま描画できない）。
+
+所有textureは`BaseColorSurface`のmaterial lifecycleと同じ寿命で破棄し、semantic slotを保持したscalar材質編集後も再生成する。UV1、normal、MRのshader keywordを含むWindows Player `Builds/SemanticPreviewV2/NyaForge.exe`をビルドし、Authoring suite **PASS**（83 checks、`Artifacts/Authoring-20260914-001305-87fea821f8dc47809c5ad43a45b17917/report.json`、画面 `authoring.png`）を確認した。
+
+これはsemantic mapの実RadDollV3表示、tangent品質、occlusion/emissive、専用paint／bake、実VRChatの見た目を受入した記録ではない。NF-V1-09/10の残作業として、実sceneで明暗環境・UV・tangent・出力一致を目視確認する。
+
 ## 2026-09-13 持込Windows v1案の照合結果
 
 ### 採用する点

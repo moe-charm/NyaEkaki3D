@@ -1,8 +1,8 @@
 # Nya Ekaki 3D Windows v1 実行計画
 
-更新: 2026-09-13。コード照合: 現行 `main` の `5f840de`。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership marker・複数package管理の実装が進んでいる。
+更新: 2026-09-14。コード照合: 現行 `main` の更新内容を反映。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership marker・複数package管理・semantic texture previewの実装が進んでいる。
 
-本書は持込「NyaForge Windows v1 開発計画」をコード照合して修正した実行計画。受入済み報告ではない。製品全体の目標・C0〜C5の要件は[設計v2](NyaForge-Authoring-Design2.md)を維持し、本書はWindows衣装制作v1へ至る着手順を定める。v1だけの合格を製品全体や進行中goalの完了へ読み替えない。直近の状態は[current_task](../current_task.md)。現行mainではCore 491 passed / 0 failed、Windows Player、semantic textureを含む合成Unity Bridgeの衣装package回帰まで確認済みで、実マウス・実アバター骨割当・実VRChatは未受入である。
+本書は持込「NyaForge Windows v1 開発計画」をコード照合して修正した実行計画。受入済み報告ではない。製品全体の目標・C0〜C5の要件は[設計v2](NyaForge-Authoring-Design2.md)を維持し、本書はWindows衣装制作v1へ至る着手順を定める。v1だけの合格を製品全体や進行中goalの完了へ読み替えない。直近の状態は[current_task](../current_task.md)。現行mainではCore 493 passed / 0 failed、Windows Playerのsemantic texture preview、semantic textureを含む合成Unity Bridgeの衣装package回帰まで確認済みで、実マウス・実アバター骨割当・実VRChatは未受入である。
 
 ## 1. 採用判断と遠回りの修正
 
@@ -26,9 +26,9 @@
 | nativeとUnity出力 | [ProjectExportService](../Assets/NyaForge/Authoring/Persistence/ProjectExportService.cs)はskin/morph/attachmentをnative packageへ振り分ける | native保存成功をUnity装着成功としない。参照bodyを除く出力対象指定も03Aの範囲 |
 | fit/weight制限 | [MeshSurfaceFit](../Assets/NyaForge/Authoring/Geometry/MeshSurfaceFit.cs)は全頂点・全avatar面を最近面へ投影し距離制限あり。[SkinWeightTransfer](../Assets/NyaForge/Authoring/Rig/SkinWeightTransfer.cs)の表面転送は全頂点・全avatar面を使い距離引数なし | 選択頂点・元body面領域・距離制限を双方へ接続する06を採用 |
 | 材質・解像度 | [ImportMaterials](../Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ImportMaterials.cs)はbase colorを縮小してPaintへ所有保存。[PaintImage](../Assets/NyaForge/Authoring/Paint/PaintImage.cs)は最大1024px | base colorの縮小契約とsemantic mapの画像所有・出力品質を09Aで受入。未対応の画像slotは明示する |
-| semantic texture | `MaterialTextureSlot`がnormal／metallic-roughnessのchannel・色空間・UV set・sampler・bytesを保持し、GLB writer/readerへ接続。材質GUIは既存mapをscalar変更時に保持し、契約を表示 | Coreのnative/GLB回帰とPlayer GUI保持は実装済み。Unity Standard／実VRChatの見た目とocclusion/emissiveは外部受入・後続範囲 |
+| semantic texture | `MaterialTextureSlot`がnormal／metallic-roughnessのchannel・色空間・UV set・sampler・bytesを保持し、GLB writer/readerへ接続。材質GUIは既存mapをscalar変更時に保持し、契約を表示。Windows PBR previewへnormal／MRを接続 | Coreのnative/GLB回帰、Player GUI保持、shader preview接続まで実装済み。実RadDollV3 sceneのtangent/外観、出力一致、occlusion/emissive、実VRChatは外部受入・後続範囲 |
 | SDK検証 | [互換記録](PhysBones-SDK-Compatibility.md)に一時環境のSDK 3.7.6で実component生成・写像の証拠あり。直近の本体project probeはunavailable | 「実SDKを一度も試していない」は誤り。常設receiverと実VRChat受入は別途必要 |
-| 既存回帰 | 現行mainのCore491件、Playerのprivate RadDollV3往復、semantic textureを含む合成Unity Bridgeのpackage受入記録あり | 既存証拠は実マウス・実VRChatの成功を意味しない。変更箇所と外部受入を別に記録する |
+| 既存回帰 | 現行mainのCore493件、Playerのprivate RadDollV3往復、semantic textureを含む合成Unity Bridgeのpackage受入記録あり | 既存証拠は実マウス・実VRChatの成功を意味しない。変更箇所と外部受入を別に記録する |
 | 共有・更新基盤 | [共有方針](Shared-Resource-Policy.md)、BridgeのImportOwnership・UpdateJournal・PrefabManagedBindings | 同一target複数nodeと管理asset更新基盤を再利用。全mesh結合や全journalの新設は不要 |
 
 ## 3. v1の成果物と境界
