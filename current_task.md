@@ -37,6 +37,12 @@ Unity BridgeはStandard shaderへnormal mapとmetallic-roughness mapを割り当
 
 これはsemantic mapの実RadDollV3表示、tangent品質、occlusion/emissive、専用paint／bake、実VRChatの見た目を受入した記録ではない。NF-V1-09/10の残作業として、実sceneで明暗環境・UV・tangent・出力一致を目視確認する。
 
+## 2026-09-14 semantic texture GUI import
+
+材質パネルへWindows Explorer選択とパス適用を追加した。normal／metallic-roughnessそれぞれをPNG/JPEG（16 MiB以内、8192px以内）として検査し、UV0/UV1とnormal scaleを指定してtyped slotへ取り込む。既存のもう一方のmap、scalar値、base color Paintを保持し、native Save/Openで画像bytesを再読込できる。semantic mapがある状態では単体Material Bakeを拒否する既存契約を維持し、GLB／graph exportへ案内できる状態を保つ。
+
+1pxのGUI fixtureをExplorer相当のパス適用経路で取り込む回帰を追加した。Windows Player `Builds/SemanticTextureGuiV6/NyaForge.exe`、Authoring suite **PASS**（83 checks、`Artifacts/Authoring-20260914-003301-f96f98e3777f483aa745fb213d47c7b3/report.json`）で、normalのUV1/scale、MR slot、scalar変更後の保持、native Save/Openを確認した。選択中の作品が変わった場合は画像指定を無効化する。
+
 ## 2026-09-14 private RadDollV3 import/Bridge recheck
 
 private一時素材 `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm` を `Builds/SemanticPreviewV2/NyaForge.exe`へ指定し、単体取込と全mesh instance取込、EditMesh、native Save/Openを再確認した。全mesh経路は10 objects、bone 171、morph 35を保持し、Authoring suite **89 checks PASS**（`Artifacts/Authoring-20260914-001523-4437ec156ea94502aa336a06b3083dcd/report.json`）。続けて同reportの出力をUnity **2022.3.22f1** Bridgeへ渡し、**14 checks PASS**（`Artifacts/BridgeReceiver-20260914-001837-446-4ccca3e524ba4ababe56a253461f64c4/bridge-report.json`）。

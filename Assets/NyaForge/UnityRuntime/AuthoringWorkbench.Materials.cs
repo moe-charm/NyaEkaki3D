@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
@@ -15,6 +16,11 @@ namespace NyaForge.UnityRuntime
         Button addMaterial;
         DropdownField materialChoice,materialAlphaMode;
         TextField materialTint,materialEmission;
+        TextField normalTexturePath,metallicRoughnessTexturePath;
+        FloatField normalTextureScale;
+        DropdownField semanticTextureTexCoord;
+        bool semanticPickerOpen;
+        Foldout semanticTexturePanel;
         Label semanticTextureInfo;
         FloatField materialOpacity,materialMetallic,materialRoughness,materialEmissionStrength,materialCutoff;
         readonly List<string> materialIds=new List<string>();
@@ -52,6 +58,7 @@ namespace NyaForge.UnityRuntime
             }
             materialFields.Add(Button("材質の変更を適用",()=>Try(ApplyMaterial),"material-apply"));
             semanticTextureInfo=new Label { name="material-semantic-textures" }; semanticTextureInfo.style.whiteSpace=WhiteSpace.Normal; materialFields.Add(semanticTextureInfo);
+            BuildSemanticTextureControls();
             var help=new Label("基本色と発光色はsRGB。画像に基本色を掛けて表示します。材質は作品へ保存でき、対応するUnity用profileへ書き出せます。");
             help.style.whiteSpace=WhiteSpace.Normal;materialFields.Add(help);
         }
@@ -84,6 +91,63 @@ namespace NyaForge.UnityRuntime
             var parameters=new MaterialParameters(new Vec4(tint.X,tint.Y,tint.Z,materialOpacity.value),materialMetallic.value,materialRoughness.value,emission,(MaterialAlphaMode)materialAlphaMode.index,materialCutoff.value,loadedMaterial.Textures);
             if(parameters.ContentHash==loadedMaterial.ContentHash) return;
             Execute(AuthoringOperation.UpdateNode(GraphNode.StandardMaterial(selectedMaterial,parameters)));
+        }
+
+        void BuildSemanticTextureControls()
+        {
+            semanticTexturePanel = new Foldout { text = "Normal / metallic-roughness画像", value = false, name = "semantic-texture-controls" };
+            var panel = semanticTexturePanel;
+            var help = new Label("PNG/JPEGを選ぶと画像bytesを作品へ取り込み、PBRプレビューへ反映します。MRはglTFのB=metallic / G=roughnessです。");
+            help.style.whiteSpace = WhiteSpace.Normal; panel.Add(help);
+            semanticTextureTexCoord = new DropdownField("UV", new List<string> { "UV0", "UV1" }, 0) { name = "semantic-texture-texcoord" }; panel.Add(semanticTextureTexCoord);
+            normalTextureScale = new FloatField("Normal scale") { value = 1f, name = "semantic-normal-scale" }; panel.Add(normalTextureScale);
+            normalTexturePath = new TextField("Normal画像パス") { name = "semantic-normal-path" }; normalTexturePath.style.flexDirection = FlexDirection.Column; panel.Add(normalTexturePath);
+            panel.Add(Button("Normal画像を選ぶ", () => { if (!semanticPickerOpen) StartCoroutine(PickSemanticTexture(MaterialTextureSemantic.Normal)); }, "semantic-normal-browse"));
+            panel.Add(Button("Normal画像を適用", () => Try(() => ApplySemanticTexture(MaterialTextureSemantic.Normal)), "semantic-normal-apply"));
+            metallicRoughnessTexturePath = new TextField("MR画像パス") { name = "semantic-mr-path" }; metallicRoughnessTexturePath.style.flexDirection = FlexDirection.Column; panel.Add(metallicRoughnessTexturePath);
+            panel.Add(Button("MR画像を選ぶ", () => { if (!semanticPickerOpen) StartCoroutine(PickSemanticTexture(MaterialTextureSemantic.MetallicRoughness)); }, "semantic-mr-browse"));
+            panel.Add(Button("MR画像を適用", () => Try(() => ApplySemanticTexture(MaterialTextureSemantic.MetallicRoughness)), "semantic-mr-apply"));
+            materialFields.Add(panel);
+        }
+
+        void ApplySemanticTexture(MaterialTextureSemantic semantic)
+        {
+            if (selectedMaterial == "" || loadedMaterial == null) throw new InvalidOperationException("材質を選んでください。");
+            string path = semantic == MaterialTextureSemantic.Normal ? normalTexturePath.value : metallicRoughnessTexturePath.value;
+            byte[] bytes = ReadSemanticTextureBytes(path, out string mimeType);
+            int texCoord = semanticTextureTexCoord.index == 1 ? 1 : 0;
+            MaterialTextureSlot slot = new MaterialTextureSlot(semantic, bytes, mimeType, texCoord,
+                semantic == MaterialTextureSemantic.Normal ? normalTextureScale.value : 1f);
+            var existing = loadedMaterial.Textures;
+            var textures = semantic == MaterialTextureSemantic.Normal
+                ? new MaterialTextureSet(slot, existing?.MetallicRoughness)
+                : new MaterialTextureSet(existing?.Normal, slot);
+            var p = loadedMaterial;
+            var parameters = new MaterialParameters(p.BaseColor, p.Metallic, p.Roughness, p.Emission, p.AlphaMode, p.AlphaCutoff, textures);
+            if (parameters.ContentHash == p.ContentHash) return;
+            Execute(AuthoringOperation.UpdateNode(GraphNode.StandardMaterial(selectedMaterial, parameters)));
+        }
+
+        static byte[] ReadSemanticTextureBytes(string path, out string mimeType)
+        {
+            if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("画像ファイルを指定してください。");
+            string fullPath = Path.GetFullPath(path);
+            var info = new FileInfo(fullPath);
+            if (!info.Exists) throw new FileNotFoundException("画像ファイルが見つかりません。", fullPath);
+            if (info.Length <= 0 || info.Length > 16 * 1024 * 1024) throw new InvalidOperationException("画像は16 MiB以内で指定してください。");
+            string extension = info.Extension.ToLowerInvariant();
+            mimeType = extension == ".png" ? "image/png" : extension == ".jpg" || extension == ".jpeg" ? "image/jpeg" : null;
+            if (mimeType == null) throw new InvalidOperationException("normal/MR画像はPNGまたはJPEGを指定してください。");
+            byte[] bytes = File.ReadAllBytes(fullPath);
+            Texture2D decoded = null;
+            try
+            {
+                decoded = new Texture2D(2, 2, TextureFormat.RGBA32, false, true);
+                if (!decoded.LoadImage(bytes, false) || decoded.width < 1 || decoded.height < 1) throw new InvalidOperationException("画像を読み込めませんでした。");
+                if (decoded.width > 8192 || decoded.height > 8192) throw new InvalidOperationException("画像の幅・高さは8192px以内で指定してください。");
+                return bytes;
+            }
+            finally { if (decoded != null) UnityEngine.Object.Destroy(decoded); }
         }
         void RefreshMaterials()
         {

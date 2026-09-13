@@ -15,7 +15,7 @@ namespace NyaForge.UnityRuntime
         {
             var previous=workspace;string previousPath=savedDirectory,failure=null,paintHash=null,parametersHash=null,savedHash=null;
             ulong materialFace=0;
-            string sharedPaint=null,sharedImageHash=null;
+            string sharedPaint=null,sharedImageHash=null,normalPath=null,mrPath=null;
             IEnumerator Step(VisualElement target,Action action)
             {
                 if(failure!=null) yield break;
@@ -26,6 +26,12 @@ namespace NyaForge.UnityRuntime
             }
             try
             {
+                byte[] TinyPng(Color32 color)
+                {
+                    var image = new Texture2D(1, 1, TextureFormat.RGBA32, false, false);
+                    try { image.SetPixels32(new[] { color }); image.Apply(false, false); return image.EncodeToPNG(); }
+                    finally { UnityEngine.Object.Destroy(image); }
+                }
                 try { ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(),null);CreatePolygonGraph();paintPanel.value=true; }
                 catch(Exception error) { failure=error.ToString(); }
                 yield return Step(addPaint,()=>PointerProbe.Click(addPaint));
@@ -53,6 +59,33 @@ namespace NyaForge.UnityRuntime
                     Check(workspace.Document.DocumentRevision==revision+1 && parameters.AlphaMode==MaterialAlphaMode.Cutout && parameters.Metallic==.7f && parameters.Roughness==.25f,"Material GUI values did not commit");
                     parametersHash=parameters.ContentHash;string after=workspace.Document.StateHash;
                     PointerProbe.Click(root.Q<Button>("material-apply"));Check(workspace.Document.StateHash==after && workspace.Document.DocumentRevision==revision+1,"Displayed hex roundtrip changed authored precision");
+                    normalPath=Path.Combine(output,"gui-normal.png");mrPath=Path.Combine(output,"gui-metallic-roughness.png");
+                    File.WriteAllBytes(normalPath,TinyPng(new Color32(128,128,255,255)));File.WriteAllBytes(mrPath,TinyPng(new Color32(10,64,200,255)));
+                    normalTexturePath.SetValueWithoutNotify(normalPath);normalTextureScale.SetValueWithoutNotify(.7f);semanticTextureTexCoord.index=1;
+                    semanticTexturePanel.value=true;
+                });
+                yield return Step(root.Q<Button>("semantic-normal-apply"),() =>
+                {
+                    PointerProbe.Click(root.Q<Button>("semantic-normal-apply"));
+                    Check(workspace.Preview.Output.Material.Parameters.Textures.Normal!=null && workspace.Preview.Output.Material.Parameters.Textures.Normal.TexCoord==1 && Math.Abs(workspace.Preview.Output.Material.Parameters.Textures.Normal.NormalScale-.7f)<.0001f,"Normal texture GUI import did not preserve semantic settings");
+                });
+                yield return Step(root.Q<Button>("semantic-mr-apply"),() =>
+                {
+                    metallicRoughnessTexturePath.SetValueWithoutNotify(mrPath);PointerProbe.Click(root.Q<Button>("semantic-mr-apply"));
+                    Check(workspace.Preview.Output.Material.Parameters.Textures.MetallicRoughness!=null,"Metallic-roughness texture GUI import did not commit");
+                });
+                yield return Step(root.Q<Button>("material-apply"),() =>
+                {
+                    materialMetallic.SetValueWithoutNotify(.6f);PointerProbe.Click(root.Q<Button>("material-apply"));
+                    Check(workspace.Preview.Output.Material.Parameters.Textures.Normal!=null && workspace.Preview.Output.Material.Parameters.Textures.MetallicRoughness!=null,"Scalar material edit dropped GUI semantic textures");
+                    string semanticProject=Path.Combine(output,"semantic-texture-ui-project");ProjectStore.Save(semanticProject,workspace,0);
+                    var semanticReopened=ProjectStore.Open(semanticProject).Document.Objects[0].Graph.Nodes[selectedMaterial].Material;
+                    Check(semanticReopened.Textures!=null && semanticReopened.Textures.Normal!=null && semanticReopened.Textures.MetallicRoughness!=null,"Semantic texture GUI Save/Open dropped image slots");
+                    var currentParameters=workspace.Preview.Output.Material.Parameters;
+                    var scalarOnly=new MaterialParameters(currentParameters.BaseColor,currentParameters.Metallic,currentParameters.Roughness,currentParameters.Emission,currentParameters.AlphaMode,currentParameters.AlphaCutoff);
+                    Execute(AuthoringOperation.UpdateNode(GraphNode.StandardMaterial(selectedMaterial,scalarOnly)));
+                    Check(workspace.Preview.Output.Material.Parameters.Textures==null,"Semantic texture GUI export fixture cleanup failed");
+                    parametersHash=workspace.Preview.Output.Material.Parameters.ContentHash;
                     materialPanel.value=false;paintPanel.value=true;
                 });
                 yield return Step(surfacePaintMode,()=> { surfacePaintMode.value=true;Check(surfacePaintMode.value && surfacePaintMode.enabledSelf,"Material path disabled 3D paint");Frame(); });
