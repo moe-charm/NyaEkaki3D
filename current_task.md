@@ -1586,3 +1586,11 @@ Core **469 passed / 0 failed**（`dotnet run --project Tests/Authoring.Core/Auth
 
 この回帰は合成fixtureとprivate実モデルの取込・保存・出力smokeであり、実マウス／DPI差、実VRChat内の見た目・PhysBones、異なるskeletonの自動結合、共有mesh／skin／morph参照、完全VRM出力は別受入境界として残す。次のカードは共有参照の明示仕様化か、版固定した実SDK受け取り検証のどちらか一つに絞る。
 
+## 2026-09-13 all-mesh-instance real-model recheck
+
+実モデルでも一括取込の入口を検証できるよう、`Tools/Test-NyaForgeAuthoring.ps1 -ImportModel <path> -ImportAllModel` を追加した。private一時RadDollV3 VRMを使い、ファイル内の全mesh instanceをstatic／skinned graphへ展開し、各graphのEditMesh、graph-keyed rig session、native Save/Open、feature-preserving native exportを確認する。public fixtureの通常Authoring suiteは従来どおり維持する。
+
+Windows Player `Builds/AllMeshRealV1/NyaForge.exe` の実RadDollV3 Authoring suiteは **PASS / 84 checks**（`Artifacts/Authoring-20260913-130636-74e77cd8f5b143b5a62324d73c5e3669/report.json`）。全mesh instanceの取込・保存・再開・native export roundtripを含む。同成果物のUnity **2022.3.22f1 Bridge**も **PASS**（`Artifacts/BridgeReceiver-20260913-131142-286-11d7292fd3e74bb492946824f1af290d/bridge-report.json`）。
+
+これはprivate実モデルの自動smokeであり、実マウス／DPI差、実VRChat内の見た目・PhysBones、異なるskeletonの自動結合、共有mesh／skin／morph参照、完全VRM出力は別受入境界として残す。
+

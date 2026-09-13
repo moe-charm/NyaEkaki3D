@@ -26,6 +26,12 @@ Playerのビルド後は、候補選択からEditMesh編集、Save/Open、標準
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthoring.ps1 -BuildName UiNarrowStatusV2 -Width 800 -Height 600 -ImportModel .\Artifacts\NyaForgeGlbFixture\clothing-fixture.glb
 ```
 
+同じファイル内のbody・hairなどをまとめてgraph objectへ追加する場合は、`-ImportAllModel`を付けます。全mesh instanceの検査後に一括公開され、途中で失敗した場合は現在の制作状態を変更しません。
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthoring.ps1 -BuildName AllMeshRealV1 -ImportModel <モデルの絶対パス> -ImportAllModel -TimeoutSeconds 900
+```
+
 このfixture検証は取込と保存経路の自動確認であり、実アバターの見た目・実マウス操作・VRChat内の動作確認ではありません。
 
 ## 起動と編集

@@ -7,6 +7,7 @@ param(
     [switch]$DensePaint,
     [switch]$SecondaryMotionMcp,
     [switch]$GlbExportMcp,
+    [switch]$ImportAllModel,
     [string]$McpProbe,
     [string]$ImportModel,
     [ValidateRange(30,900)][int]$TimeoutSeconds = 120
@@ -24,6 +25,10 @@ Write-Output "Authoring check: $checkDirectory"
 if ($DensePaint) { $arguments += '--authoring-dense-paint' }
 if ($McpProbe) { $arguments += @('--authoring-mcp-probe', ('"{0}"' -f (Resolve-Path -LiteralPath $McpProbe).Path)) }
 if ($ImportModel) { $arguments += @('--authoring-import-model', ('"{0}"' -f (Resolve-Path -LiteralPath $ImportModel).Path)) }
+if ($ImportAllModel) {
+    if (-not $ImportModel) { throw '-ImportAllModel requires -ImportModel.' }
+    $arguments += @('--authoring-import-all-model', ('"{0}"' -f (Resolve-Path -LiteralPath $ImportModel).Path))
+}
 if ($SecondaryMotionMcp) {
     if (-not $McpProbe) { throw 'SecondaryMotionMcp requires -McpProbe.' }
     $arguments += '--authoring-secondary-mcp'

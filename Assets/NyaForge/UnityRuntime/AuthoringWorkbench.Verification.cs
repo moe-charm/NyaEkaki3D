@@ -45,6 +45,7 @@ namespace NyaForge.UnityRuntime
             string failure = null;
             var arguments = Environment.GetCommandLineArgs();
             int modelImportIndex = Array.IndexOf(arguments, "--authoring-import-model");
+            int modelImportAllIndex = Array.IndexOf(arguments, "--authoring-import-all-model");
             int reopenIndex = Array.IndexOf(arguments, "--authoring-reopen-project");
             if (reopenIndex >= 0 && reopenIndex + 1 < arguments.Length)
             {
@@ -91,6 +92,8 @@ namespace NyaForge.UnityRuntime
                 Check(workspace.Document.IsEmpty && workspace.Document.DocumentId == emptyId && !HasUnsaved, "Empty save/reopen failed");
                 if (modelImportIndex >= 0 && modelImportIndex + 1 < arguments.Length)
                     VerifyCommandLineModelImport(arguments[modelImportIndex + 1], output, checks);
+                if (modelImportAllIndex >= 0 && modelImportAllIndex + 1 < arguments.Length)
+                    VerifyCommandLineAllModelImport(arguments[modelImportAllIndex + 1], output, checks);
                 AddSample(1);
                 Check(!workspace.Document.IsEmpty && workspace.CanUndo && projection.Points.Length > 0, "Sample did not use the command path");
                 VerifyImportDiagnosticsPanel(checks);
