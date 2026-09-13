@@ -1,3 +1,6 @@
+# 2026-09-13 製品名・公開リポジトリ名の更新
+
+公開リポジトリが `moe-charm/NyaForge` から `moe-charm/NyaEkaki3D` へ変更されたため、ローカル `origin` を `https://github.com/moe-charm/NyaEkaki3D.git` へ追従させた。README、文書入口、開発計画、設計v1/v2の表示名と対象URLを **Nya Ekaki 3D** に更新した。既存の `NyaForge` は package ID、namespace、スクリプト、実行ファイル、LocalLow設定パスに残し、互換性を維持する。履歴文書と内部コード名は過去の実装証跡として変更していない。
 # 2026-09-13 GLB export report graph identity
 
 GLB `export-report.json` の `objects[]` に、native graph objectへ追跡できる `graphId` を追加した。static/skinnedの両profileで出力対象のgraph IDを保持し、sourceDiagnosticsのgraphIdと同じreport内で直接照合できる。CoreのGLB export回帰へreportのgraphId確認を追加し、`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore` は **486 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0247bad405b7437fb76fa5e0f163a586`）。この変更は出力追跡性を改善するもので、実Unity SDK・実VRChat内の外観/挙動受入とは別境界である。

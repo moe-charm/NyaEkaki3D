@@ -1,6 +1,8 @@
-# NyaForge 文書の入口
+# Nya Ekaki 3D 文書の入口
 
-更新: 2026-09-12。まずWindowsで開発する。macOSは将来対応。
+更新: 2026-09-13。まずWindowsで開発する。macOSは将来対応。
+
+このプロジェクトの製品名は **Nya Ekaki 3D**。`NyaForge` は既存のコード、パッケージID、namespace、実行スクリプトで互換性のために残している旧開発名です。公開リポジトリは [moe-charm/NyaEkaki3D](https://github.com/moe-charm/NyaEkaki3D) です。
 
 | 文書 | 役割 |
 |---|---|

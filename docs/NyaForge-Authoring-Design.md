@@ -1,9 +1,11 @@
-# NyaForge 制作アプリ拡張設計 v1
+# Nya Ekaki 3D 制作アプリ拡張設計 v1
+
+製品名は **Nya Ekaki 3D**。`NyaForge` は既存のコード・パッケージ・namespaceに残る旧開発名です。
 
 > 旧設計・参考資料（2026-09-11）: 製品範囲と実装順は [設計v2](NyaForge-Authoring-Design2.md) に置き換えた。本文のNF-0／NF-1等は旧段階名であり、新規開発の順序には使わない。以前の判断を追えるよう本文を保持する。現在の実装は [current_task.md](../current_task.md)、操作は [使い方](Authoring-Quickstart.md) を参照。
 
 作成日：2026-09-11  
-対象：[moe-charm/NyaForge](https://github.com/moe-charm/NyaForge) / `main`  
+対象：[moe-charm/NyaEkaki3D](https://github.com/moe-charm/NyaEkaki3D) / `main`
 確認コミット：`6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36`  
 状態：実装前の設計提案。固定コミットのソースを静的確認した。Unityでのビルド・実行、実モデルでの計測、各出力ライブラリの実証は未実施。
 
@@ -30,7 +32,7 @@ NyaForgeを、**人間とAIが同じ制作操作を使える、VR向け衣装・
 | `ViewerApp.VisualChecks` | PNG・session・metricsの組、同じカメラでの比較 | 汎用撮影serviceへ抽出、snapshot IDと制作物を対象に追加 |
 | `JsonFiles` | 厳密なJSON、hash付き保存、一時ファイルからの置換 | 新形式用codecとbinary blob。巨大配列や多態型を押し込まない |
 
-根拠：[PackStore](https://github.com/moe-charm/NyaForge/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Runtime/PackStore.cs)、[RendererBindings](https://github.com/moe-charm/NyaForge/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Contracts/RendererBindings.cs)、[Models](https://github.com/moe-charm/NyaForge/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Contracts/Models.cs)、[ViewerApp](https://github.com/moe-charm/NyaForge/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Runtime/ViewerApp.cs)、[AvatarInstance](https://github.com/moe-charm/NyaForge/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Runtime/AvatarInstance.cs)。
+根拠：[PackStore](https://github.com/moe-charm/NyaEkaki3D/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Runtime/PackStore.cs)、[RendererBindings](https://github.com/moe-charm/NyaEkaki3D/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Contracts/RendererBindings.cs)、[Models](https://github.com/moe-charm/NyaEkaki3D/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Contracts/Models.cs)、[ViewerApp](https://github.com/moe-charm/NyaEkaki3D/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Runtime/ViewerApp.cs)、[AvatarInstance](https://github.com/moe-charm/NyaEkaki3D/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Runtime/AvatarInstance.cs)。
 
 先に対応する論点は次の6つ。
 
@@ -41,7 +43,7 @@ NyaForgeを、**人間とAIが同じ制作操作を使える、VR向け衣装・
 5. フレーミングやUIがmanifestのrenderer一覧に依存する。生成物をSceneに追加するだけでは確認対象から漏れる。
 6. neckカメラには特定素体の高さに基づく固定値がある。骨・ランドマーク・対象範囲から求める汎用方式へ置き換える。
 
-現在の視覚検査は `Renderer.bounds` を保守的な描画範囲として扱い、実頂点から求めた寸法とは区別している。scale100の衣装で `BakeMesh(false)` と `TransformPoint` の組が期待する結果にならなかったこともコードに記録されている。**このboundsを首周り測定や貫通判定へ転用しない。** [VisualChecks](https://github.com/moe-charm/NyaForge/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Runtime/ViewerApp.VisualChecks.cs)
+現在の視覚検査は `Renderer.bounds` を保守的な描画範囲として扱い、実頂点から求めた寸法とは区別している。scale100の衣装で `BakeMesh(false)` と `TransformPoint` の組が期待する結果にならなかったこともコードに記録されている。**このboundsを首周り測定や貫通判定へ転用しない。** [VisualChecks](https://github.com/moe-charm/NyaEkaki3D/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Runtime/ViewerApp.VisualChecks.cs)
 
 ## 3. 機能の境界
 
@@ -94,7 +96,7 @@ flowchart TD
 | `ViewState` | カメラ、照明、ポーズ時刻、検査表示、一時選択 | 確認セット／別の表示履歴。制作Undoには入れない |
 | 評価snapshot | `RestGeometrySnapshot` は制作後の基準meshとskin情報、`EvaluatedSnapshot` は姿勢適用後の表示・計測結果 | 再生成可能な結果。ただし使用中は不変。通常のskin付き出力は前者を使う |
 
-現行 `SessionDocument` は確認セットとして維持する。新projectがこれを参照できるようにするが、現行v1 JSONに無断で新fieldを足さない。`JsonFiles.CheckShape` は未知field・欠落field・nullを拒否し、配列は20,000要素、JSONは8MiBに制限している。新projectには独立したversion付きcodecとmigrationを用意する。任意オブジェクトの型名によるdeserializeは使わず、レシピkindごとの明示DTOにする。 [JsonFiles](https://github.com/moe-charm/NyaForge/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Contracts/JsonFiles.cs)
+現行 `SessionDocument` は確認セットとして維持する。新projectがこれを参照できるようにするが、現行v1 JSONに無断で新fieldを足さない。`JsonFiles.CheckShape` は未知field・欠落field・nullを拒否し、配列は20,000要素、JSONは8MiBに制限している。新projectには独立したversion付きcodecとmigrationを用意する。任意オブジェクトの型名によるdeserializeは使わず、レシピkindごとの明示DTOにする。 [JsonFiles](https://github.com/moe-charm/NyaEkaki3D/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Contracts/JsonFiles.cs)
 
 ### 5.2 文書の最低限の項目
 
@@ -218,7 +220,7 @@ layerに `normalPolicy` を持ち、元normal保持と再計算を区別する�
 
 同一sourceを再読み込みするだけならsourceEpochだけを進める。異なるsource版を採用し `sourceRefs` やlayerの未解決状態を変える操作は、型付き `source.adopt_revision` commandとしてdocumentRevisionを進め、Undoへ記録する。ロード失敗時は旧sourceRefsを維持する。Undoで必要になった旧sourceを取得できない場合は、旧文書を保持するRecovery状態へ移り、編集内容を消さない。
 
-既存の旧bundle解放→新bundle読込→失敗時の旧版再ロードというメモリー方針は維持可能。二重bundleの常駐を必須にしない。CPUの制作正本と生成物の必要データは別所有とし、Unity参照をリロード後に引き直す。 [ReloadLoop](https://github.com/moe-charm/NyaForge/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Runtime/ViewerApp.Reload.cs)
+既存の旧bundle解放→新bundle読込→失敗時の旧版再ロードというメモリー方針は維持可能。二重bundleの常駐を必須にしない。CPUの制作正本と生成物の必要データは別所有とし、Unity参照をリロード後に引き直す。 [ReloadLoop](https://github.com/moe-charm/NyaEkaki3D/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/Assets/Viewer/Runtime/ViewerApp.Reload.cs)
 
 ## 8. AIが使いやすいMCP
 
@@ -384,7 +386,7 @@ unlit／診断表示を解除すると「現在の制作材質」へ戻る。glT
 
 ## 11. 入力と編集可能性
 
-現在のNyaForgeは準備済みAssetBundleパックを開く。公開repoにはアバター、private pack builder、binding profileは含まれていない。最初はこの入力経路を継続する。任意FBXのruntime読込を初期の必須機能にしない。 [README](https://github.com/moe-charm/NyaForge/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/README.md)
+現在のNyaForgeは準備済みAssetBundleパックを開く。公開repoにはアバター、private pack builder、binding profileは含まれていない。最初はこの入力経路を継続する。任意FBXのruntime読込を初期の必須機能にしない。 [README](https://github.com/moe-charm/NyaEkaki3D/blob/6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36/README.md)
 
 `forge_capabilities` はobjectごとに `viewable / measurable / vertexEditable / exportable / sourceRoundTrippable` を返す。表示できることと、頂点へCPUアクセスできることは違う。Unity `Mesh.isReadable` の確認が必要。コピーしただけで非可読meshが可読になる前提にはしない。 [Unity Mesh.isReadable](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Mesh-isReadable.html)
 

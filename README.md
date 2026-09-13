@@ -1,4 +1,6 @@
-# NyaForge
+# Nya Ekaki 3D
+
+Nya Ekaki 3D is the public product name. The repository's former development name was NyaForge; existing package IDs, namespaces, scripts, and local settings paths keep that name for compatibility.
 
 Windows-first authoring app for VR characters, clothing, and items. The product goal is to complete modeling through export without requiring Blender.
 
@@ -35,7 +37,7 @@ To view an existing pack, select **パックを開く…** and choose `current.S
 
 To view the synthetic body/neck/collar pack, launch with `--library "<absolute repository path>/GeneratedPacks/NyaForgeFixture"`. This technical mannequin is not a Humanoid avatar.
 
-In the authoring screen, **Explorerで選ぶ…** opens a Windows file picker for an existing `project.nyaforge.json`; NyaForge uses its parent directory as the native project folder and rejects other JSON files before replacing the current workspace. Standard GLB exports include a revision-pinned `export-report.json` whose `glbHash` is the SHA-256 of the adjacent `model.glb`, so the report and binary can be checked as one pair.
+In the authoring screen, **Explorerで選ぶ…** opens a Windows file picker for an existing `project.nyaforge.json`; Nya Ekaki 3D uses its parent directory as the native project folder and rejects other JSON files before replacing the current workspace. Standard GLB exports include a revision-pinned `export-report.json` whose `glbHash` is the SHA-256 of the adjacent `model.glb`, so the report and binary can be checked as one pair.
 
 Core regression tests require .NET 10:
 
