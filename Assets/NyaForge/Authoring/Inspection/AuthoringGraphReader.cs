@@ -56,6 +56,15 @@ namespace NyaForge.Authoring.Inspection
                             ["layerStack"]=AuthoringLayerReader.Read(graph,n,image),
                             ["paintContext"]=(n.TypeId==BuiltinNodes.Paint && definition!=null && image!=null) ? (JToken)new JObject { ["graphId"]=graph.GraphId,["nodeId"]=n.NodeId,["imageHash"]=image.ImageHash,["uvHash"]=image.UvHash,["meshDomain"]=image.MeshDomain } : JValue.CreateNull(),
                             ["imageOutput"]=image==null ? JValue.CreateNull() : (JToken)new JObject { ["imageHash"]=image.ImageHash,["width"]=image.Image.Width,["height"]=image.Image.Height,["uvHash"]=image.UvHash,["meshDomain"]=image.MeshDomain },
+                            ["originalImage"] = n.TypeId == BuiltinNodes.OriginalImage && n.OriginalImage != null ? (JToken)new JObject
+                            {
+                                ["paintNodeId"] = n.OriginalImage.PaintNodeId,
+                                ["width"] = n.OriginalImage.Width,
+                                ["height"] = n.OriginalImage.Height,
+                                ["mimeType"] = n.OriginalImage.MimeType,
+                                ["encodedByteCount"] = n.OriginalImage.EncodedByteCount,
+                                ["contentHash"] = n.OriginalImage.ContentHash
+                            } : JValue.CreateNull(),
                             ["materialOutput"]=AuthoringMaterialReader.Read(material),
                             ["assignedMaterial"]=AuthoringMaterialReader.Read(output?.Material),
                             ["materialSlots"]=n.MaterialSlots==null ? JValue.CreateNull() : (JToken)new JArray(n.MaterialSlots),
