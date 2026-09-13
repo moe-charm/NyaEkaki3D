@@ -31,7 +31,10 @@ namespace NyaForge.UnityRuntime
             if (rig != null) return rig.GraphId;
             var graphs = value?.Document?.Objects?.Where(item => item.Graph != null).Select(item => item.Graph.GraphId).Distinct().ToArray();
             if (graphs?.Length == 1) return graphs[0];
-            return value?.Document?.ActiveObject?.Graph?.GraphId;
+            // A legacy sidecar has no object identity. Do not infer the
+            // selected graph when several graph objects exist; doing so can
+            // silently attach avatar A's expressions/Spring to object B.
+            return null;
         }
 
         void ClearImportedVrmExpressionTable()
