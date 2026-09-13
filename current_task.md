@@ -1,3 +1,9 @@
+# 2026-09-13 multi-skin GLB regression lock
+
+同一sourceの共通安定 `BoneId` を持ちながらrest定義が異なる2つのskinを合成し、拡張skinned GLBがskin resourceを2つに分離してmesh nodeのskin参照を保持するCore回帰を追加した。各skinをmesh index／skin indexで再読込できること、異なるsourceの骨は従来どおり拒否することを同じ出力契約へ固定した。
+
+Coreは **470 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-554fa4d20d504cc6bcd46a4d81ed0fb5`）。この回帰は標準GLB出力が同一hashのshared skinだけに依存せず、同一source内の複数skin資源を安全に保持することを検証する。実RadDollV3の10 mesh／9 skin出力は前項の `AllMeshRealV3` artifactで確認済み。
+
 # 2026-09-13 latest Windows viewer navigation recheck
 
 `Builds/FeedbackRecheckV1/NyaForge.exe`を1280x800で起動し、パック選択、キャンセル時の文書／履歴保持、named session保存・再開、未保存変更の破棄確認、不正パス保持、最近／確認セット／設定／制作画面への遷移、utility panelの折りたたみ、viewportの利用可能領域を再確認した。Navigation suiteは **PASS**（`Artifacts/Navigation-20260913-125208-90befd32b95d416690cf89634a21c1f1/report.json`）。`main.png`／`sets.png`／`settings.png`は1280x800で文字欠けなし、制作入口の表示領域も確保されている。

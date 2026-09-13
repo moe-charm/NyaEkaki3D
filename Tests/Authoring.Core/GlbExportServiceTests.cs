@@ -141,6 +141,37 @@ internal static partial class Program
             True(!Directory.Exists(rejectedDirectory));
         });
 
+        Test("skinned GLB export keeps same-source skins with distinct rest definitions separate", () =>
+        {
+            var first = AuthoringFixtures.Panel(1);
+            var second = PrimitiveGeometry.Plane(.2f, .1f);
+            string sharedBone = GraphId();
+            var firstSkeleton = new SkeletonDefinition(new[] { new BoneDefinition(sharedBone, "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
+            var secondSkeleton = new SkeletonDefinition(new[] { new BoneDefinition(sharedBone, "Root", "", new Vec3(.01f, 0, 0), new Vec3(.01f, .2f, 0)) });
+            AuthoringGraph BuildGraph(MeshData mesh, SkeletonDefinition rig)
+            {
+                string rootId = rig.Bones[0].BoneId;
+                string sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), outputId = GraphId();
+                var binding = SkinBinding.Create(mesh, rig, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, rootId, 1f)));
+                var pose = PoseSet.Create(rig, new[] { new BonePose(rootId, PoseTransform.FromTranslation(rig.Bones[0].Head)) });
+                return new AuthoringGraph(GraphId(),
+                    new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, rig), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                    new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
+            }
+            var workspace = AuthoringWorkspace.CreateEmpty();
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(BuildGraph(first, firstSkeleton))));
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(BuildGraph(second, secondSkeleton))));
+            string directory = Path.Combine(Root, "glb-skinned-source-skins-" + Guid.NewGuid().ToString("N"));
+            var result = GlbExportService.ExportSkinnedExtended(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory);
+            var json = JObject.Parse(ReadJsonChunk(File.ReadAllBytes(result.Path)));
+            Equal(2, ((JArray)json["skins"]!).Count);
+            var meshNodes = ((JArray)json["nodes"]!).OfType<JObject>().Where(node => node["mesh"] != null).ToArray();
+            Equal(2, meshNodes.Length);
+            True((int)meshNodes[0]["skin"]! != (int)meshNodes[1]["skin"]!);
+            Equal(1, GlbSkinImporter.Read(File.ReadAllBytes(result.Path), 0, 0).Skeleton.Bones.Count);
+            Equal(1, GlbSkinImporter.Read(File.ReadAllBytes(result.Path), 1, 1).Skeleton.Bones.Count);
+        });
+
         Test("skinned GLB export connects multiple root bones through a common skeleton root", () =>
         {
             var mesh = AuthoringFixtures.Panel(1);
