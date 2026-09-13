@@ -188,6 +188,12 @@ namespace NyaForge.Authoring
                 Checks.Require(workspace.Document.Objects.All(item => !item.Graph.Nodes.Values.Any(node => node.TypeId == Graph.BuiltinNodes.Attachment)), "VRM_ATTACHMENT_UNSUPPORTED", "VRM output cannot silently discard attachment metadata; convert every accessory to skin first.");
                 if (metadataObjectId != null)
                     Checks.Require(workspace.Document.Objects.Any(item => item.ObjectId == metadataObjectId && !item.IsStaticProfile), "VRM_HUMANOID_OBJECT", "VRM humanoid metadata object is not in the export snapshot.");
+                string referenceObjectId = metadataObjectId ?? workspace.Document.Objects[0].ObjectId;
+                var referenceSkeleton = workspace.Document.Objects.Single(item => item.ObjectId == referenceObjectId).Graph.Nodes.Values
+                    .FirstOrDefault(node => node.TypeId == Graph.BuiltinNodes.Skeleton && node.Skeleton != null)?.Skeleton;
+                Checks.Require(referenceSkeleton != null, "VRM_SKELETON_REQUIRED", "VRM output requires a skeleton on the humanoid metadata object.");
+                Checks.Require(workspace.Document.Objects.All(item => item.Graph.Nodes.Values.Any(node => node.TypeId == Graph.BuiltinNodes.Skeleton && node.Skeleton != null && node.Skeleton.ContentHash == referenceSkeleton.ContentHash)),
+                    "VRM_SKELETON_MISMATCH", "VRM avatar and clothing objects must share the same skeleton hash.");
                 Checks.Require(!Directory.Exists(directory) && !File.Exists(directory), "EXPORT_DESTINATION_EXISTS", "Export destination already exists.");
             }
 

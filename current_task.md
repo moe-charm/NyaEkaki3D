@@ -1933,3 +1933,9 @@ Coreは **480 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 Coreは **481 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-fed81b349a32470c8386e9ce1584fb96`、multi-object VRM回帰を含む）。Unity **6000.4.3f1** Windows Player `Builds/VrmClothingV2/NyaForge.exe` のAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-190247-bcfa83cf90c34dbb904099e2a5bc7d45/report.json`）。private fixtureで、avatar＋skin-bound clothingの自動weight、pose、native Save/Open、GLB／VRM出力、両meshの再読込を確認した。fixture・生成物・SDKはpublic repositoryへ追加していない。
 
 これはVRM1初期profileの同一skeleton同梱であり、material bind、LookAt、FirstPerson、MToon、animation、任意拡張、実UniVRM／VRChat内の見た目・挙動は引き続き別受入境界とする。
+
+# 2026-09-13 VRM同梱のAPI側skeleton検査
+
+Workbenchの事前検査だけに依存しないよう、`VrmExportService.ExportVrm1`自身でもmetadata対象avatarのskeleton hashを基準に全graph objectを検査するようにした。異なるskeletonを直接API／MCPから渡した場合も`VRM_SKELETON_MISMATCH`で出力先を作らず停止する。Coreへ混在拒否の回帰を追加した。
+
+Coreは **481 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f4b22134d2eb49308a09ca54c0780028`）。Unity **6000.4.3f1** Windows Player `Builds/VrmClothingV3/NyaForge.exe` のAuthoring suiteも **PASS**（`Artifacts/Authoring-20260913-190629-7f5413cf3b194f06a17f4fcb25a9015e/report.json`）。

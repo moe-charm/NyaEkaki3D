@@ -412,13 +412,15 @@ internal static partial class Program
         {
             string rootId = GraphId();
             var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(rootId, "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
-            AuthoringGraph BuildGraph(MeshData mesh)
+            AuthoringGraph BuildGraph(MeshData mesh, SkeletonDefinition selectedSkeleton = null)
             {
+                var rig = selectedSkeleton ?? skeleton;
+                string selectedRootId = rig.Bones[0].BoneId;
                 string sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), outputId = GraphId();
-                var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, rootId, 1f)));
-                var pose = PoseSet.Create(skeleton, new[] { new BonePose(rootId, PoseTransform.FromTranslation(new Vec3())) });
+                var binding = SkinBinding.Create(mesh, rig, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, selectedRootId, 1f)));
+                var pose = PoseSet.Create(rig, new[] { new BonePose(selectedRootId, PoseTransform.FromTranslation(new Vec3())) });
                 return new AuthoringGraph(GraphId(),
-                    new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                    new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, rig), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
                     new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
             }
             var workspace = AuthoringWorkspace.CreateEmpty();
@@ -444,6 +446,14 @@ internal static partial class Program
             True(profile.HumanoidNodes.Values.All(index => index == rootNode));
             True(meshNodes.All(node => node["skin"] != null));
             Equal((int)meshNodes[0]["skin"]!, (int)meshNodes[1]["skin"]!);
+
+            var mixed = AuthoringWorkspace.CreateEmpty();
+            Ok(Execute(mixed, AuthoringOperation.AddGraph(BuildGraph(AuthoringFixtures.Panel(1)))));
+            var foreign = new SkeletonDefinition(new[] { new BoneDefinition(GraphId(), "ForeignRoot", "", new Vec3(), new Vec3(0, .1f, 0)) });
+            Ok(Execute(mixed, AuthoringOperation.AddGraph(BuildGraph(PrimitiveGeometry.Plane(.2f, .1f), foreign))));
+            string rejected = Path.Combine(Root, "vrm-export-clothing-mixed-" + Guid.NewGuid().ToString("N"));
+            Expect("VRM_SKELETON_MISMATCH", () => VrmExportService.ExportVrm1(mixed, mixed.InstanceId, mixed.Document.DocumentId, mixed.Document.DocumentRevision, rejected, metadata, metadataObjectId: mixed.Document.Objects[0].ObjectId));
+            True(!Directory.Exists(rejected));
         });
 
         Test("MCP GLB export request is revision pinned and profile strict", () =>
