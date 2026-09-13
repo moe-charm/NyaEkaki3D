@@ -224,7 +224,7 @@ namespace NyaForge.UnityBridge.Editor
                 }
                 created = SkinnedClothingReceiver.ApplyPackage(manifestPath, avatarRoot, boneBindings,
                     "NyaForge Clothing " + package.ObjectId.Substring(0, 8));
-                if (previous != null) Undo.DestroyObjectImmediate(previous);
+                if (previous != null) DestroyManagedObjectWithUndo(previous, "Update NyaForge clothing package");
                 if (binding == null) binding = (NyaForgeSkinnedClothingBinding)Undo.AddComponent(avatarRoot.gameObject, typeof(NyaForgeSkinnedClothingBinding));
                 Undo.RecordObject(binding, "Apply NyaForge clothing package");
                 binding.Capture(manifestPath, package.ObjectId, package.GraphId, package.StateHash, package.GraphHash,
@@ -235,7 +235,7 @@ namespace NyaForge.UnityBridge.Editor
             }
             catch (Exception error)
             {
-                if (created != null && created.GameObject != null) Undo.DestroyObjectImmediate(created.GameObject);
+                if (created != null && created.GameObject != null) DestroyManagedObjectImmediately(created.GameObject);
                 SetError("衣装を適用できませんでした: ", error);
             }
         }
@@ -251,13 +251,46 @@ namespace NyaForge.UnityBridge.Editor
                     throw new InvalidOperationException("削除対象の管理objectがこのavatar rootにありません。");
                 Undo.SetCurrentGroupName("Remove NyaForge clothing package");
                 Undo.RecordObject(binding, "Remove NyaForge clothing binding");
-                Undo.DestroyObjectImmediate(previous);
+                DestroyManagedObjectWithUndo(previous, "Remove NyaForge clothing package");
                 binding.ClearGeneratedObject();
                 EditorUtility.SetDirty(binding);
                 status = "管理対象の衣装を削除しました。Undoで元の関連付けへ戻せます。";
                 statusType = MessageType.Info;
             }
             catch (Exception error) { SetError("衣装を削除できませんでした: ", error); }
+        }
+
+        internal static void DestroyManagedObjectWithUndo(GameObject generated, string undoName)
+        {
+            if (generated == null) return;
+            var marker = generated.GetComponent<NyaForgeSkinnedClothingManaged>();
+            if (marker == null)
+            {
+                Undo.DestroyObjectImmediate(generated);
+                return;
+            }
+            var mesh = marker.Mesh;
+            var materials = marker.Materials.Where(material => material != null).Distinct().ToArray();
+            var textures = materials.Select(material => material.mainTexture)
+                .Where(texture => texture != null && texture != Texture2D.whiteTexture).Distinct().ToArray();
+            int group = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName(undoName);
+            // Capture the references before destroying the GameObject. Each
+            // generated asset is destroyed through Undo as well, so one Undo
+            // restores the complete managed object and its material resources.
+            Undo.DestroyObjectImmediate(generated);
+            foreach (var texture in textures) Undo.DestroyObjectImmediate(texture);
+            foreach (var material in materials) Undo.DestroyObjectImmediate(material);
+            if (mesh != null) Undo.DestroyObjectImmediate(mesh);
+            Undo.CollapseUndoOperations(group);
+        }
+
+        internal static void DestroyManagedObjectImmediately(GameObject generated)
+        {
+            if (generated == null) return;
+            var marker = generated.GetComponent<NyaForgeSkinnedClothingManaged>();
+            if (marker != null) marker.ReleaseOwnedAssets();
+            UnityEngine.Object.DestroyImmediate(generated);
         }
 
         bool bindingMatchesObject()

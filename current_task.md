@@ -40,6 +40,10 @@ GUI/MCP共通command（13）と保存・復旧（14）は各実装と同時に�
 
 この順序なら、環境待ちの外部検査を正直にBLOCKEDとして保持しつつ、現在の編集基盤を使って制作一周へ進める。v1の出荷判定はNF-V1-15/16まで完了するまで行わない。
 
+## 2026-09-13 ownership資産のUndo回帰
+
+ownership markerが生成したmesh・material・base-color textureを、更新／明示削除時に同じUndoグループで破棄・復元するよう補強した。失敗時は即時片付け、外部Materialは所有対象に含めない。Unity **2022.3.22f1**の合成Bridgeで、3資産を一括削除後に1回のUndoで生成objectと全資産が復元されることを確認した（**PASS**、`Artifacts/BridgeReceiver-20260913-230234-754-918978ce45d44e5385c2a4c9aa0f4046/bridge-report.json`）。実EditorWindowをマウス操作した更新／削除受入は未実施として残す。
+
 ## 2026-09-13 現行Playerのprivate RadDollV3回帰
 
 `Builds/ClothingOwnershipV1/NyaForge.exe`へprivate一時RadDollV3 VRMを指定し、全mesh取込→EditMesh頂点編集→native Save/Open→標準skinned GLB／VRM出力まで再実行した。**91 checks PASS**（`Artifacts/Authoring-20260913-225717-54b8d7c9f0bc4ed8a7fa5c93574b5656/report.json`、画面 `authoring.png`）。同じPlayer reportと衣装packageをUnity **2022.3.22f1** Bridgeへ渡し、package／receiver／ownership／削除参照回帰も **PASS**（`Artifacts/BridgeReceiver-20260913-230018-288-e08b8d8aba4a41f99f34f6a0cd2f34b1/bridge-report.json`）。

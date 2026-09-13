@@ -211,9 +211,46 @@ namespace NyaForge.UnityBridge.Editor
                 binding.ClearGeneratedObject();
                 Require(binding.GeneratedObject == null && !binding.MatchesObject(objectId),
                     "Skinned clothing binding did not clear the managed generated object.");
+                VerifySkinnedClothingManagedUndo(checks);
                 checks.Add("Skinned clothing ownership marker preserves package identity and explicit BoneId map.");
             }
             finally { Object.DestroyImmediate(avatar); }
+        }
+
+        static void VerifySkinnedClothingManagedUndo(List<string> checks)
+        {
+            var avatar = new GameObject("NyaForge Clothing Undo Fixture");
+            var generated = new GameObject("Managed Clothing Undo");
+            generated.transform.SetParent(avatar.transform, false);
+            var mesh = new Mesh { name = "Owned Clothing Undo Mesh" };
+            var shader = Shader.Find("Standard");
+            Require(shader != null, "Unity Standard shader is unavailable for clothing ownership Undo fixture.");
+            var material = new Material(shader) { name = "Owned Clothing Undo Material" };
+            var texture = new Texture2D(2, 2) { name = "Owned Clothing Undo Texture" };
+            material.mainTexture = texture;
+            try
+            {
+                var marker = generated.AddComponent<NyaForgeSkinnedClothingManaged>();
+                marker.Bind(Guid.NewGuid().ToString("D"), new string('b', 64), mesh, new[] { material });
+                SkinnedClothingPackageWindow.DestroyManagedObjectWithUndo(generated, "Verify NyaForge clothing ownership Undo");
+                Require(generated == null && mesh == null && material == null && texture == null,
+                    "Managed clothing Undo fixture was not destroyed as one ownership set.");
+                Undo.PerformUndo();
+                Require(generated != null, "Managed clothing Undo did not restore the generated object.");
+                var restored = generated.GetComponent<NyaForgeSkinnedClothingManaged>();
+                Require(restored != null && restored.Mesh != null && restored.Materials.Length == 1 && restored.Materials[0] != null && restored.Materials[0].mainTexture != null,
+                    "Managed clothing Undo did not restore owned mesh/material/texture assets.");
+                checks.Add("Managed clothing deletion destroys owned mesh/material/texture together and restores them with one Undo.");
+            }
+            finally
+            {
+                if (generated != null) Object.DestroyImmediate(generated);
+                if (mesh != null) Object.DestroyImmediate(mesh);
+                if (material != null) Object.DestroyImmediate(material);
+                if (texture != null) Object.DestroyImmediate(texture);
+                if (avatar != null) Object.DestroyImmediate(avatar);
+                Undo.ClearAll();
+            }
         }
 
         static Mesh VerifyAssets(BakeImportResult result, BakeDocument bake, List<string> checks, string label, bool generatedNormals=false)
