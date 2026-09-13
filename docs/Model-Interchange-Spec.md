@@ -192,7 +192,7 @@ GLB/VRMの入出力にはnative blobと分離した128 MiBファイル予算と�
 | `SkinnedGeometry` | 単一graphのsource mesh、4 influence weight、骨階層、inverse bind、POSITION/NORMAL/TANGENT morph、標準PBR材質と埋め込みbase-color PNG | rest pose・identity source/output transformに限定。EditMeshによるトポロジー不変の頂点編集を保持する。未対応のtexture/image/samplerは出力しない。任意pose、非ゼロmorph変形、未対応nodeは拒否しnative/static exportを案内 |
 | `SkinnedGeometryExtended` | 単一graphのsource mesh、最大32 influence weightを全JOINTS_n/WEIGHTS_n setで保持、骨階層、inverse bind、POSITION/NORMAL/TANGENT morph、標準PBR材質と埋め込みbase-color PNG | rest pose・identity source/output transformに限定。標準profileで4 influenceを超える受取先には互換性を保証しない。未対応のtexture/image/samplerは出力しない。任意pose、非ゼロmorph変形、未対応nodeは拒否 |
 
-GUIには「標準GLB（表示形状）」「標準GLB（skin/morph保持）」「拡張GLB（全weight保持）」を分けて表示する。出力先は`<project>/exports/glb-*`の新規ディレクトリに限定し、失敗時はstagingを削除して既存制作状態を変更しない。各出力には`model.glb`と同じstagingから`export-report.json`を同梱し、document ID・revision・state hash・profile・対象件数・`model.glb`本体のSHA-256（`glbHash`）と、標準GLBへ出ないgraph／VRM metadataを記録する。nativeへ保存したGLB取込診断は`sourceDiagnostics`としてsource hash・mesh/skin/node locator・保持不可理由を同じreportへ複写する。GLBの読込確認はCore importerで行い、Unity・VRChat実機での外観／挙動受入とは分離して記録する。
+GUIには「標準GLB（表示形状）」「標準GLB（skin/morph保持）」「拡張GLB（全weight保持）」を分けて表示する。出力先は`<project>/exports/glb-*`の新規ディレクトリに限定し、失敗時はstagingを削除して既存制作状態を変更しない。各出力には`model.glb`と同じstagingから`export-report.json`を同梱し、document ID・revision・state hash・profile・対象件数・`model.glb`本体のSHA-256（`glbHash`）と、標準GLBへ出ないgraph／VRM metadataを記録する。 `objects[]`には`objectId`と、native graphを直接追跡できる`graphId`（static objectでgraphが存在する場合）を含める。nativeへ保存したGLB取込診断は`sourceDiagnostics`としてsource hash・mesh/skin/node locator・保持不可理由を同じreportへ複写する。GLBの読込確認はCore importerで行い、Unity・VRChat実機での外観／挙動受入とは分離して記録する。
 
 ### 8.1 skinned node instance affine（2026-09-13）
 

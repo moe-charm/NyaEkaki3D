@@ -1,3 +1,6 @@
+# 2026-09-13 GLB export report graph identity
+
+GLB `export-report.json` の `objects[]` に、native graph objectへ追跡できる `graphId` を追加した。static/skinnedの両profileで出力対象のgraph IDを保持し、sourceDiagnosticsのgraphIdと同じreport内で直接照合できる。CoreのGLB export回帰へreportのgraphId確認を追加し、`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore` は **486 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0247bad405b7437fb76fa5e0f163a586`）。この変更は出力追跡性を改善するもので、実Unity SDK・実VRChat内の外観/挙動受入とは別境界である。
 # 2026-09-13 PhysBones SDK availability probe
 
 `Tools/Test-NyaForgePhysBonesSdk.ps1 -UnityProjectPath .`を読み取り専用で実行した。現行NyaForge Unity projectには`com.vrchat.*` dependencyとVRChat PhysBones componentファイルがなく、statusは`unavailable`。レポートは`Artifacts/PhysBonesSdkProbe-20260913.json`へ保存した。NyaForge自身のfixture／BridgeをSDK検出と誤認せず、実SDK受け取りはSDK導入後に再実行する境界を確認した。合成Bridgeとpublic Playerの動作は既存証拠を維持する。

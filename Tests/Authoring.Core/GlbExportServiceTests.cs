@@ -28,6 +28,7 @@ internal static partial class Program
             Equal("StaticGeometry", (string)report["profile"]!);
             Equal(1, (int)report["objectCount"]!);
             Equal("passed", (string)report["validation"]!["glbResourceReaders"]!);
+            Equal(workspace.Document.ActiveObject.Graph.GraphId, (string)report["objects"]![0]!["graphId"]!);
             var imported = GlbImporter.Read(File.ReadAllBytes(result.Path));
             Equal(workspace.Evaluate().VertexCount, imported.Mesh.VertexCount);
             Equal(workspace.Evaluate().TriangleCount, imported.Mesh.TriangleCount);

@@ -193,6 +193,7 @@ namespace NyaForge.Authoring
             public MorphSet Morphs;
             public IReadOnlyDictionary<string, float> MorphWeights;
             public string Name;
+            public string GraphId;
             public SourceAffine Affine;
             public GraphMaterialValue Material;
             public GraphImageValue BaseColor;
@@ -228,6 +229,7 @@ namespace NyaForge.Authoring
             var output = meshOverride ?? evaluation.Output;
             Checks.Require(output.Mesh != null, "GRAPH_INCOMPLETE", "Static GLB export requires a complete renderable graph.");
             return new MeshObject { Mesh = output.Mesh, Transform = output.Transform, Name = item.ObjectId,
+                GraphId = item.Graph?.GraphId,
                 Material = output.Material, BaseColor = output.BaseColor, SlotMaterials = output.SlotMaterials };
         }
 
@@ -284,7 +286,7 @@ namespace NyaForge.Authoring
             if (morphs != null) foreach (var pair in weights) Checks.Require(morphs.ById.ContainsKey(pair.Key), "GLB_MORPH_UNRESOLVED", "Morph weight references an unknown target.");
             return new SkinnedObject
             {
-                Mesh = new MeshObject { Mesh = authoredOutput, Transform = evaluation.Output.Transform, Morphs = morphs, MorphWeights = weights, Name = item.ObjectId, Affine = instanceWorldTransform,
+                Mesh = new MeshObject { Mesh = authoredOutput, Transform = evaluation.Output.Transform, Morphs = morphs, MorphWeights = weights, Name = item.ObjectId, GraphId = graph.GraphId, Affine = instanceWorldTransform,
                     Material = evaluation.Output.Material, BaseColor = evaluation.Output.BaseColor, SlotMaterials = evaluation.Output.SlotMaterials },
                 Skeleton = skeleton, Binding = binding, Pose = pose
                 , InverseBindMatrices = inverseBindMatrices, JointLocalTransforms = jointLocalTransforms,
@@ -323,6 +325,20 @@ namespace NyaForge.Authoring
                 ValidateResourceReadback(bytes, inventory);
                 string path = Path.Combine(staging, FileName); File.WriteAllBytes(path, bytes);
                 string reportPath = Path.Combine(staging, ReportFileName);
+                var objectReports = new JArray();
+                foreach (var item in objects)
+                {
+                    var objectReport = new JObject
+                    {
+                        ["objectId"] = item.Name,
+                        ["vertexCount"] = item.Mesh.VertexCount,
+                        ["triangleCount"] = item.Mesh.Submeshes.Sum(values => values.Length / 3),
+                        ["submeshCount"] = item.Mesh.Submeshes.Count,
+                        ["materialSlotCount"] = item.SlotMaterials?.Count ?? (item.Material == null && item.BaseColor == null ? 0 : 1)
+                    };
+                    if (!string.IsNullOrWhiteSpace(item.GraphId)) objectReport["graphId"] = item.GraphId;
+                    objectReports.Add(objectReport);
+                }
                 var report = new JObject
                 {
                     ["version"] = 1,
@@ -334,14 +350,7 @@ namespace NyaForge.Authoring
                     ["stateHash"] = stateHash,
                     ["glbHash"] = Checks.Hash(bytes),
                     ["objectCount"] = objects.Length,
-                    ["objects"] = new JArray(objects.Select(item => new JObject
-                    {
-                        ["objectId"] = item.Name,
-                        ["vertexCount"] = item.Mesh.VertexCount,
-                        ["triangleCount"] = item.Mesh.Submeshes.Sum(values => values.Length / 3),
-                        ["submeshCount"] = item.Mesh.Submeshes.Count,
-                        ["materialSlotCount"] = item.SlotMaterials?.Count ?? (item.Material == null && item.BaseColor == null ? 0 : 1)
-                    })),
+                    ["objects"] = objectReports,
                     ["sourceDiagnostics"] = new JArray((sourceDiagnostics ?? new Dictionary<string, ImportedGlbDiagnostics>(StringComparer.Ordinal)).Values
                         .OrderBy(item => item.GraphId, StringComparer.Ordinal).Select(item => new JObject
                         {
