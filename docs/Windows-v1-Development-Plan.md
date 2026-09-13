@@ -46,7 +46,7 @@ NF-V1のIDは持込提案との対応用に維持。状態は実装済み・合�
 
 | ID | 作業・成果物 | 開始条件 | 完了条件 |
 |---|---|---|---|
-| NF-V1-01 | receiver環境manifest・既存fixture棚卸し | なし | Player/receiver/SDK/UniVRM/shader/lock/OS/GPUとfixture・hash・保存場所を固定。過去の一時環境を再利用できるか確認。未導入項目は未確認と記録 |
+| NF-V1-01 | receiver環境manifest・既存fixture棚卸し | なし | [Windows-v1-Environment.md](Windows-v1-Environment.md)へPlayer/receiver/Core/OS/GPUとfixture・hash・保存場所を固定。SDK/UniVRM/shaderの未導入項目はBLOCKEDとして記録 |
 | NF-V1-03 | 衣装出力・骨対応・所有権契約 | 01の入力/target候補 | 参照body、納品allowlist、rest/骨対応、生成領域、更新key、競合/削除方針を定義。既存GLB＋sidecar／既存Bake拡張を比較し、receiverで実証する最小経路一つを選ぶ |
 | NF-V1-03A | 最小衣装packageと初回Unity適用 | 03 | `skinned-clothing-v1`で衣装GLB・stable skeleton・bindingを個別に渡す。参照bodyの非同梱、BoneId map・IBM対応、事前hash検証、失敗時無変更を確認。合成Unity receiver、明示割当GUI、ownership markerまで実証済み。実アバター適用と実更新結果は外部受入として残す |
 | NF-V1-02A | G1初回の独立reader・SDK・クライアント受入 | 01、03A（衣装ケース） | E01〜E05の現行対応分、E06のbase color/alpha、E08のlocal段階を確認。独立readerで骨/形状を比較。E07更新・未実装map・他者視点は後続へ明示的に分ける |

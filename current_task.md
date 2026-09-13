@@ -32,13 +32,17 @@ GUI/MCP共通command（13）と保存・復旧（14）は各実装と同時に�
 
 ### 次の実作業カード
 
-1. **環境・受け取り契約（NF-V1-01/03）** — 対応Unity／UniVRM／SDK／shader／OSをmanifestへ固定し、実SDK未導入はBLOCKEDと記録する。実アバターをpublicへ置かない。
+1. **環境・受け取り契約（NF-V1-01/03）** — [Windows-v1-Environment.md](docs/Windows-v1-Environment.md)へ対応Unity／UniVRM／SDK／shader／OSを固定し、実SDK未導入はBLOCKEDと記録する。実アバターをpublicへ置かない。
 2. **実アバター初回適用（NF-V1-03A）** — private RadDollV3 sceneで全BoneIdを明示割当し、衣装packageの初回適用・再起動後の確認を行う。失敗時はsceneを変更しない。
 3. **一着の手動完走（NF-V1-04〜08）** — Polygon派生、UV／paint、確定、範囲限定fit／weight、pose、Undo、Save/Openを実マウスでカフ1点に適用する。
 4. **材質の意味契約（NF-V1-09/09A）** — base color／alphaは現行実装を証拠化し、normal／MRの色空間・channel・UV・sampler・縮小・所有を文書で固定してから実装する。
 5. **受け渡し更新（NF-V1-11〜13）** — 同一targetの衣装2点＋小物1点、更新／削除／取消／競合を合成fixtureで回帰し、実Unity受入へ持ち込む。
 
 この順序なら、環境待ちの外部検査を正直にBLOCKEDとして保持しつつ、現在の編集基盤を使って制作一周へ進める。v1の出荷判定はNF-V1-15/16まで完了するまで行わない。
+
+## 2026-09-13 NF-V1-01 環境マニフェスト
+
+[Windows-v1-Environment.md](docs/Windows-v1-Environment.md)を追加し、現行Player Unity **6000.4.3f1**、Bridge Unity **2022.3.22f1**、Core runtime **10.0.202**、OS/GPU、package版、fixture hashと証拠場所を固定した。`com.vrchat.*`未導入でPhysBones probeが`unavailable`のため、実SDK／実VRChatはBLOCKEDのまま記録する。これは環境固定の完了であり、外部受入の完了ではない。
 
 ## 2026-09-13 ownership資産のUndo回帰
 
