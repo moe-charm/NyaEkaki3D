@@ -26,6 +26,8 @@ fitと表面weight転送へ、avatar側の対象三角形を明示的に限定�
 
 形状を後段で暗黙に焼かないため、複数PolygonSource、後段の幾何modifier、LayeredPaint、既存rig/attachmentは明示的に拒否する。`EditMesh`からPaintとOutputへ複数のmesh downstreamがあるappearance graphにもskin deformationを挿入する。Coreで元graphのhash不変、派生graphのskin/pose、paint画像・出力geometry一致、2 objectのnative Save/Openを確認した。Coreは **488 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-7b21bff3e1a24040bc32e17b9835b820`）。Workbenchの派生操作ボタン、Undoを含む一操作command、実Unity receiverへの適用は未接続で、NF-V1-03Aの後続に残す。
 
+Unity **6000.4.3f1** のWindows Player `Builds/PolygonMaterializeV1/NyaForge.exe`をビルドし、既存Authoring suiteを **PASS**（`Artifacts/Authoring-20260913-214847-d03fbeaf4bde4378abdac6d5078db5b6/report.json`、画面`authoring.png`）で確認した。これは新しいPolygon派生ボタンを実マウスで押した受入ではなく、既存Player導線の回帰確認として扱う。WorkbenchのPolygon派生操作は、次の手動UI受入で元object保持・新object選択・Undo・Save/Openを確認する。
+
 ## 今回のレビュー結論
 
 方向性は採用。原案の02→後続10/12→02という受入依存の逆転を02A/02Bへ分離し、未実装のskin衣装receiverを03Aとして前倒しした。1024pxへ縮小される画像の原本/作業/出力契約を09Aへ追加。12週間・週20〜25時間は未合意の仮定として採用しない。全身制作、FBX、完全VRM、全shader、共有資源の完全統合は既存backlogへ残し、今の衣装一周に必要な接続を先行する。

@@ -19,7 +19,7 @@ namespace NyaForge.UnityRuntime
         DropdownField attachmentBone;
         FloatField attachmentOffsetX, attachmentOffsetY, attachmentOffsetZ;
         FloatField accessoryFitOffsetMm, accessoryFitMaxDistanceMm;
-        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessoryPoseCopy;
+        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPolygonMaterialize, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessoryPoseCopy;
         readonly List<string> attachmentTargetIds = new List<string>();
         readonly List<string> attachmentBoneIds = new List<string>();
         string attachmentTargetChoice;
@@ -51,14 +51,15 @@ namespace NyaForge.UnityRuntime
             attachmentApply = Button("この小物を装着", ApplyAttachment, "object-attachment-apply");
             attachmentRemove = Button("装着を解除", RemoveAttachment, "object-attachment-remove");
             accessorySkinBind = Button("衣装をavatar骨格へskin-bind（Root初期化）", BindAccessoryToAvatar, "object-skin-bind");
+            accessoryPolygonMaterialize = Button("Polygon造形をskin衣装へ派生", MaterializePolygonAccessory, "object-polygon-materialize");
             accessoryAutoWeight = Button("衣装の自動weight初期化（骨近傍）", TransferAccessoryWeights, "object-skin-auto-weight");
             accessorySurfaceWeight = Button("衣装の自動weight初期化（avatar表面）", TransferAccessorySurfaceWeights, "object-skin-surface-weight");
             accessoryFitOffsetMm = Number(attachmentPanel, "avatar表面からのfit offset (mm)", 2, "object-surface-fit-offset-mm");
             accessoryFitMaxDistanceMm = Number(attachmentPanel, "surface fit最大距離 (mm)", 50, "object-surface-fit-max-distance-mm");
             accessorySurfaceFit = Button("衣装をavatar表面へfit", FitAccessoryToAvatarSurface, "object-surface-fit");
             accessoryPoseCopy = Button("avatarの現在poseを衣装へコピー", CopyAvatarPose, "object-skin-pose-copy");
-            attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryAutoWeight); attachmentPanel.Add(accessorySurfaceWeight); attachmentPanel.Add(accessorySurfaceFit); attachmentPanel.Add(accessoryPoseCopy);
-            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。自動weight初期化（骨近傍）はrest骨segmentへの距離から最大4本を選ぶ簡易初期値です。avatar表面が評価できる場合は、表面上の最近三角形から既存avatar weightを補間するavatar表面方式を推奨します。どちらも必ず動作確認・Rig panelで手修正してください。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。自動fitや貫通判定は別機能です。");
+            attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryPolygonMaterialize); attachmentPanel.Add(accessoryAutoWeight); attachmentPanel.Add(accessorySurfaceWeight); attachmentPanel.Add(accessorySurfaceFit); attachmentPanel.Add(accessoryPoseCopy);
+            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。Polygon造形をskin衣装へ派生すると、元のPolygon graphを残したまま編集結果をMeshSourceへ確定し、新しい衣装objectを作成します。自動weight初期化（骨近傍）はrest骨segmentへの距離から最大4本を選ぶ簡易初期値です。avatar表面が評価できる場合は、表面上の最近三角形から既存avatar weightを補間するavatar表面方式を推奨します。どちらも必ず動作確認・Rig panelで手修正してください。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。自動fitや貫通判定は別機能です。");
             help.style.whiteSpace = WhiteSpace.Normal; attachmentPanel.Add(help);
             parent.Add(attachmentPanel);
         }
@@ -158,7 +159,7 @@ namespace NyaForge.UnityRuntime
             if (!IsGraph)
             {
                 attachmentStatus.text = "装着: graph objectを選択してください。";
-                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); return;
+                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryPolygonMaterialize.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); return;
             }
             var targets = workspace.Document.Objects.Where(item => item.ObjectId != workspace.Document.ActiveObjectId && item.Graph != null).ToArray();
             attachmentTargetIds.AddRange(targets.Select(item => item.ObjectId));
@@ -194,6 +195,7 @@ namespace NyaForge.UnityRuntime
                 workspace.Document.ActiveObject.Graph.Nodes.Values.Count(item => item.TypeId == BuiltinNodes.EditMesh) == 1 &&
                 workspace.Document.ActiveObject.Graph.Nodes.Values.All(item => item.TypeId != BuiltinNodes.Skeleton && item.TypeId != BuiltinNodes.SkinBind && item.TypeId != BuiltinNodes.SkinDeform && item.TypeId != BuiltinNodes.Pose && item.TypeId != BuiltinNodes.Attachment);
             accessorySkinBind.SetEnabled(canSkinBind);
+            accessoryPolygonMaterialize.SetEnabled(target != null && skeleton != null && CanMaterializePolygonAccessory(workspace.Document.ActiveObject.Graph));
             bool canAutoWeight = target != null && skeleton != null && workspace.Preview.IsComplete &&
                 workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.EditMesh) &&
                 workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.SkinBind && item.Binding != null);
@@ -271,6 +273,41 @@ namespace NyaForge.UnityRuntime
                 Execute(AuthoringOperation.ReplaceGraph(changed));
                 attachmentTargetChoice = target.ObjectId;
                 SetStatus("衣装をavatar骨格へskin-bindしました。全頂点をRootへ初期化済みです。Rig panelでweight paintし、poseと保存後の出力を確認してください。");
+            });
+        }
+
+        bool CanMaterializePolygonAccessory(AuthoringGraph graph)
+        {
+            if (graph == null) return false;
+            var nodes = graph.Nodes.Values.ToArray();
+            if (nodes.Count(node => node.TypeId == BuiltinNodes.PolygonSource) != 1 ||
+                nodes.Count(node => node.TypeId == BuiltinNodes.PolygonEdit) != 1 ||
+                nodes.Any(node => node.TypeId == BuiltinNodes.Skeleton || node.TypeId == BuiltinNodes.SkinBind ||
+                    node.TypeId == BuiltinNodes.SkinDeform || node.TypeId == BuiltinNodes.Pose || node.TypeId == BuiltinNodes.Attachment ||
+                    node.TypeId == BuiltinNodes.LayeredPaint || node.TypeId == BuiltinNodes.Mirror)) return false;
+            try { return GraphEvaluator.Evaluate(graph).IsComplete; }
+            catch (AuthoringException) { return false; }
+        }
+
+        void MaterializePolygonAccessory()
+        {
+            Try(() =>
+            {
+                if (!IsGraph) throw new InvalidOperationException("Polygon衣装のgraph objectを選択してください。");
+                int targetIndex = attachmentTarget.index;
+                if (targetIndex < 0 || targetIndex >= attachmentTargetIds.Count) throw new InvalidOperationException("派生先avatarを選択してください。");
+                var target = FindObject(attachmentTargetIds[targetIndex]);
+                var session = RigFor(target);
+                var skeleton = session == null || target == null ? null : TryResolveSkeleton(session, target.Graph);
+                if (skeleton == null) throw new InvalidOperationException("派生先avatarのimported skeletonがありません。");
+                var graph = workspace.Document.ActiveObject.Graph;
+                if (!CanMaterializePolygonAccessory(graph)) throw new InvalidOperationException("PolygonSource→PolygonEditとappearanceだけのgraphを選択してください。");
+                var root = skeleton.Bones.FirstOrDefault(bone => string.IsNullOrEmpty(bone.ParentBoneId));
+                if (root == null) throw new InvalidOperationException("avatar skeletonにRoot boneがありません。");
+                var result = AccessorySkinMaterializer.Materialize(graph, skeleton, root.BoneId, target.ObjectId);
+                Execute(AuthoringOperation.AddGraph(result.Graph));
+                attachmentTargetChoice = target.ObjectId;
+                SetStatus("Polygon造形をskin衣装へ派生しました。元graphは保持されています。新しい衣装objectでweight・fit・poseを確認して保存してください。");
             });
         }
 
