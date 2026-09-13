@@ -8,7 +8,7 @@
 
 Workbenchの衣装表面処理へ`avatar面ID（カンマ区切り・空欄=全て）`を追加した。指定したrest meshの三角形領域を`MeshSurfaceFit.Project`と`SkinWeightTransfer.BySurfaceProjection`へ同じ入力で渡し、範囲外ID・不正文字列・距離超過は文書を変更せず診断する。自動Authoring suiteで面ID `0`を指定したfit／surface weight、ステータスの領域表示、失敗時無変更を確認した。`Builds/WindowsSurfaceRegion/NyaForge.exe`（Unity **6000.4.3f1**）と **83 checks PASS**の証拠は`Artifacts/Authoring-20260914-022441-128a2e31fec14decbb120c3d3eb2de76/report.json` と `authoring.png`。面領域指定は受入経路へ接続したが、実マウスでの面選択、実RadDollV3全周fit・貫通・見た目、VRChat内表示は未受入である。
 
-さらに`衣装頂点ID（カンマ区切り・空欄=全て）`を追加し、指定頂点だけをfit／surface weight更新する経路へ接続した。未選択頂点の位置と既存weightを保持し、選択頂点・avatar面領域・最大距離の検証を一つの操作で行う。Coreは **496 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-13b58921c12044f9af20c2af39255a97`）。再ビルドした`Builds/WindowsSurfaceRegion2/NyaForge.exe`（Unity **6000.4.3f1**）のAuthoring suiteも **83 checks PASS**（`Artifacts/Authoring-20260914-023119-c4585ef859ce4158b2774a3ab9e40a8c/report.json` と `authoring.png`）。これは選択範囲の自動経路確認で、実マウスによる面／頂点選択、実RadDollV3全周fit・貫通・見た目、VRChat内表示は未受入である。
+さらに`衣装頂点ID（カンマ区切り・空欄=全て）`を追加し、指定頂点だけをfit／surface weight更新する経路へ接続した。未選択頂点の位置と既存weightを保持し、選択頂点・avatar面領域・最大距離の検証を一つの操作で行う。「現在の衣装頂点選択を適用対象にする」ボタンでビューポート選択を同じ入力へ取り込める。Coreは **496 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-13b58921c12044f9af20c2af39255a97`）。最新`Builds/WindowsSurfaceRegion3/NyaForge.exe`（Unity **6000.4.3f1**）のAuthoring suiteも **83 checks PASS**（`Artifacts/Authoring-20260914-023409-a1b227311bbd4c12ae710e341c55a860/report.json` と `authoring.png`）。これは選択範囲の自動経路確認で、実マウスによる面／頂点選択、実RadDollV3全周fit・貫通・見た目、VRChat内表示は未受入である。
 
 レビューで挙がった `9855d43` 系のP1/P2を現行mainへ再照合した。対象は衣装受け取りの座標、割当保存、UV1、疎なmaterial slot、MR係数、カフ面向き、sampler共有、削除済み衣装の割当読込である。
 

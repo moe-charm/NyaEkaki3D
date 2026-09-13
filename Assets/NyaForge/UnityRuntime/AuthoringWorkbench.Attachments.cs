@@ -22,7 +22,7 @@ namespace NyaForge.UnityRuntime
         FloatField accessoryFitOffsetMm, accessoryFitMaxDistanceMm;
         TextField accessorySurfaceTriangleIds;
         TextField accessoryClothingVertexIds;
-        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPolygonMaterialize, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessoryPoseCopy;
+        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPolygonMaterialize, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessoryPoseCopy, accessoryUseSelectedVertices;
         readonly List<string> attachmentTargetIds = new List<string>();
         readonly List<string> attachmentBoneIds = new List<string>();
         string attachmentTargetChoice;
@@ -65,6 +65,8 @@ namespace NyaForge.UnityRuntime
             accessoryClothingVertexIds = new TextField("衣装頂点ID（カンマ区切り・空欄=全て）") { name = "object-surface-clothing-vertex-ids" };
             accessoryClothingVertexIds.tooltip = "衣装EditMeshの頂点IDを限定します。空欄なら全頂点を対象にし、指定時は未選択頂点の位置・weightを保持します。";
             attachmentPanel.Add(accessoryClothingVertexIds);
+            accessoryUseSelectedVertices = Button("現在の衣装頂点選択を適用対象にする", UseSelectedClothingVertices, "object-surface-use-selected-vertices");
+            attachmentPanel.Add(accessoryUseSelectedVertices);
             accessorySurfaceFit = Button("衣装をavatar表面へfit", FitAccessoryToAvatarSurface, "object-surface-fit");
             accessoryPoseCopy = Button("avatarの現在poseを衣装へコピー", CopyAvatarPose, "object-skin-pose-copy");
             attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryPolygonMaterialize); attachmentPanel.Add(accessoryAutoWeight); attachmentPanel.Add(accessorySurfaceWeight); attachmentPanel.Add(accessorySurfaceFit); attachmentPanel.Add(accessoryPoseCopy);
@@ -168,7 +170,7 @@ namespace NyaForge.UnityRuntime
             if (!IsGraph)
             {
                 attachmentStatus.text = "装着: graph objectを選択してください。";
-                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryPolygonMaterialize.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); return;
+                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryPolygonMaterialize.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); accessoryUseSelectedVertices.SetEnabled(false); return;
             }
             var targets = workspace.Document.Objects.Where(item => item.ObjectId != workspace.Document.ActiveObjectId && item.Graph != null).ToArray();
             attachmentTargetIds.AddRange(targets.Select(item => item.ObjectId));
@@ -218,6 +220,8 @@ namespace NyaForge.UnityRuntime
             bool hasSkinPose = workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.SkinBind) &&
                 workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.Pose);
             accessoryPoseCopy.SetEnabled(target != null && skeleton != null && hasSkinPose);
+            var editNode = workspace.Document.ActiveObject.Graph.Nodes.Values.FirstOrDefault(item => item.TypeId == BuiltinNodes.EditMesh);
+            accessoryUseSelectedVertices.SetEnabled(editNode != null && workspace.Preview.IsComplete && selection.Count > 0);
             if (node == null) attachmentStatus.text = "装着: 未設定。対象avatarとBoneIdを選んでください。";
             else if (diagnosticFor(node, target) != "") attachmentStatus.text = "装着: " + diagnosticFor(node, target);
             else attachmentStatus.text = "装着: " + node.AttachmentBoneId.Substring(0, 8) + "へ固定 · 保存対象";
@@ -330,6 +334,23 @@ namespace NyaForge.UnityRuntime
                     evaluation.SkinBindingOutputs.TryGetValue(bind.NodeId, out var binding) && binding != null && binding.Binding != null;
             }
             catch (AuthoringException) { return false; }
+        }
+
+        void UseSelectedClothingVertices()
+        {
+            Try(() =>
+            {
+                if (!IsGraph) throw new InvalidOperationException("衣装graph objectを選択してください。");
+                var edit = workspace.Document.ActiveObject.Graph.Nodes.Values.FirstOrDefault(item => item.TypeId == BuiltinNodes.EditMesh);
+                if (edit == null) throw new InvalidOperationException("衣装へEditMeshを先に用意してください。");
+                if (!workspace.Preview.Evaluation.MeshOutputs.TryGetValue(edit.NodeId, out var value) || value?.Mesh == null)
+                    throw new InvalidOperationException("衣装EditMeshの評価結果を取得できません。");
+                var indices = selection.OrderBy(index => index).ToArray();
+                if (indices.Any(index => index < 0 || index >= value.Mesh.VertexCount))
+                    throw new InvalidOperationException("現在の選択にEditMeshの頂点範囲外が含まれています。EditMeshを表示して選択してください。");
+                accessoryClothingVertexIds.SetValueWithoutNotify(string.Join(",", indices));
+                SetStatus("現在の衣装頂点選択をfit／weight対象へ設定しました（" + indices.Length.ToString(CultureInfo.InvariantCulture) + "頂点）。");
+            });
         }
 
         IEnumerable<int> ParseIndexSelection(string text, string label)

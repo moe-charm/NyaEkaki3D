@@ -99,7 +99,9 @@ namespace NyaForge.UnityRuntime
                 attachmentTargetChoice = avatarObjectId;
                 RefreshAttachmentControls();
                 accessorySurfaceTriangleIds.SetValueWithoutNotify("0");
-                accessoryClothingVertexIds.SetValueWithoutNotify("0,1");
+                Select(new[] { 0, 1 });
+                UseSelectedClothingVertices();
+                Check(accessoryClothingVertexIds.value == "0,1", "Selected clothing vertices were not copied into the surface tool");
                 TransferAccessorySurfaceWeights();
                 boundGraph = workspace.Document.ActiveObject.Graph;
                 bound = boundGraph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.SkinBind);
