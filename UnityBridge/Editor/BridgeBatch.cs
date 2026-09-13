@@ -301,6 +301,25 @@ namespace NyaForge.UnityBridge.Editor
                     "Multiple clothing package bindings were not kept independent on one avatar.");
                 Require(binding.TryGetBone(rootId, out var resolved) && resolved == bone.transform,
                     "Skinned clothing BoneId binding lookup failed.");
+                // A newer authored revision must keep the existing generated
+                // object associated while the user saves the same BoneId map.
+                // The object is replaced only by the subsequent apply step;
+                // changing StateHash alone must never orphan ownership.
+                string updatedHash = new string('c', 64);
+                binding.Capture("C:/private/skinned-clothing.nyaforge.json", objectId, graphId, updatedHash, updatedHash,
+                    updatedHash, updatedHash, updatedHash,
+                    new[] { new KeyValuePair<string, Transform>(rootId, bone.transform) }, generated);
+                Require(binding.GeneratedObject == generated && binding.Matches(objectId, updatedHash, updatedHash, updatedHash) &&
+                    binding.MatchesAssignment(objectId),
+                    "Saving a newer clothing revision orphaned the existing managed object.");
+                var replacement = new GameObject("Managed Clothing Updated"); replacement.transform.SetParent(avatar.transform, false);
+                binding.Capture("C:/private/skinned-clothing.nyaforge.json", objectId, graphId, updatedHash, updatedHash,
+                    updatedHash, updatedHash, updatedHash,
+                    new[] { new KeyValuePair<string, Transform>(rootId, bone.transform) }, replacement);
+                Require(binding.GeneratedObject == replacement && binding.MatchesObject(objectId),
+                    "Updating a clothing revision did not repoint the managed object exactly once (generated=" +
+                    (binding.GeneratedObject == null ? "null" : binding.GeneratedObject.name) + ").");
+                checks.Add("Skinned clothing save with a newer StateHash retains BoneId ownership, then repoints the managed object on update.");
                 binding.ClearGeneratedObject();
                 Require(binding.GeneratedObject == null && !binding.MatchesObject(objectId) && binding.MatchesAssignment(objectId) &&
                     binding.TryGetBone(rootId, out resolved) && resolved == bone.transform,

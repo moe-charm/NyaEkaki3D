@@ -60,6 +60,11 @@ the previous generated object in place. The same window also offers
 `管理対象の衣装を削除（Undo可）`; it clears only the generated-object
 association and records the operation in Unity Undo, while refusing objects
 outside the selected avatar root or with a different ObjectId.
+Saving a newer StateHash for the same ObjectId keeps the existing generated
+object reference and BoneId assignments; the replacement is recorded only by
+the subsequent apply operation. The Bridge regression covers this save-then-
+replace sequence so a package update cannot silently orphan the old ownership
+marker.
 
 When the caller omits explicit `Material[]`, `ApplyPackage` creates one Unity
 Standard material per submesh from the package GLB's imported base-color

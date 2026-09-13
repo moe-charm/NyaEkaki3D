@@ -1,5 +1,7 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+追加のBridge回帰を実施した。`NyaForgeSkinnedClothingBinding`へ同じObjectIdの新しいStateHashを保存しても、既存の生成object参照とstable BoneId割当を保持し、その後の更新で新objectへ一度だけ付け替えられることを確認した。Unity **2022.3.22f1**のBridge suite **15 checks PASS**（`Artifacts/BridgeReceiver-20260914-031910-021-7a155f84e2354bb3be94d816c8401c1a/bridge-report.json`）。これは更新時のownership参照回帰であり、実EditorWindowの手動操作・実RadDollV3全周fit・貫通・見た目・VRChat内受入とは分けて扱う。
+
 ## 2026-09-14 FeedbackFixV5 レビュー照合
 
 通常GLBのUV1欠落を黙って許さない契約を追加した。`GlbImporter.ReadPrimitive`は`TEXCOORD_1`入力を`UNSUPPORTED_UV_SET`で拒否し、skinned importerも同じ静的形状経路を通るため同じ結果になる。Core回帰を追加し、UV0のみをWindows v1出荷範囲とすることをREADMEへ明記した。Coreは **496 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-da3659c1953a4c0991cd05296c52ef23`）。
