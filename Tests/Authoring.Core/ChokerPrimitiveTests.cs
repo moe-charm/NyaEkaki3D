@@ -26,5 +26,25 @@ internal static partial class Program
             Expect("PARAMETER_RANGE", () => PolygonPrimitives.Choker(Guid.NewGuid().ToString("D"), .06f, .04f));
             Expect("PARAMETER_RANGE", () => PolygonPrimitives.Choker(Guid.NewGuid().ToString("D"), .06f, .008f, 4));
         });
+        Test("cuff primitive has a closed shell and render attributes", () =>
+        {
+            var mesh = PolygonPrimitives.Cuff(Guid.NewGuid().ToString("D"));
+            Equal(32 * 4, mesh.Vertices.Count);
+            Equal(32 * 4, mesh.Faces.Count);
+            True(mesh.Faces.All(face => face.Corners.Count == 4));
+            True(mesh.EdgeFaces.Values.All(faces => faces.Count == 2));
+            var rendered = PolygonRenderAdapter.Build(mesh);
+            Equal(32 * 4 * 2, rendered.Mesh.TriangleCount);
+            Equal(rendered.Mesh.VertexCount, rendered.Mesh.Normals.Count);
+            Equal(rendered.Mesh.VertexCount, rendered.Mesh.Tangents.Count);
+            Equal(rendered.Mesh.VertexCount, rendered.Mesh.Uv0.Count);
+        });
+        Test("cuff primitive rejects unsafe parameters", () =>
+        {
+            Expect("PARAMETER_RANGE", () => PolygonPrimitives.Cuff(Guid.NewGuid().ToString("D"), .005f));
+            Expect("PARAMETER_RANGE", () => PolygonPrimitives.Cuff(Guid.NewGuid().ToString("D"), .04f, .002f));
+            Expect("PARAMETER_RANGE", () => PolygonPrimitives.Cuff(Guid.NewGuid().ToString("D"), .04f, .035f, .05f));
+            Expect("PARAMETER_RANGE", () => PolygonPrimitives.Cuff(Guid.NewGuid().ToString("D"), .04f, .035f, .004f, 4));
+        });
     }
 }

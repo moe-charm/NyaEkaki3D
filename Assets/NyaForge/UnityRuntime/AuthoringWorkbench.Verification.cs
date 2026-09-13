@@ -182,6 +182,7 @@ namespace NyaForge.UnityRuntime
                 VerifySpringCore(checks);
                 VerifyMultiObjectDisplay(output, checks);
                 VerifyChokerTemplate(output, checks);
+                VerifyCuffTemplate(output, checks);
                 VerifyAttachment(output, checks);
                 VerifyImportedAccessoryWorkflow(output, checks);
                 VerifyVrmImportRoundtrip(output, checks);

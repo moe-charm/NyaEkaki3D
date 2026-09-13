@@ -55,7 +55,7 @@ NF-V1のIDは持込提案との対応用に維持。状態は実装済み・合�
 | NF-V1-05 | topology確定・属性依存 | 04 | skin/morph前に造形確定。既存skin/morphの未対応topology変更を事前拒否。再造形は新派生へ明示転送し旧派生を保持 |
 | NF-V1-06 | 範囲を指定するfit/weight | 03の座標/対象契約 | 衣装の選択頂点、元body面領域、距離を共通候補として使う。範囲外は無変更、未選択頂点・weightを保持。薄い表裏・袖/胴体・遠方の負例。候補/未対応点/移動量を確認して確定 |
 | NF-V1-07 | 衣装検査GUIと参照保護 | 05、06 | rest編集/pose確認、bodyと衣装の表示、参照ロック、既存weight修正、固定pose群をGUIへ接続。新ブラシは一周で必要性が判明したものに限定 |
-| NF-V1-08 | 自作衣装1点の全工程 | 03A、07。外部判定は02A | primitive→造形→UV/paint→確定→weight→保存再開→Unity→VRChatを手順だけで再現。実マウス完走と自動検査を区別 |
+| NF-V1-08 | 自作衣装1点の全工程 | 03A、07。外部判定は02A | `PolygonPrimitives.Cuff`で低ポリ手首カフのprimitive→造形→UV/paint→確定→weight→保存再開→Unity→VRChatを手順だけで再現。Player自動経路は確認済み、実アバター・実VRChat・販売品質は未受入 |
 | NF-V1-09 | 材質semantic slot設計 | 03 | 既存材質を拡張し、用途・色空間・channel・UV・sampler・adapter版を定義。Unity shader固有名はadapter。全面IR置換なし |
 | NF-V1-09A | 画像解像度・所有・出力品質 | 09 | 入力/作業/出力解像度とhashを表示・保存・reportへ。原本画像と縮小previewの分離を設計し、未編集原本保持/編集後出力の規則とメモリ予算を確定。元画像を失った既存projectから原画復元を装わない |
 | NF-V1-10 | normal/MR画像の一周 | 09、09A、03Aのshader決定 | 衣装の画像指定・プレビュー・native・出力・receiverで一致。normal方向/tangent、MRのG=roughness/B=metallic、linear値とsRGB色、alphaを検証。専用paint/AO/emissive/bakeは追加しない |

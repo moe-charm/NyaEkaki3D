@@ -9,7 +9,7 @@ ChatGPT Proの持込Windows v1案を現行mainへ照合し、[採用修正版](d
 | 1 | NF-V1-01 / 03 | 部分実装・外部BLOCKED | 受け取り環境manifestとfixtureを固定し、衣装だけの出力対象・BoneId・所有領域を確定。SDK未導入のため実SDK／実VRChatはBLOCKEDの証拠を残す |
 | 2 | NF-V1-03A | 実装・合成Bridge受入済み / 実アバター未受入 | `SkinnedClothingReceiver`、`skinned-clothing-v1`、割当GUI、ownership markerを重複実装しない。実RadDollV3 sceneでBoneId割当→初回適用→再適用を手動確認 |
 | 3 | NF-V1-04 / 05 / 06 / 07 | Core/Player実装済み・手動未受入 | Polygon派生→UV/paint→確定→範囲限定fit/weight→pose確認を実マウスで通し、参照body保護・Undo・Save/Openを確認 |
-| 4 | NF-V1-08 | 未完了・次の制作カード | 最小primitiveから自作カフまたは短いベストを1点完成。Unity適用とVRChat確認は外部環境が戻り次第実施し、未受入を成功扱いしない |
+| 4 | NF-V1-08 | カフ試作経路実装・Player受入済み / 実アバター未受入 | 低ポリ手首カフを頂点編集し、実RadDollV3へfit・weight・Unity適用・VRChat確認。自動テンプレート通過を販売品質と扱わない |
 | 5 | NF-V1-09 / 10 | Core実装済み・Unity/VRChat未受入 | semantic normal／metallic-roughnessのpackage適用を実sceneで確認し、Standard shaderの外観・tangent・samplerを記録。occlusion/emissiveと専用paintは後続範囲 |
 | 後続 | NF-V1-11〜16 / 02A / 02B | 未完了 | 複数衣装・Unity再適用→長時間/手動/別環境→VRChat/private upload/RC。詳細依存は採用修正版参照 |
 
@@ -20,6 +20,10 @@ GUI/MCP共通command（13）と保存・復旧（14）は各実装と同時に�
 `MaterialTextureSlot`／`MaterialTextureSet`を追加し、normal／metallic-roughness画像について、semantic、PNG/JPEG bytes、色空間（linear）、channel契約、UV set、normal scale、glTF samplerをtyped payloadとして保持するようにした。GLB取込は埋め込み画像と安全なローカル相対URIを解決し、native graph binaryは画像をblobとして所有してSave/Openする。GLB出力はnormalTextureとmetallicRoughnessTexture、samplerを再生成し、Coreで画像bytes・channel前提・sampler・native roundtripを確認した。通常のMaterial Bakeはこの情報を落とさないよう事前拒否する。
 
 Unity BridgeはStandard shaderへnormal mapとmetallic-roughness mapを割り当て、glTFの`B=metallic/G=roughness`をUnityのmetallic-gloss `R=metallic/A=smoothness`へ変換し、生成textureをownership cleanup対象へ含めるところまで実装した。Coreは **491 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-9d9d5d3cfac64004ae975127d5e0c89e`）、Windows Player `Builds/SemanticTextureV2/NyaForge.exe` build成功（`Logs/build-player-20260913-233518-121.log`）、Authoring suite **82 checks PASS**（`Artifacts/Authoring-20260913-233528-55f3f2bb6fa2463596b1c4af10ecc0b0/report.json`）、Unity **2022.3.22f1** Bridge **14 checks PASS**（`Artifacts/BridgeReceiver-20260913-233832-795-33b73c74efd24d73bdf00a523751f803/bridge-report.json`）。Bridge内でsemantic map package適用、normal scale、MR channel conversion、ownership cleanup、Undoによるnormal／MR texture復元まで確認したが、実RadDollV3 scene表示・実VRChatは未受入として残す。occlusion/emissive画像、専用paint/bake、全shader一致も対象外。
+
+## 2026-09-13 NF-V1-08 カフ試作テンプレート
+
+`PolygonPrimitives.Cuff`とWorkbenchの「手首カフ形状を追加」を追加した。内外面・上下キャップを持つ閉じた低ポリシェル（既定32分割、128編集頂点、128 quad）で、既存のPolygonEdit、頂点移動、native Save/Open、単体Bakeへ接続している。Coreは **493 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-1a4ae1d1c3f74cbea9a742fe8707b919`）、Windows Player `Builds/CuffTemplateV2/NyaForge.exe` build成功（`Logs/build-player-20260913-234616-199.log`）、Authoring suite **83 checks PASS**（`Artifacts/Authoring-20260913-234636-1f3341077d154d6ba757a0ed6a853e78/report.json`）。これは制作開始点の自動回帰であり、実RadDollV3へのfit・weight・貫通確認、実Unity scene、実VRChat内の見た目・負荷、販売品質を証明しない。
 
 ## 2026-09-13 持込Windows v1案の照合結果
 
