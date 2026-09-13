@@ -1,10 +1,29 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 FeedbackFixV5 レビュー照合
+
+レビューで挙がった `9855d43` 系のP1/P2を現行mainへ再照合した。対象は衣装受け取りの座標、割当保存、UV1、疎なmaterial slot、MR係数、カフ面向き、sampler共有、削除済み衣装の割当読込である。
+
+次の項目は現行実装と回帰で確認済みで、同じ修正を重ねて行わない。
+
+| 指摘 | 現行の扱い | 根拠 |
+|---|---|---|
+| avatar移動後の衣装配置 | avatar-local座標を保持し、receiver rootへ一度だけ親子付け | 変形avatarのUnity Bridge fixture |
+| 衣装更新時の割当参照 | Bone割当の再利用と生成object所有をObjectIdで分離 | `MatchesAssignment`、更新・削除・再適用回帰 |
+| UV1の欠落 | Windows v1はUV0契約。UV1 semantic slotは書込み前に`UNSUPPORTED_UV_SET`で停止 | Core import/export回帰 |
+| sparse material slot | 使用submeshだけをslot mapへ残し、slot番号と入力portを保持 | Core sparse slot GLB roundtrip |
+| MR係数・sampler・カフ winding | shader係数、sampler hash、quad windingを修正 | Core 495件、Player/Bridge fixture |
+| 適用前・削除後の割当読込 | 生成objectの存在とassignment identityを分離 | Unity Bridge binding回帰 |
+
+残る受入境界は、実RadDollV3 sceneでの衣装表面fit／surface weight転送、実EditorWindowのマウス操作とDPI、fit後の貫通・見た目、VRChat Build & Test／実機表示である。これらはCoreや合成Bridgeの合格へ読み替えず、`NF-V1-03A`、`NF-V1-04〜08`、`NF-V1-10`の手動受入カードとして扱う。次は実アバターのbody rendererを基準にしたfit／weight測定をprivate probeへ追加し、公開リポジトリにはSDK・素材・private sceneを入れず証拠だけを記録する。
+
+private probeへ実RadDollV3の`Body` rendererを基準にした最小surface測定を追加した。Unity **2022.3.22f1**でBody 8,467頂点／10,770三角形をavatar-localへ変換し、実bodyの非退化三角形から1 mm離した3頂点カフを作成して、`MeshSurfaceFit.Project`（offset 0.5 mm、上限10 mm）と`SkinWeightTransfer.BySurfaceProjection`（4 influence、上限10 mm）を実行した。3頂点すべてがfitされ、最大投影距離 **0.99995 mm**、最大移動量 **0.49994 mm**、surface weight 3頂点・最大1 influence・正規化済みを確認した。証拠はpublicへ素材を含めないprivate `private/PhysBonesSdkProbe-20260914/avatar-fit-weight-report.json`。これは実bodyメッシュとの座標・距離制限・weight正規化の接続確認であり、カフ全周の貫通・衣装の見た目・手動EditorWindow操作・VRChat内受入ではない。
+
 ChatGPT Proの持込Windows v1案を現行mainへ照合し、[採用修正版](docs/Windows-v1-Development-Plan.md)へタスク化した。方針は採用するが、実SDK／実VRChat未受入を完了扱いにせず、実装済みの衣装受け渡しを重複開発しない。製品全体のC0〜C5と進行中goalは維持する。以降の着手順はこの欄と採用修正版を優先し、下に残る日付付き記録の「次」は当時の履歴として読む。
 
 ## 2026-09-14 Downloads版Windows v1案の再確認
 
-`C:\Users\tomoaki\Downloads\NyaForge-Windows-v1-Development-Plan.md`を検証対象コード`main`（`803eeb3`）と再照合した。**方針は妥当で、遠回りにはなっていない。** 既存の編集基盤を作り直さず、既存アバターへ衣装だけを渡す出口、造形→skinの一周、semantic texture、再適用、実受入を分ける順序は採用する。
+`C:\Users\tomoaki\Downloads\NyaForge-Windows-v1-Development-Plan.md`を検証対象コード`main`（`ca346ee`）と再照合した。**方針は妥当で、遠回りにはなっていない。** 既存の編集基盤を作り直さず、既存アバターへ衣装だけを渡す出口、造形→skinの一周、semantic texture、再適用、実受入を分ける順序は採用する。
 
 原案からの実務上の修正は採用修正版へ反映済みである。NF-V1-02を02A/02Bへ分割し、衣装package/receiver（03A）をG1へ前倒しし、実SDK・実VRChat・実マウスをCore/Player/合成Bridgeと混同しない。12週間・週20〜25時間は見積りの仮定として採用せず、最小受け渡しと一着の実測後に見直す。
 
