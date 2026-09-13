@@ -1762,3 +1762,12 @@ codec失敗を意図的に注入する破損fixture、実マウス・DPI差、Un
 実装済みの点マーカー／クリック選択が全編集点を対象とし、2,048点単位で描画をまとめる仕様に対して、Quickstartに残っていた「先頭256頂点まで」という古い説明を修正した。ID指定も全頂点を対象とする記述を維持した。
 
 これはドキュメント整合性の修正で、製品コード・保存形式は変更していない。直近のWindows Player Authoring／Unity Bridge／Core検証結果は前項の `ImportAtomicV1` 記録を正本とする。
+# 2026-09-13 Authoring中の描画応答性と観測値
+
+通常viewerは非操作時15fps／非フォーカス5fpsで省電力にする一方、制作画面を開いている間は60fpsと通常描画へ切り替えるようにした。頂点・面・UV・3D paintのpointer編集で、viewerの待機用frame capが残って入力表示を遅らせないための変更である。制作画面を閉じると従来のviewer省電力制御へ戻る。
+
+Unity 6000.4.3f1の`Builds/AuthoringResponsiveV1/NyaForge.exe`でDense Paint計測を実施し、合成131,072三角形・256px画像・30 frameの観測値は target 60fps、平均16.76ms、P95 17.04ms、最大19.17ms、GC0は30回増加だった（`Artifacts/Authoring-20260913-161603-8d5717f2193641c68741d344132aa4c7/dense-paint-profile.json`）。これはRTX 4090・Unity Player一台の観測値で、他GPUや大規模実アバターの性能保証ではない。
+
+同Playerでprivate一時RadDollV3 VRMの全mesh instance取込・頂点編集・native Save/Open・GLB出力を含むAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-161644-c1daec285f28438b870d2e5df732733c/report.json`）。Unity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-161901-669-68d3a0ef75924fdd8f100564689704de/bridge-report.json`）。1000×700 Navigationも **PASS**（`Artifacts/Navigation-20260913-161921-42b24c9738b1421f8e49fb1256e1f1c2/report.json`）。
+
+性能の正式な合否は機種別の測定が必要であり、実マウス・DPI差、UniVRM／VRChat受取、実VRChat内の外観・PhysBones挙動は別受入境界とする。

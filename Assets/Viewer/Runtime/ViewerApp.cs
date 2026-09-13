@@ -114,8 +114,12 @@ namespace Viewer.Runtime
         void Update()
         {
             ReflectAvailability();
-            Application.targetFrameRate = !focused ? 5 : IsPlaying || reloadLoop || dragging || UnityEngine.Time.unscaledTime < renderAwakeUntil ? 60 : 15;
-            UnityEngine.Rendering.OnDemandRendering.renderFrameInterval = !focused && !reloadLoop && UnityEngine.Time.unscaledTime >= renderAwakeUntil ? 12 : 1;
+            // Authoring owns a live viewport and pointer-driven editors. Keep
+            // it responsive while open, but retain the low-power 15 fps idle
+            // cap for the ordinary viewer screen.
+            bool authoringOpen = authoringWorkbench?.IsOpen == true;
+            Application.targetFrameRate = !focused ? 5 : authoringOpen || IsPlaying || reloadLoop || dragging || UnityEngine.Time.unscaledTime < renderAwakeUntil ? 60 : 15;
+            UnityEngine.Rendering.OnDemandRendering.renderFrameInterval = !focused && !authoringOpen && !reloadLoop && UnityEngine.Time.unscaledTime >= renderAwakeUntil ? 12 : 1;
             if (Document != null && Active?.Avatar != null && !IsBusy && focused)
             {
                 if (IsPlaying)
