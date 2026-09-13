@@ -69,6 +69,8 @@ Polygon→skinの疎な材質slot経路を追加確認した。Polygonのslot 3�
 
 同じFeedbackFixV4 Playerで`-VrmExport`を有効にし、private RadDollV3 VRM取込からVRM出力を含むsuiteも **90 checks PASS**（`Artifacts/Authoring-20260914-015524-81f8c35d45504482a12e0bc3f1ba781e/report.json`）だった。これはVRM packageの自動node map／表情・Spring参照回帰とGLB出力の確認であり、UniVRM/VRChat SDK上の実Build & Test、実VRChatアップロード・表示、実アバター衣装の見た目受入とは分けて扱う。
 
+公開候補として`Builds/WindowsV1Candidate/NyaForge.exe`を`Tools/Build-NyaForge.ps1 -Target All`で生成した（Unity **6000.4.3f1**、`Logs/build-all-20260914-020031-025.log`）。同PlayerのAuthoring suiteは **83 checks PASS**（`Artifacts/Authoring-20260914-020044-96ef375d298447a7a1530b960c1a182b/report.json`）、その出力を渡したUnity **2022.3.22f1** Bridgeも **passed**（`Artifacts/BridgeReceiver-20260914-020118-207-eed1de1948f8432e8637a35c29baa87d/bridge-report.json`）。これは公開fixtureでの再現可能な候補ビルド証拠であり、実RadDollV3 sceneのfit・貫通・VRChat内見た目・負荷受入は別カードとして残す。
+
 ## 2026-09-13 NF-V1-09/10 semantic texture contract
 
 `MaterialTextureSlot`／`MaterialTextureSet`を追加し、normal／metallic-roughness画像について、semantic、PNG/JPEG bytes、色空間（linear）、channel契約、UV set、normal scale、glTF samplerをtyped payloadとして保持するようにした。GLB取込は埋め込み画像と安全なローカル相対URIを解決し、native graph binaryは画像をblobとして所有してSave/Openする。GLB出力はnormalTextureとmetallicRoughnessTexture、samplerを再生成し、Coreで画像bytes・channel前提・sampler・native roundtripを確認した。通常のMaterial Bakeはこの情報を落とさないよう事前拒否する。
