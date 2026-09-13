@@ -18,6 +18,10 @@
 
 同じ `Builds/GoalAuditV1/NyaForge.exe` と `Tests/Mcp.Transport/bin/Debug/net10.0/Mcp.Transport.Tests.dll` を使い、外部MCP client→sidecar→live Playerの経路を再検証した。Authoring suiteは **PASS**（report `Artifacts/Authoring-20260913-094343-a58800080c474e95b92512b941da0228/report.json`）。revision固定の標準GLB出力、既存出力先の再実行拒否、文書状態不変を確認した。別実行ではsecondary-motionのstate/play/pause/rebuild/fixed-step/resetも **PASS**（report `Artifacts/Authoring-20260913-094233-ca3a879a1b2a461bb4e129a21e816145/report.json`、`mcp-external.log`）。GLB export成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-094512-926-b7d3cd6946e84fceb09827135c45f99c/bridge-report.json`）。
 
+# 2026-09-13 attachment target retention fix
+
+装着先Dropdownの変更イベントが表示ラベル（`graph · <id>`）をstable object IDとして保持していたため、Refresh後に選択が先頭へ戻る経路を修正した。選択肢のindexから内部IDを保存し、表示ラベルと契約IDを分離した。回帰では異なるskeleton sessionを持つ2つのavatar graph objectを用意し、2番目の対象を選択→Refreshしても選択値が保持されることを確認した。`Builds/AttachmentTargetRetentionV1/NyaForge.exe` の800x600 Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-095046-9bd3831ed6124ff7bfd59ea819ab6f37/report.json`）。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-095216-432-f3e7c59ba0794f8ab91d312b43f99e28/bridge-report.json`）。
+
 # 2026-09-13 native UI acceptance bridge check
 
 提示されたレビュー（基準 `0d1e957`）のP1/P2は、実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。

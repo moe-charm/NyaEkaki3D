@@ -30,7 +30,16 @@ namespace NyaForge.UnityRuntime
             attachmentStatus.style.whiteSpace = WhiteSpace.Normal;
             attachmentPanel.Add(attachmentStatus);
             attachmentTarget = new DropdownField("アバター対象", new List<string> { "対象なし" }, 0) { name = "object-attachment-target" };
-            attachmentTarget.RegisterValueChangedCallback(e => { attachmentTargetChoice = e.newValue; RefreshAttachmentControls(); });
+            attachmentTarget.RegisterValueChangedCallback(e =>
+            {
+                // DropdownField exposes the display label, while the authored
+                // attachment contract uses the stable object ID. Keep the
+                // selected ID so a subsequent Refresh cannot mistake the
+                // label for an ID and fall back to the first avatar.
+                int index = attachmentTarget.choices.IndexOf(e.newValue);
+                attachmentTargetChoice = index >= 0 && index < attachmentTargetIds.Count ? attachmentTargetIds[index] : null;
+                RefreshAttachmentControls();
+            });
             attachmentPanel.Add(attachmentTarget);
             attachmentBone = new DropdownField("BoneId", new List<string> { "対象なし" }, 0) { name = "object-attachment-bone" };
             attachmentPanel.Add(attachmentBone);

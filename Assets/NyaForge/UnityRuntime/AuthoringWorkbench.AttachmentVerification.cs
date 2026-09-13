@@ -28,7 +28,16 @@ namespace NyaForge.UnityRuntime
                     new[] { GraphNode.Plane(planeId, .1f, .1f), GraphNode.Output(outputId), GraphNode.SkeletonNode(skeletonNodeId, skeleton), GraphNode.PoseNode(poseNodeId, pose) },
                     new[] { new GraphEdge(planeId, "mesh", outputId, "mesh"), new GraphEdge(skeletonNodeId, "skeleton", poseNodeId, "skeleton") }, outputId);
                 Execute(AuthoringOperation.AddGraph(targetGraph, targetObjectId));
+                string secondTargetObjectId = Guid.NewGuid().ToString("D"), secondTargetGraphId = Guid.NewGuid().ToString("D");
+                string secondPlaneId = Guid.NewGuid().ToString("D"), secondSkeletonNodeId = Guid.NewGuid().ToString("D"), secondPoseNodeId = Guid.NewGuid().ToString("D"), secondOutputId = Guid.NewGuid().ToString("D");
+                var secondGraph = new AuthoringGraph(secondTargetGraphId,
+                    new[] { GraphNode.Plane(secondPlaneId, .12f, .12f), GraphNode.Output(secondOutputId), GraphNode.SkeletonNode(secondSkeletonNodeId, skeleton), GraphNode.PoseNode(secondPoseNodeId, pose) },
+                    new[] { new GraphEdge(secondPlaneId, "mesh", secondOutputId, "mesh"), new GraphEdge(secondSkeletonNodeId, "skeleton", secondPoseNodeId, "skeleton") }, secondOutputId);
+                Execute(AuthoringOperation.AddGraph(secondGraph, secondTargetObjectId));
                 string sourceHash = Checks.Hash(new byte[] { 1, 7, 3 });
+                importedRigSessions[secondTargetGraphId] = new ImportedRigSession(sourceHash: Checks.Hash(new byte[] { 1, 7, 4 }), skeletonHash: skeleton.ContentHash,
+                    graphId: secondTargetGraphId, skeletonNodeId: secondSkeletonNodeId,
+                    nodes: new Dictionary<int, string> { [0] = boneId }, humanoid: new Dictionary<string, int>());
                 var session = new ImportedRigSession(sourceHash, skeleton.ContentHash, targetGraphId, skeletonNodeId,
                     new Dictionary<int, string> { [0] = boneId }, new Dictionary<string, int>());
                 importedRigSessions[targetGraphId] = session;
@@ -41,7 +50,12 @@ namespace NyaForge.UnityRuntime
                 var attachment = GraphNode.AttachmentNode(Guid.NewGuid().ToString("D"), targetObjectId, boneId, skeleton.ContentHash, new Vec3());
                 Execute(AuthoringOperation.AddNode(attachment));
                 Refresh();
-                Check(attachmentTarget.choices.Count == 1 && attachmentBone.choices.Count == 1, "Attachment GUI did not expose the resolved target and BoneId");
+                Check(attachmentTarget.choices.Count == 2 && attachmentBone.choices.Count == 1, "Attachment GUI did not expose the resolved targets and BoneId");
+                string secondTargetLabel = attachmentTarget.choices[1];
+                attachmentTarget.value = secondTargetLabel;
+                Check(attachmentTarget.value == secondTargetLabel, "Attachment GUI did not accept the second target choice");
+                RefreshAttachmentControls();
+                Check(attachmentTarget.value == secondTargetLabel, "Attachment GUI lost the selected target after Refresh");
                 var expectedRoot = new UnityEngine.Vector3(bone.Head.X, bone.Head.Y, bone.Head.Z);
                 Check(UnityEngine.Vector3.Distance(projection.DisplayObject.transform.position, expectedRoot) < 1e-5f, "Accessory root did not resolve to the target bone rest position");
                 var initialRotation = projection.DisplayObject.transform.localRotation;
