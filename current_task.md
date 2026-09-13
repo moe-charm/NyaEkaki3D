@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09P: V30性能修正後のAuthoring回帰
+
+`pose-arms-up`を持たないfixtureでも性能計測できるようにしたV30 Player `Builds/PerformanceV30/NyaForge.exe`で、Authoring suiteを1080×700で再実行した。**PASS**（`Artifacts/Authoring-20260914-083803-8d33406704a64fa58853d2c5220bdfb6/report.json`、`authoring.png`）。性能計測の修正が制作UI・保存・出力回帰へ影響していないことを確認した。
+
 ## 2026-09-14 NF-V1-09O: V30通常Viewerのforeground性能基準
 
 `Builds/PerformanceV30/NyaForge.exe`へ標準fixture `GeneratedPacks/NyaForgeFixture/current.StandaloneWindows64.json`を明示し、通常ウィンドウを前面化して性能計測を実行した。`pose-arms-up`がないfixtureでは、今回追加した選択規則により`pose-rest`を計測対象とし、レポートへ`performanceClipId`を保存する。
