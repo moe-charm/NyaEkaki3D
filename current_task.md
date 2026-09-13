@@ -1,5 +1,15 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09L: 現行HEADのReleaseCandidateV29再確認
+
+前回のレビュー再照合後、現行HEAD `dd76473` からWindows Player `Builds/ReleaseCandidateV29/NyaForge.exe`を別出力した。既存Playerを上書きせず、Authoring suiteを1画面ずつ実行した。
+
+- 1080×700: **PASS**（`Artifacts/Authoring-20260914-081243-3ee4984084fb4b05828bbea7316d6edb/report.json`、`authoring.png`）
+- 1600×1000: **PASS**（`Artifacts/Authoring-20260914-081548-c6b6d08ca3f84bef9b44a8614b4fcc8c/report.json`、`authoring.png`）
+- 同じ1080×700成果物の衣装packageをUnity **2022.3.22f1** Bridgeへ渡し、**16 checks PASS**（`Artifacts/BridgeReceiver-20260914-081913-413-2c85882368184553872e90c8fbfdaa5e/bridge-report.json`）。
+
+2画面同時実行ではPlayer検証が競合して120秒でタイムアウトしたが、手順どおり単独実行で完了した。これは検証ランナーの実行条件差であり、製品の失敗とは扱わない。実EditorWindowのマウス・IME・Explorer、衣装全周の貫通ゼロ・見た目、VRChat Build & Test／実機表示は未受入として残る。
+
 ## 2026-09-14 NF-V1-09K: 9855d43衣装レビュー再照合と実RadDollV3受け入れ
 
 提示された`9855d43`基準のP1（avatar移動後の配置、衣装更新時のownership、UV1欠落）とP2（sparse material slot、MR係数、Cuff winding、sampler variant、割当読込）を現行HEAD `4c1cd3c5ed35f57b450a92d278606ad1b71d74aa`へ再照合した。後続実装と回帰で解消済みのため、本番コードの重複修正は行っていない。詳細は[レビュー再照合](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-4c1cd3c.md)へ固定した。
