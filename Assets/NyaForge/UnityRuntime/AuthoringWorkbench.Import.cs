@@ -128,7 +128,11 @@ namespace NyaForge.UnityRuntime
             finalNode = AppendImportedMaterials(nodes, edges, finalNode, imported.Mesh.Submeshes.Count, imported.Materials, materialWarnings);
             nodes.Add(GraphNode.Output(outputId)); edges.Add(new GraphEdge(finalNode, "mesh", outputId, "mesh"));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
-            var diagnostics = imported.Diagnostics.Count == 0 ? null : new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, null, imported.Diagnostics);
+            // Persist the source locator even when the selected mesh has no
+            // lossy-feature warnings. This keeps shared-resource identity
+            // available after native Save/Open instead of making it depend on
+            // whether a diagnostic happened to be emitted.
+            var diagnostics = new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, null, imported.Diagnostics);
             var candidate = new ImportMetadataCandidate(null, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm, diagnostics);
             string display = (string.IsNullOrWhiteSpace(sourceName) ? "mesh " + meshIndex : sourceName) +
                 (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") +
@@ -157,7 +161,7 @@ namespace NyaForge.UnityRuntime
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
             var sourceCandidate = GlbSourceSkinImporter.ReadFromDirectory(bytes, meshIndex, skinIndex, sourceDirectory);
             var rigSession = ImportedRigSession.Create(imported, vrm, graph.GraphId, skeletonId).WithSourceSkin(sourceCandidate.Skin, sourceCandidate.Binding);
-            var diagnostics = imported.Diagnostics.Count == 0 ? null : new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, imported.SkinIndex, imported.Diagnostics);
+            var diagnostics = new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, imported.SkinIndex, imported.Diagnostics);
             var candidate = new ImportMetadataCandidate(rigSession, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm, diagnostics);
             string display = (string.IsNullOrWhiteSpace(sourceName) ? "mesh " + meshIndex : sourceName) +
                 " · bone " + imported.Skeleton.Bones.Count + " · weight " + imported.Binding.Weights.Count +

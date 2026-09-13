@@ -1850,3 +1850,10 @@ Coreは **477 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 再利用probeを実際のSDK 3.7.6 projectで再実行し、`status=verified`（probe `status=passed`）を確認した。非対応のdampingへ非ゼロ値を渡すケースも、コンポーネント生成前に`SDK_MEMBER_MISSING`で拒否されることを回帰した。レポートは `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-script-20260913-final2.json`。SDK DLL、対象project、private素材はリポジトリへ追加しない。
 
 Core／Windows Player／Unity Bridgeの直前PASS証跡は前項のPhysBones SDK受け取り写像を正とする。実アバターの揺れ、VRChat Build & Test／実機、Quest制約、実マウス／DPI差は未完了境界として継続する。
+# 2026-09-13 clean GLBのsource locator保持
+
+取込時にlossy診断が0件のGLBでも、`ImportedGlbDiagnostics`レコードを必ず生成して保存するようにした。これによりsource hash・選択mesh index・skin indexが診断の有無に依存せずnative projectへ残り、共有meshの出所をSave/Open後も追跡できる。Playerの取込診断画面には、空診断レコードのlocatorと「診断項目なし」を確認する回帰を追加し、Coreでは空診断locatorのsnapshot Save/Openを検証した。
+
+Coreは **477 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-212d7df90b524f1383c60eda06d182e2`）。Unity 6000.4.3f1のWindows Player `Builds/ImportLocatorV2/NyaForge.exe`はビルド成功（`Logs/build-all-20260913-174750-928.log`）。Authoring suiteは **PASS・81 checks**（`Artifacts/Authoring-20260913-174813-4363023cd488480fa353aece07713e87/report.json`、画面`authoring.png`）で、clean GLB locator回帰を含む。同成果物をUnity **2022.3.22f1** Bridgeへ渡した受け取り検証も **PASS**（`Artifacts/BridgeReceiver-20260913-174848-448-a38f7b33920a452997438a283373cc3e/bridge-report.json`）。
+
+safe resource dedup、異なるsource skeletonの結合、実素材・実マウス／DPI差、UniVRM／VRChat Build & Test・実機での見た目とPhysBones挙動は引き続き別受入境界とする。

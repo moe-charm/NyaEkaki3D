@@ -38,6 +38,12 @@ internal static partial class Program
             workspace.SetAttachments(new ProjectAttachments(new System.Collections.Generic.Dictionary<string, byte[]> { [ProjectAttachments.ImportDiagnostics] = ImportedGlbDiagnosticsCodec.Write(new[] { record }) }));
             var directory = Dir("import-diagnostics-snapshot"); ProjectStore.Save(directory, workspace, 0); var reopened = ProjectStore.Open(directory);
             var inspected = AuthoringGraphReader.Read(reopened, reopened.InstanceId); Equal(1, inspected["graph"]["importDiagnostics"]["items"].Count()); Equal("ANIMATIONS_NOT_RETAINED", (string)inspected["graph"]["importDiagnostics"]["items"][0]["code"]); False(reopened.IsDirty);
+
+            var clean = new ImportedGlbDiagnostics(graph.GraphId, new string('f', 64), 7, 3, Array.Empty<GlbImportDiagnostic>());
+            workspace.SetAttachments(new ProjectAttachments(new System.Collections.Generic.Dictionary<string, byte[]> { [ProjectAttachments.ImportDiagnostics] = ImportedGlbDiagnosticsCodec.Write(new[] { clean }) }));
+            var cleanDirectory = Dir("clean-import-locator-snapshot"); ProjectStore.Save(cleanDirectory, workspace, 0); var cleanReopened = ProjectStore.Open(cleanDirectory);
+            var cleanRecord = ImportedGlbDiagnosticsCodec.Read(cleanReopened.Attachments.Read(ProjectAttachments.ImportDiagnostics))[graph.GraphId];
+            Equal(new string('f', 64), cleanRecord.SourceHash); Equal(7, cleanRecord.MeshIndex); Equal(3, cleanRecord.SkinIndex.Value); Equal(0, cleanRecord.Diagnostics.Count); False(cleanReopened.IsDirty);
         });
     }
 }
