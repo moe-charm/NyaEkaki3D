@@ -2,7 +2,7 @@
 
 更新: 2026-09-14。検証対象コード: `main`（`3d5de41`）。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership marker・複数package管理・semantic texture previewの実装が進んでいる。Downloads版原案の再確認結果は[current_task](../current_task.md)へ記録した。
 
-本書は持込「NyaForge Windows v1 開発計画」をコード照合して修正した実行計画。受入済み報告ではない。製品全体の目標・C0〜C5の要件は[設計v2](NyaForge-Authoring-Design2.md)を維持し、本書はWindows衣装制作v1へ至る着手順を定める。v1だけの合格を製品全体や進行中goalの完了へ読み替えない。直近の状態は[current_task](../current_task.md)。現行mainではCore 493 passed / 0 failed、Windows Playerのsemantic texture preview、private RadDollV3全mesh import smoke、実SDKのRadDollV3 Skirt chain PhysBone設定probe、実FBXへのskinned-clothing package初回・再適用smoke、semantic textureを含む合成Unity Bridgeの衣装package回帰まで確認済みで、実マウス・native保存／再読込・Build & Test・実VRChatは未受入である。
+本書は持込「NyaForge Windows v1 開発計画」をコード照合して修正した実行計画。受入済み報告ではない。製品全体の目標・C0〜C5の要件は[設計v2](NyaForge-Authoring-Design2.md)を維持し、本書はWindows衣装制作v1へ至る着手順を定める。v1だけの合格を製品全体や進行中goalの完了へ読み替えない。直近の状態は[current_task](../current_task.md)。現行mainではCore 493 passed / 0 failed、Windows Playerのsemantic texture preview、private RadDollV3全mesh import smoke、実SDKのRadDollV3 Skirt chain PhysBone設定probe、実FBXへのskinned-clothing package初回・再適用・native roundtrip smoke、semantic textureを含む合成Unity Bridgeの衣装package回帰まで確認済みで、実マウス・実EditorWindow・fit／貫通・見た目・Build & Test・実VRChatは未受入である。
 
 ## 1. 採用判断と遠回りの修正
 
