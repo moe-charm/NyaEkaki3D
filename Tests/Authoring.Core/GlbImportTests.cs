@@ -130,6 +130,22 @@ internal static partial class Program
             var imported = GlbImporter.Read(BuildGlbContainer(Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), combinedBin));
             Equal(1, imported.Materials.Count); var material = imported.Materials[0]; True(material.HasTextureReferences); True(material.HasEmbeddedBaseColorImage); Equal(0, material.BaseColorImageIndex); Equal("image/png", material.BaseColorImageMimeType); True(image.SequenceEqual(material.CopyBaseColorImageBytes()));
         });
+        Test("GLB importer resolves a safe local external base color image", () =>
+        {
+            string directory = Dir("external-image"); string imagePath = Path.Combine(directory, "textures", "red.png"); Directory.CreateDirectory(Path.GetDirectoryName(imagePath));
+            var image = PaintPng.Encode(new PaintImage(2, 1, new Rgba32(220, 30, 60, 255))); File.WriteAllBytes(imagePath, image);
+            var root = JObject.Parse(ReadJsonChunk(BuildGlb()));
+            root["images"] = new JArray(new JObject { ["uri"] = "textures/red.png", ["mimeType"] = "image/png" });
+            root["textures"] = new JArray(new JObject { ["source"] = 0 });
+            root["materials"] = new JArray(new JObject { ["pbrMetallicRoughness"] = new JObject { ["baseColorTexture"] = new JObject { ["index"] = 0 } } });
+            ((JObject)((JArray)((JObject)((JArray)root["meshes"]!)[0]!) ["primitives"]!)[0]!) ["material"] = 0;
+            var imported = GlbImporter.ReadFromDirectory(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None)), 0, directory);
+            var material = imported.Materials.Single(); True(material.HasEmbeddedBaseColorImage); Equal("image/png", material.BaseColorImageMimeType); True(image.SequenceEqual(material.CopyBaseColorImageBytes()));
+            root["images"]![0]!["uri"] = "../outside.png";
+            Expect("UNSUPPORTED_FORMAT", () => GlbImporter.ReadFromDirectory(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None)), 0, directory));
+            File.WriteAllBytes(Path.Combine(directory, "textures", "red.webp"), image); root["images"]![0]!["uri"] = "textures/red.webp"; root["images"]![0]!["mimeType"] = "image/webp";
+            Expect("UNSUPPORTED_FORMAT", () => GlbImporter.ReadFromDirectory(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None)), 0, directory));
+        });
         Test("GLB importer allows an unskinned accessory beside a skinned mesh", () =>
         {
             var root = JObject.Parse(ReadJsonChunk(BuildGlb()));

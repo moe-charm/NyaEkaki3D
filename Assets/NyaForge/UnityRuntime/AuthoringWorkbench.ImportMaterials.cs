@@ -40,7 +40,7 @@ namespace NyaForge.UnityRuntime
                     try { image = DecodeEmbeddedImage(material); }
                     catch (AuthoringException error)
                     {
-                        string message = "material " + material.SourceMaterialIndex + " の埋め込みbase color画像をnative Paintへ保持できないため省略しました（" + error.Code + "）。";
+                        string message = "material " + material.SourceMaterialIndex + " のbase color画像をnative Paintへ保持できないため省略しました（" + error.Code + "）。";
                         warnings?.Add(message); Debug.LogWarning(message);
                         continue;
                     }
@@ -56,21 +56,21 @@ namespace NyaForge.UnityRuntime
         static PaintImage DecodeEmbeddedImage(GlbMaterialSource material)
         {
             byte[] bytes = material.CopyBaseColorImageBytes();
-            if (bytes == null || bytes.Length == 0) throw new AuthoringException("INVALID_IMAGE", "埋め込みbase color画像が空です。");
+            if (bytes == null || bytes.Length == 0) throw new AuthoringException("INVALID_IMAGE", "base color画像が空です。");
             Texture2D texture = null;
             try
             {
                 texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, false);
-                if (!texture.LoadImage(bytes, false)) throw new AuthoringException("INVALID_IMAGE", "埋め込みbase color画像を読み込めませんでした。");
+                if (!texture.LoadImage(bytes, false)) throw new AuthoringException("INVALID_IMAGE", "base color画像を読み込めませんでした。");
                 if (texture.width < 1 || texture.height < 1)
-                    throw new AuthoringException("IMAGE_DIMENSION_EXCEEDED", "埋め込みbase color画像の寸法が不正です（" + texture.width + "x" + texture.height + "）。");
+                    throw new AuthoringException("IMAGE_DIMENSION_EXCEEDED", "base color画像の寸法が不正です（" + texture.width + "x" + texture.height + "）。");
                 // Keep the native Paint budget deterministic while retaining the
                 // visual reference of common 2K/4K avatar textures. Decode only
                 // up to a bounded source size, then downsample in CPU space so
                 // the persisted project owns the resulting pixels and never
                 // depends on the original GLB after Save/Open.
                 if (texture.width > 8192 || texture.height > 8192)
-                    throw new AuthoringException("IMAGE_DIMENSION_EXCEEDED", "埋め込みbase color画像は8192px以内で読み込みます（" + texture.width + "x" + texture.height + "）。");
+                    throw new AuthoringException("IMAGE_DIMENSION_EXCEEDED", "base color画像は8192px以内で読み込みます（" + texture.width + "x" + texture.height + "）。");
                 var colors = texture.GetPixels32();
                 int targetWidth = texture.width, targetHeight = texture.height;
                 if (targetWidth > 1024 || targetHeight > 1024)

@@ -49,7 +49,8 @@ namespace NyaForge.UnityRuntime
         {
             if (workspace == null || (!workspace.Document.IsEmpty && workspace.Document.ActiveObject.IsStaticProfile)) throw new InvalidOperationException("GLB取り込みは空またはgraph projectで実行してください。");
             if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("GLBファイルを選択してください。");
-            var bytes = ReadModelFile(path);
+            string fullPath = Path.GetFullPath(path); string sourceDirectory = Path.GetDirectoryName(fullPath);
+            var bytes = ReadModelFile(fullPath);
             VrmMetadata vrm = VrmMetadataReader.ContainsVrm(bytes) ? VrmMetadataReader.Read(bytes) : null;
             var inventory = GlbSceneInventoryReader.Read(bytes);
             int instanceIndex = SelectedModelInstanceIndex;
@@ -75,10 +76,10 @@ namespace NyaForge.UnityRuntime
                     if (linkedSkins.Length > 1 && !linkedSkins.Contains(skinIndex)) throw new InvalidOperationException("選択meshに対応しないskin indexです。node instanceを指定してください。");
                 }
                 var skinnedInstanceWorld = instanceIndex >= 0 ? inventory.Instances[instanceIndex].WorldTransform : null;
-                ImportSkinnedModel(bytes, vrm, meshIndex, skinIndex, skinnedInstanceWorld); return;
+                ImportSkinnedModel(bytes, vrm, meshIndex, skinIndex, skinnedInstanceWorld, sourceDirectory); return;
             }
             var instanceWorld = instanceIndex >= 0 ? inventory.Instances[instanceIndex].WorldTransform : null;
-            var imported = instanceWorld == null ? GlbImporter.Read(bytes, meshIndex) : GlbImporter.Read(bytes, meshIndex, instanceWorld);
+            var imported = GlbImporter.ReadFromDirectory(bytes, meshIndex, sourceDirectory, instanceWorld);
             string sourceId = Guid.NewGuid().ToString("D"), editId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
             // Static accessories are still authored graph objects. Keep an explicit
             // rest-space EditMesh stage so an imported choker or clothing piece can
@@ -104,9 +105,9 @@ namespace NyaForge.UnityRuntime
             Refresh(); SetStatus("GLBを取り込みました。mesh " + meshIndex + " · " + (imported.Morphs == null ? " morphなし" : " morph " + imported.Morphs.Targets.Count + "個") + (vrm == null ? "" : " · " + vrm.Format + " " + vrm.Title + " humanoid " + vrm.HumanoidNodes.Count + " expression " + vrm.Expressions.Count + " spring " + vrm.SpringBones.Count + "/" + vrm.SpringColliderGroups.Count) + " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(imported.Diagnostics) + ImportMaterialWarningSummary(materialWarnings));
         }
 
-        void ImportSkinnedModel(byte[] bytes, VrmMetadata vrm, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null)
+        void ImportSkinnedModel(byte[] bytes, VrmMetadata vrm, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null, string sourceDirectory = null)
         {
-            var imported = instanceWorldTransform == null ? GlbSkinImporter.Read(bytes, meshIndex, skinIndex) : GlbSkinImporter.Read(bytes, meshIndex, skinIndex, instanceWorldTransform); string sourceId = Guid.NewGuid().ToString("D"), editId = Guid.NewGuid().ToString("D"), skeletonId = Guid.NewGuid().ToString("D"), bindId = Guid.NewGuid().ToString("D"), poseId = Guid.NewGuid().ToString("D"), deformId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
+            var imported = GlbSkinImporter.ReadFromDirectory(bytes, meshIndex, skinIndex, sourceDirectory, instanceWorldTransform); string sourceId = Guid.NewGuid().ToString("D"), editId = Guid.NewGuid().ToString("D"), skeletonId = Guid.NewGuid().ToString("D"), bindId = Guid.NewGuid().ToString("D"), poseId = Guid.NewGuid().ToString("D"), deformId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
             // Keep an explicit rest-space EditMesh before binding/deformation so a newly
             // imported avatar is immediately editable from the same vertex workflow as a
             // hand-authored graph. The binding topology remains valid for offset-only edits.
@@ -122,7 +123,7 @@ namespace NyaForge.UnityRuntime
             finalNode = AppendImportedMaterials(nodes, edges, deformId, imported.Mesh.Submeshes.Count, imported.Materials, materialWarnings);
             edges.Add(new GraphEdge(finalNode, "mesh", outputId, "mesh"));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
-            var sourceCandidate = GlbSourceSkinImporter.Read(bytes, meshIndex, skinIndex);
+            var sourceCandidate = GlbSourceSkinImporter.ReadFromDirectory(bytes, meshIndex, skinIndex, sourceDirectory);
             var rigSession = ImportedRigSession.Create(imported, vrm, graph.GraphId, skeletonId)
                 .WithSourceSkin(sourceCandidate.Skin, sourceCandidate.Binding);
             var diagnostics = imported.Diagnostics.Count == 0 ? null : new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, imported.SkinIndex, imported.Diagnostics);

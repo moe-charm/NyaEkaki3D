@@ -38,7 +38,13 @@ namespace NyaForge.Authoring.Import
             return Read(GlbDocumentReader.Read(bytes), meshIndex, skinIndex);
         }
 
-        static GlbSourceSkinImportResult Read(GlbDocument document, int meshIndex, int skinIndex)
+        /// <summary>Reads source skin data and resolves supported local external images beside the source model.</summary>
+        public static GlbSourceSkinImportResult ReadFromDirectory(byte[] bytes, int meshIndex, int skinIndex, string sourceDirectory)
+        {
+            return Read(GlbDocumentReader.Read(bytes), meshIndex, skinIndex, sourceDirectory);
+        }
+
+        static GlbSourceSkinImportResult Read(GlbDocument document, int meshIndex, int skinIndex, string sourceDirectory = null)
         {
             var root = document.Root; var meshes = Array(root, "meshes");
             Checks.Require(meshIndex >= 0 && meshIndex < meshes.Count && meshes[meshIndex] is JObject, "INVALID_IMPORT", "Source skin mesh index is out of range.");
@@ -56,7 +62,7 @@ namespace NyaForge.Authoring.Import
                 var attributes = primitive["attributes"] as JObject; Checks.Require(attributes != null, "INVALID_IMPORT", "Source primitive attributes are required.");
                 foreach (var property in attributes.Properties().Where(p => p.Name.StartsWith("JOINTS_", StringComparison.Ordinal) || p.Name.StartsWith("WEIGHTS_", StringComparison.Ordinal)).ToArray()) property.Remove();
             }
-            var meshSource = GlbImporter.ReadDocument(new GlbDocument(staticRoot, document.Bin, document.SourceHash), meshIndex);
+            var meshSource = GlbImporter.ReadDocument(new GlbDocument(staticRoot, document.Bin, document.SourceHash), meshIndex, null, sourceDirectory);
             var binding = ReadWeights(document, skin, meshSource.Mesh, bufferLength, meshIndex);
             return new GlbSourceSkinImportResult(document.SourceHash, meshSource, skin, binding);
         }

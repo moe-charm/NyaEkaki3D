@@ -60,18 +60,28 @@ namespace NyaForge.Authoring.Import
             return ReadDocument(GlbDocumentReader.Read(bytes), meshIndex, instanceWorld);
         }
 
+        /// <summary>Reads a mesh and resolves supported local external images beside the source model.</summary>
+        public static ImportedMeshSource ReadFromDirectory(byte[] bytes, int meshIndex, string sourceDirectory, SourceAffine instanceWorld = null)
+        {
+            if (instanceWorld == null) return ReadDocument(GlbDocumentReader.Read(bytes), meshIndex, null, sourceDirectory);
+            return ReadDocument(GlbDocumentReader.Read(bytes), meshIndex, instanceWorld, sourceDirectory);
+        }
+
         internal static ImportedMeshSource ReadDocument(GlbDocument document) { return ReadDocument(document, 0); }
 
         internal static ImportedMeshSource ReadDocument(GlbDocument document, int meshIndex)
-            => ReadDocument(document, meshIndex, null);
+            => ReadDocument(document, meshIndex, null, null);
 
         internal static ImportedMeshSource ReadDocument(GlbDocument document, int meshIndex, SourceAffine instanceWorld)
+            => ReadDocument(document, meshIndex, instanceWorld, null);
+
+        internal static ImportedMeshSource ReadDocument(GlbDocument document, int meshIndex, SourceAffine instanceWorld, string sourceDirectory)
         {
             Checks.Require(document != null, "INVALID_IMPORT", "GLB document is required.");
-            return Parse(document.Root, document.Bin, document.SourceHash, meshIndex, instanceWorld);
+            return Parse(document.Root, document.Bin, document.SourceHash, meshIndex, instanceWorld, sourceDirectory);
         }
 
-        static ImportedMeshSource Parse(JObject root, byte[] bin, string sourceHash, int meshIndex, SourceAffine instanceWorld)
+        static ImportedMeshSource Parse(JObject root, byte[] bin, string sourceHash, int meshIndex, SourceAffine instanceWorld, string sourceDirectory)
         {
             Checks.Require((string)root["asset"]?["version"] == "2.0", "UNSUPPORTED_FORMAT", "GLB asset version must be 2.0.");
             GlbImportDiagnostics.RequireSupportedRequiredExtensions(root);
@@ -109,8 +119,8 @@ namespace NyaForge.Authoring.Import
                 mesh = transformed.Mesh; morphs = transformed.Morphs;
             }
             var diagnostics = GlbImportDiagnostics.ForMesh(root, meshToken);
-            var materials = GlbMaterialSourceReader.Read(root, meshToken, parts.Select(part => part.MaterialIndex).ToArray(), bin, views);
-            var warnings = new List<string> { "Imported as " + parts.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " static triangle primitive(s); original glTF scene hierarchy, texture/image resources and skin bindings are not retained. Basic PBR material factors are retained when a primitive material is present." };
+            var materials = GlbMaterialSourceReader.Read(root, meshToken, parts.Select(part => part.MaterialIndex).ToArray(), bin, views, sourceDirectory);
+            var warnings = new List<string> { "Imported as " + parts.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " static triangle primitive(s); original glTF scene hierarchy, unsupported texture/image resources and skin bindings are not retained. Basic PBR material factors and supported local/embedded base-color images are retained when a primitive material is present." };
             warnings.AddRange(GlbImportDiagnostics.WarningText(diagnostics));
             if (instanceWorld != null) warnings.Add("Selected node instance world transform was applied to mesh positions, normals, tangents and POSITION morph deltas.");
             if (unsupportedNormalMorph || unsupportedTangentMorph) warnings.Add("POSITION morph targets were retained; normal/tangent morph deltas are not imported because the base mesh lacks the matching attribute.");

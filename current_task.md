@@ -1,3 +1,9 @@
+# 2026-09-13 external base-color image import
+
+GLB/VRM取込へ、モデルファイルと同じフォルダ配下の安全な相対URIによるbase-color画像を追加した。外部画像はnative Paintへ即時コピーしてSave/Open後も元ファイルへ依存しない。モデルフォルダ外への`..`、data URI、remote URI、欠落ファイル、16MiB超は明示エラーにする。埋め込み画像と既存のサイズ縮小経路は維持し、警告文と交換仕様書を実際の保持範囲へ更新した。
+
+Core回帰は **469 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-70d826e4f3034f6783a84eb881a41b34`）。新規テストでローカルPNGの読込・MIME・バイト一致、path traversal、非対応WebP拒否を確認した。Windows Player `Builds/ExternalImageV3/NyaForge.exe` の800x600 Authoring suiteは **PASS、79 checks**（`Artifacts/Authoring-20260913-121649-4baab4f47e744278af3c3fc1cab1922f/report.json`）、Unity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-121721-131-45d72974b08d46ffaf28e75b0c800dd6/bridge-report.json`）。Navigationは同じ実行内容を先行PlayerでPASS済み（`Artifacts/Navigation-20260913-121452-c9e3477d673549bd92a4f9e6b5b2b8a8/report.json`）。実モデルの外部URIは未観測のため、次回はprivate一時入力でこの経路を目視確認する。標準VRM出力、完全な追加texture map/animation/VRM拡張保持、実VRChat内受入は引き続き未完了境界とする。
+
 # 2026-09-13 Windows navigation smoke recheck
 
 最新の`Builds/ExportReportV4/NyaForge.exe`で`Tools/Test-NyaForgeNavigation.ps1 -BuildName ExportReportV4 -Width 1280 -Height 800`を実行し、**PASS**（`Artifacts/Navigation-20260913-120737-e54944adc0dc4bd89cc03ea2a5cf7060/report.json`）。パック選択、キャンセル時の現状態保持、不正パス保持、named sessionの保存/再読込、utility panelの折り畳み、制作画面への遷移とusable viewportを確認した。これはスクリプト化されたWindows Playerナビゲーション証拠で、実マウスの個体差・DPI設定差は別の手動受入境界とする。公開READMEにもGLBレポートの`glbHash`照合方法を追記した。

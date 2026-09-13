@@ -80,7 +80,13 @@ namespace NyaForge.Authoring.Import
             return Parse(GlbDocumentReader.Read(bytes), meshIndex, skinIndex, instanceWorldTransform);
         }
 
-        static ImportedSkinnedMeshSource Parse(GlbDocument document, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null)
+        /// <summary>Reads a skinned mesh and resolves supported local external images beside the source model.</summary>
+        public static ImportedSkinnedMeshSource ReadFromDirectory(byte[] bytes, int meshIndex, int skinIndex, string sourceDirectory, SourceAffine instanceWorldTransform = null)
+        {
+            return Parse(GlbDocumentReader.Read(bytes), meshIndex, skinIndex, instanceWorldTransform, sourceDirectory);
+        }
+
+        static ImportedSkinnedMeshSource Parse(GlbDocument document, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null, string sourceDirectory = null)
         {
             var root = document.Root;
             GlbImportDiagnostics.RequireSupportedRequiredExtensions(root);
@@ -109,7 +115,7 @@ namespace NyaForge.Authoring.Import
                 var attributes = primitive["attributes"] as JObject; Checks.Require(attributes != null, "INVALID_IMPORT", "GLB primitive attributes are required.");
                 foreach (var property in attributes.Properties().Where(p => p.Name.StartsWith("JOINTS_", StringComparison.Ordinal) || p.Name.StartsWith("WEIGHTS_", StringComparison.Ordinal)).ToArray()) property.Remove();
             }
-            var baseSource = GlbImporter.ReadDocument(new GlbDocument(staticRoot, document.Bin, document.SourceHash), meshIndex);
+            var baseSource = GlbImporter.ReadDocument(new GlbDocument(staticRoot, document.Bin, document.SourceHash), meshIndex, null, sourceDirectory);
             var rawWeights = new List<SkinBinding.VertexWeightInput>(); int vertexOffset = 0;
             for (int p = 0; p < primitives.Count; p++)
             {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using NyaForge.Authoring.Graph;
 using Newtonsoft.Json.Linq;
@@ -37,7 +38,7 @@ namespace NyaForge.Authoring.Import
 
     internal static class GlbMaterialSourceReader
     {
-        internal static IReadOnlyList<GlbMaterialSource> Read(JObject root, JObject mesh, IReadOnlyList<int> materialIndices, byte[] bin, JArray views)
+        internal static IReadOnlyList<GlbMaterialSource> Read(JObject root, JObject mesh, IReadOnlyList<int> materialIndices, byte[] bin, JArray views, string sourceDirectory = null)
         {
             var materials = root["materials"] as JArray;
             if (materials == null || materials.Count == 0 || materialIndices == null || materialIndices.Count == 0)
@@ -50,12 +51,12 @@ namespace NyaForge.Authoring.Import
                 Checks.Require(sourceIndex < materials.Count, "INVALID_IMPORT", "GLB primitive material reference is out of range.");
                 var token = materials[sourceIndex] as JObject;
                 Checks.Require(token != null, "INVALID_IMPORT", "GLB material is invalid.");
-                result.Add(Parse(submesh, sourceIndex, token, root, bin, views));
+                result.Add(Parse(submesh, sourceIndex, token, root, bin, views, sourceDirectory));
             }
             return new ReadOnlyCollection<GlbMaterialSource>(result);
         }
 
-        static GlbMaterialSource Parse(int submeshIndex, int sourceIndex, JObject token, JObject root, byte[] bin, JArray views)
+        static GlbMaterialSource Parse(int submeshIndex, int sourceIndex, JObject token, JObject root, byte[] bin, JArray views, string sourceDirectory)
         {
             string name = token["name"]?.Type == JTokenType.String ? (string)token["name"] : "Material " + sourceIndex.ToString(CultureInfo.InvariantCulture);
             Checks.Require(name.Length <= 256, "INVALID_IMPORT", "GLB material name is too long.");
@@ -77,12 +78,12 @@ namespace NyaForge.Authoring.Import
             float cutoff = Number(token["alphaCutoff"], .5f, "alphaCutoff");
             bool textures = pbr?["baseColorTexture"] != null || pbr?["metallicRoughnessTexture"] != null || token["normalTexture"] != null || token["occlusionTexture"] != null || token["emissiveTexture"] != null;
             int imageIndex; string imageMimeType; byte[] imageBytes;
-            ReadBaseColorImage(root, pbr?["baseColorTexture"] as JObject, bin, views, out imageIndex, out imageMimeType, out imageBytes);
+            ReadBaseColorImage(root, pbr?["baseColorTexture"] as JObject, bin, views, sourceDirectory, out imageIndex, out imageMimeType, out imageBytes);
             return new GlbMaterialSource(submeshIndex, sourceIndex, name,
                 new MaterialParameters(new Vec4(baseColor[0], baseColor[1], baseColor[2], baseColor[3]), metallic, roughness, new Vec3(emission[0], emission[1], emission[2]), alpha, cutoff), textures, imageIndex, imageMimeType, imageBytes);
         }
 
-        static void ReadBaseColorImage(JObject root, JObject textureReference, byte[] bin, JArray views, out int imageIndex, out string mimeType, out byte[] bytes)
+        static void ReadBaseColorImage(JObject root, JObject textureReference, byte[] bin, JArray views, string sourceDirectory, out int imageIndex, out string mimeType, out byte[] bytes)
         {
             imageIndex = -1; mimeType = ""; bytes = null;
             if (textureReference == null) return;
@@ -96,7 +97,14 @@ namespace NyaForge.Authoring.Import
             imageIndex = (int)texture["source"]; Checks.Require(imageIndex >= 0 && imageIndex < images.Count, "INVALID_IMPORT", "GLB texture source index is out of range.");
             var image = images[imageIndex] as JObject; Checks.Require(image != null, "INVALID_IMPORT", "GLB image is invalid.");
             mimeType = image["mimeType"]?.Type == JTokenType.String ? (string)image["mimeType"] : "";
-            if (image["bufferView"] == null) return; // external URI: report the reference but do not fetch it.
+            if (image["bufferView"] == null)
+            {
+                var uriToken = image["uri"];
+                if (uriToken == null) return;
+                Checks.Require(uriToken.Type == JTokenType.String && !string.IsNullOrWhiteSpace((string)uriToken), "INVALID_IMPORT", "GLB external image URI is invalid.");
+                bytes = ReadExternalImage(sourceDirectory, (string)uriToken, ref mimeType);
+                return;
+            }
             Checks.Require(image["bufferView"].Type == JTokenType.Integer, "INVALID_IMPORT", "GLB image bufferView is invalid.");
             int viewIndex = (int)image["bufferView"]; Checks.Require(viewIndex >= 0 && viewIndex < views.Count, "INVALID_IMPORT", "GLB image bufferView is out of range.");
             var view = views[viewIndex] as JObject; Checks.Require(view != null, "INVALID_IMPORT", "GLB image bufferView is invalid.");
@@ -104,6 +112,35 @@ namespace NyaForge.Authoring.Import
             int length = Integer(view["byteLength"], "image byteLength");
             Checks.Require(offset >= 0 && length > 0 && length <= 16 * 1024 * 1024 && (long)offset + length <= bin.Length, "IMAGE_BUDGET_EXCEEDED", "Embedded GLB image exceeds the image budget or BIN chunk.");
             bytes = new byte[length]; Buffer.BlockCopy(bin, offset, bytes, 0, length);
+        }
+
+        static byte[] ReadExternalImage(string sourceDirectory, string uri, ref string mimeType)
+        {
+            Checks.Require(!string.IsNullOrWhiteSpace(sourceDirectory), "EXTERNAL_RESOURCE_UNAVAILABLE", "An external image requires the source model directory.");
+            Checks.Require(uri.IndexOf('\0') < 0 && !uri.StartsWith("data:", StringComparison.OrdinalIgnoreCase), "UNSUPPORTED_FORMAT", "Data URI images are not supported; use a local relative image file.");
+            Checks.Require(!uri.Contains("://", StringComparison.Ordinal), "UNSUPPORTED_FORMAT", "Remote image URIs are not supported; use a local relative image file.");
+            string root = Path.GetFullPath(sourceDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            string relative = uri.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+            string full;
+            try { full = Path.GetFullPath(Path.Combine(root, relative)); }
+            catch (Exception error) when (error is ArgumentException || error is NotSupportedException) { throw new AuthoringException("INVALID_IMPORT", "External image URI is not a valid local path."); }
+            Checks.Require(full.StartsWith(root, StringComparison.OrdinalIgnoreCase), "UNSUPPORTED_FORMAT", "External image URI escapes the model directory.");
+            var info = new FileInfo(full); Checks.Require(info.Exists, "EXTERNAL_RESOURCE_MISSING", "External base color image was not found: " + uri);
+            Checks.Require(info.Length > 0 && info.Length <= 16 * 1024 * 1024, "IMAGE_BUDGET_EXCEEDED", "External base color image exceeds the 16 MiB image budget.");
+            if (string.IsNullOrWhiteSpace(mimeType)) mimeType = MimeType(Path.GetExtension(full));
+            Checks.Require(mimeType == "image/png" || mimeType == "image/jpeg", "UNSUPPORTED_FORMAT", "Only PNG and JPEG external base color images are supported.");
+            return File.ReadAllBytes(full);
+        }
+
+        static string MimeType(string extension)
+        {
+            switch ((extension ?? "").ToLowerInvariant())
+            {
+                case ".png": return "image/png";
+                case ".jpg":
+                case ".jpeg": return "image/jpeg";
+                default: return "";
+            }
         }
 
         static int Integer(JToken token, string name)

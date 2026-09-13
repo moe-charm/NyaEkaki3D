@@ -42,7 +42,7 @@ namespace NyaForge.Authoring.Import
             // when a primitive of the selected mesh actually points at a material slot.
             bool materialReference = primitives != null && primitives.OfType<JObject>().Any(p => p["material"] != null);
             if (materialReference)
-                result.Add(new GlbImportDiagnostic("MATERIALS_NOT_RETAINED", "materials", true, "Texture/image resources and unsupported material features are not retained; basic PBR factors are routed into native material nodes."));
+                result.Add(new GlbImportDiagnostic("MATERIALS_NOT_RETAINED", "materials", true, "Unsupported texture/image resources and material features are not retained; basic PBR factors plus supported base-color images are routed into native material nodes."));
             if (root["animations"] is JArray animations && animations.Count > 0)
                 result.Add(new GlbImportDiagnostic("ANIMATIONS_NOT_RETAINED", "animations", true, "glTF animations are not imported and are not substituted with the current pose."));
             var required = Names(root["extensionsRequired"]);
