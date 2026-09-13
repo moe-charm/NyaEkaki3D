@@ -14,6 +14,12 @@ ChatGPT Proの持込Windows v1案を現行 `41e73ac` に照合し、[採用修�
 
 GUI/MCP共通command（13）と保存・復旧（14）は各実装と同時に検証する。SDKや他者視点待ちでも、独立した04/06等のCore・GUI作業は継続できる。外部検査の未実施は未実施のまま残す。
 
+## 2026-09-13 NF-V1-06 / 05 のCore接続
+
+fitと表面weight転送へ、avatar側の対象三角形を明示的に限定する入力と、転送時の最大距離検査を追加した。三角形番号は`MeshData.Submeshes`を平坦化した順で、選択範囲を別の面へ暗黙に広げない。範囲外・空選択は事前に拒否し、距離超過は`SURFACE_FIT_DISTANCE`／`WEIGHT_TRANSFER_DISTANCE`で停止する。従来の全表面APIは互換overloadとして維持した。
+
+回帰テストを追加し、離れた2面のfixtureで「選択面へ投影・選択面からのweight転送」と「誤った面を選んだ場合の無変更失敗」を確認した。Coreは **487 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f8e876f07220401a87ec2dd99e446230`）。これはCoreの範囲限定土台であり、Workbenchの面選択UI接続、実RadDollV3での服一周、Unity/VRChat受入は未完了のまま次カードへ残す。
+
 ## 今回のレビュー結論
 
 方向性は採用。原案の02→後続10/12→02という受入依存の逆転を02A/02Bへ分離し、未実装のskin衣装receiverを03Aとして前倒しした。1024pxへ縮小される画像の原本/作業/出力契約を09Aへ追加。12週間・週20〜25時間は未合意の仮定として採用しない。全身制作、FBX、完全VRM、全shader、共有資源の完全統合は既存backlogへ残し、今の衣装一周に必要な接続を先行する。

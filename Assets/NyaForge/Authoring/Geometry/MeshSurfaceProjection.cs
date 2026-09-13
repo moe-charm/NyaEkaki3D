@@ -13,6 +13,7 @@ namespace NyaForge.Authoring.Geometry
         readonly List<Node> nodes = new List<Node>();
         readonly RestTransform transform;
         readonly int root;
+        readonly HashSet<int> allowedTriangles;
 
         struct Triangle
         {
@@ -27,10 +28,21 @@ namespace NyaForge.Authoring.Geometry
         }
 
         public MeshSurfaceProjection(MeshData mesh, RestTransform placement)
+            : this(mesh, placement, null)
+        {
+        }
+
+        /// <summary>
+        /// Builds a projection over an optional, explicitly selected set of
+        /// flattened triangle indices. The indices follow MeshData.Submeshes
+        /// order, so callers can persist the selection beside the mesh domain.
+        /// </summary>
+        public MeshSurfaceProjection(MeshData mesh, RestTransform placement, IEnumerable<int> triangleIndices)
         {
             Checks.Require(mesh != null, "MESH_MISSING", "A surface projection mesh is required.");
             placement.Validate();
             transform = placement;
+            allowedTriangles = triangleIndices == null ? null : new HashSet<int>(triangleIndices);
             vertices = mesh.Positions.ToArray();
             triangles = new Triangle[mesh.TriangleCount];
             order = new int[triangles.Length];
@@ -51,6 +63,12 @@ namespace NyaForge.Authoring.Geometry
                 }
             }
             Checks.Require(triangles.Length > 0, "MESH_MISSING", "A surface projection mesh must contain triangles.");
+            if (allowedTriangles != null)
+            {
+                Checks.Require(allowedTriangles.Count > 0, "SURFACE_REGION_EMPTY", "At least one avatar triangle must be selected.");
+                foreach (int triangleIndex in allowedTriangles)
+                    Checks.Require(triangleIndex >= 0 && triangleIndex < triangles.Length, "SURFACE_REGION_INVALID", "A selected avatar triangle is outside the mesh domain.");
+            }
             root = Build(0, triangles.Length);
         }
 
@@ -78,6 +96,7 @@ namespace NyaForge.Authoring.Geometry
                 for (int i = node.Start; i < node.Start + node.Count; i++)
                 {
                     int id = order[i];
+                    if (allowedTriangles != null && !allowedTriangles.Contains(id)) continue;
                     var triangle = triangles[id];
                     var candidate = Closest(local, vertices[triangle.A], vertices[triangle.B], vertices[triangle.C]);
                     if (candidate.DistanceSquared < nearest ||

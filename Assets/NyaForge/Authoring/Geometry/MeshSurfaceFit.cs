@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace NyaForge.Authoring.Geometry
 {
@@ -36,13 +37,26 @@ namespace NyaForge.Authoring.Geometry
             MeshData clothingMesh, RestTransform clothingTransform,
             MeshData avatarMesh, RestTransform avatarTransform,
             float surfaceOffset, float maxDistance)
+            => Project(clothingMesh, clothingTransform, avatarMesh, avatarTransform,
+                surfaceOffset, maxDistance, null);
+
+        /// <summary>
+        /// Projects clothing onto an explicitly selected avatar triangle region.
+        /// Triangle indices are flattened in MeshData.Submeshes order. The
+        /// region and distance checks happen before any edit is committed by a
+        /// caller, so a rejected fit leaves the graph unchanged.
+        /// </summary>
+        public static MeshSurfaceFitResult Project(
+            MeshData clothingMesh, RestTransform clothingTransform,
+            MeshData avatarMesh, RestTransform avatarTransform,
+            float surfaceOffset, float maxDistance, IEnumerable<int> avatarTriangleIndices)
         {
             Checks.Require(clothingMesh != null && avatarMesh != null, "INVALID_SURFACE_FIT", "Clothing and avatar meshes are required.");
             clothingTransform.Validate(); avatarTransform.Validate();
             Checks.Finite(surfaceOffset); Checks.Finite(maxDistance);
             Checks.Require(maxDistance > 0f && maxDistance <= 10f, "INVALID_SURFACE_FIT", "Surface fit distance must be between zero and 10 metres.");
             Checks.Require(Math.Abs(surfaceOffset) <= maxDistance, "INVALID_SURFACE_FIT", "Surface offset cannot exceed the fit distance.");
-            var projection = new MeshSurfaceProjection(avatarMesh, avatarTransform);
+            var projection = new MeshSurfaceProjection(avatarMesh, avatarTransform, avatarTriangleIndices);
             var result = new Vec3[clothingMesh.VertexCount];
             int moved = 0;
             double projectionDistanceTotal = 0d, displacementTotal = 0d;
@@ -84,6 +98,13 @@ namespace NyaForge.Authoring.Geometry
             MeshData avatarMesh, RestTransform avatarTransform,
             float surfaceOffset, float maxDistance)
             => Project(clothingMesh, clothingTransform, avatarMesh, avatarTransform, surfaceOffset, maxDistance).Positions;
+
+        public static Vec3[] ProjectPositions(
+            MeshData clothingMesh, RestTransform clothingTransform,
+            MeshData avatarMesh, RestTransform avatarTransform,
+            float surfaceOffset, float maxDistance, IEnumerable<int> avatarTriangleIndices)
+            => Project(clothingMesh, clothingTransform, avatarMesh, avatarTransform,
+                surfaceOffset, maxDistance, avatarTriangleIndices).Positions;
 
         static Vec3 Cross(Vec3 a, Vec3 b)
         {

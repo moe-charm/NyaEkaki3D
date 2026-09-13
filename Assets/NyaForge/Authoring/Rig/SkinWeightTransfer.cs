@@ -35,19 +35,42 @@ namespace NyaForge.Authoring.Rig
             MeshData avatarMesh, RestTransform avatarTransform,
             SkinBinding avatarBinding, SkeletonDefinition skeleton,
             int maxInfluences = 4)
+            => BySurfaceProjection(clothingMesh, clothingTransform, avatarMesh,
+                avatarTransform, avatarBinding, skeleton, maxInfluences, null, null);
+
+        /// <summary>
+        /// Transfers weights from an explicitly selected avatar surface region.
+        /// Triangle indices are flattened in MeshData.Submeshes order. A
+        /// positive maxDistance rejects clothing vertices that are too far from
+        /// that region instead of silently assigning a distant bone influence.
+        /// </summary>
+        public static SkinBinding BySurfaceProjection(
+            MeshData clothingMesh, RestTransform clothingTransform,
+            MeshData avatarMesh, RestTransform avatarTransform,
+            SkinBinding avatarBinding, SkeletonDefinition skeleton,
+            int maxInfluences, float? maxDistance, IEnumerable<int> avatarTriangleIndices)
         {
             Checks.Require(clothingMesh != null && avatarMesh != null && avatarBinding != null && skeleton != null,
                 "INVALID_SKIN", "Clothing mesh, avatar mesh, binding and skeleton are required.");
             clothingTransform.Validate(); avatarTransform.Validate();
             Checks.Require(maxInfluences >= 1 && maxInfluences <= SkinBinding.MaxInfluencesPerVertex,
                 "INFLUENCE_LIMIT", "Weight transfer influence count is invalid.");
+            if (maxDistance.HasValue)
+            {
+                Checks.Finite(maxDistance.Value);
+                Checks.Require(maxDistance.Value > 0f && maxDistance.Value <= 10f,
+                    "INVALID_WEIGHT", "Weight transfer distance must be between zero and 10 metres.");
+            }
             avatarBinding.ValidateFor(avatarMesh, skeleton);
-            var projection = new MeshSurfaceProjection(avatarMesh, avatarTransform);
+            var projection = new MeshSurfaceProjection(avatarMesh, avatarTransform, avatarTriangleIndices);
             var raw = new List<SkinBinding.VertexWeightInput>(clothingMesh.VertexCount * maxInfluences);
             for (int vertex = 0; vertex < clothingMesh.VertexCount; vertex++)
             {
                 Vec3 avatarPoint = clothingTransform.ToAvatarPoint(clothingMesh.Positions[vertex]);
                 MeshSurfaceHit hit = projection.FindClosest(avatarPoint);
+                if (maxDistance.HasValue)
+                    Checks.Require(hit.DistanceSquared <= (double)maxDistance.Value * maxDistance.Value,
+                        "WEIGHT_TRANSFER_DISTANCE", "A clothing vertex is farther from the selected avatar surface than the configured limit.");
                 var accumulated = new Dictionary<string, float>(StringComparer.Ordinal);
                 Accumulate(accumulated, avatarBinding.Weights[hit.A], (float)hit.U);
                 Accumulate(accumulated, avatarBinding.Weights[hit.B], (float)hit.V);

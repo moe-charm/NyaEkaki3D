@@ -80,6 +80,53 @@ internal static partial class Program
                 avatar, new RestTransform(1, new Vec3()), .2f, .1f));
         });
 
+        Test("clothing fit and surface weights respect an explicit avatar triangle region", () =>
+        {
+            var avatar = new MeshData(
+                new[] {
+                    new Vec3(0, 0, 0), new Vec3(1, 0, 0), new Vec3(0, 1, 0),
+                    new Vec3(2, 0, 0), new Vec3(3, 0, 0), new Vec3(2, 1, 0)
+                },
+                Enumerable.Repeat(new Vec3(0, 0, 1), 6).ToArray(),
+                Enumerable.Repeat(new Vec4(1, 0, 0, 1), 6).ToArray(),
+                Enumerable.Repeat(new Vec2(0, 0), 6).ToArray(),
+                new[] { new[] { 0, 1, 2, 3, 4, 5 } });
+            var clothing = new MeshData(
+                new[] { new Vec3(2.2f, .2f, .1f), new Vec3(2.4f, .2f, .1f), new Vec3(2.2f, .4f, .1f) },
+                Enumerable.Repeat(new Vec3(0, 0, 1), 3).ToArray(),
+                Enumerable.Repeat(new Vec4(1, 0, 0, 1), 3).ToArray(),
+                new[] { new Vec2(0, 0), new Vec2(1, 0), new Vec2(0, 1) },
+                new[] { new[] { 0, 1, 2 } });
+            var fitted = MeshSurfaceFit.Project(clothing, new RestTransform(1, new Vec3()),
+                avatar, new RestTransform(1, new Vec3()), .02f, .5f, new[] { 1 });
+            True(fitted.Positions.All(position => Math.Abs(position.Z - .02f) < 1e-5f));
+            Expect("SURFACE_FIT_DISTANCE", () => MeshSurfaceFit.Project(clothing,
+                new RestTransform(1, new Vec3()), avatar, new RestTransform(1, new Vec3()),
+                .02f, .5f, new[] { 0 }));
+
+            string root = GraphId(), child = GraphId();
+            var skeleton = new SkeletonDefinition(new[] {
+                new BoneDefinition(root, "Root", "", new Vec3(), new Vec3(0, .1f, 0)),
+                new BoneDefinition(child, "Child", root, new Vec3(2, 0, 0), new Vec3(2, .1f, 0))
+            });
+            var raw = new[] {
+                new SkinBinding.VertexWeightInput(0, root, 1),
+                new SkinBinding.VertexWeightInput(1, root, 1),
+                new SkinBinding.VertexWeightInput(2, root, 1),
+                new SkinBinding.VertexWeightInput(3, child, 1),
+                new SkinBinding.VertexWeightInput(4, child, 1),
+                new SkinBinding.VertexWeightInput(5, child, 1)
+            };
+            var avatarBinding = SkinBinding.Create(avatar, skeleton, raw);
+            var transferred = SkinWeightTransfer.BySurfaceProjection(clothing,
+                new RestTransform(1, new Vec3()), avatar, new RestTransform(1, new Vec3()),
+                avatarBinding, skeleton, 2, .5f, new[] { 1 });
+            True(transferred.Weights.Values.All(values => values.All(value => value.BoneId == child)));
+            Expect("WEIGHT_TRANSFER_DISTANCE", () => SkinWeightTransfer.BySurfaceProjection(clothing,
+                new RestTransform(1, new Vec3()), avatar, new RestTransform(1, new Vec3()),
+                avatarBinding, skeleton, 2, .5f, new[] { 0 }));
+        });
+
         Test("static accessory can become a root-initialized avatar skin graph", () =>
         {
             var mesh = AuthoringFixtures.Panel(1);
