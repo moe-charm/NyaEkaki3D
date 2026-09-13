@@ -19,8 +19,14 @@ namespace NyaForge.Authoring.Graph
             // slot keys. Prefer that declaration over assuming dense slots.
             var used=mesh.PolygonRendering?.MaterialSlotMap ?? declaredSlots ?? Enumerable.Range(0,mesh.Mesh.Submeshes.Count).ToArray();
             Checks.Require(used.All(bindings.ContainsKey),"MATERIAL_SLOT_UNASSIGNED","Every used geometry slot needs a material connection.");
-            foreach(var binding in bindings.Values) PaintEvaluation.Bind(mesh,binding.Material.BaseColor);
-            return new GraphMeshValue(mesh.Mesh,mesh.Transform,mesh.DomainId,mesh.Polygon,mesh.PolygonRendering,null,null,new ReadOnlyDictionary<int,MaterialSlotBinding>(new Dictionary<int,MaterialSlotBinding>(bindings)));
+            // Keep only slots that are actually represented by render
+            // submeshes. An AssignMaterials node may declare a superset of
+            // slots while a polygon currently uses only one of them; carrying
+            // the unused binding forward makes GLB export see more materials
+            // than submeshes and can silently reintroduce sparse-slot swaps.
+            var selected = used.Distinct().ToDictionary(slot => slot, slot => bindings[slot]);
+            foreach(var binding in selected.Values) PaintEvaluation.Bind(mesh,binding.Material.BaseColor);
+            return new GraphMeshValue(mesh.Mesh,mesh.Transform,mesh.DomainId,mesh.Polygon,mesh.PolygonRendering,null,null,new ReadOnlyDictionary<int,MaterialSlotBinding>(selected));
         }
     }
 }

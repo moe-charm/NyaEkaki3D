@@ -3,6 +3,7 @@ using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Geometry;
 using NyaForge.Authoring.Graph;
+using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Rig;
 using NyaForge.Authoring.Topology;
 using NyaForge.Authoring.Paint;
@@ -243,6 +244,58 @@ internal static partial class Program
                 item.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinBind) &&
                 item.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.DerivedSource &&
                     node.DerivedFromGraphId == graph.GraphId && node.DerivedFromGraphHash == sourceHash)));
+        });
+
+        Test("polygon materialization keeps sparse material slots through skinned GLB export", () =>
+        {
+            string source = GraphId(), edit = GraphId(), red = GraphId(), blue = GraphId(), assignment = GraphId(), output = GraphId();
+            var basePolygon = PolygonPrimitives.Plane(GraphId(), .2f, .2f);
+            var baseFace = basePolygon.Faces[0];
+            var duplicateVertices = basePolygon.Vertices.Values.Select(vertex =>
+                new CageVertex(vertex.Id + 10, new Vec3(vertex.Position.X + .3f, vertex.Position.Y, vertex.Position.Z)));
+            var duplicateCorners = baseFace.Corners.Select(corner =>
+                new CageCorner(corner.Id + 10, corner.VertexId + 10, corner.Uv0, corner.Normal, corner.Tangent));
+            var polygon = new PolygonMesh(basePolygon.DomainId,
+                basePolygon.Vertices.Values.Concat(duplicateVertices),
+                new[] { new CageFace(baseFace.Id, 3, baseFace.Corners), new CageFace(baseFace.Id + 10, 9, duplicateCorners) });
+            var graph = new AuthoringGraph(GraphId(),
+                new[] {
+                    GraphNode.Polygon(source, polygon, new RestTransform(1, new Vec3())),
+                    GraphNode.PolygonEdit(edit),
+                    GraphNode.StandardMaterial(red, new MaterialParameters(new Vec4(1, 0, 0, 1), 0, 1, new Vec3())),
+                    GraphNode.StandardMaterial(blue, new MaterialParameters(new Vec4(0, 0, 1, 1), 0, 1, new Vec3())),
+                    GraphNode.AssignMaterials(assignment, new[] { 3, 9 }),
+                    GraphNode.Output(output)
+                },
+                new[] {
+                    new GraphEdge(source, "mesh", edit, "mesh"),
+                    new GraphEdge(edit, "mesh", assignment, "mesh"),
+                    new GraphEdge(red, "material", assignment, GraphNode.MaterialSlotPort(3)),
+                    new GraphEdge(blue, "material", assignment, GraphNode.MaterialSlotPort(9)),
+                    new GraphEdge(assignment, "mesh", output, "mesh")
+                }, output);
+            var before = GraphEvaluator.Evaluate(graph);
+            True(before.IsComplete && before.Output.SlotMaterials.Count == 2);
+            var skeleton = new SkeletonDefinition(new[] {
+                new BoneDefinition(GraphId(), "Root", "", new Vec3(), new Vec3(0, .1f, 0))
+            });
+            var materialized = AccessorySkinMaterializer.Materialize(graph, skeleton, skeleton.Bones[0].BoneId, derivedGraphId: GraphId());
+            var after = GraphEvaluator.Evaluate(materialized.Graph);
+            True(after.IsComplete && after.Output.SlotMaterials.Count == 2);
+            Equal(2, after.Output.SlotMaterials.Count);
+            True(after.Output.SlotMaterials.ContainsKey(3) && after.Output.SlotMaterials.ContainsKey(9));
+            var workspace = AuthoringWorkspace.CreateEmpty();
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(materialized.Graph)));
+            Equal(2, workspace.Preview.Output.SlotMaterials.Count);
+            Equal(2, workspace.Preview.Output.Mesh.Submeshes.Count);
+            string directory = System.IO.Path.Combine(Root, "polygon-materialized-sparse-glb-" + Guid.NewGuid().ToString("N"));
+            var exported = GlbExportService.ExportSkinned(workspace, workspace.InstanceId, workspace.Document.DocumentId,
+                workspace.Document.DocumentRevision, directory);
+            var imported = GlbSkinImporter.Read(System.IO.File.ReadAllBytes(exported.Path));
+            Equal(2, imported.Materials.Count);
+            Equal(2, imported.Mesh.Submeshes.Count);
+            True(imported.Materials.Any(material => material.Parameters.BaseColor.X > .9f && material.Parameters.BaseColor.Z < .1f));
+            True(imported.Materials.Any(material => material.Parameters.BaseColor.Z > .9f && material.Parameters.BaseColor.X < .1f));
         });
 
         Test("accessory skin binding refuses a rigid attachment conflict", () =>
