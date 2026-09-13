@@ -1,8 +1,8 @@
 # Nya Ekaki 3D Windows v1 実行計画
 
-更新: 2026-09-13。コード照合: 現行 `main`。持込提案の基準 `8c1bd7a` との差は名称・文書のみ。
+更新: 2026-09-13。コード照合: 現行 `main` の `d0ea49f`。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership markerの実装が進んでいる。
 
-本書は持込「NyaForge Windows v1 開発計画」をコード照合して修正した実行計画。受入済み報告ではない。製品全体の目標・C0〜C5の要件は[設計v2](NyaForge-Authoring-Design2.md)を維持し、本書はWindows衣装制作v1へ至る着手順を定める。v1だけの合格を製品全体や進行中goalの完了へ読み替えない。直近の状態は[current_task](../current_task.md)。
+本書は持込「NyaForge Windows v1 開発計画」をコード照合して修正した実行計画。受入済み報告ではない。製品全体の目標・C0〜C5の要件は[設計v2](NyaForge-Authoring-Design2.md)を維持し、本書はWindows衣装制作v1へ至る着手順を定める。v1だけの合格を製品全体や進行中goalの完了へ読み替えない。直近の状態は[current_task](../current_task.md)。現行mainではCore 489 passed / 0 failed、Windows Player、合成Unity Bridgeの衣装package回帰まで確認済みで、実マウス・実アバター骨割当・実VRChatは未受入である。
 
 ## 1. 採用判断と遠回りの修正
 
@@ -27,7 +27,7 @@
 | fit/weight制限 | [MeshSurfaceFit](../Assets/NyaForge/Authoring/Geometry/MeshSurfaceFit.cs)は全頂点・全avatar面を最近面へ投影し距離制限あり。[SkinWeightTransfer](../Assets/NyaForge/Authoring/Rig/SkinWeightTransfer.cs)の表面転送は全頂点・全avatar面を使い距離引数なし | 選択頂点・元body面領域・距離制限を双方へ接続する06を採用 |
 | 材質・解像度 | [ImportMaterials](../Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ImportMaterials.cs)はbase colorを縮小してPaintへ所有保存。[PaintImage](../Assets/NyaForge/Authoring/Paint/PaintImage.cs)は最大1024px | base color以外の画像slotは未対応。縮小の明示と画像所有契約を09Aへ |
 | SDK検証 | [互換記録](PhysBones-SDK-Compatibility.md)に一時環境のSDK 3.7.6で実component生成・写像の証拠あり。直近の本体project probeはunavailable | 「実SDKを一度も試していない」は誤り。常設receiverと実VRChat受入は別途必要 |
-| 既存回帰 | `8c1bd7a`のCore486件、Player82件、実モデル往復・Bridgeの記録あり | 今回再実行していない。対象機能に関係する既存証拠を再利用し、変更箇所と外部受入を補う |
+| 既存回帰 | 現行mainのCore489件、Playerのprivate RadDollV3往復、合成Unity Bridgeのpackage受入記録あり | 既存証拠は実マウス・実VRChatの成功を意味しない。変更箇所と外部受入を別に記録する |
 | 共有・更新基盤 | [共有方針](Shared-Resource-Policy.md)、BridgeのImportOwnership・UpdateJournal・PrefabManagedBindings | 同一target複数nodeと管理asset更新基盤を再利用。全mesh結合や全journalの新設は不要 |
 
 ## 3. v1の成果物と境界
@@ -42,7 +42,7 @@ GLB/初期VRMは対応範囲を明示した交換用の副経路とする。UniV
 
 ## 4. 依存を修正したタスク
 
-NF-V1のIDは持込提案との対応用に維持。状態はすべて未完了。既存基盤ありと受入済みを区別する。
+NF-V1のIDは持込提案との対応用に維持。状態は実装済み・合成受入済み・外部未受入を分けて記録する。実装済みの03Aを重複して作らない。
 
 | ID | 作業・成果物 | 開始条件 | 完了条件 |
 |---|---|---|---|

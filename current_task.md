@@ -1,18 +1,44 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-13 再計画）
 
-ChatGPT Proの持込Windows v1案を現行mainへ照合し、[採用修正版](docs/Windows-v1-Development-Plan.md)へタスク化した。製品全体のC0〜C5と進行中goalは維持する。以降の着手順はこの欄と採用修正版を優先し、下に残る日付付き記録の「次」は当時の履歴として読む。
+ChatGPT Proの持込Windows v1案を現行mainへ照合し、[採用修正版](docs/Windows-v1-Development-Plan.md)へタスク化した。方針は採用するが、実SDK／実VRChat未受入を完了扱いにせず、実装済みの衣装受け渡しを重複開発しない。製品全体のC0〜C5と進行中goalは維持する。以降の着手順はこの欄と採用修正版を優先し、下に残る日付付き記録の「次」は当時の履歴として読む。
 
 ## 次に実装するカード
 
 | 順 | ID | 状態 | 次の具体作業・完了条件 |
 |---|---|---|---|
-| 1 | NF-V1-01 / 03 | 未着手 | 過去SDK 3.7.6一時検証とreceiver候補を確認。環境版・fixtureを固定し、衣装だけの出力対象、骨対応、所有領域と最小受取経路を決定 |
-| 2 | NF-V1-03A / 02A | receiver/package/割当GUI実装済み・合成Bridge受入済み / 外部未受入 | `SkinnedClothingReceiver`と`skinned-clothing-v1`で既存Unity avatarへ初回適用。実アバター骨map、独立reader/実SDK/local VRChatで比較。static Bridge成功で実受取を代用しない |
-| 3 | NF-V1-04 / 05 | Core/UI実装済み・手動未受入 | 元Polygon graphを残し、UV/material/paint/出自対応を保持したskin用派生graphを一操作で生成。Undo・失敗無変更・保存再開を実マウスで確認 |
-| 4 | NF-V1-06 / 07 / 08 | 基盤/UI実装済み・実衣装未受入 | 選択頂点/元body面領域/距離をfitとweightへ適用。参照保護・pose確認を経て自作カフ1点を手操作で完成 |
-| 後続 | NF-V1-09〜16 / 02B | 未完了 | 画像原本/縮小契約→normal/MR→複数衣装・Unity再適用→長時間/手動/別環境→追加map/同期/RC受入。詳細依存は採用修正版参照 |
+| 1 | NF-V1-01 / 03 | 部分実装・外部BLOCKED | 受け取り環境manifestとfixtureを固定し、衣装だけの出力対象・BoneId・所有領域を確定。SDK未導入のため実SDK／実VRChatはBLOCKEDの証拠を残す |
+| 2 | NF-V1-03A | 実装・合成Bridge受入済み / 実アバター未受入 | `SkinnedClothingReceiver`、`skinned-clothing-v1`、割当GUI、ownership markerを重複実装しない。実RadDollV3 sceneでBoneId割当→初回適用→再適用を手動確認 |
+| 3 | NF-V1-04 / 05 / 06 / 07 | Core/Player実装済み・手動未受入 | Polygon派生→UV/paint→確定→範囲限定fit/weight→pose確認を実マウスで通し、参照body保護・Undo・Save/Openを確認 |
+| 4 | NF-V1-08 | 未完了・次の制作カード | 最小primitiveから自作カフまたは短いベストを1点完成。Unity適用とVRChat確認は外部環境が戻り次第実施し、未受入を成功扱いしない |
+| 後続 | NF-V1-09〜16 / 02A / 02B | 未完了 | semantic texture契約→normal/MR→複数衣装・Unity再適用→長時間/手動/別環境→VRChat/private upload/RC。詳細依存は採用修正版参照 |
 
-GUI/MCP共通command（13）と保存・復旧（14）は各実装と同時に検証する。SDKや他者視点待ちでも、独立した04/06等のCore・GUI作業は継続できる。外部検査の未実施は未実施のまま残す。
+GUI/MCP共通command（13）と保存・復旧（14）は各実装と同時に検証する。SDKや他者視点待ちでも、独立した08/09等のCore・GUI作業は継続できる。外部検査の未実施は未実施のまま残す。全身キャラ制作、FBX／BLEND parser、完全VRM互換、全shader、Quest対応はv1受入まで着手しない。
+
+## 2026-09-13 持込Windows v1案の照合結果
+
+### 採用する点
+
+- 既存アバターへ衣装だけを渡す経路を先に固める。
+- Polygonの造形結果をskin用派生graphへ確定し、fit・weight・pose・保存再開を一周させる。
+- 材質はsemantic slotを先に決め、normal／metallic-roughnessをbase colorと別に検証する。
+- 実マウス、Unity受け取り、実VRChatをCore／Player／合成Bridgeと別の受入gateで記録する。
+
+### 遠回りとして止める点
+
+- 実SDKが未導入の間に、VRChat対応をPASS扱いしない。`Tools/Test-NyaForgePhysBonesSdk.ps1`のunavailable記録を維持する。
+- 全身キャラ造形、FBX／BLEND parser、完全VRM round trip、全shader、Quest／macOS対応をv1の途中へ持ち込まない。
+- 既に実装・合成受入済みの`NF-V1-03A`（package、BoneId割当、ownership marker、base-color復元）を作り直さない。
+- テスト件数や同じfixtureのbuild反復を進捗の代用にしない。外部受入と手動操作を優先する。
+
+### 次の実作業カード
+
+1. **環境・受け取り契約（NF-V1-01/03）** — 対応Unity／UniVRM／SDK／shader／OSをmanifestへ固定し、実SDK未導入はBLOCKEDと記録する。実アバターをpublicへ置かない。
+2. **実アバター初回適用（NF-V1-03A）** — private RadDollV3 sceneで全BoneIdを明示割当し、衣装packageの初回適用・再起動後の確認を行う。失敗時はsceneを変更しない。
+3. **一着の手動完走（NF-V1-04〜08）** — Polygon派生、UV／paint、確定、範囲限定fit／weight、pose、Undo、Save/Openを実マウスでカフ1点に適用する。
+4. **材質の意味契約（NF-V1-09/09A）** — base color／alphaは現行実装を証拠化し、normal／MRの色空間・channel・UV・sampler・縮小・所有を文書で固定してから実装する。
+5. **受け渡し更新（NF-V1-11〜13）** — 同一targetの衣装2点＋小物1点、更新／削除／取消／競合を合成fixtureで回帰し、実Unity受入へ持ち込む。
+
+この順序なら、環境待ちの外部検査を正直にBLOCKEDとして保持しつつ、現在の編集基盤を使って制作一周へ進める。v1の出荷判定はNF-V1-15/16まで完了するまで行わない。
 
 ## 2026-09-13 NF-V1-03A 最小Unity skin衣装receiver
 
