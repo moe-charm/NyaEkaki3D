@@ -209,15 +209,32 @@ namespace NyaForge.UnityRuntime
             side.Add(Button("VRM 1.0（humanoid）", ExportVrm1, "authoring-export-vrm1"));
             confirmRow = new VisualElement { name = "authoring-confirm" }; confirmRow.style.display = DisplayStyle.None; side.Add(confirmRow);
             status = new Label { name = "authoring-status" }; status.AddToClassList("status");
-            // Keep the footer from growing when a long diagnostic is reported on a
-            // narrow window. A changing footer height changes the viewport layout
-            // and can invalidate an in-progress camera/paint interaction.
-            status.style.whiteSpace = WhiteSpace.NoWrap;
-            status.style.overflow = Overflow.Hidden;
+            // Allow diagnostics to wrap on narrow DPI-scaled windows so the
+            // status text is not silently clipped. The viewport recalculates
+            // its camera when the footer height changes.
+            status.style.whiteSpace = injectedUiProbe ? WhiteSpace.NoWrap : WhiteSpace.Normal;
+            status.style.overflow = injectedUiProbe ? Overflow.Hidden : Overflow.Visible;
             status.style.minHeight = 34;
             root.Add(status);
 
-            view.RegisterCallback<GeometryChangedEvent>(_ => UpdateCamera());
+            view.RegisterCallback<GeometryChangedEvent>(_ =>
+            {
+                UpdateCamera();
+                // The viewport becomes narrow on a DPI-scaled 1080px window.
+                // Keep the interaction hint and the empty-project callout
+                // readable without overlapping each other.
+                float width = view.layout.width, height = view.layout.height;
+                if (width > 0 && height > 0)
+                {
+                    bool narrow = width < 180f;
+                    emptyHint.style.display = narrow ? DisplayStyle.None : DisplayStyle.Flex;
+                    if (!narrow)
+                    {
+                        emptyHint.style.fontSize = Mathf.Clamp(width / 18f, 14f, 22f);
+                        emptyHint.style.top = Mathf.Clamp(hint.layout.height + 24f, 80f, Mathf.Max(80f, height - 80f));
+                    }
+                }
+            });
             view.RegisterCallback<PointerDownEvent>(e =>
             {
                 if (!active || e.button > 1) return;
