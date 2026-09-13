@@ -1,5 +1,9 @@
 # 2026-09-13 pasted feedback recheck on current main
 
+## README capability alignment
+
+公開READMEとAuthoring Core READMEに残っていた古い能力表記を現行実装へ更新した。root READMEはnative schema 4（旧schema読込互換）、standard static/skinned GLB profile、MCP inspection/exportを明記し、Authoring READMEはstandard skinned GLB／外部MCPを実装済みとして、完全VRM・実VRChat SDK・自動fit等の境界を残した。ドキュメント変更後も `dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj` は **465 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ee87e9a0c12e40c8838a497d8f3b154a`）。
+
 貼り付けられたレビュー（基準 `0d1e957`）を、現行 `main` の `f5b908a` に再照合した。レビューの5件のP1は、複数graphのrig／expression／spring所属保存、source skinを`SkinDeform`入力へ組み込む評価順、skinned node affineの監査metadata化、元のinverse-bind行列の標準／拡張GLB出力への継承、装着後`WorldPoints`による描画・Frame・選択判定の統一で対応済み。P2の材質linear値・metallic既定値、primitive単位の材質、省略textureの扱い、装着先保持、PhysBones source hash、揺れUndo／再bind、複数rootとmorph bounds、normal/tangent morph変換も回帰へ含まれている。
 
 現行Core回帰は **465 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-50ab507c88d04f23b0f72eeda0c001a6`）。Windows Playerの800x600 Authoring suiteとUnity **2022.3.22f1** synthetic Bridge、private一時RadDollV3 VRMの取込→EditMesh→native Save/Open→標準skinned GLB出力→再取込は直前カードのPASSを正とする。レビュー文面の古いhashや「未修正」という判定を現行状態へ持ち込まない。
