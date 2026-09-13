@@ -1,5 +1,18 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09E: Windows高DPIで制作パネルを表示
+
+実ウィンドウを`1080x700`・Windows DPI 150%（`Screen.dpi=144`）で直接起動したところ、内部の`Screen=1080x700`レイアウトだけを使うと右側の制作controlsが物理描画領域の外へ切れる問題を確認した。`PanelSettings`を実DPI係数（`dpi/96`、1〜2倍）へ合わせ、制作workbenchのroot・左viewport・右controlsへ明示的なflex幅を設定した。自動の注入式UIプローブは従来の1:1 panel-space座標を維持する。
+
+確認結果:
+
+- コード: `c0647c3`（`fix: fit authoring controls on high DPI windows`）
+- Player: `Builds/ReleaseCandidateV19/NyaForge.exe`
+- 自動Authoring suite: **PASS**（`Artifacts/Authoring-20260914-071233-63f28ebed52d4f008219649225b02fe1/report.json`、`1080x700`、既存チェック一式）
+- 実ウィンドウ確認: **右側制作パネルの表示を確認**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-manual-v19.png`）。これはWin32の`PrintWindow`による画面証跡で、実マウス・IME・Explorer・実RadDollV3全周fit・VRChat表示の受入ではない。
+
+この変更で高DPI時の右パネル切れというコード上の問題は閉じた。100/150/200%の実マウス操作、空白path・日本語IME、実アバターの全周fit・貫通・見た目、VRChat Build & Test／実機は手動受入として残す。
+
 ## 2026-09-14: 手動受入表をReleaseCandidateV10へ同期
 
 手動チェック表の対象を古い`ReleaseCandidateV2`から、原画像sourceの未編集時再出力まで含む現行`ReleaseCandidateV10`（コード`43cb551`）へ更新した。衣装一周の項目へ、base-colorの原画像サイズ・作業画像サイズ・MIME・hashのinspection確認と、Paint編集後にpreviewへフォールバックするGLB確認を追加した。環境マニフェストもCore 505件とV10 Player／Bridge証跡へ同期した。これは手動操作を実施した記録ではなく、次の実操作で使う候補・確認条件の同期である。
