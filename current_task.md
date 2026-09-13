@@ -8,7 +8,7 @@
 
 # 2026-09-13 latest automated acceptance recheck
 
-現行HEAD `e999ec2` でCoreを再実行し、**465 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2ce6c7d8eaf547fbad1d9c8d09714515`）。`Builds/ValidationSkinV3/NyaForge.exe` の800x600 Authoring suiteも **PASS**（`Artifacts/Authoring-20260913-091250-cf3646192e704ab8bbb5eea32c568969/report.json`、画面 `authoring.png`）。同じPlayer検証成果物をUnity **2022.3.22f1** synthetic Bridgeへ渡した結果も **PASS**（`Artifacts/BridgeReceiver-20260913-091344-440-d19dee26d87b4d83a65334dc283d045d/bridge-report.json`）。これは自動回帰・合成receiverの証拠であり、実マウス/DPI差、実VRChat SDK/実アバター内の見た目受入とは分けて扱う。
+現行HEAD `e999ec2` でCoreを再実行し、**465 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2ce6c7d8eaf547fbad1d9c8d09714515`）。画像リソース重複計上修正を含む `Builds/ValidationTextureDedupV1/NyaForge.exe` の800x600 Authoring suiteも **PASS**（`Artifacts/Authoring-20260913-091728-f26ad2de57b24a038163c89a57e89b8e/report.json`、画面 `authoring.png`）。同じPlayer検証成果物をUnity **2022.3.22f1** synthetic Bridgeへ渡した結果も **PASS**（`Artifacts/BridgeReceiver-20260913-091801-690-5b07e4e16c6e4f1e91c24785c6675491/bridge-report.json`）。これは自動回帰・合成receiverの証拠であり、実マウス/DPI差、実VRChat SDK/実アバター内の見た目受入とは分けて扱う。
 
 # 2026-09-13 material output guidance
 
