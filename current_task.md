@@ -1719,3 +1719,7 @@ Unity 6000.4.3f1のWindows Player `Builds/FacePickFixV2/NyaForge.exe` はビル�
 高密度モデルでの軽量性を保つため、面クリックごとのrender頂点ワールド座標配列生成をやめ、`OwnedMeshProjection`構築時に`RenderWorldPoints`をキャッシュするようにした。UV seam分割を含むrender domainと、頂点編集用の`WorldPoints`を別々に保持し、通常クリックは追加割り当てなしで判定する。projection再構築（mesh／Transform／attachment変更）時だけキャッシュを更新する。
 
 Coreは **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-6d3e3e05bc934e43900a2ccad27b6101`）。Unity 6000.4.3f1のWindows Player `Builds/FacePickPerfV1/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-154110-759.log`）。RadDollV3全mesh取込を含むAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-154132-e96fc21de38f4fa59f67b3b123813c5a/report.json`）。1000x700 Navigationも **PASS**（`Artifacts/Navigation-20260913-154343-66577ae7461f400d9b3d0249ef459056/report.json`）。
+
+# 2026-09-13 Save/Recovery crash検証
+
+保存・再開の安全性を強めるため、最新のFacePickPerfV1全mesh実モデルcheckを入力に`Test-NyaForgeCrashRecovery.ps1`を実行した。Unity 2022.3.22f1 Bridgeの通常検証に加え、materials／prefab／receiptの更新途中停止後にプロセスを再起動し、recovery状態を再読込できることを確認した。Bridge reportは **PASS**（`Artifacts/BridgeReceiver-20260913-154451-682-e8552774ca7b4d10ad51b1d0fc684fe3/bridge-report.json`）。recovery証跡3件（`materials-recovery.json`、`prefab-recovery.json`、`receipt-recovery.json`）もすべて **PASS**。元のチェック成果物・制作データは変更していない。
