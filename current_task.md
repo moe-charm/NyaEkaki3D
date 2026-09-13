@@ -24,14 +24,14 @@ VCCキャッシュの`com.vrchat.base`／`com.vrchat.avatars` **3.7.6**を公開
 
 ## 2026-09-14 実RadDollV3 skinned-clothing package適用probe
 
-同じprivate projectで低ポリカフ（136頂点）を生成し、skinned GLB出力→`skinned-clothing-v1` package化→実RadDollV3 FBX prefab instanceへの`SkinnedClothingReceiver.ApplyPackage`まで通した。`lower_arm.L`を明示BoneId mapへ割り当て、生成Rendererの親、rootBone、頂点数、ownership markerを確認した。同じnative graphを`AuthoringProjectExportService`で保存し`ProjectStore.Open`してgraph identity／node数を照合後、packageを再読込して再適用した。管理対象Renderer数は21（元の20＋衣装1）のまま維持し、bindingのObjectId／生成object参照も更新できた。証拠は`private/PhysBonesSdkProbe-20260914/avatar-clothing-reapply-report.json`（`clothingNativeRoundtrip: true`）。これは実FBX階層への初回・再適用とnative graph/package roundtripのsmokeであり、EditorWindowの手動操作、fit・貫通、見た目、Build & Test、実VRChat内受入は未完了である。
+同じprivate projectで低ポリカフ（136頂点）を生成し、skinned GLB出力→`skinned-clothing-v1` package化→実RadDollV3 FBX prefab instanceへの`SkinnedClothingReceiver.ApplyPackage`まで通した。`lower_arm.L`を明示BoneId mapへ割り当て、生成Rendererの親、rootBone、頂点数、ownership markerを確認した。同じnative graphを`AuthoringProjectExportService`で保存し`ProjectStore.Open`してgraph identity／node数を照合後、packageを再読込して再適用した。管理対象Renderer数は21（元の20＋衣装1）のまま維持し、bindingのObjectId／生成object参照も更新できた。さらに受け取りsceneを保存して開き直し、衣装Renderer 21件とbinding／ownership markerが残ることを確認した。証拠は`private/PhysBonesSdkProbe-20260914/avatar-clothing-reapply-report.json` と `private/PhysBonesSdkProbe-20260914/avatar-scene-roundtrip-report.json`（いずれもstatus passed）。これは実FBX階層への初回・再適用とnative/scene roundtripのsmokeであり、EditorWindowの手動操作、fit・貫通、見た目、Build & Test、実VRChat内受入は未完了である。
 
 ## 次に実装するカード
 
 | 順 | ID | 状態 | 次の具体作業・完了条件 |
 |---|---|---|---|
 | 1 | NF-V1-01 / 03 | manifest・実SDK／実RadDollV3 chain probe済み / 外部受入BLOCKED | private受け取りprojectでSDK 3.7.6の実`VRCPhysBone`解決・生成・stable root/BoneId設定、RadDollV3のSkirt直下chain設定まで確認済み。次は実アバターsceneの全対象chain明示割当とBuild & Testを行い、未実施の実VRChatはBLOCKEDとして残す |
-| 2 | NF-V1-03A | 実装・合成Bridge受入済み / 実FBX初回・再適用・native roundtrip smoke済み | private RadDollV3 FBXへカフpackageを`lower_arm.L`へ明示適用し、136頂点・rootBone・ownership marker、同一package再適用時の重複なし、graph/packageの保存再読込を確認。次は実EditorWindow経路での割当保存、実sceneへのfit・weight、見た目確認 |
+| 2 | NF-V1-03A | 実装・合成Bridge受入済み / 実FBX初回・再適用・native/scene roundtrip smoke済み | private RadDollV3 FBXへカフpackageを`lower_arm.L`へ明示適用し、136頂点・rootBone・ownership marker、同一package再適用時の重複なし、graph/package/sceneの保存再読込を確認。次は実EditorWindow経路での割当保存、実sceneへのfit・weight、見た目確認 |
 | 3 | NF-V1-04 / 05 / 06 / 07 | Core/Player実装済み・手動未受入 | Polygon派生→UV/paint→確定→範囲限定fit/weight→pose確認を実マウスで通し、参照body保護・Undo・Save/Openを確認 |
 | 4 | NF-V1-08 | カフ試作経路実装・Player受入済み / 実アバター未受入 | 低ポリ手首カフを頂点編集し、実RadDollV3へfit・weight・Unity適用・VRChat確認。自動テンプレート通過を販売品質と扱わない |
 | 5 | NF-V1-09 / 10 | Core実装済み・Unity/VRChat未受入 | semantic normal／metallic-roughnessのpackage適用を実sceneで確認し、Standard shaderの外観・tangent・samplerを記録。occlusion/emissiveと専用paintは後続範囲 |
