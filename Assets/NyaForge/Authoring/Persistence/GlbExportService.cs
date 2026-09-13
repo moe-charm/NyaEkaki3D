@@ -323,6 +323,7 @@ namespace NyaForge.Authoring
                 BuiltinNodes.Pose, BuiltinNodes.SkinDeform, BuiltinNodes.Output,
                 BuiltinNodes.PoseSource,
                 BuiltinNodes.DerivedSource,
+                BuiltinNodes.OriginalImage,
                 BuiltinNodes.StandardMaterial, BuiltinNodes.AssignMaterial,
                 BuiltinNodes.AssignMaterials, BuiltinNodes.Paint, BuiltinNodes.LayeredPaint
             }, StringComparer.Ordinal);

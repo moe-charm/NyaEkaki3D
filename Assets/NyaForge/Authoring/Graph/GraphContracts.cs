@@ -37,6 +37,8 @@ namespace NyaForge.Authoring.Graph
         public const string PolygonEdit = "mesh.polygon-edit";
         public const string Mirror = "mesh.mirror";
         public const string Paint = "image.paint";
+        /// <summary>Owned source bytes retained separately from the bounded Paint preview.</summary>
+        public const string OriginalImage = "image.original-source";
         public const string LayeredPaint = "image.paint-layers";
         public const string Plane = "primitive.plane";
         public const string EditMesh = "mesh.edit";
@@ -65,6 +67,7 @@ namespace NyaForge.Authoring.Graph
                 [PolygonEdit] = new NodeDefinition(PolygonEdit, new[] { new PortDefinition("mesh", PortType.Mesh) }, new[] { new PortDefinition("mesh", PortType.Mesh) }),
                 [Mirror] = new NodeDefinition(Mirror, new[] { new PortDefinition("mesh", PortType.Mesh) }, new[] { new PortDefinition("mesh", PortType.Mesh) }),
                 [Paint] = new NodeDefinition(Paint, new[] { new PortDefinition("mesh", PortType.Mesh) }, new[] { new PortDefinition("image", PortType.Image) }),
+                [OriginalImage] = new NodeDefinition(OriginalImage, Array.Empty<PortDefinition>(), Array.Empty<PortDefinition>()),
                 [LayeredPaint] = new NodeDefinition(LayeredPaint, new[] { new PortDefinition("mesh", PortType.Mesh) }, new[] { new PortDefinition("image", PortType.Image) }),
                 [Plane] = new NodeDefinition(Plane, new[] { new PortDefinition("width", PortType.Scalar, false), new PortDefinition("height", PortType.Scalar, false) }, new[] { new PortDefinition("mesh", PortType.Mesh) }),
                 [EditMesh] = new NodeDefinition(EditMesh, new[] { new PortDefinition("mesh", PortType.Mesh) }, new[] { new PortDefinition("mesh", PortType.Mesh) }),

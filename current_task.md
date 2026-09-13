@@ -1,8 +1,16 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09B: base-color原画像sourceのnative保持
+
+GLB／VRM取込時に1024pxへ縮小する作業用Paintとは別に、元画像のPNG/JPEG bytes・MIME・原寸・hashを`image.original-source` nodeとしてnative graphへ保存するようにした。Save/Openとgraph wireの往復でbytesを再取得でき、Polygon→skin派生でもsource nodeを保持する。入力の上限は8192px・16MiBで、未対応形式は取込時に警告して省略する。
+
+現段階ではGLB/VRM再出力は従来どおりbounded Paint previewを使う。未編集時に原画像bytesをそのまま出力する切替は、作業画像編集後の出力規則・sampler・メモリ予算を定めた次段タスクへ分離した。したがって既存projectや原画像sourceを持たないgraphから原画復元を装わない。
+
+Coreは **503 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b5cacb5bc01b44419c1aa19941174dd5`）。回帰にはsource nodeのwire roundtrip、bytesの不変性、形式・寸法・予算拒否、Polygon→skin派生での保持を含む。Unity Player／実RadDollV3／Bridge smokeは次のReleaseCandidateで再実行する。
+
 ## 2026-09-14 NF-V1-09A: base-color縮小の明示
 
-GLB／VRM取込でbase-colorをnative Paintの1024px予算へ縮小した場合、従来は成功表示だけで原画像との解像度差が分からなかった。取込ステータスへ原画像サイズと作業画像サイズを出し、native projectが作業画像のみを保持して原画像bytesを保持しないことを明示するようにした。形式・サイズエラーで省略した場合と、正常に縮小した場合の注意表示も分けた。原画像bytesを保持して未編集時に再出力する機能は、別のNF-V1-09A拡張として残る。
+GLB／VRM取込でbase-colorをnative Paintの1024px予算へ縮小した場合、取込ステータスへ原画像サイズと作業画像サイズを出す。現在は`image.original-source` nodeが原画像bytesを別保持するため、Save/Open後も品質情報を失わない。形式・サイズエラーで省略した場合と、正常に縮小した場合の注意表示も分けた。未編集時の原画像bytesを出力へ使う接続はNF-V1-09B後段として残る。
 
 `Builds/ReleaseCandidateV5/NyaForge.exe`（Unity 6000.4.3f1）のAuthoring suiteは **PASS**（`Artifacts/Authoring-20260914-055656-491efb9544c44ac1a1bb194d27f77e02/report.json`）。private RadDollV3の実取込・Save/Open・GLB／VRM1・衣装package生成とUnity 2022.3.22f1 Bridge受け取りも **PASS**（Player `Artifacts/Authoring-20260914-055729-e2c198f284584c4c9450f7f3a60b68d1/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-060010-016-6f0b11002a194bcbb7c44473efc05b8d/bridge-report.json`）。これは縮小後の作業画像と出力の回帰であり、原画像bytes保存、実EditorWindowのマウス／DPI、実VRChat表示を完了扱いにはしない。
 

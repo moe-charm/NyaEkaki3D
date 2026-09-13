@@ -37,20 +37,26 @@ namespace NyaForge.UnityRuntime
                 edges.Add(new GraphEdge(materialId, "material", assignmentId, GraphNode.MaterialSlotPort(slot)));
                 if (material?.HasEmbeddedBaseColorImage == true)
                 {
-                    PaintImage image; int sourceWidth, sourceHeight;
-                    try { image = DecodeEmbeddedImage(material, out sourceWidth, out sourceHeight); }
+                    string imageId = Guid.NewGuid().ToString("D");
+                    PaintImage image; int sourceWidth, sourceHeight; GraphOriginalImage original;
+                    try
+                    {
+                        image = DecodeEmbeddedImage(material, out sourceWidth, out sourceHeight);
+                        string sourceMime = ImageMime(material);
+                        original = new GraphOriginalImage(imageId, sourceWidth, sourceHeight, sourceMime, material.CopyBaseColorImageBytes());
+                    }
                     catch (AuthoringException error)
                     {
                         string message = "material " + material.SourceMaterialIndex + " のbase color画像をnative Paintへ保持できないため省略しました（" + error.Code + "）。";
                         warnings?.Add(message); Debug.LogWarning(message);
                         continue;
                     }
-                    string imageId = Guid.NewGuid().ToString("D");
                     nodes.Add(GraphNode.Paint(imageId, image.Width, image.Height, image));
                     edges.Add(new GraphEdge(meshNodeId, "mesh", imageId, "mesh"));
                     edges.Add(new GraphEdge(imageId, "image", materialId, "baseColor"));
+                    nodes.Add(GraphNode.OriginalImageNode(Guid.NewGuid().ToString("D"), original));
                     if (sourceWidth != image.Width || sourceHeight != image.Height)
-                        warnings?.Add("material " + material.SourceMaterialIndex + " のbase color画像を " + sourceWidth + "x" + sourceHeight + " から " + image.Width + "x" + image.Height + " へ縮小しました。native projectは作業画像のみを保持し、原画像bytesは保持しません。");
+                        warnings?.Add("material " + material.SourceMaterialIndex + " のbase color画像を " + sourceWidth + "x" + sourceHeight + " から " + image.Width + "x" + image.Height + " へ縮小しました。native projectは作業画像と原画像bytesを別保持します。");
                 }
             }
             return assignmentId;
@@ -88,6 +94,13 @@ namespace NyaForge.UnityRuntime
                 return PaintImage.FromRgbaBottomLeft(targetWidth, targetHeight, rgba);
             }
             finally { if (texture != null) UnityEngine.Object.Destroy(texture); }
+        }
+
+        static string ImageMime(GlbMaterialSource material)
+        {
+            string mime = material?.BaseColorImageMimeType ?? "";
+            if (mime == "image/png" || mime == "image/jpeg") return mime;
+            throw new AuthoringException("UNSUPPORTED_FORMAT", "base color画像のMIME typeがPNG/JPEGではありません。");
         }
 
         static MaterialTextureSet BuildSemanticTextures(GlbMaterialSource material, List<string> warnings)

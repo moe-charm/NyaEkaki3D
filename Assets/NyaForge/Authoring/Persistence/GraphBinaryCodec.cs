@@ -92,6 +92,9 @@ namespace NyaForge.Authoring
                     case BuiltinNodes.Paint:
                         writer.Write(node.PaintWidth); writer.Write(node.PaintHeight); Text(writer,node.PaintUvHash); Text(writer,node.ExpectedDomain);
                         Text(writer,node.PaintImage == null ? "" : addBlob(PaintImageCodec.Write(node.PaintImage))); break;
+                    case BuiltinNodes.OriginalImage:
+                        Text(writer, node.OriginalImage.PaintNodeId); writer.Write(node.OriginalImage.Width); writer.Write(node.OriginalImage.Height);
+                        Text(writer, node.OriginalImage.MimeType); Text(writer, addBlob(node.OriginalImage.CopyEncodedBytes())); break;
                     case BuiltinNodes.LayeredPaint:
                         Text(writer,addBlob(PaintLayersCodec.Write(node.LayerStack,addBlob)));
                         Text(writer,node.PaintUvHash);Text(writer,node.ExpectedDomain);break;
@@ -199,6 +202,10 @@ namespace NyaForge.Authoring
                         NyaForge.Authoring.Paint.PaintImage.ValidateDimensions(paintWidth,paintHeight);
                         string uvBinding=Text(reader,64),paintDomain=Text(reader,64),imageHash=Text(reader,64);
                         node=GraphNode.Paint(id,paintWidth,paintHeight,imageHash == "" ? null : PaintImageCodec.Read(readBlob(imageHash)),uvBinding,paintDomain); break;
+                    case BuiltinNodes.OriginalImage:
+                        string paintNodeId=Text(reader,64); int originalWidth=reader.ReadInt32(), originalHeight=reader.ReadInt32();
+                        string originalMime=Text(reader,128); string originalHash=Text(reader,64);
+                        node=GraphNode.OriginalImageNode(id,new GraphOriginalImage(paintNodeId,originalWidth,originalHeight,originalMime,readBlob(originalHash))); break;
                     case BuiltinNodes.LayeredPaint:
                         var layers=PaintLayersCodec.Read(readBlob(Text(reader,64)),readBlob);
                         node=GraphNode.LayeredPaint(id,layers,Text(reader,64),Text(reader,64));break;

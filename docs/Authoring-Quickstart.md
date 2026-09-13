@@ -95,7 +95,7 @@ VRM 1.0を出力する場合は、humanoidのskinned avatar graph objectをactiv
 
 ## 現在の範囲
 
-実装済み: 空project、typed graph、Plane/EditMesh/Polygon/Mirror/UV/Paint/Material、頂点・面編集、Undo/Redo、schema 4 native保存（旧schema読込互換）、画像付きBake、Rig skeleton/skin binding/pose/skin-deform、weight paint、GLB/VRMのstatic／skin取込、stable BoneId装着、標準GLB出力、MCP、Unity Bridgeでの受け取り。
+実装済み: 空project、typed graph、Plane/EditMesh/Polygon/Mirror/UV/Paint/Material、頂点・面編集、Undo/Redo、schema 4 native保存（旧schema読込互換）、画像付きBake、Rig skeleton/skin binding/pose/skin-deform、weight paint、GLB/VRMのstatic／skin取込、stable BoneId装着、標準GLB出力、MCP、Unity Bridgeでの受け取り。base-colorはbounded Paint previewと原画像PNG/JPEG bytesをnative graphへ別保持します。
 
 未実装: FBX/BLEND import、humanoid自動配置、完全なVRM export、任意pose/morphのskin変換、自動fit／貫通修正、実VRChat SDK／VRChat内の見た目受入。VRM 1.0は、humanoid/metaと解決可能なmorph bind、詳細付きVRM1 SpringBoneを含む初期profileを出力できますが、material bind・LookAt・FirstPerson・MToon・animation・任意拡張は対象外です。GLB/VRMは候補から1 mesh/skinを選ぶ取込と、同一ファイルの全mesh instanceをまとめて追加する取込の両方に対応し、rest pose EditMesh編集、別static GLB小物のBoneId装着、skin-bindした衣装の同一VRM／GLB出力、native package保存を検証しています。標準GLBは表示形状profileと、rest pose・トポロジー不変の頂点編集まで対応するskin/morph profileをGUIから選べます。semantic normal／metallic-roughness画像はUV0を出荷対象とし、GUIでもUV1の新規適用を拒否します（既存UV1は出力前にUV0へ置換が必要です）。今回の往復検証はVRChat内の動作検証ではありません。
 

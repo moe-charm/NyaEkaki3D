@@ -22,5 +22,11 @@ namespace NyaForge.Authoring.Graph
             return new GraphNode(id,BuiltinNodes.Paint,1,null,Identity,0,0,0,true,"",domain,Empty,"")
             { PaintWidth=width,PaintHeight=height,PaintImage=image,PaintUvHash=uvHash };
         }
+
+        public static GraphNode OriginalImageNode(string id, GraphOriginalImage source)
+        {
+            Checks.Require(source != null, "INVALID_IMAGE", "Original image source is required.");
+            return new GraphNode(id, BuiltinNodes.OriginalImage, 1, null, Identity, 0, 0, 0, true, "", "", Empty, "") { OriginalImage = source };
+        }
     }
 }

@@ -88,6 +88,7 @@ internal static partial class Program
         RunUvIslandTests();
         RunPaintTests();
         RunPaintGraphTests();
+        RunOriginalImageGraphTests();
         RunPaintRebindTests();
         RunPaintDependencyTests();
         RunPaintPngTests();

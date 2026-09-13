@@ -25,6 +25,8 @@ namespace NyaForge.Authoring.Graph
         public string DerivedFromGraphHash { get; private set; } = "";
         public MorphSet Morphs { get; private set; }
         public IReadOnlyDictionary<string, float> MorphWeights { get; private set; }
+        /// <summary>Raw imported image kept separately from the bounded editable Paint preview.</summary>
+        public GraphOriginalImage OriginalImage { get; private set; }
         /// <summary>Target avatar object identity for an object.attachment node.</summary>
         public string AttachmentTargetObjectId { get; private set; } = "";
         /// <summary>Stable target bone identity; names are never used as a fallback.</summary>

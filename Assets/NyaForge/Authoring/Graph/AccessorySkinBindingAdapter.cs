@@ -57,7 +57,7 @@ namespace NyaForge.Authoring.Graph
             // plus appearance nodes so that no later modifier is silently baked.
             var allowed = new HashSet<string>(new[] {
                 BuiltinNodes.PolygonSource, BuiltinNodes.PolygonEdit, BuiltinNodes.Output,
-                BuiltinNodes.Paint, BuiltinNodes.StandardMaterial, BuiltinNodes.AssignMaterial,
+                BuiltinNodes.Paint, BuiltinNodes.OriginalImage, BuiltinNodes.StandardMaterial, BuiltinNodes.AssignMaterial,
                 BuiltinNodes.AssignMaterials
             }, StringComparer.Ordinal);
             if (bakeAttachmentTransform.HasValue) allowed.Add(BuiltinNodes.Attachment);
@@ -95,6 +95,8 @@ namespace NyaForge.Authoring.Graph
                     var image = node.PaintImage ?? new PaintImage(node.PaintWidth, node.PaintHeight, new Rgba32(255, 255, 255, 255));
                     return GraphNode.Paint(node.NodeId, node.PaintWidth, node.PaintHeight, image);
                 }
+                if (node.TypeId == BuiltinNodes.OriginalImage)
+                    return GraphNode.OriginalImageNode(node.NodeId, node.OriginalImage);
                 Checks.Require(node.TypeId != BuiltinNodes.LayeredPaint, "POLYGON_MATERIALIZE_UNSUPPORTED", "Layered paint needs an explicit image rebinding step before materialization.");
                 return node;
             }).Concat(new[] { sourceMarker }).ToArray();

@@ -249,13 +249,14 @@ internal static partial class Program
 
         Test("polygon materialization preserves source and appearance before skin binding", () =>
         {
-            string source = GraphId(), edit = GraphId(), paint = GraphId(), material = GraphId(), assignment = GraphId(), output = GraphId();
+            string source = GraphId(), edit = GraphId(), paint = GraphId(), original = GraphId(), material = GraphId(), assignment = GraphId(), output = GraphId();
             var polygon = PolygonPrimitives.Plane(GraphId(), .2f, .2f);
             var graph = new AuthoringGraph(GraphId(),
                 new[] {
                     GraphNode.Polygon(source, polygon, new RestTransform(1, new Vec3())),
                     GraphNode.PolygonEdit(edit),
                     GraphNode.Paint(paint, 4, 4),
+                    GraphNode.OriginalImageNode(original, new GraphOriginalImage(paint, 4, 4, "image/png", new byte[] { 1, 2, 3 })),
                     GraphNode.StandardMaterial(material),
                     GraphNode.AssignMaterial(assignment),
                     GraphNode.Output(output)
@@ -285,6 +286,8 @@ internal static partial class Program
             True(result.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.EditMesh));
             True(result.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinBind));
             True(result.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.PoseSource));
+            True(result.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.OriginalImage &&
+                node.OriginalImage.PaintNodeId == paint && node.OriginalImage.CopyEncodedBytes().SequenceEqual(new byte[] { 1, 2, 3 })));
             var marker = result.Graph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.DerivedSource);
             Equal(graph.GraphId, marker.DerivedFromGraphId);
             Equal(sourceHash, marker.DerivedFromGraphHash);
