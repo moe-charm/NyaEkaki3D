@@ -108,6 +108,9 @@ namespace NyaForge.UnityRuntime
             // object happens to be selected after a multi-object Open.
             bool legacySessionCanBind = next.Document.Objects.Count <= 1 ||
                 (rigSession != null && selectedGraphId != null && rigSession.GraphId == selectedGraphId);
+            bool ambiguousLegacySession = !legacySessionCanBind &&
+                ((expressionBytes != null && !VrmExpressionSessionsCodec.IsTable(expressionBytes)) ||
+                 (springBytes != null && !VrmSpringSessionsCodec.IsTable(springBytes)));
             if (expressionSession == null && expressionBytes != null && !VrmExpressionSessionsCodec.IsTable(expressionBytes) && legacySessionCanBind)
                 expressionSession = VrmExpressionSessionCodec.Read(expressionBytes);
             if (springSession == null && springBytes != null && !VrmSpringSessionsCodec.IsTable(springBytes) && legacySessionCanBind)
@@ -159,6 +162,8 @@ namespace NyaForge.UnityRuntime
             importedSecondaryMotionAsset = secondaryMotionDocument?.Asset;
             SelectSecondaryMotionForActiveGraph();
             RefreshSecondaryMotionStatus();
+            if (ambiguousLegacySession)
+                SetStatus("旧形式のVRM expression／Spring sidecarは複数graphの割当先を特定できないため未割当です。元モデルを再取込するか、GraphId付きprojectへ移行してください。sidecar自体は保存されています。");
         }
 
         void Export() => Try(() =>

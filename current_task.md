@@ -1743,3 +1743,10 @@ Core回帰も **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/N
 # 2026-09-13 Quickstartの保存・取込範囲同期
 
 `docs/Authoring-Quickstart.md`の古いschema 2移行表記を現行schema 4へ更新した。GLB／VRMの説明も、単一mesh/skin選択取込に加えて同一ファイルの全mesh instance原子的取込を明記し、実装・検証済みの範囲と一致させた。
+# 2026-09-13 legacy sidecar診断の可視化
+
+複数graph projectで旧形式の単一VRM expression／Spring sidecarを開いたとき、割当先を推測せず保持するだけでは画面上で理由が分かりにくかった。`OpenProject`で曖昧な旧形式payloadを検出し、読み込み後に「未割当・sidecarは保存済み・元モデル再取込またはGraphId付きprojectへ移行」という状態をStatusへ表示するようにした。GraphId付きsession table、単一graphの旧project、legacy rigがactive graphを明示するケースは従来どおり復元する。
+
+Windows Player `Builds/LegacySessionGuardV2/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-160144-681.log`）。private一時RadDollV3 VRMを使った単体＋全mesh Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-160206-0372f66742b643aab57caf219ea6fe84/report.json`、画面`authoring.png`）。候補選択、複数mesh取込、graph-keyed metadata、native Save/Open、skin／extended GLB出力、VRM0/1 playback lifecycleを含む既存回帰を通過した。Coreも **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-fa8ff7533c224346bbdf9b8e398def7d`）。
+
+この検証は自動Player／Coreの証跡であり、legacy sidecarを意図的に複数graphへ混在させた手動fixture、実マウス・DPI差、UniVRM／VRChat受取、実VRChat内の見た目・PhysBones挙動は別受入境界とする。
