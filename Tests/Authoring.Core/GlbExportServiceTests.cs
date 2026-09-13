@@ -290,6 +290,46 @@ internal static partial class Program
             True(imported.Materials[0].HasEmbeddedBaseColorImage); True(imported.Materials[0].CopyBaseColorImageBytes().Length > 8);
         });
 
+        Test("VRM 1 package adds explicit humanoid metadata without changing GLB geometry", () =>
+        {
+            var mesh = AuthoringFixtures.Panel(1);
+            var glb = GlbWriter.Build(new[] { new GlbExportService.MeshObject { Mesh = mesh, Name = "avatar" } }, null, GlbExportProfile.StaticGeometry);
+            var humanoid = VrmExportMetadata.RequiredHumanBones.ToDictionary(name => name, _ => 0, StringComparer.Ordinal);
+            var metadata = new VrmExportMetadata("Nya test avatar", new[] { "Moe, Charm" }, "https://example.com/license", humanoid);
+            var vrm = VrmExportService.Package(glb, metadata);
+            var root = JObject.Parse(ReadJsonChunk(vrm));
+            Equal("1.0", (string)root["extensions"]!["VRMC_vrm"]!["specVersion"]!);
+            Equal("Nya test avatar", (string)root["extensions"]!["VRMC_vrm"]!["meta"]!["name"]!);
+            True(((JArray)root["extensionsUsed"]!).Values<string>().Contains("VRMC_vrm"));
+            var imported = GlbImporter.Read(vrm);
+            Equal(mesh.VertexCount, imported.Mesh.VertexCount);
+            Equal(mesh.TriangleCount, imported.Mesh.TriangleCount);
+            var profile = VrmMetadataReader.Read(vrm);
+            Equal("vrm1", profile.Format);
+            Equal("Nya test avatar", profile.Title);
+            Equal(15, profile.HumanoidNodes.Count);
+        });
+
+        Test("VRM 1 export writes a revision-pinned package directory", () =>
+        {
+            var mesh = AuthoringFixtures.Panel(1); string boneId = GraphId();
+            var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(boneId, "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
+            string sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), outputId = GraphId();
+            var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, boneId, 1f)));
+            var pose = PoseSet.Create(skeleton, new[] { new BonePose(boneId, PoseTransform.FromTranslation(new Vec3())) });
+            var graph = new AuthoringGraph(GraphId(),
+                new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
+            var workspace = AuthoringWorkspace.CreateEmpty(); Ok(Execute(workspace, AuthoringOperation.AddGraph(graph)));
+            var mapping = VrmExportMetadata.RequiredHumanBones.ToDictionary(name => name, _ => 1, StringComparer.Ordinal);
+            var metadata = new VrmExportMetadata("Exported avatar", new[] { "NyaForge" }, "https://example.com/license", mapping);
+            string directory = Path.Combine(Root, "vrm-export-" + Guid.NewGuid().ToString("N"));
+            var result = VrmExportService.ExportVrm1(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, metadata);
+            True(File.Exists(result.Path)); True(File.Exists(result.ReportPath)); Equal(1, result.ObjectCount);
+            var report = JObject.Parse(File.ReadAllText(result.ReportPath)); Equal("Vrm1Humanoid", (string)report["profile"]!); Equal(Checks.Hash(File.ReadAllBytes(result.Path)), (string)report["vrmHash"]!);
+            Equal("vrm1", VrmMetadataReader.Read(File.ReadAllBytes(result.Path)).Format);
+        });
+
         Test("MCP GLB export request is revision pinned and profile strict", () =>
         {
             string instance = Guid.NewGuid().ToString("D"), document = Guid.NewGuid().ToString("D"), export = Guid.NewGuid().ToString("D");

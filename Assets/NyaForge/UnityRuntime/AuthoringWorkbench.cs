@@ -14,6 +14,7 @@ namespace NyaForge.UnityRuntime
         VisualElement root, view, confirmRow;
         Label status, metrics, selectionLabel, projectLabel, emptyHint;
         TextField projectPath;
+        TextField vrmName, vrmAuthors, vrmLicenseUrl;
         IntegerField vertexId;
         ScrollView controls;
         GraphCanvas graphCanvas;
@@ -168,6 +169,13 @@ namespace NyaForge.UnityRuntime
             side.Add(Button("標準GLB（skin/morph保持）", ExportGlbSkinned, "authoring-export-glb-skinned"));
             side.Add(Button("拡張GLB（全weight保持）", ExportGlbSkinnedExtended, "authoring-export-glb-skinned-extended"));
             side.Add(new Label("Unity用出力はnative機能を保持します。装着情報を含む作品はnative projectへ出力されます。標準GLBは互換用4 influence、拡張GLBは全weightを出力します。"));
+            var vrmMetadata = new Foldout { text = "VRM 1.0 metadata", value = false, name = "authoring-vrm-metadata" };
+            vrmName = new TextField("名前") { value = "NyaForge Avatar", name = "authoring-vrm-name" }; vrmMetadata.Add(vrmName);
+            vrmAuthors = new TextField("作者（カンマ区切り）") { value = "NyaForge", name = "authoring-vrm-authors" }; vrmMetadata.Add(vrmAuthors);
+            vrmLicenseUrl = new TextField("license URL") { value = "", name = "authoring-vrm-license-url" }; vrmMetadata.Add(vrmLicenseUrl);
+            vrmMetadata.Add(new Label("VRM 1.0のhumanoid必須骨を検査します。license URLは作品の利用条件を指すURLを入力してください。表情・LookAt・SpringBoneはこの初期profileでは出力しません。"));
+            side.Add(vrmMetadata);
+            side.Add(Button("VRM 1.0（humanoid）", ExportVrm1, "authoring-export-vrm1"));
             confirmRow = new VisualElement { name = "authoring-confirm" }; confirmRow.style.display = DisplayStyle.None; side.Add(confirmRow);
             status = new Label { name = "authoring-status" }; status.AddToClassList("status");
             // Keep the footer from growing when a long diagnostic is reported on a

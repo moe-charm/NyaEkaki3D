@@ -1637,3 +1637,10 @@ Unity 6000.4.3f1のWindows Player `Builds/ValidationUiV2/NyaForge.exe` をビル
 Unityの出力チェック画面にも「対象別」欄を追加し、対象ID先頭8文字、状態、頂点数、三角形数を縦に表示する。これにより、複数オブジェクトの合計だけでは分からなかった「どの衣装／小物が未完成か」を画面上で確認できる。Core回帰では2オブジェクトの個別結果と合計値を固定した。
 
 Coreは **471 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3d71370b6873449e9888a1fe109e47ec`）。Windows Player `Builds/ValidationObjectsV1/NyaForge.exe`のAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-140207-6001fe322ecb477cb9333b5a243c6b94/report.json`、画面`authoring.png`）。Unity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-140240-211-18db2ee56ab14264af3fc677cb032408/bridge-report.json`）。実マウス、DPI個体差、実VRChat内の見た目・挙動は別の手動受入境界とする。
+# 2026-09-13 initial VRM 1.0 humanoid export profile
+
+標準VRM出力の最初の実装単位として、既存のrest-pose skinned GLBを基礎に`VRMC_vrm` extensionを付ける`VrmExportService`を追加した。WorkbenchのVRM1ボタンは、取込時のgraph単位`ImportedRigSession`をstable `BoneId`で出力GLTF nodeへ解決し、作品名・作者・作品license URLを明示して`model.vrm`を作る。1つのskinned avatar graph object、VRM 1.0 humanoid必須15骨、絶対HTTP(S) license URLを満たさない場合は出力先を作らず拒否する。
+
+このprofileはmetaとhumanoidだけを出力する。表情、LookAt、FirstPerson、SpringBone、MToon、animation、任意VRM拡張は未出力で、`export-report.json`へ制限を記録する。既存のskinned GLBのBIN／geometryを再利用し、CoreでVRM extension再読込とmesh頂点・三角形数の一致を固定した。仕様書とAuthoring READMEにもこの境界を追記した。
+
+Coreは **473 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-892d5dde65f84761a0797c6ae2959758`）。新規回帰はVRM1 packageの`VRMC_vrm`・meta・humanoid再読込とGLB geometry不変、および`VrmExportService`の`model.vrm`／レポート生成を検証する。Windows Player `Builds/Vrm1HumanoidV1/NyaForge.exe`のAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-141116-e1a5a4b4d7894e8fbfa4c77b7efc152b/report.json`、画面`authoring.png`）。Unity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-141149-860-f9fe4f3174564a12803c284e9dd86cb8/bridge-report.json`）。実RadDollV3でのVRM1出力、UniVRM／VRChatでの受取・外観・挙動は未検証境界とする。

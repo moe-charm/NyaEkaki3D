@@ -11,6 +11,8 @@
 
 取込・情報保持・保存・出力の契約を [モデル交換仕様](Model-Interchange-Spec.md) に集約した。[実素材調査](Real-Asset-Import-Plan.md)で20mesh/257骨/18weight/単一mesh262morphの要求を確認したため、次はI04-A（source affine）から進む。複数mesh、容量、標準FBX Bridge、情報保持reportの順序と完了条件は同仕様の第8節、状態はcurrent_taskを参照する。Blenderは任意の開発検査/互換adapterで、標準制作の必須依存へ変更しない。C0〜C5の終了条件は維持する。
 
+2026-09-13追記: 初期のVRM 1.0 humanoid/meta出力profileを`VrmExportService`とWorkbenchへ接続した。既存のrest-pose skinned GLBを基礎に、取込sessionのstable `BoneId`からhumanoid nodeを解決し、作品名・作者・license URLを明示して`.vrm`へ包装する。表情、LookAt、FirstPerson、SpringBone、MToon、animation、任意VRM拡張はまだ出力しないため、完全VRM出力の終了条件は維持する。
+
 ## C1-A開始時の比較表（進捗はcurrent_taskへ集約）
 
 HEADは `6e1e4fc6d4c88b1b5f3368f3706bcec21a0a9e36` だが、制作Core・GUI・Bridge等は未コミットの作業ツリーに存在する。設計v2の第2節は同じコミットを調査した記録であり、次表はC1-A開始時点の比較で、現在はgraph文書・保存・command・canvas・Bakeまで進んでいる。既存変更を上書き・破棄しない。
