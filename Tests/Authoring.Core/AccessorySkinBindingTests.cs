@@ -222,6 +222,9 @@ internal static partial class Program
             True(result.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.EditMesh));
             True(result.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinBind));
             True(result.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.PoseSource));
+            var marker = result.Graph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.DerivedSource);
+            Equal(graph.GraphId, marker.DerivedFromGraphId);
+            Equal(sourceHash, marker.DerivedFromGraphHash);
             var after = GraphEvaluator.Evaluate(result.Graph);
             True(after.IsComplete && after.Output.Mesh != null && after.Output.BaseColor != null);
             Equal(before.Output.Mesh.ContentHash, after.Output.Mesh.ContentHash);
@@ -237,7 +240,9 @@ internal static partial class Program
             Equal(2, reopened.Document.Objects.Count);
             True(reopened.Document.Objects.Any(item => item.Graph.GraphId == graph.GraphId));
             True(reopened.Document.Objects.Any(item => item.Graph.GraphId == result.Graph.GraphId &&
-                item.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinBind)));
+                item.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinBind) &&
+                item.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.DerivedSource &&
+                    node.DerivedFromGraphId == graph.GraphId && node.DerivedFromGraphHash == sourceHash)));
         });
 
         Test("accessory skin binding refuses a rigid attachment conflict", () =>

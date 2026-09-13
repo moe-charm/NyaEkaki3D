@@ -55,6 +55,8 @@ namespace NyaForge.Authoring.Graph
         public const string MorphDeform = "rig.morph-deform";
         /// <summary>Metadata node that pins an accessory object to a stable avatar bone.</summary>
         public const string Attachment = "object.attachment";
+        /// <summary>Metadata node that records the polygon graph used to derive a skin graph.</summary>
+        public const string DerivedSource = "mesh.derived-source";
         static readonly IReadOnlyDictionary<string, NodeDefinition> definitions =
             new ReadOnlyDictionary<string, NodeDefinition>(new Dictionary<string, NodeDefinition>
             {
@@ -79,6 +81,7 @@ namespace NyaForge.Authoring.Graph
                 ,[MorphSet] = new NodeDefinition(MorphSet, Array.Empty<PortDefinition>(), new[] { new PortDefinition("morphs", PortType.MorphSet) })
                 ,[MorphDeform] = new NodeDefinition(MorphDeform, new[] { new PortDefinition("mesh", PortType.Mesh), new PortDefinition("morphs", PortType.MorphSet) }, new[] { new PortDefinition("mesh", PortType.Mesh) })
                 ,[Attachment] = new NodeDefinition(Attachment, Array.Empty<PortDefinition>(), Array.Empty<PortDefinition>())
+                ,[DerivedSource] = new NodeDefinition(DerivedSource, Array.Empty<PortDefinition>(), Array.Empty<PortDefinition>())
             });
         public static IReadOnlyDictionary<string, NodeDefinition> Definitions { get { return definitions; } }
         public static NodeDefinition Find(GraphNode node)

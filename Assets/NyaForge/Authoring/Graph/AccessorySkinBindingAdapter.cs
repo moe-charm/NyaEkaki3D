@@ -68,6 +68,7 @@ namespace NyaForge.Authoring.Graph
             var materializedSource = GraphNode.Source(source.NodeId, editValue.Mesh, editValue.Transform);
             var sourceValue = GraphMeshValue.Source(source.NodeId, editValue.Mesh, editValue.Transform);
             var materializedEdit = GraphNode.Edit(edit.NodeId, true, null, sourceValue.SnapshotHash, sourceValue.DomainId);
+            var sourceMarker = GraphNode.DerivedSourceNode(Guid.NewGuid().ToString("D"), polygonGraph.GraphId, GraphContentIdentity.Hash(polygonGraph));
             var nodes = polygonGraph.Nodes.Values.Select(node =>
             {
                 if (node.NodeId == source.NodeId) return materializedSource;
@@ -82,7 +83,7 @@ namespace NyaForge.Authoring.Graph
                 }
                 Checks.Require(node.TypeId != BuiltinNodes.LayeredPaint, "POLYGON_MATERIALIZE_UNSUPPORTED", "Layered paint needs an explicit image rebinding step before materialization.");
                 return node;
-            }).ToArray();
+            }).Concat(new[] { sourceMarker }).ToArray();
             var derived = new AuthoringGraph(derivedGraphId, nodes, polygonGraph.Edges, polygonGraph.OutputNodeId);
             var derivedEvaluation = GraphEvaluator.Evaluate(derived);
             Checks.Require(derivedEvaluation.IsComplete && derivedEvaluation.Output != null && derivedEvaluation.Output.Mesh != null,

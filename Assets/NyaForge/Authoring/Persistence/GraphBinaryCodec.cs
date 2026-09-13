@@ -79,6 +79,7 @@ namespace NyaForge.Authoring
                     case BuiltinNodes.Pose: Text(writer, addBlob(PoseCodec.Write(node.Pose))); break;
                     case BuiltinNodes.SkinDeform: break;
                     case BuiltinNodes.PoseSource: Text(writer, node.PoseSourceObjectId); break;
+                    case BuiltinNodes.DerivedSource: Text(writer, node.DerivedFromGraphId); Text(writer, node.DerivedFromGraphHash); break;
                     case BuiltinNodes.MorphSet: Text(writer, addBlob(MorphCodec.Write(node.Morphs))); break;
                     case BuiltinNodes.MorphDeform:
                         writer.Write(node.MorphWeights.Count);
@@ -175,6 +176,8 @@ namespace NyaForge.Authoring
                         node=GraphNode.SkinDeformNode(id);break;
                     case BuiltinNodes.PoseSource:
                         node=GraphNode.PoseSourceNode(id, Text(reader,64)); break;
+                    case BuiltinNodes.DerivedSource:
+                        node=GraphNode.DerivedSourceNode(id, Text(reader,64), Text(reader,64)); break;
                     case BuiltinNodes.MorphSet:
                         node=GraphNode.MorphSetNode(id, MorphCodec.ReadUnbound(readBlob(Text(reader,64))));break;
                     case BuiltinNodes.MorphDeform:

@@ -19,6 +19,10 @@ namespace NyaForge.Authoring.Graph
         public PoseSet Pose { get; private set; }
         /// <summary>Avatar object identity used by the last explicit pose copy.</summary>
         public string PoseSourceObjectId { get; private set; } = "";
+        /// <summary>Source graph identity retained by a materialized clothing graph.</summary>
+        public string DerivedFromGraphId { get; private set; } = "";
+        /// <summary>Source graph content hash observed during materialization.</summary>
+        public string DerivedFromGraphHash { get; private set; } = "";
         public MorphSet Morphs { get; private set; }
         public IReadOnlyDictionary<string, float> MorphWeights { get; private set; }
         /// <summary>Target avatar object identity for an object.attachment node.</summary>
@@ -109,6 +113,13 @@ namespace NyaForge.Authoring.Graph
             Checks.Id(objectId);
             var node = new GraphNode(id, BuiltinNodes.PoseSource, 1, null, Identity, 0, 0, 0, true, "", "", Empty, "");
             node.PoseSourceObjectId = objectId;
+            return node;
+        }
+        public static GraphNode DerivedSourceNode(string id, string sourceGraphId, string sourceGraphHash)
+        {
+            Checks.Id(sourceGraphId); Checks.HashText(sourceGraphHash);
+            var node = new GraphNode(id, BuiltinNodes.DerivedSource, 1, null, Identity, 0, 0, 0, true, "", "", Empty, "");
+            node.DerivedFromGraphId = sourceGraphId; node.DerivedFromGraphHash = sourceGraphHash;
             return node;
         }
         public static GraphNode Edit(string id, bool enabled = true, IDictionary<int, Vec3> offsets = null, string inputSnapshot = "", string domain = "")

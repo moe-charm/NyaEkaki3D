@@ -64,6 +64,11 @@ namespace NyaForge.Authoring.Inspection
                             ["skinBindingOutput"]=Binding(binding),
                             ["poseOutput"]=Pose(pose),
                             ["poseSourceObjectId"] = n.TypeId == BuiltinNodes.PoseSource ? (JToken)new JValue(n.PoseSourceObjectId) : JValue.CreateNull(),
+                            ["derivedSource"] = n.TypeId == BuiltinNodes.DerivedSource ? (JToken)new JObject
+                            {
+                                ["graphId"] = n.DerivedFromGraphId,
+                                ["graphHash"] = n.DerivedFromGraphHash
+                            } : JValue.CreateNull(),
                             ["morphOutput"]=Morph(morphs),
                             ["attachment"] = n.TypeId == BuiltinNodes.Attachment ? (JToken)new JObject
                             {
