@@ -1778,3 +1778,13 @@ Authoring画面を開いている間の60fps／OnDemand描画解除を、Dense P
 Unity 6000.4.3f1の`Builds/AuthoringResponsiveV2/NyaForge.exe`はビルド成功（`Logs/build-all-20260913-162013-417.log`）。Dense Paint回帰は **PASS**（`Artifacts/Authoring-20260913-162035-7c6436829ccb48ef8967a24b9c4824d6/report.json`）。同Playerでprivate一時RadDollV3 VRMの全mesh取込・頂点編集・native Save/Open・GLB出力を含むAuthoring suiteも **PASS**（`Artifacts/Authoring-20260913-162111-22190844683a40ba8e49ee9a4ae0b804/report.json`）。Unity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-162322-577-2235196b85fd4ed9bcb5c06550bfa253/bridge-report.json`）。
 
 これはPlayer一台の応答性回帰であり、機種別性能保証、実マウス・DPI差、UniVRM／VRChat受取、実VRChat内の外観・PhysBones挙動は別受入境界とする。
+
+# 2026-09-13 出力補正失敗の黙示フォールバック防止
+
+静的GLBの表示形状をsource skin補正から作る経路で、補正が失敗した場合に未補正のgraph出力へ黙って戻る処理を削除した。現在はstale binding・不足したsource skin・不完全な評価を`AuthoringException`としてGUI／MCPへ返し、表示と異なる静的GLBを成功扱いで公開しない。これは「表示した形と出力した形を一致させる」ための安全境界で、原因を直してから再出力する。
+
+実モデル検証側も、raw source-slotのinverse-bind配列を直接渡す経路を廃止し、本番GUI／MCPと同じstable BoneId順のinverse-bind再整列、親相対joint-local行列、identity node transformの組合せを使うようにした。これまでのall-mesh smokeがこの出力規則を実際に通るようになった。
+
+Coreは **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-72abf8521b22410480b1013456745ce0`）。Unity 6000.4.3f1のWindows Player `Builds/OutputConsistencyV1/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-163056-409.log`）。private一時RadDollV3 VRMの全mesh取込→編集→native Save/Open→拡張skinned GLB出力を含むAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-163128-9961c8b0bc08419bbf7d066126f789ef/report.json`、`authoring.png`）。同成果物のUnity **2022.3.22f1 Bridge**も **PASS**（`Artifacts/BridgeReceiver-20260913-163342-168-0dd45298a43349f6859ac54fd0b4e83b/bridge-report.json`）。
+
+この回帰はCore・Windows Player・Bridgeの自動証跡であり、実マウス／DPI差、UniVRM／VRChat実機での受け取りと見た目、完全VRM semanticsは別の手動受入境界として残す。

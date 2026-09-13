@@ -197,14 +197,14 @@ namespace NyaForge.UnityRuntime
                 if (item?.Graph == null || !importedRigSessions.TryGetValue(item.Graph.GraphId, out var session) || session?.SourceSkin == null)
                     continue;
                 var evaluation = item == workspace.Document.ActiveObject ? workspace.Preview.Evaluation : item.EvaluateGraph();
-                try
-                {
-                    var bindingNode = item.Graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);
-                    var authoredBinding = bindingNode != null && evaluation.SkinBindingOutputs.TryGetValue(bindingNode.NodeId, out var bindingValue) ? bindingValue.Binding : bindingNode?.Binding;
-                    var corrected = SourceSkinGraphAdapter.ApplyToEvaluation(evaluation, item.Graph, session, authoredBinding);
-                    if (corrected?.Mesh != null) result[item.ObjectId] = corrected;
-                }
-                catch (AuthoringException) { }
+                var bindingNode = item.Graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);
+                var authoredBinding = bindingNode != null && evaluation.SkinBindingOutputs.TryGetValue(bindingNode.NodeId, out var bindingValue) ? bindingValue.Binding : bindingNode?.Binding;
+                // A source-skin correction is part of the static display
+                // contract. Falling back to the uncorrected graph output
+                // would publish a GLB that visibly differs from the
+                // Workbench while hiding a stale/missing binding.
+                var corrected = SourceSkinGraphAdapter.ApplyToEvaluation(evaluation, item.Graph, session, authoredBinding);
+                if (corrected?.Mesh != null) result[item.ObjectId] = corrected;
             }
             return result;
         }

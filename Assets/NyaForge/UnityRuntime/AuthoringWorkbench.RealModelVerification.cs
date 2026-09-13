@@ -147,16 +147,16 @@ namespace NyaForge.UnityRuntime
 
             if (expectedRigs == expected)
             {
-                var transforms = new Dictionary<string, SourceAffine>(StringComparer.Ordinal);
-                var inverseBinds = new Dictionary<string, IReadOnlyList<SourceAffine>>(StringComparer.Ordinal);
-                foreach (var item in workspace.Document.Objects)
-                {
-                    if (!importedRigSessions.TryGetValue(item.Graph.GraphId, out var session)) continue;
-                    if (session.MeshInstanceTransform != null) transforms[item.ObjectId] = session.MeshInstanceTransform;
-                    if (session.SourceSkin?.InverseBindMatrices != null) inverseBinds[item.ObjectId] = session.SourceSkin.InverseBindMatrices;
-                }
+                // Exercise the same export adapters as the production GUI/MCP
+                // path. In particular, inverse-bind entries are reordered by
+                // stable BoneId and authored source joint frames are emitted as
+                // parent-relative local matrices; passing raw source-slot arrays
+                // here would leave the real-model smoke blind to those rules.
+                var transforms = SkinnedNodeTransformsForExport();
+                var inverseBinds = SkinnedInverseBindMatrices();
+                var jointLocals = SkinnedJointLocalTransforms();
                 string glbDirectory = Path.Combine(output, "all-model-skinned-glb");
-                var glb = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, glbDirectory, transforms, inverseBinds);
+                var glb = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, glbDirectory, transforms, inverseBinds, jointLocals);
                 var glbInventory = GlbSceneInventoryReader.Read(File.ReadAllBytes(glb.Path));
                 Check(glb.ObjectCount == expected && glbInventory.Meshes.Count == expected && glbInventory.Skins.Count > 0, "All-mesh command-line extended skinned GLB did not retain every mesh instance.");
                 checks.Add("real GLB/VRM all-mesh extended skinned GLB output retains every mesh instance with one or more validated skin resources");
