@@ -193,6 +193,7 @@ namespace Viewer.Runtime
             string failure = null, restorationError = null;
             SessionDocument before = null;
             bool beforeDirty = false, restored = false;
+            string performanceClipId = null;
             object metadata = null;
             var playback = new PerformanceSegment { name = "foreground-playback", requestedSeconds = 60 };
             var idle = new PerformanceSegment { name = "stopped-idle", requestedSeconds = 5 };
@@ -207,12 +208,22 @@ namespace Viewer.Runtime
                 if (Application.platform != RuntimePlatform.WindowsPlayer) throw new InvalidOperationException("Run performance capture in the Windows Player.");
                 if (Active?.Avatar == null || IsBusy || reloadLoop) throw new InvalidOperationException("Initial load did not finish: " + LastErrorCode + " " + Status);
                 readyObservedAtSeconds = UnityEngine.Time.realtimeSinceStartupAsDouble;
-                if (!Active.Verified.Manifest.clips.Any(c => c.clipId == "pose-arms-up")) throw new InvalidOperationException("Required pose-arms-up clip is missing.");
+                // The production avatar packs normally include pose-arms-up,
+                // while the small synthetic fixture intentionally contains
+                // only rest and neck-tilt. Measure the first stable clip when
+                // the preferred pose is unavailable and record the choice so
+                // reports never pretend that a different pose was measured.
+                var performanceClip = Active.Verified.Manifest.clips.FirstOrDefault(c => c.clipId == "pose-arms-up")
+                    ?? Active.Verified.Manifest.clips.FirstOrDefault(c => c.required)
+                    ?? Active.Verified.Manifest.clips.FirstOrDefault();
+                if (performanceClip == null || string.IsNullOrWhiteSpace(performanceClip.clipId))
+                    throw new InvalidOperationException("The pack has no clip available for performance measurement.");
+                performanceClipId = performanceClip.clipId;
                 before = Snapshot(); beforeDirty = Dirty;
                 Pause();
-                Edit(s => { s.motion.clipId = "pose-arms-up"; s.motion.timeSeconds = 0; s.motion.speed = 1; s.motion.loop = true; s.preview.mode = "original"; s.preview.lightPresetId = "studio"; });
+                Edit(s => { s.motion.clipId = performanceClipId; s.motion.timeSeconds = 0; s.motion.speed = 1; s.motion.loop = true; s.preview.mode = "original"; s.preview.lightPresetId = "studio"; });
                 CameraPreset("all"); CameraPreset("front");
-                if (Document.motion.clipId != "pose-arms-up") throw new InvalidOperationException("Playback setup was rejected: " + Status);
+                if (Document.motion.clipId != performanceClipId) throw new InvalidOperationException("Playback setup was rejected: " + Status);
                 IsPlaying = true;
                 SetStatus("性能を測定しています · 再生60秒、停止5秒");
             }
@@ -255,12 +266,14 @@ namespace Viewer.Runtime
                     clock = "Unity Time.realtimeSinceStartupAsDouble; excludes OS process launch before Unity initialization.",
                     readiness = "Observed Active avatar with no reload in progress; not an OS-launch or first-present measurement." },
                 metadata, pack = before?.pack,
+                performanceClipId,
                 validForegroundPlayback, validStoppedIdle,
                 playback = playback.Summary(), idle = idle.Summary(),
                 notes = new[] { "Frame cadence uses actual coroutine resume intervals from a monotonic clock, including stalls.",
                     "No forced GC or asset unloading during measurement. Process memory samples are approximately one second apart.",
                     "Budget pass/fail is intentionally not asserted; foreground validity and metadata must be checked before comparison.",
-                    "This captures one startup observation and one playback run, not the required ten-startup series or twenty-update test." }
+                    "This captures one startup observation and one playback run, not the required ten-startup series or twenty-update test.",
+                    "The preferred pose-arms-up clip is used when present; otherwise the first required or available clip is recorded in performanceClipId." }
             };
             try { File.WriteAllText(Path.Combine(output, "performance.json"), JsonConvert.SerializeObject(report, Formatting.Indented)); }
             catch (Exception e) { failure = "Writing performance.json: " + e; }

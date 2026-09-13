@@ -1,5 +1,17 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09O: V30通常Viewerのforeground性能基準
+
+`Builds/PerformanceV30/NyaForge.exe`へ標準fixture `GeneratedPacks/NyaForgeFixture/current.StandaloneWindows64.json`を明示し、通常ウィンドウを前面化して性能計測を実行した。`pose-arms-up`がないfixtureでは、今回追加した選択規則により`pose-rest`を計測対象とし、レポートへ`performanceClipId`を保存する。
+
+- レポート: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PerformanceV30-Foreground-e8eaeb64df894b969e80fee4a092b347/performance.json`
+- 計測完了: **true**。foreground／stopped-idleとも有効
+- 60秒再生: **60.0016 FPS、P95 16.8724 ms、最大 17.7144 ms**
+- Private bytes: 再生開始約577MB、終了約563MB。working set peak約335MB
+- Unity 6000.4.3f1、Direct3D11、RTX 4090、Windows 11、1280×800、DPI 150%、AC電源
+
+これは標準fixture・単一PCでの一回の基準値で、10回起動・20回更新、実RadDollV3通常編集、別GPU、VRChatの性能保証ではない。全mesh取込時の一時約4.6GB観測はNF-V1-09Nへ分けて記録する。
+
 ## 2026-09-14 NF-V1-09N: V29実RadDollV3一周とBridge受け取り
 
 private一時VRM `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`を公開ツリーへコピーせず、`Builds/ReleaseCandidateV29/NyaForge.exe`へ直接渡した。全mesh instance取込、EditMesh、native Save/Open、skinned GLB／VRM1出力、衣装package生成を含む **93 checks PASS**（`Artifacts/Authoring-20260914-082145-4f42a375b1224914af0782043c15f279/report.json`）。生成packageをUnity **2022.3.22f1**のBridgeへ渡し、**16 checks PASS**（`Artifacts/BridgeReceiver-20260914-082703-724-7cf712d873094c299d5e03ef390fb8b5/bridge-report.json`）。

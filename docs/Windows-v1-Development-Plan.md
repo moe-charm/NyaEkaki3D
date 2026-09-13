@@ -97,7 +97,7 @@ NF-V1のIDは持込提案との対応用に維持。状態は実装済み・合�
 
 ## 6. 軽量性と画像品質の受入
 
-持込の「P95入力100ms、1080pで30fps、2時間、50回Open/Close、warm baseline比10%または100MiB以内」は暫定測定案。達成済みとはせず、01で基準PC・モデル頂点数・texture量・操作・計測点・GC/待機条件を決める。FPS平均だけで長い入力停止を見逃さず、保持Unity Object数とmanaged/nativeメモリも記録する。異なる場面のピーク同士を比較してリーク判定しない。
+持込の「P95入力100ms、1080pで30fps、2時間、50回Open/Close、warm baseline比10%または100MiB以内」は暫定測定案。V30では標準fixtureのforeground再生60秒＋停止5秒を実行し、**60.0016 FPS、P95 16.8724ms、最大17.7144ms、private bytes約577MB→563MB、working set peak約335MB**を観測した（レポート `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PerformanceV30-Foreground-e8eaeb64df894b969e80fee4a092b347/performance.json`）。これはUnity 6000.4.3f1／RTX 4090／Windows 11／1280×800／DPI150%の一回の基準値で、予算合否や実RadDollV3通常編集の保証ではない。10回起動・20回更新・2時間編集を含む最終計測は未実施。FPS平均だけで長い入力停止を見逃さず、保持Unity Object数とmanaged/nativeメモリも記録する。異なる場面のピーク同士を比較してリーク判定しない。
 
 Paintと表示textureで同じ解像度・更新頻度を必要とするかを09Aで判断する。原本4Kを常時CPU展開して全layerへ複製する変更は、軽量性・Undo・保存予算の検証を伴わせる。画像の縮小をユーザーへ明示し、原本未保持は出力損失として扱う。
 
