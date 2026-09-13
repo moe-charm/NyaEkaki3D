@@ -122,7 +122,17 @@ namespace NyaForge.Authoring
         {
             Checks.Require(objects != null && objects.Count > 0, "NO_EXPORTABLE_OBJECT", "No skinned graph objects were provided.");
             string skeletonHash = objects[0].Skeleton.ContentHash;
-            Checks.Require(objects.All(item => item.Skeleton.ContentHash == skeletonHash), "GLB_SKIN_SHARED_SKELETON", "Skinned multi-object GLB export requires all graph objects to share one skeleton.");
+            if (objects.All(item => item.Skeleton.ContentHash == skeletonHash)) return;
+
+            // A source GLB may contain several skin resources that use
+            // different subsets (or bind frames) of one hierarchy. Keep those
+            // as separate glTF skins, but require a shared stable BoneId so
+            // unrelated avatars cannot be combined merely because their bone
+            // names happen to match. Stable IDs include the source hash.
+            var common = new HashSet<string>(objects[0].Skeleton.Bones.Select(bone => bone.BoneId), StringComparer.Ordinal);
+            for (int i = 1; i < objects.Count; i++)
+                common.IntersectWith(objects[i].Skeleton.Bones.Select(bone => bone.BoneId));
+            Checks.Require(common.Count > 0, "GLB_SKIN_SHARED_SKELETON", "Skinned multi-object GLB export requires a shared source skeleton or explicit attachment conversion.");
         }
 
         static void ValidateRequest(AuthoringWorkspace workspace, string instance, string document, long revision, string directory)
@@ -363,7 +373,7 @@ namespace NyaForge.Authoring
                 Checks.Require(skinnedObjects != null && skinnedObjects.Length == objects.Length, "GLB_SKIN_OBJECT_COUNT", "Each skinned mesh must have a matching binding.");
                 Checks.Require(skinnedObjects.Length > 0, "NO_EXPORTABLE_OBJECT", "No skinned graph objects were provided.");
             }
-            int sharedSkinIndex = -1;
+            var skinIndices = new Dictionary<string, int>(StringComparer.Ordinal);
             for (int i = 0; i < objects.Length; i++)
             {
                 var item = objects[i]; var meshObject = item; var mesh = item.Mesh; var primitiveTemplates = new JArray();
@@ -379,8 +389,12 @@ namespace NyaForge.Authoring
                     jointSets = AddJointSets(binary, views, accessors, mesh.VertexCount, currentSkinned.Binding, currentSkinned.Skeleton, profile == GlbExportProfile.SkinnedGeometryExtended);
                     weightSets = AddWeightSets(binary, views, accessors, mesh.VertexCount, currentSkinned.Binding, profile == GlbExportProfile.SkinnedGeometryExtended);
                     joints = jointSets[0]; weights = weightSets[0];
-                    if (sharedSkinIndex < 0) sharedSkinIndex = AddSkeleton(binary, views, accessors, nodes, skins, sceneNodes, currentSkinned);
-                    skinIndex = sharedSkinIndex;
+                    string skinKey = SkinIdentity(currentSkinned);
+                    if (!skinIndices.TryGetValue(skinKey, out skinIndex))
+                    {
+                        skinIndex = AddSkeleton(binary, views, accessors, nodes, skins, sceneNodes, currentSkinned);
+                        skinIndices.Add(skinKey, skinIndex);
+                    }
                 }
                 var morphTargets = new JArray();
                 if (meshObject.Morphs != null)
@@ -571,6 +585,24 @@ namespace NyaForge.Authoring
         }
 
         static JArray Append(JToken existing, int value) { var array = existing as JArray ?? new JArray(); array.Add(value); return array; }
+        static string SkinIdentity(GlbExportService.SkinnedObject skinned)
+        {
+            using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(skinned.Skeleton.ContentHash);
+                if (skinned.InverseBindMatrices == null) writer.Write(0);
+                else
+                {
+                    writer.Write(skinned.InverseBindMatrices.Count);
+                    foreach (var matrix in skinned.InverseBindMatrices)
+                    {
+                        Checks.Require(matrix != null, "GLB_SKIN_BIND", "Retained inverse-bind matrix is missing.");
+                        foreach (double value in matrix.ToColumnMajor()) writer.Write(value);
+                    }
+                }
+                return Checks.Hash(stream.ToArray());
+            }
+        }
         static SourceAffine DefaultInverseBind(BoneDefinition bone)
             => SourceAffine.FromTrs(new Vec3(-bone.Head.X, -bone.Head.Y, -bone.Head.Z), new Vec4(0, 0, 0, 1), new Vec3(1, 1, 1));
         static bool IsSkinned(GlbExportProfile profile) => profile == GlbExportProfile.SkinnedGeometry || profile == GlbExportProfile.SkinnedGeometryExtended;

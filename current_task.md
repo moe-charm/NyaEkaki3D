@@ -3,6 +3,16 @@
 `Builds/FeedbackRecheckV1/NyaForge.exe`を1280x800で起動し、パック選択、キャンセル時の文書／履歴保持、named session保存・再開、未保存変更の破棄確認、不正パス保持、最近／確認セット／設定／制作画面への遷移、utility panelの折りたたみ、viewportの利用可能領域を再確認した。Navigation suiteは **PASS**（`Artifacts/Navigation-20260913-125208-90befd32b95d416690cf89634a21c1f1/report.json`）。`main.png`／`sets.png`／`settings.png`は1280x800で文字欠けなし、制作入口の表示領域も確保されている。
 
 これは自動Playerナビゲーションと画面画像の証拠で、実マウス・DPI個体差・Explorerの実クリックは別手動受入境界とする。
+# 2026-09-13 multi-skin GLB output recheck
+
+前回の実RadDollV3全mesh取込では、native projectの10 objectとgraph単位rig sessionを保存・再読込できた。複数のsource skin resourceを一つのglTF skinへ無理に統合すると、同じsource由来でもrest定義やinverse-bindが異なるため出力時に停止する課題が残っていた。
+
+`GlbExportService`を、同一 `Skeleton.ContentHash` なら従来どおり一つのskinを共有し、hashが異なる場合は全object間の共通安定 `BoneId` を検証してから、skeleton hashとinverse-bind行列の組合せごとに別skin resourceを生成する方式へ変更した。共通BoneIdがない異なるsourceの結合は従来どおり `GLB_SKIN_SHARED_SKELETON` で拒否する。skin resourceを分けてもmesh node・node affine・4/32 influence・source inverse-bindを保持し、native制作データは変更しない。
+
+Coreは **469 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-62af12a2a9a6453dafdeb24bfdf9e2be`）。`Builds/AllMeshRealV3/NyaForge.exe`でprivate一時RadDollV3 VRMを `-ImportAllModel` 実行し、10 mesh instanceの編集可能化、native Save/Open、feature-preserving native export、複数skinを含む拡張skinned GLB出力まで **PASS**（`Artifacts/Authoring-20260913-132813-15c2514e54da41ef8f7a104643df84ab/report.json`、GLB `all-model-skinned-glb/model.glb`）。Unity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-133031-021-d7d97a099abe4b0fbb7fdd6d4b5eaf7c/bridge-report.json`）。private素材はpublic repositoryへ追加していない。
+
+実VRChatでの見た目・挙動、異なるsourceのskeleton結合、共有mesh／morph参照、完全なtexture／animation／VRM拡張保持、標準VRM出力は別の受入境界として残る。
+
 # 2026-09-13 pasted feedback recheck on current HEAD d440900
 
 添付されたレビュー（基準 `0d1e957`）を現行HEAD `d440900`へ再照合した。レビューのP1（複数graph metadataの混線、source skin二重変形、skinned node affine、inverse-bind欠落、装着後クリックずれ）は、現行のgraph単位session、SkinDeform入力差し替え後の再評価、skinned affineの監査保持、元行列の標準／拡張GLB出力、`WorldPoints`統一で対応済み。P2（linear material／metallic既定値、局所material slot、装着先保持、PhysBones source hash、揺れUndo、GLB共通root・morph bounds、normal/tangent morph）も回帰へ含まれている。
@@ -1593,4 +1603,3 @@ Core **469 passed / 0 failed**（`dotnet run --project Tests/Authoring.Core/Auth
 Windows Player `Builds/AllMeshRealV1/NyaForge.exe` の実RadDollV3 Authoring suiteは **PASS / 84 checks**（`Artifacts/Authoring-20260913-130636-74e77cd8f5b143b5a62324d73c5e3669/report.json`）。全mesh instanceの取込・保存・再開・native export roundtripを含む。同成果物のUnity **2022.3.22f1 Bridge**も **PASS**（`Artifacts/BridgeReceiver-20260913-131142-286-11d7292fd3e74bb492946824f1af290d/bridge-report.json`）。
 
 これはprivate実モデルの自動smokeであり、実マウス／DPI差、実VRChat内の見た目・PhysBones、異なるskeletonの自動結合、共有mesh／skin／morph参照、完全VRM出力は別受入境界として残す。
-

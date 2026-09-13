@@ -160,9 +160,9 @@ I04-Eのreport設計はAと同時に進め、完全取込の公開にはA〜Eの
 
 ### 同一skeletonの複数mesh（2026-09-13）
 
-`SkinnedGeometry`／`SkinnedGeometryExtended`は、同一skeleton hashを共有する複数graph objectをmeshごとのprimitive/nodeとして出力し、一つのshared skinを参照できる。graph objectごとの `ImportedRigSession.MeshInstanceTransform` はnodeごとのmatrixへ保持する。source skinの表示は`SkinDeform`ノード位置をsource paletteで差し替えてから下流graphを再評価し、SkinDeform後のEditMesh/Morph/材質を保持する。異なるskeletonの結合、共有mesh／morph参照の完全保持は未対応である。
+`SkinnedGeometry`／`SkinnedGeometryExtended`は、同一skeleton hashを共有する複数graph objectをmeshごとのprimitive/nodeとして出力し、一つのshared skinを参照できる。さらに同一GLB/VRM由来でskeleton hashが分かれる場合は、共通の安定 `BoneId` を検証したうえで、inverse-bindと骨定義の組合せごとに複数のglTF skin resourceへ分けて出力する。graph objectごとの `ImportedRigSession.MeshInstanceTransform` はnodeごとのmatrixへ保持する。source skinの表示は`SkinDeform`ノード位置をsource paletteで差し替えてから下流graphを再評価し、SkinDeform後のEditMesh/Morph/材質を保持する。異なるsourceのskeleton、共有mesh／morph参照の完全保持は未対応である。
 
-`GlbExportService` はnative制作データを変更せず、明示的な2 profileで標準glTF 2.0 GLBを生成する。
+`GlbExportService` はnative制作データを変更せず、明示的な3 profileで標準glTF 2.0 GLBを生成する。
 
 GLB/VRMの入出力にはnative blobと分離した128 MiBファイル予算と、1 mesh 200,000頂点の共通予算を適用する。native graph/blobの16 MiB予算を広げる変更ではない。予算超過は出力先を作成せず診断する。
 

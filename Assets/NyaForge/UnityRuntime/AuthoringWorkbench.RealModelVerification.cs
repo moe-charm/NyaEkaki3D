@@ -117,6 +117,23 @@ namespace NyaForge.UnityRuntime
             Check(exported.Kind == ProjectExportKind.AuthoringProject && reopenedPackage.Document.Objects.Count == expected && reopenedPackage.Document.StateHash == workspace.Document.StateHash && reopenedPackage.Attachments.ContentHash == workspace.Attachments.ContentHash, "All-mesh command-line native export did not roundtrip.");
             checks.Add("real GLB/VRM all-mesh command-line import: every mesh instance editable, native Save/Open and feature-preserving native export roundtrip");
 
+            if (expectedRigs == expected)
+            {
+                var transforms = new Dictionary<string, SourceAffine>(StringComparer.Ordinal);
+                var inverseBinds = new Dictionary<string, IReadOnlyList<SourceAffine>>(StringComparer.Ordinal);
+                foreach (var item in workspace.Document.Objects)
+                {
+                    if (!importedRigSessions.TryGetValue(item.Graph.GraphId, out var session)) continue;
+                    if (session.MeshInstanceTransform != null) transforms[item.ObjectId] = session.MeshInstanceTransform;
+                    if (session.SourceSkin?.InverseBindMatrices != null) inverseBinds[item.ObjectId] = session.SourceSkin.InverseBindMatrices;
+                }
+                string glbDirectory = Path.Combine(output, "all-model-skinned-glb");
+                var glb = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, glbDirectory, transforms, inverseBinds);
+                var glbInventory = GlbSceneInventoryReader.Read(File.ReadAllBytes(glb.Path));
+                Check(glb.ObjectCount == expected && glbInventory.Meshes.Count == expected && glbInventory.Skins.Count > 0, "All-mesh command-line extended skinned GLB did not retain every mesh instance.");
+                checks.Add("real GLB/VRM all-mesh extended skinned GLB output retains every mesh instance with one or more validated skin resources");
+            }
+
             string empty = Path.Combine(output, "all-model-empty");
             ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null);
             projectPath.SetValueWithoutNotify(empty);
