@@ -80,7 +80,8 @@ namespace NyaForge.UnityRuntime
             if (instanceIndex >= 0)
             {
                 var instance = inventory.Instances[instanceIndex];
-                modelImportSelectionStatus.text = "候補: node " + instanceIndex + " (" + instance.Name + ") → mesh " + instance.MeshIndex + (instance.SkinIndex.HasValue ? " · skin " + instance.SkinIndex.Value : " · skinなし") + " · instances " + inventory.Instances.Count + " · source " + inventory.SourceHash.Substring(0, 12);
+                var shared = inventory.SharedResources.Mesh(instance.MeshIndex);
+                modelImportSelectionStatus.text = "候補: node " + instanceIndex + " (" + instance.Name + ") → mesh " + instance.MeshIndex + (instance.SkinIndex.HasValue ? " · skin " + instance.SkinIndex.Value : " · skinなし") + (shared != null && shared.IsShared ? " · mesh共有 " + shared.NodeIndices.Count + " nodes（取込後は個別編集）" : "") + " · instances " + inventory.Instances.Count + " · source " + inventory.SourceHash.Substring(0, 12);
                 return;
             }
             int meshIndex = modelImportMeshIndex.value, skinIndex = modelImportSkinIndex.value;
@@ -88,7 +89,10 @@ namespace NyaForge.UnityRuntime
             if (inventory.Skins.Count > 0 && (skinIndex < 0 || skinIndex >= inventory.Skins.Count)) throw new InvalidOperationException("skin index が範囲外です。候補を確認してください。");
             var mesh = inventory.Meshes[meshIndex];
             string instances = " instances " + inventory.Instances.Count;
-            modelImportSelectionStatus.text = "候補: mesh " + meshIndex + " (" + mesh.Name + ", " + mesh.PrimitiveCount + " primitive) · skins " + inventory.Skins.Count + instances + " · source " + inventory.SourceHash.Substring(0, 12);
+            var meshRefs = inventory.SharedResources.Mesh(meshIndex);
+            string sharing = meshRefs != null && meshRefs.IsShared ? " · mesh共有 " + meshRefs.NodeIndices.Count + " nodes（取込後は個別編集）" : "";
+            string skinSharing = meshRefs != null && meshRefs.HasMultipleSkins ? " · 複数skin参照（node選択が必要）" : "";
+            modelImportSelectionStatus.text = "候補: mesh " + meshIndex + " (" + mesh.Name + ", " + mesh.PrimitiveCount + " primitive) · skins " + inventory.Skins.Count + sharing + skinSharing + instances + " · source " + inventory.SourceHash.Substring(0, 12);
         }
 
         int SelectedModelMeshIndex => modelImportMeshIndex == null ? 0 : modelImportMeshIndex.value;
@@ -100,7 +104,11 @@ namespace NyaForge.UnityRuntime
             if (inventory == null) return;
             if (modelImportMeshChoice != null)
             {
-                modelImportMeshChoice.choices = inventory.Meshes.Select(mesh => "mesh " + mesh.MeshIndex + " · " + mesh.Name + " · " + mesh.PrimitiveCount + " primitive").ToList();
+                modelImportMeshChoice.choices = inventory.Meshes.Select(mesh =>
+                {
+                    var references = inventory.SharedResources.Mesh(mesh.MeshIndex);
+                    return "mesh " + mesh.MeshIndex + " · " + mesh.Name + " · " + mesh.PrimitiveCount + " primitive" + (references != null && references.IsShared ? " · shared " + references.NodeIndices.Count : "");
+                }).ToList();
                 if (modelImportMeshChoice.choices.Count == 0) modelImportMeshChoice.choices.Add("mesh候補なし");
                 modelImportMeshChoice.index = Math.Max(0, Math.Min(SelectedModelMeshIndex, modelImportMeshChoice.choices.Count - 1));
             }

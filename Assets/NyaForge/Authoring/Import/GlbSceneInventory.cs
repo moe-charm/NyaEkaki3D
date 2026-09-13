@@ -48,6 +48,38 @@ namespace NyaForge.Authoring.Import
         }
     }
 
+    /// <summary>References to one mesh resource, kept separate from node instances.</summary>
+    public sealed class GlbMeshResourceReferences
+    {
+        public int MeshIndex { get; }
+        public IReadOnlyList<int> NodeIndices { get; }
+        public IReadOnlyList<int> SkinIndices { get; }
+        public bool IsShared { get { return NodeIndices.Count > 1; } }
+        public bool HasMultipleSkins { get { return SkinIndices.Count > 1; } }
+
+        internal GlbMeshResourceReferences(int meshIndex, IEnumerable<GlbMeshInstance> instances)
+        {
+            MeshIndex = meshIndex;
+            var values = (instances ?? Enumerable.Empty<GlbMeshInstance>()).OrderBy(item => item.NodeIndex).ToArray();
+            NodeIndices = Array.AsReadOnly(values.Select(item => item.NodeIndex).ToArray());
+            SkinIndices = Array.AsReadOnly(values.Where(item => item.SkinIndex.HasValue).Select(item => item.SkinIndex.Value).Distinct().OrderBy(value => value).ToArray());
+        }
+    }
+
+    /// <summary>Source resource aliases are reported without collapsing editable graph objects.</summary>
+    public sealed class GlbSharedResourceReferences
+    {
+        public IReadOnlyList<GlbMeshResourceReferences> Meshes { get; }
+        internal GlbSharedResourceReferences(IEnumerable<GlbMeshResourceReferences> meshes)
+        {
+            Meshes = new ReadOnlyCollection<GlbMeshResourceReferences>((meshes ?? Enumerable.Empty<GlbMeshResourceReferences>()).ToArray());
+        }
+        public GlbMeshResourceReferences Mesh(int meshIndex)
+        {
+            return Meshes.FirstOrDefault(item => item.MeshIndex == meshIndex);
+        }
+    }
+
     /// <summary>Immutable scene-level references used before a selected mesh is published to an authoring graph.</summary>
     public sealed class GlbSceneInventory
     {
@@ -57,6 +89,8 @@ namespace NyaForge.Authoring.Import
         public IReadOnlyList<GlbMeshLocator> Meshes { get; }
         public IReadOnlyList<GlbMeshInstance> Instances { get; }
         public IReadOnlyList<GlbSkinLocator> Skins { get; }
+        /// <summary>Explicit source mesh aliases. Repeated instances remain independent graph objects after import.</summary>
+        public GlbSharedResourceReferences SharedResources { get; }
 
         internal GlbSceneInventory(string sourceHash, SourceNodeTransforms nodeTransforms,
             IEnumerable<GlbMeshLocator> meshes, IEnumerable<GlbMeshInstance> instances, IEnumerable<GlbSkinLocator> skins)
@@ -66,6 +100,8 @@ namespace NyaForge.Authoring.Import
             Meshes = new ReadOnlyCollection<GlbMeshLocator>(meshes.ToArray());
             Instances = new ReadOnlyCollection<GlbMeshInstance>(instances.ToArray());
             Skins = new ReadOnlyCollection<GlbSkinLocator>(skins.ToArray());
+            SharedResources = new GlbSharedResourceReferences(Meshes.Select(mesh =>
+                new GlbMeshResourceReferences(mesh.MeshIndex, Instances.Where(instance => instance.MeshIndex == mesh.MeshIndex))));
         }
     }
 

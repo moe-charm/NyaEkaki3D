@@ -345,7 +345,7 @@ reflection型解決は`VrcPhysBonesReflectionResolver`へ分離し、assembly-qu
 | 状態 / ID | 実行する作業 | 完了条件・依存 |
 |---|---|---|
 | [ ] I04-A / P1 **継続** | source local/world、一般TRS/matrix、inverse-bind、法線/接線変換の基盤 | 数値/reader/codec/GUI生成/native原本なしOpen、mesh/POSITION/NORMAL/TANGENT morph変換、SourceSkinBinding/SourceSkinDeformer、GLB全JOINTS_n/WEIGHTS_n候補、NYSPとrig v5/native/GUI接続、評価済みGraphMeshValueへのSourceSkinGraphAdapter、authored poseからのSourceSkinPosePalette、Workbench取込後/揺れ再生中の自動表示を追加済み。同一skeleton hashの複数graph objectをshared skinでSkinnedGeometry／Extended GLBへ出力する回帰を追加。次は異なるskeletonの明示的な出力境界、再利用mesh/objectと失敗時原子性を検証。sparse weightは未対応。float weightとnormalized UBYTE/USHORT weightを読取可能 |
-| [ ] I04-B / P1 **継続** | 複数mesh/instance/skin、source→制作ID対応 | `GlbSceneInventoryReader`でmesh/primitive数、node instance、skin joint参照、node world transformを元indexのまま候補化し、候補確認・node instance選択GUIを追加した。native documentは最大64 objectのactive object方式へ拡張し、`object.select`、graph object追加、Save/Open、Workbench対象切替を検証済み。非active objectは読み取り専用の背面表示とFrame対象にでき、複数object package出力も追加した。GLB取込はgraph projectへ新objectとして追加する。複数graph objectのrig sessionをgraph IDで保存・active objectへ再選択する経路を追加済み。同一skeleton hashの複数skinned meshはshared skin出力へ対応。残りは異なるskeletonの結合、同名morph/共有mesh・skin参照と実素材受入。 |
+| [ ] I04-B / P1 **継続** | 複数mesh/instance/skin、source→制作ID対応 | `GlbSceneInventoryReader`でmesh/primitive数、node instance、skin joint参照、node world transformを元indexのまま候補化し、候補確認・node instance選択GUIを追加した。`SharedResources`でmesh aliasと複数skin参照を明示し、GUIへ「取込後は個別編集」「node選択が必要」を表示する。native documentは最大64 objectのactive object方式へ拡張し、`object.select`、graph object追加、Save/Open、Workbench対象切替を検証済み。非active objectは読み取り専用の背面表示とFrame対象にでき、複数object package出力も追加した。GLB取込はgraph projectへ新objectとして追加する。複数graph objectのrig sessionをgraph IDで保存・active objectへ再選択する経路を追加済み。同一skeleton hashの複数skinned meshはshared skin出力へ対応。残りは異なるskeletonの結合、同名morph/共有mesh・skin参照の完全dedup、実素材受入。方針は`docs/Shared-Resource-Policy.md`に固定した。 |
 | [ ] I04-C / P1 **継続** | rig/weight/morph容量とcodec/hash/表示/出力 | nativeは512骨・32 influence・512 morphへ拡張し、257骨・18weight・単一mesh262morphの削減なし往復、GLB全JOINTS_n/WEIGHTS_n取込、`SkinnedGeometryExtended`出力を回帰済み。標準SkinnedGeometryは互換上4 influenceを明示拒否する。実GLB受取先・VRChat側確認が残る |
 | [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
 | [ ] I04-E / P1 **継続** | 機能report、材質/animation/VRM意味情報/未知拡張の保持とGUI/MCP | GLB importerのコード付きdiagnosticsをnative attachmentへ保存し、MCP graph inspection・取込後status・GUI詳細パネルで表示。未実装の `extensionsRequired` は取込前拒否済み。依存資源込みopaque保持、既知VRM内の未保持field、完全材質/animation保持が残件 |
@@ -1834,6 +1834,14 @@ Coreは **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 実SDK probe **PASS**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-20260913-5e7f66bbf32a464286e9a84465f5a79c/physbones-sdk-report-16.json`）。Core **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-cebf69dc5bb5449d9e10ffe45b43746b`）。Unity 6000.4.3f1 Windows Player build **PASS**（`Builds/PhysBonesSdkCompatV1/NyaForge.exe`、`Logs/build-all-20260913-172701-801.log`）。同PlayerのAuthoring suite **PASS**（`Artifacts/Authoring-20260913-172731-2a6d0733c50c48f4a71c37ccaee5a9a3/report.json`）、Unity 2022.3.22f1 Bridge **PASS**（`Artifacts/BridgeReceiver-20260913-172802-343-45a35a51b0ff4f50885efa1dde54ecfd/bridge-report.json`）。
 
 残る境界は、実アバターを使った揺れの見た目、VRChat Build & Test／実機、Quest制約、実マウス／DPI差。SDK DLLとprivate素材はpublic repositoryへ追加しない。
+
+# 2026-09-13 GLB共有リソースの明示化
+
+I04-Bの残件を、暗黙のmesh aliasを作らずに参照関係を確認できる形へ進めた。`GlbSceneInventory.SharedResources`がmesh resourceごとのnode index／skin indexを公開し、同じmeshを複数nodeが参照する場合や一つのmeshへ複数skinが対応する場合を候補確認で区別する。Workbenchのmesh候補・候補statusへ共有数を表示し、全mesh instance取込後はnodeごとに独立編集できることを明記した。source hash＋mesh indexを含むmorph IDと、graph keyedのskinned session保持は既存契約を引き継ぐ。
+
+Coreへ「同一mesh resourceを2 nodeが参照するinventoryが、aliasを報告しつつ2 instanceを保持する」回帰を追加した。共有参照の方針は`docs/Shared-Resource-Policy.md`へ記録し、import READMEも同期した。safe resource dedup、異なるsource skeletonの結合、外部アプリの共有解釈、実素材での共有参照受入はI04-Bの残件として継続する。
+
+Coreは **477 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-07c2979fe4314ddfab27df9c7c858bd5`）。Unity 6000.4.3f1のWindows Player `Builds/SharedResourceUiV1/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-173935-325.log`）、Authoring suite **PASS**（`Artifacts/Authoring-20260913-174003-379716347af5449d96e02f3d3f4caaa8/report.json`、画面`authoring.png`）、Unity 2022.3.22f1 Bridge **PASS**（`Artifacts/BridgeReceiver-20260913-174039-231-85b8e1f85217483f8cbc2367b9c34a8b/bridge-report.json`）。
 
 # 2026-09-13 PhysBones実SDK probeの再利用化
 

@@ -29,6 +29,22 @@ internal static partial class Program
             Equal(1, result.Meshes.Count); Equal(0, result.Instances.Count); True(result.NodeTransforms == null);
         });
 
+        Test("GLB scene inventory reports shared mesh aliases without collapsing instances", () =>
+        {
+            var root = JObject.Parse(ReadJsonChunk(BuildGlb()));
+            root["nodes"] = new JArray(
+                new JObject { ["name"] = "BodyA", ["mesh"] = 0, ["skin"] = 0 },
+                new JObject { ["name"] = "BodyB", ["mesh"] = 0 });
+            root["skins"] = new JArray(new JObject { ["joints"] = new JArray(0) });
+            var result = GlbSceneInventoryReader.Read(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None)));
+            var references = result.SharedResources.Mesh(0);
+            True(references != null && references.IsShared);
+            Equal(2, references.NodeIndices.Count); Equal(0, references.NodeIndices[0]); Equal(1, references.NodeIndices[1]);
+            Equal(1, references.SkinIndices.Count); Equal(0, references.SkinIndices[0]);
+            True(!references.HasMultipleSkins);
+            Equal(2, result.Instances.Count);
+        });
+
         Test("GLB scene inventory rejects broken references and duplicate joints", () =>
         {
             var bytes = BuildGlb();
