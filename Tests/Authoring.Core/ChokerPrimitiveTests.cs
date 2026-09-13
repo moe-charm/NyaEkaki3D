@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using NyaForge.Authoring;
 using NyaForge.Authoring.Topology;
 
 internal static partial class Program
@@ -38,6 +39,22 @@ internal static partial class Program
             Equal(rendered.Mesh.VertexCount, rendered.Mesh.Normals.Count);
             Equal(rendered.Mesh.VertexCount, rendered.Mesh.Tangents.Count);
             Equal(rendered.Mesh.VertexCount, rendered.Mesh.Uv0.Count);
+        });
+        Test("cuff primitive geometric winding agrees with supplied normals", () =>
+        {
+            var mesh = PolygonPrimitives.Cuff(Guid.NewGuid().ToString("D"));
+            foreach (var face in mesh.Faces)
+            {
+                var a = mesh.Vertices[face.Corners[0].VertexId].Position;
+                var b = mesh.Vertices[face.Corners[1].VertexId].Position;
+                var c = mesh.Vertices[face.Corners[2].VertexId].Position;
+                var geometric = new Vec3(
+                    (b.Y - a.Y) * (c.Z - a.Z) - (b.Z - a.Z) * (c.Y - a.Y),
+                    (b.Z - a.Z) * (c.X - a.X) - (b.X - a.X) * (c.Z - a.Z),
+                    (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X));
+                var supplied = face.Corners[0].Normal.Value;
+                True(geometric.X * supplied.X + geometric.Y * supplied.Y + geometric.Z * supplied.Z > 0f);
+            }
         });
         Test("cuff primitive rejects unsafe parameters", () =>
         {

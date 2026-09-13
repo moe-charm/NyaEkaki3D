@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09V: Cuff法線向きのCore回帰追加
+
+報告されていたCuffの面向き逆転を再発させないため、各面の幾何面法線と指定corner normalの内積が正になる回帰を追加した。**Core 506 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-d95cc0756d7f4197b67fd9d3ac7f0e7e`）。既存の閉シェル・頂点属性・片面材質向けwinding契約を維持している。
+
+これは幾何データの向き確認であり、Unity／VRChatの実照明、裏面表示、実EditorWindowでの見た目を自動的に受入したものではない。
+
 ## 2026-09-14 NF-V1-09U: 実RadDollV3単一候補の通常Authoring回帰
 
 全mesh展開オプションと通常経路を分けるため、private一時 `RadDollV3_VRM.vrm` を単一候補として `Builds/PerformanceV30/NyaForge.exe`へ渡し、1280×800でAuthoring suite＋VRM1出力を再実行した。**PASS**（`Artifacts/Authoring-20260914-085304-69897268cb7e4f4e95514ad6eaf8c644/report.json`）。実モデルのcandidate選択、EditMesh、頂点編集、native Save/Open、skinned GLB再読込、VRM1 metadata／geometry再読込、semantic texture・衣装関連の既存回帰を確認した。
