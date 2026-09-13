@@ -27,7 +27,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgePhysBon
 
 ## 証跡
 
-- 実SDK probe: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-script-20260913.json`（`status: verified`、probe reportの`status: passed`、実コンポーネント生成・設定まで確認）
+- 実SDK probe: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-script-20260913-final2.json`（`status: verified`、probe reportの`status: passed`、非対応値の事前拒否と実コンポーネント生成・設定まで確認）
 - Core: 476 passed / 0 failed（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-cebf69dc5bb5449d9e10ffe45b43746b`）
 - Windows Player build: `Builds/PhysBonesSdkCompatV1/NyaForge.exe`
 - Unity Bridge: `Artifacts/BridgeReceiver-20260913-172802-343-45a35a51b0ff4f50885efa1dde54ecfd/bridge-report.json`（Unity 2022.3.22f1、PASS）

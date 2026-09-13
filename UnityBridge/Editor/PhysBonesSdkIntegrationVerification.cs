@@ -63,6 +63,29 @@ namespace NyaForge.UnityBridge.Editor
                     "preflight changed the scene or did not plan exactly one component");
                 checks.Add("preflight is non-mutating");
 
+                // The current VRC SDK omits several generic fields. Verify that
+                // a value which cannot be represented is rejected before scene
+                // mutation rather than silently discarded.
+                var unsupportedParameters = new PhysBonesParameters(PhysBonesLimitType.None, 0f, 0f, .5f, .5f, .5f,
+                    0f, 0f, .5f, .25f, 0f, 0f, 0f, 0f, 0f, new Vec3(0, -1, 0));
+                var unsupportedChain = new PhysBonesChain("tail", rootId, new[] { rootId, childId },
+                    PhysBonesEndpointMode.Auto, "", null, PhysBonesMultiChildType.Ignore, null, null, null,
+                    unsupportedParameters, PhysBonesInteraction.Default, null);
+                var unsupportedProfile = new PhysBonesTargetProfile(VrcPhysBonesReflectionBackend.Target, "probe", "probe",
+                    skeleton.ContentHash, "", new[] { unsupportedChain });
+                try
+                {
+                    PhysBonesBridge.Inspect(unsupportedProfile, skeleton, context, backend);
+                    throw new InvalidOperationException("unsupported nonzero SDK value was accepted");
+                }
+                catch (PhysBonesBridgeException error)
+                {
+                    Require(error.Code == "SDK_MEMBER_MISSING", "unsupported SDK value returned an unexpected code: " + error.Code);
+                    Require(!avatar.GetComponentsInChildren<Component>(true).Any(component => component.GetType() == resolution.ComponentType),
+                        "unsupported SDK value mutated the scene during preflight");
+                }
+                checks.Add("unsupported nonzero SDK values fail closed before component creation");
+
                 var applied = PhysBonesBridge.Apply(profile, skeleton, context, backend);
                 var component = applied.Components.Single();
                 Require(component.GetType() == resolution.ComponentType, "applied component type differs from resolved SDK type");
@@ -72,6 +95,11 @@ namespace NyaForge.UnityBridge.Editor
                     "rootTransform was not configured on the real SDK component");
                 Require(avatar.GetComponentsInChildren<NyaForgePhysBonesManaged>(true).Length == 1,
                     "managed ownership marker was not created");
+                var posingField = resolution.ComponentType.GetField("allowPosing",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (posingField != null && posingField.FieldType.IsEnum)
+                    Require(string.Equals(Enum.GetName(posingField.FieldType, posingField.GetValue(component)), "False", StringComparison.OrdinalIgnoreCase),
+                        "AdvancedBool allowPosing was not explicitly mapped to False");
                 checks.Add("real SDK component created and configured with stable root/bone mapping");
                 exitCode = 0;
             }

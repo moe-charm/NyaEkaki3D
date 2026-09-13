@@ -1839,6 +1839,6 @@ Coreは **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 
 一時検証スクリプトだけに依存しないよう、`UnityBridge/Editor/PhysBonesSdkIntegrationVerification.cs`を追加した。SDK導入済みの受け取り側Unity projectで、`PhysBonesSdkIntegrationVerification.Run`を明示実行すると、実行時型解決、capability列挙、非破壊preflight、実`VRCPhysBone`生成・stable root設定を一度に確認できる。`Tools/Test-NyaForgePhysBonesSdk.ps1 -RunUnityProbe -RequireSdk`から呼び出し、レポートとUnityログは一時フォルダへ出す。SDKなしの通常Player／Core起動ではこのprobeを自動実行しない。
 
-再利用probeを実際のSDK 3.7.6 projectで再実行し、`status=verified`（probe `status=passed`）を確認した。レポートは `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-script-20260913.json`。SDK DLL、対象project、private素材はリポジトリへ追加しない。
+再利用probeを実際のSDK 3.7.6 projectで再実行し、`status=verified`（probe `status=passed`）を確認した。非対応のdampingへ非ゼロ値を渡すケースも、コンポーネント生成前に`SDK_MEMBER_MISSING`で拒否されることを回帰した。レポートは `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-script-20260913-final2.json`。SDK DLL、対象project、private素材はリポジトリへ追加しない。
 
 Core／Windows Player／Unity Bridgeの直前PASS証跡は前項のPhysBones SDK受け取り写像を正とする。実アバターの揺れ、VRChat Build & Test／実機、Quest制約、実マウス／DPI差は未完了境界として継続する。
