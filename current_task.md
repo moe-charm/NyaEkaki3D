@@ -1,3 +1,7 @@
+# 2026-09-13 real-model external base-color import recheck
+
+private一時RadDollV3 VRMを元データのままリポジトリへ追加せず、base-color画像1枚を`textures/rad-doll-base.png`へ分離したGLB/VRM入力（相対URI、画像2,713,743 bytes、`bufferView`なし）を生成して、外部base-color経路を実モデルで確認した。Windows Player `Builds/ExternalImageRealV1/NyaForge.exe` の800x600 Authoring suiteは **PASS、全チェック完了**（`Artifacts/Authoring-20260913-122518-c59cfd830965477faae7b40c245413e1/report.json`、画面 `authoring.png`）。この経路では候補選択、外部画像付きVRM取込、既存の編集、native Save/Open、標準GLB出力まで通過した。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-122636-976-32e1c3b7b48b4226bca2ab84bbe41c9b/bridge-report.json`）。元VRM・分離画像・生成入力は`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-RealModelExternal-bdae4b667e6f41c792b056f8a23a9ab2`に置き、public repositoryへ追加していない。実VRChat内の見た目・挙動、標準VRM出力、完全な追加texture map/animation/VRM拡張保持、自動fit・貫通修正、実マウス/DPI差は引き続き未検証境界とする。
+
 # 2026-09-13 external base-color image import
 
 GLB/VRM取込へ、モデルファイルと同じフォルダ配下の安全な相対URIによるbase-color画像を追加した。外部画像はnative Paintへ即時コピーしてSave/Open後も元ファイルへ依存しない。モデルフォルダ外への`..`、data URI、remote URI、欠落ファイル、16MiB超は明示エラーにする。埋め込み画像と既存のサイズ縮小経路は維持し、警告文と交換仕様書を実際の保持範囲へ更新した。
