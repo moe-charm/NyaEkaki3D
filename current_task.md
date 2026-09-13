@@ -6,6 +6,10 @@
 
 残る境界は、実マウス／DPI差／Explorer実クリック、実VRChat SDK・実アバター内の見た目とPhysBones動作、自動fit・貫通修正、異なるskeletonの結合、共有mesh／skin／morph参照、完全な外部texture・animation・VRM拡張保持、標準VRM出力。次の開発カードは、共有参照の明示仕様化か、実SDK版を固定した受け取り検証のどちらか一つに絞る。
 
+# 2026-09-13 goal audit Player acceptance
+
+現行HEADから別フォルダへ作成した `Builds/GoalAuditV1/NyaForge.exe` を、公開fixtureとprivate一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）で再検証した。1280x800のAuthoring suiteは **81 checks PASS**（real GLB/VRM command-line import、候補選択、生成EditMesh、頂点編集、native Save/Open、標準skinned GLB出力と再取込を含む、report `Artifacts/Authoring-20260913-093714-3087afd197c3424fb519575d5641e6a6/report.json`）。同成果物をUnity **2022.3.22f1** synthetic Bridgeへ渡した検証も **PASS**（`Artifacts/BridgeReceiver-20260913-093847-492-b8cfb82dc0064581bdc0a78e38514dbc/bridge-report.json`）。最終画面 `Artifacts/Authoring-20260913-093714-3087afd197c3424fb519575d5641e6a6/authoring.png` はUI Toolkitと制作cameraが同時に描画され、右パネルはスクロール可能だった。これは自動検証と画面画像の確認であり、実マウス/DPI差、実VRChat内の見た目、実SDK受入を代替しない。
+
 # 2026-09-13 native UI acceptance bridge check
 
 提示されたレビュー（基準 `0d1e957`）のP1/P2は、実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。
