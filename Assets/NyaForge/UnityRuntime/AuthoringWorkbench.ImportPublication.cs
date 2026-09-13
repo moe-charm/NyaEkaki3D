@@ -32,6 +32,8 @@ namespace NyaForge.UnityRuntime
         {
             var attachments = candidate.Attachments;
             SecondaryMotionAsset secondary = BuildImportedSecondaryMotion(graph, candidate.Rig, candidate.Springs);
+            var secondarySessions = ReadSecondaryMotionSessions(workspace);
+            if (secondary != null) secondarySessions[graph.GraphId] = secondary;
             var existing = workspace.Attachments;
             var owned = new Dictionary<string, byte[]>();
             foreach (var name in existing.Hashes.Keys) owned[name] = existing.Read(name);
@@ -45,10 +47,7 @@ namespace NyaForge.UnityRuntime
                 records[candidate.GlbDiagnostics.GraphId] = candidate.GlbDiagnostics;
                 owned[ProjectAttachments.ImportDiagnostics] = ImportedGlbDiagnosticsCodec.Write(records.Values);
             }
-            if (secondary != null)
-            {
-                owned[ProjectAttachments.SecondaryMotion] = SecondaryMotionCodec.Write(secondary);
-            }
+            if (secondarySessions.Count > 0) owned[ProjectAttachments.SecondaryMotion] = SecondaryMotionSessionsCodec.Write(secondarySessions);
             attachments = new ProjectAttachments(owned);
             var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph)), projection);
             if (!result.Success) throw new InvalidOperationException(result.Code + ": " + result.Message);
@@ -69,15 +68,13 @@ namespace NyaForge.UnityRuntime
                 importedVrmSpringSessions[graph.GraphId] = candidate.Springs;
                 owned[ProjectAttachments.Springs] = VrmSpringSessionsCodec.Write(importedVrmSpringSessions);
             }
+            importedSecondaryMotionSessions.Clear();
+            foreach (var item in secondarySessions) importedSecondaryMotionSessions.Add(item.Key, item.Value);
             attachments = new ProjectAttachments(owned);
             workspace.SetAttachments(attachments);
             if (candidate.Rig != null) importedRigSession = candidate.Rig;
             RefreshImportedVrmSessionsForActiveGraph();
-            if (secondary != null)
-            {
-                importedSecondaryMotionDocument = SecondaryMotionCodec.ReadDocument(SecondaryMotionCodec.Write(secondary));
-                importedSecondaryMotionAsset = secondary;
-            }
+            SelectSecondaryMotionForActiveGraph();
             RefreshVrmSpringStatus();
         }
 

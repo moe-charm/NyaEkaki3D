@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Import;
+using NyaForge.Authoring.Simulation;
 
 namespace NyaForge.UnityRuntime
 {
@@ -12,6 +13,7 @@ namespace NyaForge.UnityRuntime
         VrmSpringSession importedVrmSpringSession;
         readonly Dictionary<string, VrmExpressionSession> importedVrmSessions = new Dictionary<string, VrmExpressionSession>(StringComparer.Ordinal);
         readonly Dictionary<string, VrmSpringSession> importedVrmSpringSessions = new Dictionary<string, VrmSpringSession>(StringComparer.Ordinal);
+        readonly Dictionary<string, SecondaryMotionAsset> importedSecondaryMotionSessions = new Dictionary<string, SecondaryMotionAsset>(StringComparer.Ordinal);
 
         void RefreshImportedVrmSessionsForActiveGraph()
         {
@@ -40,6 +42,11 @@ namespace NyaForge.UnityRuntime
         void ClearImportedVrmSpringTable()
         {
             importedVrmSpringSessions.Clear(); importedVrmSpringSession = null;
+        }
+
+        void ClearImportedSecondaryMotionTable()
+        {
+            importedSecondaryMotionSessions.Clear(); importedSecondaryMotionDocument = null; importedSecondaryMotionAsset = null;
         }
     }
 }

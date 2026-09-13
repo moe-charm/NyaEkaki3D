@@ -92,10 +92,15 @@ namespace NyaForge.UnityRuntime
             foreach (var group in importedSecondaryMotionAsset.ColliderGroups) foreach (var collider in group.Colliders) if (collider.BoneId != "") ids.Add(collider.BoneId);
             var map = ids.ToDictionary(id => id, id => id, StringComparer.Ordinal);
             var rebound = SecondaryMotionRebind.Apply(importedSecondaryMotionAsset, skeleton, mesh, map);
+            var sessions = ReadSecondaryMotionSessions(workspace);
+            string graphId = workspace.Document.ActiveObject?.Graph?.GraphId;
+            if (graphId == null) throw new InvalidOperationException("共通揺れ設定の対象graphがありません。");
+            sessions[graphId] = rebound;
             var owned = new Dictionary<string, byte[]>(); foreach (var name in workspace.Attachments.Hashes.Keys) owned[name] = workspace.Attachments.Read(name);
-            owned[ProjectAttachments.SecondaryMotion] = SecondaryMotionCodec.Write(rebound);
+            owned[ProjectAttachments.SecondaryMotion] = SecondaryMotionSessionsCodec.Write(sessions);
             ClearSpringPlayback(true); workspace.SetAttachmentsWithHistory(new ProjectAttachments(owned));
-            importedSecondaryMotionAsset = rebound; importedSecondaryMotionDocument = SecondaryMotionCodec.ReadDocument(owned[ProjectAttachments.SecondaryMotion]);
+            importedSecondaryMotionSessions.Clear(); foreach (var item in sessions) importedSecondaryMotionSessions.Add(item.Key, item.Value);
+            SelectSecondaryMotionForActiveGraph();
             Refresh(); SetStatus("共通揺れ設定を同じBoneIdで再bindしました。保存すると新しいskeleton/topology identityを記録します。");
         }
 
@@ -121,6 +126,7 @@ namespace NyaForge.UnityRuntime
 
         void ClearImportedSecondaryMotion()
         {
+            importedSecondaryMotionSessions.Clear();
             importedSecondaryMotionDocument = null;
             importedSecondaryMotionAsset = null;
             RefreshSecondaryMotionStatus();
@@ -130,9 +136,53 @@ namespace NyaForge.UnityRuntime
         {
             if (workspace == null) { ClearImportedSecondaryMotion(); return; }
             var bytes = workspace.Attachments.Read(ProjectAttachments.SecondaryMotion);
+            importedSecondaryMotionSessions.Clear();
+            if (bytes != null && SecondaryMotionSessionsCodec.IsTable(bytes))
+            {
+                foreach (var item in SecondaryMotionSessionsCodec.Read(bytes)) importedSecondaryMotionSessions.Add(item.Key, item.Value);
+                SelectSecondaryMotionForActiveGraph();
+                return;
+            }
+            // Legacy projects used one unkeyed asset. Keep it available for the
+            // active graph until the next save migrates it to the keyed table.
             var document = bytes == null ? null : SecondaryMotionCodec.ReadDocument(bytes);
             importedSecondaryMotionDocument = document;
             importedSecondaryMotionAsset = document?.Asset;
+            string graphId = workspace.Document.ActiveObject?.Graph?.GraphId;
+            if (graphId != null && importedSecondaryMotionAsset != null) importedSecondaryMotionSessions[graphId] = importedSecondaryMotionAsset;
+        }
+
+        void SelectSecondaryMotionForActiveGraph()
+        {
+            string graphId = workspace?.Document?.ActiveObject?.Graph?.GraphId;
+            if (graphId != null && importedSecondaryMotionSessions.TryGetValue(graphId, out var asset))
+            {
+                importedSecondaryMotionAsset = asset;
+                importedSecondaryMotionDocument = SecondaryMotionCodec.ReadDocument(SecondaryMotionCodec.Write(asset));
+            }
+            else
+            {
+                importedSecondaryMotionAsset = null;
+                importedSecondaryMotionDocument = null;
+            }
+        }
+
+        Dictionary<string, SecondaryMotionAsset> ReadSecondaryMotionSessions(AuthoringWorkspace value)
+        {
+            var result = new Dictionary<string, SecondaryMotionAsset>(StringComparer.Ordinal);
+            var bytes = value?.Attachments?.Read(ProjectAttachments.SecondaryMotion);
+            if (bytes != null && SecondaryMotionSessionsCodec.IsTable(bytes))
+            {
+                foreach (var item in SecondaryMotionSessionsCodec.Read(bytes)) result.Add(item.Key, item.Value);
+                return result;
+            }
+            if (bytes != null)
+            {
+                var legacy = SecondaryMotionCodec.Read(bytes);
+                string graphId = value?.Document?.ActiveObject?.Graph?.GraphId;
+                if (graphId != null) result[graphId] = legacy;
+            }
+            return result;
         }
     }
 }

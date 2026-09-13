@@ -55,7 +55,11 @@ namespace NyaForge.UnityRuntime
                 ImportModel(path);
                 Check(!workspace.Document.IsEmpty && importedVrmSession != null && importedVrmSpringSession != null, "VRM import did not create graph and sessions");
                 var nativeSecondaryBytes = workspace.Attachments.Read(ProjectAttachments.SecondaryMotion);
-                Check(nativeSecondaryBytes != null && SecondaryMotionCodec.Read(nativeSecondaryBytes).Profile.SimulatorId == (legacy ? "vrm0" : "vrm1"), "VRM import did not publish the common secondary-motion attachment");
+                var nativeSecondarySessions = nativeSecondaryBytes != null && SecondaryMotionSessionsCodec.IsTable(nativeSecondaryBytes)
+                    ? SecondaryMotionSessionsCodec.Read(nativeSecondaryBytes)
+                    : new Dictionary<string, SecondaryMotionAsset>();
+                string importedGraphId = workspace.Document.ActiveObject.Graph.GraphId;
+                Check(nativeSecondarySessions.TryGetValue(importedGraphId, out var nativeSecondary) && nativeSecondary.Profile.SimulatorId == (legacy ? "vrm0" : "vrm1"), "VRM import did not publish the graph-keyed secondary-motion attachment");
                 string graphHash = workspace.Document.EditSourceHash;
                 string metadataHash = workspace.Attachments.ContentHash;
                 string sourceHash = importedVrmSession.SourceHash;

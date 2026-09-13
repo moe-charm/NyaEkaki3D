@@ -27,7 +27,7 @@
 | GUI/MCP | 同一command経由の設定変更、再構築・reset・一定時間再生・連続撮影。準備中/失敗/依存不足を表示する |
 | 出力adapter | VRChat PhysBones、VRM、Magicaを使うUnityアプリを別profileとして検証・出力。未対応項目をloss reportで報告する |
 
-保存はnative正本へ版付きで追加する。`secondary-motion.nyaforge.bin` は既存のVRM Spring／PhysBones attachmentとは別の共通 `NYSM` payloadとしてschema 4 envelopeへ保存する。依存packageなしでも作品を開き設定を保管できること。未知版は編集/再生不可を示して保持し、値を初期化しない。固定領域はmesh IDとtopology依存を持ち、頂点の追加/削除時に明示再対応する。
+保存はnative正本へ版付きで追加する。`secondary-motion.nyaforge.bin` は既存のVRM Spring／PhysBones attachmentとは別の共通 `NYSM` payloadとしてschema 4 envelopeへ保存する。複数graphを含む作品では同じattachment名の `NVSX` v1 tableへGraphIdとNYSM payloadを並べ、active object以外の揺れ設定を誤表示しない。旧single NYSM payloadはactive graphへ互換読込し、次回保存でtableへ移行する。依存packageなしでも作品を開き設定を保管できること。未知版は編集/再生不可を示して保持し、値を初期化しない。固定領域はmesh IDとtopology依存を持ち、頂点の追加/削除時に明示再対応する。
 
 VRM0はsource nodeのroot subtreeを元children順で展開し、取込rigのstable `BoneId`へ移行してから共通assetへ保存する。VRM0の元Spring sessionも既存sidecarとして残すため、移行後に元設定を再確認できる。skeleton/topologyが変わった場合はattachment bytesを保持したまま「再bindが必要」と表示し、自動で初期値へ戻さない。
 

@@ -52,6 +52,23 @@ internal static partial class Program
             False(capabilities.Accepts(new SecondaryMotionProfile("other", "test.simulator", 1, "1", "pkg", SecondaryMotionOutputKind.BonePose, Array.Empty<byte>())));
         });
 
+        Test("secondary motion session table keeps assets attached to their graph", () =>
+        {
+            var skeleton = BuildSecondarySkeleton(out _, out var childId); var mesh = AuthoringFixtures.Panel(1);
+            var profile = new SecondaryMotionProfile("test.adapter", "test.simulator", 1, "1", "", SecondaryMotionOutputKind.BonePose, Array.Empty<byte>());
+            var first = new SecondaryMotionAsset(profile, skeleton.ContentHash, mesh.TopologyHash,
+                new[] { new SecondaryMotionChain("first", new[] { childId }, Array.Empty<int>()) }, null, null);
+            var second = new SecondaryMotionAsset(profile, skeleton.ContentHash, mesh.TopologyHash,
+                new[] { new SecondaryMotionChain("second", new[] { childId }, Array.Empty<int>()) }, null, null);
+            string graphA = Guid.NewGuid().ToString("D"), graphB = Guid.NewGuid().ToString("D");
+            var bytes = SecondaryMotionSessionsCodec.Write(new Dictionary<string, SecondaryMotionAsset> { [graphA] = first, [graphB] = second });
+            True(SecondaryMotionSessionsCodec.IsTable(bytes));
+            var reopened = SecondaryMotionSessionsCodec.Read(bytes);
+            Equal(2, reopened.Count); Equal(first.ContentHash, reopened[graphA].ContentHash); Equal(second.ContentHash, reopened[graphB].ContentHash);
+            var tampered = (byte[])bytes.Clone(); BitConverter.GetBytes(99).CopyTo(tampered, 4);
+            Expect("UNSUPPORTED_FORMAT", () => SecondaryMotionSessionsCodec.Read(tampered));
+        });
+
         Test("resolved spring data migrates to stable secondary motion topology", () =>
         {
             var skeleton = BuildSecondarySkeleton(out var rootId, out var childId); var mesh = AuthoringFixtures.Panel(1);

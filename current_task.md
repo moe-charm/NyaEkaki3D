@@ -1,5 +1,11 @@
 # 2026-09-13 pasted feedback recheck on current main
 
+## Graph-keyed secondary-motion attachment
+
+複数graphを一つのnative projectへ追加した際、旧来の単一 `secondary-motion.nyaforge.bin` が別graphの揺れ設定として表示される境界を閉じた。`SecondaryMotionSessionsCodec`（`NVSX` v1）で共通揺れassetをGraphIdごとに保存し、active object切替時はそのgraphのassetだけを表示・再生・再bind対象にする。旧単一assetは読込時にactive graphへ互換移行し、次回保存時にtableへ変換する。既存のVRM expression／Spring／rig session tableと同じ所有単位へ揃えた。
+
+Coreは **466 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-09cbb83127594ddf9dc48dc24f570994`）。`Builds/SecondaryMotionSessionsV2/NyaForge.exe` の800x600 Authoring suiteは **PASS、81 checks**（private一時RadDollV3 VRMの取込→候補選択→EditMesh→Save/Open→標準skinned GLB再取込、VRM0/1 playback、MCP lifecycleを含む、report `Artifacts/Authoring-20260913-100432-be47d5cabfa24764a85d18e290226470/report.json`）。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-100559-883-c623b841ae61434eb75b6732de6c7a12/bridge-report.json`）。private素材はpublic repositoryへ追加していない。
+
 ## README capability alignment
 
 公開READMEとAuthoring Core READMEに残っていた古い能力表記を現行実装へ更新した。root READMEはnative schema 4（旧schema読込互換）、standard static/skinned GLB profile、MCP inspection/exportを明記し、Authoring READMEはstandard skinned GLB／外部MCPを実装済みとして、完全VRM・実VRChat SDK・自動fit等の境界を残した。ドキュメント変更後も `dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj` は **465 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ee87e9a0c12e40c8838a497d8f3b154a`）。

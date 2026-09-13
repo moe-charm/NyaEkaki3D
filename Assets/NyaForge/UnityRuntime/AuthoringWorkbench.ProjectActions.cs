@@ -67,6 +67,7 @@ namespace NyaForge.UnityRuntime
             var springBytes = next.Attachments.Read(ProjectAttachments.Springs);
             var physBonesBytes = next.Attachments.Read(ProjectAttachments.PhysBones);
             var secondaryMotionBytes = next.Attachments.Read(ProjectAttachments.SecondaryMotion);
+            var secondaryMotionSessions = new Dictionary<string, SecondaryMotionAsset>(StringComparer.Ordinal);
             var expressionSessions = new Dictionary<string, VrmExpressionSession>(StringComparer.Ordinal);
             var springSessions = new Dictionary<string, VrmSpringSession>(StringComparer.Ordinal);
             if (expressionBytes != null)
@@ -101,7 +102,20 @@ namespace NyaForge.UnityRuntime
             if (springSession == null && springBytes != null && !VrmSpringSessionsCodec.IsTable(springBytes))
                 springSession = VrmSpringSessionCodec.Read(springBytes);
             var physBonesDocument = physBonesBytes == null ? null : PhysBonesTargetCodec.ReadDocument(physBonesBytes);
-            var secondaryMotionDocument = secondaryMotionBytes == null ? null : SecondaryMotionCodec.ReadDocument(secondaryMotionBytes);
+            SecondaryMotionDocument secondaryMotionDocument = null;
+            if (secondaryMotionBytes != null && SecondaryMotionSessionsCodec.IsTable(secondaryMotionBytes))
+            {
+                foreach (var item in SecondaryMotionSessionsCodec.Read(secondaryMotionBytes)) secondaryMotionSessions.Add(item.Key, item.Value);
+                string activeGraphId = next.Document.ActiveObject?.Graph?.GraphId;
+                if (activeGraphId != null && secondaryMotionSessions.TryGetValue(activeGraphId, out var activeSecondary))
+                    secondaryMotionDocument = SecondaryMotionCodec.ReadDocument(SecondaryMotionCodec.Write(activeSecondary));
+            }
+            else if (secondaryMotionBytes != null)
+            {
+                secondaryMotionDocument = SecondaryMotionCodec.ReadDocument(secondaryMotionBytes);
+                string legacyGraphId = next.Document.ActiveObject?.Graph?.GraphId;
+                if (legacyGraphId != null && secondaryMotionDocument.Asset != null) secondaryMotionSessions[legacyGraphId] = secondaryMotionDocument.Asset;
+            }
             if (rigSession != null && expressionSession != null) rigSession.ValidateSource(expressionSession.SourceHash);
             if (rigSession != null && springSession != null) rigSession.ValidateSource(springSession.SourceHash);
             // Validate every graph-keyed metadata pair before replacing the live
@@ -119,6 +133,7 @@ namespace NyaForge.UnityRuntime
                 foreach (var item in rigSessions) importedRigSessions.Add(item.Key, item.Value);
             foreach (var item in expressionSessions) importedVrmSessions.Add(item.Key, item.Value);
             foreach (var item in springSessions) importedVrmSpringSessions.Add(item.Key, item.Value);
+            foreach (var item in secondaryMotionSessions) importedSecondaryMotionSessions.Add(item.Key, item.Value);
             importedRigSession = rigSession;
             importedVrmSession = expressionSession; Refresh();
             importedVrmSpringSession = springSession;
@@ -131,6 +146,7 @@ namespace NyaForge.UnityRuntime
             SetImportedPhysBones(physBonesDocument);
             importedSecondaryMotionDocument = secondaryMotionDocument;
             importedSecondaryMotionAsset = secondaryMotionDocument?.Asset;
+            SelectSecondaryMotionForActiveGraph();
             RefreshSecondaryMotionStatus();
         }
 
