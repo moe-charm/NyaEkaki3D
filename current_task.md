@@ -1826,3 +1826,11 @@ Windows Player `Builds/StateIdentityV1/NyaForge.exe` のRadDollV3全mesh Authori
 `get_state`だけでなく、MCPが編集結果を詳細確認する`graph_inspect`と`validate`にも`attachmentsHash`を追加した。これで形状の`stateHash`と、rig・expression・Spring・PhysBones・secondary-motion等の保存済みattachmentを、状態確認経路ごとに同じ識別子で照合できる。空プロジェクトと不完全出力のCore回帰で値を固定し、従来の診断・metrics・statusは変更していない。
 
 Coreは **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-c45f173496074d3fb072ef7995e946b0`）。この変更は状態読取の契約整合を対象とし、Windows Player／Unity Bridge／実SDK・実VRChatの受け取りは既存の受入境界を引き継ぐ。
+
+# 2026-09-13 VRChat SDK 3.7.6 PhysBones受け取り写像
+
+レビューで残っていた実SDK受け取り境界を、VCCキャッシュのVRChat SDK 3.7.6（Unity 2022.3）で確認した。reflection backendが実際の`VRC.SDK3.Dynamics.PhysBone.Components.VRCPhysBone`を解決し、root／endpoint／除外骨／branch／collider／limit／curve／interaction／parameterを設定できるようにした。SDK 3.7の`maxAngleX`／`maxAngleZ`、`maxSquish`、`AdvancedBool { False, True, Other }`を抽象設定へ明示写像する。SDKにないdamping等や重力方向へ非ゼロ値を渡す場合は、コンポーネント生成前のpreflightで`SDK_MEMBER_MISSING`として停止し、値を黙って捨てない。詳細は`docs/PhysBones-SDK-Compatibility.md`に記録した。
+
+実SDK probe **PASS**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-20260913-5e7f66bbf32a464286e9a84465f5a79c/physbones-sdk-report-16.json`）。Core **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-cebf69dc5bb5449d9e10ffe45b43746b`）。Unity 6000.4.3f1 Windows Player build **PASS**（`Builds/PhysBonesSdkCompatV1/NyaForge.exe`、`Logs/build-all-20260913-172701-801.log`）。同PlayerのAuthoring suite **PASS**（`Artifacts/Authoring-20260913-172731-2a6d0733c50c48f4a71c37ccaee5a9a3/report.json`）、Unity 2022.3.22f1 Bridge **PASS**（`Artifacts/BridgeReceiver-20260913-172802-343-45a35a51b0ff4f50885efa1dde54ecfd/bridge-report.json`）。
+
+残る境界は、実アバターを使った揺れの見た目、VRChat Build & Test／実機、Quest制約、実マウス／DPI差。SDK DLLとprivate素材はpublic repositoryへ追加しない。

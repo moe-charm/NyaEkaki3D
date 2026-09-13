@@ -99,7 +99,7 @@ namespace NyaForge.Authoring.Simulation
             LimitType = limitType; MaxAngle = Checks.Canonical(maxAngle); Radius = Checks.Canonical(radius); Stiffness = Checks.Canonical(stiffness); Pull = Checks.Canonical(pull); Spring = Checks.Canonical(spring); Immobile = Checks.Canonical(immobile); Gravity = Checks.Canonical(gravity); GravityFalloff = Checks.Canonical(gravityFalloff); Damping = Checks.Canonical(damping); Elasticity = Checks.Canonical(elasticity); Inert = Checks.Canonical(inert); Friction = Checks.Canonical(friction); StretchMotion = Checks.Canonical(stretchMotion); Squish = Checks.Canonical(squish); GravityDirection = gravityDirection;
         }
 
-        public static PhysBonesParameters Default { get { return new PhysBonesParameters(PhysBonesLimitType.None, 0f, 0f, .5f, .5f, .5f, 0f, 0f, .5f, .5f, 0f, 0f, 0f, 0f, 0f, new Vec3(0, -1, 0)); } }
+        public static PhysBonesParameters Default { get { return new PhysBonesParameters(PhysBonesLimitType.None, 0f, 0f, .5f, .5f, .5f, 0f, 0f, .5f, 0f, 0f, 0f, 0f, 0f, 0f, new Vec3(0, -1, 0)); } }
 
         static void Range(float value, float min, float max, string label) { Checks.Finite(value); Checks.Require(value >= min && value <= max, "INVALID_PHYSBONES", "PhysBones " + label + " is outside its bounded range."); }
         static float LengthSquared(Vec3 value) { return value.X * value.X + value.Y * value.Y + value.Z * value.Z; }

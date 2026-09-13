@@ -73,6 +73,11 @@ namespace NyaForge.UnityBridge.Editor
         {
             if (chain == null) throw new ArgumentNullException("chain");
             if (context == null) throw new ArgumentNullException("context");
+            ValidateParameters(chain.Parameters);
+            ValidateAdvancedBool(new[] { "allowPosing", "AllowPosing" });
+            ValidateAdvancedBool(new[] { "allowCollision", "AllowCollision" });
+            ValidateAdvancedBool(new[] { "allowGrabbing", "AllowGrabbing" });
+            ValidateBool(new[] { "snapToHand", "SnapToHand" });
             if (chain.Branches.Count == 0) return;
             var member = Find(new[] { "multiChildType", "MultiChildType" });
             if (member == null) throw new PhysBonesBridgeException("SDK_MEMBER_MISSING", "PhysBones branch mode is unavailable.");
@@ -125,26 +130,32 @@ namespace NyaForge.UnityBridge.Editor
 
             var p = chain.Parameters;
             SetEnum(component, new[] { "limitType", "LimitType" }, LimitName(p.LimitType));
-            SetNumber(component, new[] { "maxAngle", "MaxAngle" }, p.MaxAngle);
-            SetNumber(component, new[] { "radius", "Radius" }, p.Radius);
-            SetNumber(component, new[] { "stiffness", "Stiffness" }, p.Stiffness);
-            SetNumber(component, new[] { "pull", "Pull" }, p.Pull);
-            SetNumber(component, new[] { "spring", "Spring" }, p.Spring);
-            SetNumber(component, new[] { "immobile", "Immobile" }, p.Immobile);
-            SetNumber(component, new[] { "gravity", "Gravity" }, p.Gravity);
-            SetNumber(component, new[] { "gravityFalloff", "GravityFalloff" }, p.GravityFalloff);
-            SetNumber(component, new[] { "damping", "Damping" }, p.Damping);
-            SetNumber(component, new[] { "elasticity", "Elasticity" }, p.Elasticity);
-            SetNumber(component, new[] { "inert", "Inert" }, p.Inert);
-            SetNumber(component, new[] { "friction", "Friction" }, p.Friction);
-            SetNumber(component, new[] { "stretchMotion", "StretchMotion" }, p.StretchMotion);
-            SetNumber(component, new[] { "squish", "Squish" }, p.Squish);
-            SetVector(component, new[] { "gravityDir", "GravityDir", "gravityDirection", "GravityDirection" }, ToVector(p.GravityDirection));
+            // VRC SDK 3.7 exposes separate X/Z angle limits, while older
+            // compatible components expose one maxAngle field. Set every
+            // available representation so the conversion is deterministic.
+            SetMappedNumber(component, new[] { "maxAngle", "MaxAngle", "maxAngleX", "MaxAngleX", "maxAngleZ", "MaxAngleZ" }, p.MaxAngle);
+            SetMappedNumber(component, new[] { "radius", "Radius" }, p.Radius);
+            SetMappedNumber(component, new[] { "stiffness", "Stiffness" }, p.Stiffness);
+            SetMappedNumber(component, new[] { "pull", "Pull" }, p.Pull);
+            SetMappedNumber(component, new[] { "spring", "Spring" }, p.Spring);
+            SetMappedNumber(component, new[] { "immobile", "Immobile" }, p.Immobile);
+            SetMappedNumber(component, new[] { "gravity", "Gravity" }, p.Gravity);
+            SetMappedNumber(component, new[] { "gravityFalloff", "GravityFalloff" }, p.GravityFalloff);
+            SetMappedNumber(component, new[] { "damping", "Damping" }, p.Damping);
+            SetMappedNumber(component, new[] { "elasticity", "Elasticity" }, p.Elasticity);
+            SetMappedNumber(component, new[] { "inert", "Inert" }, p.Inert);
+            SetMappedNumber(component, new[] { "friction", "Friction" }, p.Friction);
+            SetMappedNumber(component, new[] { "stretchMotion", "StretchMotion" }, p.StretchMotion);
+            // Newer VRC SDKs call this limit maxSquish; preserve the generic
+            // name for older adapters and reject a nonzero value if neither is
+            // present rather than silently dropping it.
+            SetMappedNumber(component, new[] { "squish", "Squish", "maxSquish", "MaxSquish" }, p.Squish);
+            SetMappedGravityDirection(component, p);
 
             var interaction = chain.Interaction;
-            SetBool(component, new[] { "allowPosing", "AllowPosing" }, interaction.AllowPosing);
-            SetBool(component, new[] { "allowCollision", "AllowCollision" }, interaction.AllowCollision);
-            SetBool(component, new[] { "allowGrabbing", "AllowGrabbing" }, interaction.AllowGrabbing);
+            SetAdvancedBool(component, new[] { "allowPosing", "AllowPosing" }, interaction.AllowPosing);
+            SetAdvancedBool(component, new[] { "allowCollision", "AllowCollision" }, interaction.AllowCollision);
+            SetAdvancedBool(component, new[] { "allowGrabbing", "AllowGrabbing" }, interaction.AllowGrabbing);
             SetBool(component, new[] { "snapToHand", "SnapToHand" }, interaction.SnapToHand);
             SetOptionalBool(component, new[] { "resetWhenDisabled", "ResetWhenDisabled" }, interaction.ResetWhenDisabled);
             SetOptionalBool(component, new[] { "isAnimated", "IsAnimated" }, interaction.IsAnimated);
@@ -171,8 +182,12 @@ namespace NyaForge.UnityBridge.Editor
             if (Find(new[] { "ignoreTransforms", "IgnoreTransforms", "exclusions", "Exclusions" }) != null) result.Add(PhysBonesFeatures.Exclusions);
             if (Find(new[] { "multiChildType", "MultiChildType" }) != null) result.Add(PhysBonesFeatures.Branches);
             if (Find(new[] { "colliders", "Colliders" }) != null) result.Add(PhysBonesFeatures.Colliders);
-            if (HasAll(new[] { "limitType", "maxAngle", "radius", "stiffness", "pull", "spring", "immobile", "gravity", "gravityFalloff", "damping", "elasticity", "inert", "friction", "stretchMotion", "squish" }) &&
-                (Find(new[] { "gravityDir", "GravityDir", "gravityDirection", "GravityDirection" }) != null)) result.Add(PhysBonesFeatures.Limits);
+            // VRC SDK 3.7 uses maxAngleX/maxAngleZ and omits several older
+            // generic parameters. Value-level validation below rejects any
+            // nonzero parameter for which the installed type has no member.
+            if (Find(new[] { "limitType", "LimitType" }) != null &&
+                HasAny(new[] { "maxAngle", "MaxAngle", "maxAngleX", "MaxAngleX", "maxAngleZ", "MaxAngleZ" }) &&
+                HasAll(new[] { "radius", "stiffness", "pull", "spring", "immobile", "gravity", "gravityFalloff", "stretchMotion" })) result.Add(PhysBonesFeatures.Limits);
             if (HasAll(CurveMemberNames())) result.Add(PhysBonesFeatures.Curves);
             if (HasAll(new[] { "allowPosing", "allowCollision", "allowGrabbing", "snapToHand" })) result.Add(PhysBonesFeatures.Interaction);
             if (Find(new[] { "parameter", "Parameter" }) != null) result.Add(PhysBonesFeatures.Parameter);
@@ -180,6 +195,7 @@ namespace NyaForge.UnityBridge.Editor
         }
 
         bool HasAll(IEnumerable<string> names) { return names.All(name => Find(new[] { name, Upper(name) }) != null); }
+        bool HasAny(IEnumerable<string> names) { return names.Any(name => Find(new[] { name, Upper(name) }) != null); }
 
         void SetTransforms(Component component, string[] names, IEnumerable<Transform> values)
         {
@@ -242,6 +258,96 @@ namespace NyaForge.UnityBridge.Editor
 
         void SetVector(Component component, string[] names, Vector3 value) { SetTyped(component, names, value, "vector"); }
         void SetNumber(Component component, string[] names, float value) { SetTyped(component, names, value, "number"); }
+        void SetMappedNumber(Component component, string[] names, float value)
+        {
+            bool assigned = false;
+            foreach (var name in names)
+            {
+                var member = Find(new[] { name });
+                if (member == null) continue;
+                Assign(member, component, value, name); assigned = true;
+            }
+            if (!assigned && Mathf.Abs(value) > 0.000001f)
+                throw new PhysBonesBridgeException("SDK_MEMBER_MISSING", "PhysBones member is unavailable for a nonzero value: " + names[0] + ".");
+        }
+        void SetMappedGravityDirection(Component component, PhysBonesParameters parameters)
+        {
+            var member = Find(new[] { "gravityDir", "GravityDir", "gravityDirection", "GravityDirection" });
+            if (member != null) { Assign(member, component, ToVector(parameters.GravityDirection), "gravityDir"); return; }
+            // VRC SDK 3.7 uses a fixed world gravity direction. A zero gravity
+            // value makes the authored direction irrelevant; any active force
+            // must stop before mutation because it cannot be represented.
+            if (Mathf.Abs(parameters.Gravity) > 0.000001f)
+                throw new PhysBonesBridgeException("SDK_MEMBER_MISSING", "The installed PhysBones SDK has no gravity direction member.");
+        }
+        void ValidateParameters(PhysBonesParameters parameters)
+        {
+            if (parameters == null) throw new PhysBonesBridgeException("INVALID_PHYSBONES", "PhysBones parameters are missing.");
+            ValidateMappedNumber(parameters.MaxAngle, new[] { "maxAngle", "MaxAngle", "maxAngleX", "MaxAngleX", "maxAngleZ", "MaxAngleZ" });
+            ValidateMappedNumber(parameters.Radius, new[] { "radius", "Radius" });
+            ValidateMappedNumber(parameters.Stiffness, new[] { "stiffness", "Stiffness" });
+            ValidateMappedNumber(parameters.Pull, new[] { "pull", "Pull" });
+            ValidateMappedNumber(parameters.Spring, new[] { "spring", "Spring" });
+            ValidateMappedNumber(parameters.Immobile, new[] { "immobile", "Immobile" });
+            ValidateMappedNumber(parameters.Gravity, new[] { "gravity", "Gravity" });
+            ValidateMappedNumber(parameters.GravityFalloff, new[] { "gravityFalloff", "GravityFalloff" });
+            ValidateMappedNumber(parameters.Damping, new[] { "damping", "Damping" });
+            ValidateMappedNumber(parameters.Elasticity, new[] { "elasticity", "Elasticity" });
+            ValidateMappedNumber(parameters.Inert, new[] { "inert", "Inert" });
+            ValidateMappedNumber(parameters.Friction, new[] { "friction", "Friction" });
+            ValidateMappedNumber(parameters.StretchMotion, new[] { "stretchMotion", "StretchMotion" });
+            ValidateMappedNumber(parameters.Squish, new[] { "squish", "Squish", "maxSquish", "MaxSquish" });
+            if (Find(new[] { "gravityDir", "GravityDir", "gravityDirection", "GravityDirection" }) == null && Mathf.Abs(parameters.Gravity) > 0.000001f)
+                throw new PhysBonesBridgeException("SDK_MEMBER_MISSING", "The installed PhysBones SDK has no gravity direction member.");
+        }
+        void ValidateMappedNumber(float value, string[] names)
+        {
+            if (HasAny(names)) return;
+            if (Mathf.Abs(value) > 0.000001f)
+                throw new PhysBonesBridgeException("SDK_MEMBER_MISSING", "PhysBones member is unavailable for a nonzero value: " + names[0] + ".");
+        }
+        void SetAdvancedBool(Component component, string[] names, bool value)
+        {
+            var member = Find(names);
+            if (member == null) throw new PhysBonesBridgeException("SDK_MEMBER_MISSING", "PhysBones component is missing " + names[0] + ".");
+            if (member.ValueType == typeof(bool)) { member.Set(component, value); return; }
+            if (!member.ValueType.IsEnum)
+                throw new PhysBonesBridgeException("SDK_MEMBER_TYPE", "PhysBones member has an incompatible type: " + names[0] + ".");
+            try
+            {
+                // VRC SDK 3.7 uses AdvancedBool { False, True, Other }.
+                // Map authored booleans to explicit values and never select Other.
+                member.Set(component, Enum.Parse(member.ValueType, value ? "True" : "False", true));
+            }
+            catch (Exception error)
+            {
+                throw new PhysBonesBridgeException("SDK_ENUM_MISMATCH", "PhysBones boolean enum does not contain the required value for " + names[0] + " (" + error.Message + ").");
+            }
+        }
+        void ValidateAdvancedBool(string[] names)
+        {
+            var member = Find(names);
+            if (member == null) throw new PhysBonesBridgeException("SDK_MEMBER_MISSING", "PhysBones component is missing " + names[0] + ".");
+            if (member.ValueType == typeof(bool)) return;
+            if (!member.ValueType.IsEnum)
+                throw new PhysBonesBridgeException("SDK_MEMBER_TYPE", "PhysBones member has an incompatible type: " + names[0] + ".");
+            try
+            {
+                Enum.Parse(member.ValueType, "False", true);
+                Enum.Parse(member.ValueType, "True", true);
+            }
+            catch (Exception error)
+            {
+                throw new PhysBonesBridgeException("SDK_ENUM_MISMATCH", "PhysBones boolean enum does not contain False/True for " + names[0] + " (" + error.Message + ").");
+            }
+        }
+        void ValidateBool(string[] names)
+        {
+            var member = Find(names);
+            if (member == null) throw new PhysBonesBridgeException("SDK_MEMBER_MISSING", "PhysBones component is missing " + names[0] + ".");
+            if (member.ValueType != typeof(bool))
+                throw new PhysBonesBridgeException("SDK_MEMBER_TYPE", "PhysBones member has an incompatible type: " + names[0] + ".");
+        }
         void SetBool(Component component, string[] names, bool value) { SetTyped(component, names, value, "bool"); }
         void SetString(Component component, string[] names, string value) { SetTyped(component, names, value, "string"); }
         void SetOptionalBool(Component component, string[] names, bool value) { SetOptional(component, names, value); }
