@@ -119,8 +119,13 @@ namespace NyaForge.Authoring.Import
             Checks.Require(!string.IsNullOrWhiteSpace(sourceDirectory), "EXTERNAL_RESOURCE_UNAVAILABLE", "An external image requires the source model directory.");
             Checks.Require(uri.IndexOf('\0') < 0 && !uri.StartsWith("data:", StringComparison.OrdinalIgnoreCase), "UNSUPPORTED_FORMAT", "Data URI images are not supported; use a local relative image file.");
             Checks.Require(!uri.Contains("://", StringComparison.Ordinal), "UNSUPPORTED_FORMAT", "Remote image URIs are not supported; use a local relative image file.");
+            string decoded;
+            try { decoded = Uri.UnescapeDataString(uri); }
+            catch (UriFormatException) { throw new AuthoringException("UNSUPPORTED_FORMAT", "External image URI contains invalid percent encoding."); }
+            Checks.Require(decoded.IndexOf('\0') < 0 && !decoded.Contains("://", StringComparison.Ordinal), "UNSUPPORTED_FORMAT", "External image URI is not a local relative path.");
+            Checks.Require(!Path.IsPathRooted(decoded), "UNSUPPORTED_FORMAT", "External image URI must be relative to the model directory.");
             string root = Path.GetFullPath(sourceDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
-            string relative = uri.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+            string relative = decoded.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
             string full;
             try { full = Path.GetFullPath(Path.Combine(root, relative)); }
             catch (Exception error) when (error is ArgumentException || error is NotSupportedException) { throw new AuthoringException("INVALID_IMPORT", "External image URI is not a valid local path."); }

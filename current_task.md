@@ -6,6 +6,10 @@ private一時RadDollV3 VRMを元データのままリポジトリへ追加せず
 
 現行HEADのCore回帰を再実行し、**469 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-72e7c3c8bf884aa8bf08783a10569021`）。`Builds/ExternalImageRealV1/NyaForge.exe`の1280x800 Navigation smokeも **PASS**（`Artifacts/Navigation-20260913-123128-8566e55139864513997702cc86995cb1/report.json`）で、パック選択、キャンセル時の状態保持、確認セット、設定画面、制作画面への遷移を再確認した。`main.png`／`sets.png`／`settings.png`で文字欠けのない表示を確認した。Computer Useのネイティブアプリ列挙はこの環境で`apps: []`かつPlayer起動API未提供だったため、実マウス／DPI差の受入は自動画像・UI smokeと分離して未検証のままとする。レビュー対応と実モデル外部画像経路の証拠は前項へ記録し、次は実SDK受け取りまたは共有参照の仕様化へ進む。
 
+# 2026-09-13 encoded external image URI hardening
+
+外部base-color画像URIのパーセントエンコードを復号してから相対パス検査するようにした。`%2E`などの通常のファイル名表記を受け入れ、復号後の絶対パス・remote URI・NUL・`..`によるモデルフォルダ外への脱出は従来どおり拒否する。Coreは **469 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b8622a14fdb142c39010cbe5384e2ddc`）。Windows Player `Builds/UriV1/NyaForge.exe`の800x600 Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-123450-fc13e67f9c3e4363bd1c0caf022fdc99/report.json`）、Unity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-123523-876-0e11abb8f3a742218f2efb42f0cbc413/bridge-report.json`）。
+
 # 2026-09-13 external base-color image import
 
 GLB/VRM取込へ、モデルファイルと同じフォルダ配下の安全な相対URIによるbase-color画像を追加した。外部画像はnative Paintへ即時コピーしてSave/Open後も元ファイルへ依存しない。モデルフォルダ外への`..`、data URI、remote URI、欠落ファイル、16MiB超は明示エラーにする。埋め込み画像と既存のサイズ縮小経路は維持し、警告文と交換仕様書を実際の保持範囲へ更新した。

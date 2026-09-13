@@ -141,7 +141,12 @@ internal static partial class Program
             ((JObject)((JArray)((JObject)((JArray)root["meshes"]!)[0]!) ["primitives"]!)[0]!) ["material"] = 0;
             var imported = GlbImporter.ReadFromDirectory(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None)), 0, directory);
             var material = imported.Materials.Single(); True(material.HasEmbeddedBaseColorImage); Equal("image/png", material.BaseColorImageMimeType); True(image.SequenceEqual(material.CopyBaseColorImageBytes()));
+            root["images"]![0]!["uri"] = "textures/red%2Epng";
+            var encoded = GlbImporter.ReadFromDirectory(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None)), 0, directory);
+            True(encoded.Materials.Single().CopyBaseColorImageBytes().SequenceEqual(image));
             root["images"]![0]!["uri"] = "../outside.png";
+            Expect("UNSUPPORTED_FORMAT", () => GlbImporter.ReadFromDirectory(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None)), 0, directory));
+            root["images"]![0]!["uri"] = "%2E%2E/outside.png";
             Expect("UNSUPPORTED_FORMAT", () => GlbImporter.ReadFromDirectory(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None)), 0, directory));
             File.WriteAllBytes(Path.Combine(directory, "textures", "red.webp"), image); root["images"]![0]!["uri"] = "textures/red.webp"; root["images"]![0]!["mimeType"] = "image/webp";
             Expect("UNSUPPORTED_FORMAT", () => GlbImporter.ReadFromDirectory(ReplaceJsonChunk(BuildGlb(), root.ToString(Newtonsoft.Json.Formatting.None)), 0, directory));
