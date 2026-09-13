@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using NyaForge.Authoring;
+using NyaForge.Authoring.Rig;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -66,6 +67,7 @@ namespace NyaForge.UnityBridge.Editor
                 checks.Add("Output traversal is rejected before asset creation.");
                 VerifyPhysBonesBridge(checks);
                 VerifyPhysBonesBinding(checks);
+                VerifySkinnedClothingReceiver(checks);
                 if (Array.IndexOf(args,"--nyaforge-surface") >= 0)
                     VerifySurface(RequiredArgument(args,"--nyaforge-surface"),checks,folders);
                 if (Array.IndexOf(args,"--nyaforge-material") >= 0)
@@ -96,6 +98,48 @@ namespace NyaForge.UnityBridge.Editor
                     catch (Exception error) { Debug.LogException(error); exitCode = 1; }
                 }
                 if (Application.isBatchMode) EditorApplication.Exit(exitCode);
+            }
+        }
+
+        static void VerifySkinnedClothingReceiver(List<string> checks)
+        {
+            string rootId = Guid.NewGuid().ToString("D");
+            string childId = Guid.NewGuid().ToString("D");
+            var mesh = new MeshData(
+                new[] { new Vec3(0, 0, 0), new Vec3(.1f, 0, 0), new Vec3(0, .1f, 0) },
+                new[] { new Vec3(0, 0, 1), new Vec3(0, 0, 1), new Vec3(0, 0, 1) },
+                new[] { new Vec4(1, 0, 0, 1), new Vec4(1, 0, 0, 1), new Vec4(1, 0, 0, 1) },
+                new[] { new Vec2(0, 0), new Vec2(1, 0), new Vec2(0, 1) },
+                new[] { new[] { 0, 1, 2 } });
+            var skeleton = new SkeletonDefinition(new[] {
+                new BoneDefinition(rootId, "Root", "", new Vec3(0, 0, 0), new Vec3(0, .1f, 0)),
+                new BoneDefinition(childId, "Child", rootId, new Vec3(0, .1f, 0), new Vec3(0, .2f, 0)) });
+            var binding = SkinBinding.Create(mesh, skeleton, new[] {
+                new SkinBinding.VertexWeightInput(0, rootId, 1f),
+                new SkinBinding.VertexWeightInput(1, childId, 1f),
+                new SkinBinding.VertexWeightInput(2, childId, 1f) });
+            var avatar = new GameObject("NyaForge Receiver Fixture Avatar");
+            var root = new GameObject("Root"); root.transform.SetParent(avatar.transform, false);
+            var child = new GameObject("Child"); child.transform.SetParent(root.transform, false); child.transform.localPosition = new Vector3(0, .1f, 0);
+            var shader = Shader.Find("Standard");
+            Require(shader != null, "Unity Standard shader is unavailable for skinned receiver fixture.");
+            var material = new Material(shader);
+            try
+            {
+                var result = SkinnedClothingReceiver.Apply(mesh, new RestTransform(1f, new Vec3()), skeleton, binding,
+                    avatar.transform, new Dictionary<string, Transform> { [rootId] = root.transform, [childId] = child.transform },
+                    "Receiver Fixture Clothing", new[] { material });
+                Require(result.GameObject.transform.parent == avatar.transform, "Skinned receiver parent changed.");
+                Require(result.Renderer.sharedMesh == result.Mesh && result.Renderer.bones.Length == 2, "Skinned receiver bindings were not assigned.");
+                Require(result.Renderer.rootBone == root.transform && result.Mesh.bindposes.Length == 2, "Skinned receiver root/bindposes are incomplete.");
+                Require(result.Mesh.boneWeights.Length == 3 && result.Mesh.boneWeights[1].boneIndex0 == 1 && result.Mesh.boneWeights[1].weight0 > .99f,
+                    "Skinned receiver BoneWeight mapping is incorrect.");
+                checks.Add("SkinnedClothingReceiver creates an explicit BoneId-mapped SkinnedMeshRenderer with bindposes and four-slot weights.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(avatar);
+                Object.DestroyImmediate(material);
             }
         }
 
