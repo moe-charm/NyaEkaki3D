@@ -46,6 +46,7 @@ namespace NyaForge.Authoring
         public string StateHash { get; private set; }
         public string GraphHash { get; private set; }
         public string GlbHash { get; private set; }
+        public string BindingHash { get; private set; }
         public MeshData Mesh { get; private set; }
         public SkeletonDefinition Skeleton { get; private set; }
         public SkinBinding Binding { get; private set; }
@@ -56,7 +57,7 @@ namespace NyaForge.Authoring
         {
             ManifestPath = manifestPath; DocumentId = manifest.DocumentId; ObjectId = manifest.ObjectId;
             GraphId = manifest.GraphId; StateHash = manifest.StateHash; GraphHash = manifest.GraphHash;
-            GlbHash = manifest.GlbHash; Glb = glb; Mesh = mesh; Skeleton = skeleton; Binding = binding;
+            GlbHash = manifest.GlbHash; BindingHash = manifest.BindingHash; Glb = glb; Mesh = mesh; Skeleton = skeleton; Binding = binding;
         }
 
         /// <summary>Writes a clothing-only package after validating the exact GLB geometry.</summary>

@@ -48,6 +48,14 @@ passing `-ClothingPackageManifest <path>` to
 `Tools/Test-NyaForgeUnityBridge.ps1`. The option is intentionally optional so
 the base Bridge fixture remains independent of any private clothing asset.
 
+For an editor user, `Tools/NyaForge/Import Skinned Clothing Package...` opens
+`SkinnedClothingPackageWindow`. It provides a file picker, explicit mapping for
+every package BoneId, a read-only preflight, and a saved
+`NyaForgeSkinnedClothingBinding` on the avatar root. Reapplying a newer package
+reuses the managed object only when its stable ObjectId matches; an unrelated
+managed object is refused. A failed package read or receiver validation leaves
+the previous generated object in place.
+
 This is a receiver-side Unity scene operation. It does not claim VRChat SDK or
 VRChat runtime acceptance, PhysBones conversion, automatic body fitting,
 material/shader equivalence, or final VRM semantic export. Those remain later

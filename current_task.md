@@ -7,7 +7,7 @@ ChatGPT Proの持込Windows v1案を現行mainへ照合し、[採用修正版](d
 | 順 | ID | 状態 | 次の具体作業・完了条件 |
 |---|---|---|---|
 | 1 | NF-V1-01 / 03 | 未着手 | 過去SDK 3.7.6一時検証とreceiver候補を確認。環境版・fixtureを固定し、衣装だけの出力対象、骨対応、所有領域と最小受取経路を決定 |
-| 2 | NF-V1-03A / 02A | receiver/package実装済み・合成Bridge受入済み / 外部未受入 | `SkinnedClothingReceiver`と`skinned-clothing-v1`で既存Unity avatarへ初回適用。実アバター骨map、独立reader/実SDK/local VRChatで比較。static Bridge成功で実受取を代用しない |
+| 2 | NF-V1-03A / 02A | receiver/package/割当GUI実装済み・合成Bridge受入済み / 外部未受入 | `SkinnedClothingReceiver`と`skinned-clothing-v1`で既存Unity avatarへ初回適用。実アバター骨map、独立reader/実SDK/local VRChatで比較。static Bridge成功で実受取を代用しない |
 | 3 | NF-V1-04 / 05 | Core/UI実装済み・手動未受入 | 元Polygon graphを残し、UV/material/paint/出自対応を保持したskin用派生graphを一操作で生成。Undo・失敗無変更・保存再開を実マウスで確認 |
 | 4 | NF-V1-06 / 07 / 08 | 基盤/UI実装済み・実衣装未受入 | 選択頂点/元body面領域/距離をfitとweightへ適用。参照保護・pose確認を経て自作カフ1点を手操作で完成 |
 | 後続 | NF-V1-09〜16 / 02B | 未完了 | 画像原本/縮小契約→normal/MR→複数衣装・Unity再適用→長時間/手動/別環境→追加map/同期/RC受入。詳細依存は採用修正版参照 |
@@ -24,7 +24,7 @@ GUI/MCP共通command（13）と保存・復旧（14）は各実装と同時に�
 
 GLB単体ではstable BoneIdを受取側へ安全に渡せないため、`SkinnedClothingPackage`（profile `skinned-clothing-v1`）を追加した。packageは衣装だけの`clothing.glb`、Coreの`SkeletonDefinition`、`SkinBinding`、document/object/graph/state hashをmanifestへ記録する。生成前にGLBのmesh content/topology/頂点・三角形数をsidecarと照合し、stagingを読み直してから原子公開する。受取時もmanifest・各payload hash・GLB再読込・skeleton/binding topologyを検査し、不一致ではsceneを変更しない。`SkinnedClothingReceiver.ApplyPackage`はこの検査済みpackageを明示BoneId mapで`SkinnedMeshRenderer`へ適用する。
 
-Workbenchへ「選択衣装をskin packageで出力」を追加し、参照avatarを同梱しない単一衣装GLB＋sidecarの出力導線を用意した。Core回帰へpackage roundtripを追加し **489 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-c9113b12b1124f209595d7b53cb3deb2`）。Unity **6000.4.3f1** Player `Builds/ClothingPackageV1/NyaForge.exe` build成功、Authoring suite **PASS**（`Artifacts/Authoring-20260913-221015-2432c87b173840109d91c173ced1204a/report.json`）。さらにBridge検証へpackage manifestの任意入力を追加し、Unity **2022.3.22f1**でpackageのmanifest・GLB・skeleton・binding hash検証後に`ApplyPackage`が合成avatarへSkinnedMeshRendererを生成するところまで **PASS**（`Artifacts/BridgeReceiver-20260913-221633-466-84d8e08d1f7e41239bacef7e5edb5016/bridge-report.json`）。これは合成fixtureでのpackage/receiver証拠で、実RadDollV3を対象にしたBoneId map・ownership更新・VRChat内表示は未受入として残す。
+Workbenchへ「選択衣装をskin packageで出力」を追加し、参照avatarを同梱しない単一衣装GLB＋sidecarの出力導線を用意した。Core回帰へpackage roundtripを追加し **489 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0e7fef07df9f44388c5cc53b4c7559bd`）。Unity **6000.4.3f1** Player `Builds/ClothingPackageV1/NyaForge.exe` build成功、Authoring suite **PASS**（`Artifacts/Authoring-20260913-221015-2432c87b173840109d91c173ced1204a/report.json`）。受け取り側には`Tools/NyaForge/Import Skinned Clothing Package...`を追加し、manifestのファイル選択、全BoneIdの明示割当、事前診断、`NyaForgeSkinnedClothingBinding`への保存、同じObjectIdだけの管理対象更新をGUIから行えるようにした。`Builds/SkinnedClothingUiV1/NyaForge.exe`のWindows Player buildとAuthoring suite **PASS**（`Artifacts/Authoring-20260913-222609-001bc53b37b345c69077dd4ac18f1f15/report.json`）。Bridge検証へpackage manifestの任意入力とownership marker回帰を追加し、Unity **2022.3.22f1**でpackageのmanifest・GLB・skeleton・binding hash検証後に`ApplyPackage`が合成avatarへSkinnedMeshRendererを生成するところまで **PASS**（`Artifacts/BridgeReceiver-20260913-222408-639-9fc9ab8fccb7407a87a3be3792d17ca0/bridge-report.json`）。これは合成fixtureでのpackage/receiver証拠で、実RadDollV3を対象にしたBoneId map・ownership更新・VRChat内表示は未受入として残す。
 
 ## 2026-09-13 NF-V1-06 / 05 のCore接続
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Rig;
+using NyaForge.UnityBridge;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -68,6 +69,7 @@ namespace NyaForge.UnityBridge.Editor
                 VerifyPhysBonesBridge(checks);
                 VerifyPhysBonesBinding(checks);
                 VerifySkinnedClothingReceiver(checks);
+                VerifySkinnedClothingBinding(checks);
                 string clothingPackage = OptionalArgument(args, "--nyaforge-clothing-package");
                 if (!string.IsNullOrEmpty(clothingPackage)) VerifySkinnedClothingPackage(clothingPackage, checks);
                 if (Array.IndexOf(args,"--nyaforge-surface") >= 0)
@@ -184,6 +186,28 @@ namespace NyaForge.UnityBridge.Editor
                 Object.DestroyImmediate(avatar);
                 Object.DestroyImmediate(material);
             }
+        }
+
+        static void VerifySkinnedClothingBinding(List<string> checks)
+        {
+            string rootId = Guid.NewGuid().ToString("D");
+            var avatar = new GameObject("NyaForge Clothing Binding Fixture");
+            var bone = new GameObject("Root"); bone.transform.SetParent(avatar.transform, false);
+            var generated = new GameObject("Managed Clothing"); generated.transform.SetParent(avatar.transform, false);
+            try
+            {
+                var binding = (NyaForgeSkinnedClothingBinding)avatar.AddComponent(typeof(NyaForgeSkinnedClothingBinding));
+                string objectId = Guid.NewGuid().ToString("D"), graphId = Guid.NewGuid().ToString("D");
+                string hash = new string('a', 64);
+                binding.Capture("C:/private/skinned-clothing.nyaforge.json", objectId, graphId, hash, hash, hash, hash, hash,
+                    new[] { new KeyValuePair<string, Transform>(rootId, bone.transform) }, generated);
+                Require(binding.Matches(objectId, hash, hash, hash) && binding.MatchesObject(objectId),
+                    "Skinned clothing ownership identity did not round-trip.");
+                Require(binding.TryGetBone(rootId, out var resolved) && resolved == bone.transform,
+                    "Skinned clothing BoneId binding lookup failed.");
+                checks.Add("Skinned clothing ownership marker preserves package identity and explicit BoneId map.");
+            }
+            finally { Object.DestroyImmediate(avatar); }
         }
 
         static Mesh VerifyAssets(BakeImportResult result, BakeDocument bake, List<string> checks, string label, bool generatedNormals=false)
