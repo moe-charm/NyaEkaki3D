@@ -32,6 +32,9 @@ namespace NyaForge.UnityRuntime
                         var response=JObject.Parse(await read);
                         Check((bool)response["ok"] && (string)response["requestId"]==id,"Player IPC rejected state");
                         Check((string)response["result"]["documentId"]==document && (string)response["result"]["instanceId"]==instance,"Player IPC read different workspace");
+                        Check(response["result"]["referenceProtectedObjectIds"] is JArray &&
+                            (bool)response["result"]["activeObjectReferenceProtected"] == false,
+                            "Player IPC state omitted reference protection metadata");
                     }
                 }
             });

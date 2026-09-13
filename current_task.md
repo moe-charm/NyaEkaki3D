@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 MCPへ参照保護状態を公開
+
+`get_state`へ`referenceProtectedObjectIds`と`activeObjectReferenceProtected`を追加した。AI側が参照bodyを編集対象から外せるよう、保護状態をエラー発生後ではなく編集前に取得できる。空projectのnamed pipe state回帰で配列とactive=falseを確認し、Windows Player `Builds/McpRefProtectionState/NyaForge.exe`のAuthoring suite **83 checks PASS**（`Artifacts/Authoring-20260914-034328-5750299d23c84ce8950a4f8308328a64/report.json`）。実MCP clientによる保護中objectの選択・編集拒否は、別途実アバター手動受入の境界として残る。
+
 ## 2026-09-14 参照保護のUndo/Redo同期
 
 参照body保護のattachmentをUndo/Redoした際、native attachmentの正本と制作対象パネルのトグルがずれる穴を修正した。GUIとMCPのhistory undo/redo後に`reference-protection.nyaforge.bin`を再読込し、保護中の頂点編集停止状態を維持する。Windows Player `Builds/RefProtectionUndo/NyaForge.exe`のAuthoring suiteは **83 checks PASS**（`Artifacts/Authoring-20260914-034002-538c4019d23045dd9010231eca7ee326/report.json`）。ON→Undo→Redo→頂点編集停止→Save/Open→解除まで自動回帰に含む。Coreも **497 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ada9ea537fa9447595c259624ed75b3b`）。実EditorWindowの手動操作、実RadDollV3全周fit・貫通・見た目、VRChat内表示は未受入である。

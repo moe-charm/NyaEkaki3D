@@ -89,6 +89,8 @@ ProjectSaveServiceはinstance/document/revision一致確認をProjectStore.Save�
 ## forge_save_project公開
 get_stateのsaveTargetを用い、GUI選択済みdirectoryへdocument/revision/saveVersionを検査して保存。別directoryはSAVE_TARGET_CHANGED。保存成功後GUIのdirty/pathを同期。static/graphの実MCP保存・再送競合・Player再読込hash一致がWindows-McpSaveで成功。layoutはMCP保存の対象外、保存先をMCPで変更する機能も未公開。
 
+`get_state`には、制作対象パネルで参照保護したobject IDを`referenceProtectedObjectIds`として返し、active objectが保護中なら`activeObjectReferenceProtected: true`になる。保護中の編集要求は`REFERENCE_PROTECTED`で停止し、object選択・history・保存・出力は継続できるため、AIは参照bodyを避けて衣装objectを選択してから編集できる。空projectのnamed pipe stateで、この2項目が常に返ることをPlayer回帰する。
+
 ## Export service準備
 ProjectExportServiceがinstance/document/revisionを検査し、属性に応じ既存BakeStoreへ振分け。GUI Exportを同serviceへ移行。Core250/Windows-ExportServiceのPlayer suite成功。MCP export要求は次。
 
