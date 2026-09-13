@@ -1,3 +1,11 @@
+# 2026-09-13 pasted feedback recheck on current main
+
+貼り付けられたレビュー（基準 `0d1e957`）を、現行 `main` の `f5b908a` に再照合した。レビューの5件のP1は、複数graphのrig／expression／spring所属保存、source skinを`SkinDeform`入力へ組み込む評価順、skinned node affineの監査metadata化、元のinverse-bind行列の標準／拡張GLB出力への継承、装着後`WorldPoints`による描画・Frame・選択判定の統一で対応済み。P2の材質linear値・metallic既定値、primitive単位の材質、省略textureの扱い、装着先保持、PhysBones source hash、揺れUndo／再bind、複数rootとmorph bounds、normal/tangent morph変換も回帰へ含まれている。
+
+現行Core回帰は **465 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-50ab507c88d04f23b0f72eeda0c001a6`）。Windows Playerの800x600 Authoring suiteとUnity **2022.3.22f1** synthetic Bridge、private一時RadDollV3 VRMの取込→EditMesh→native Save/Open→標準skinned GLB出力→再取込は直前カードのPASSを正とする。レビュー文面の古いhashや「未修正」という判定を現行状態へ持ち込まない。
+
+残る境界は、実マウス／DPI差／Explorer実クリック、実VRChat SDK・実アバター内の見た目とPhysBones動作、自動fit・貫通修正、異なるskeletonの結合、共有mesh／skin／morph参照、完全な外部texture・animation・VRM拡張保持、標準VRM出力。次の開発カードは、共有参照の明示仕様化か、実SDK版を固定した受け取り検証のどちらか一つに絞る。
+
 # 2026-09-13 native UI acceptance bridge check
 
 提示されたレビュー（基準 `0d1e957`）のP1/P2は、実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。
