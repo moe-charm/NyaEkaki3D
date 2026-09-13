@@ -1,6 +1,6 @@
 # Nya Ekaki 3D Windows v1 実行計画
 
-更新: 2026-09-13。コード照合: `41e73ac`。持込提案の基準 `8c1bd7a` との差は名称・文書のみ。
+更新: 2026-09-13。コード照合: 現行 `main`。持込提案の基準 `8c1bd7a` との差は名称・文書のみ。
 
 本書は持込「NyaForge Windows v1 開発計画」をコード照合して修正した実行計画。受入済み報告ではない。製品全体の目標・C0〜C5の要件は[設計v2](NyaForge-Authoring-Design2.md)を維持し、本書はWindows衣装制作v1へ至る着手順を定める。v1だけの合格を製品全体や進行中goalの完了へ読み替えない。直近の状態は[current_task](../current_task.md)。
 
@@ -107,4 +107,4 @@ Paintと表示textureで同じ解像度・更新頻度を必要とするかを09
 - [VRChat avatar作成手順](https://creators.vrchat.com/avatars/creating-your-first-avatar/): localテストとアップロード後の他者表示は別。アップロード可能条件も初回に確認する。
 - [glTF材質仕様](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#materials): 色画像と数値map、MR channel、normal/tangentをadapter間で明示する。
 
-今回の検証は持込文書、現行ソース、既存記録、上記公式情報の照合のみ。Core/Player/SDK/VRChatの新規実行は行っていない。実装開始時に対象ケースの現行結果を取得する。
+本書の初回策定時の検証は持込文書、現行ソース、既存記録、上記公式情報の照合のみだった。実装後のCore/Player/Bridge/SDK検証結果は[current_task](../current_task.md)へ時系列で追記し、合成fixtureと実アバター・実VRChatの受入を混同しない。
