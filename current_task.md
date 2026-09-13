@@ -19,6 +19,8 @@
 
 private probeへ実RadDollV3の`Body` rendererを基準にした最小surface測定を追加した。Unity **2022.3.22f1**でBody 8,467頂点／10,770三角形をavatar-localへ変換し、実bodyの非退化三角形から1 mm離した3頂点カフを作成して、`MeshSurfaceFit.Project`（offset 0.5 mm、上限10 mm）と`SkinWeightTransfer.BySurfaceProjection`（4 influence、上限10 mm）を実行した。3頂点すべてがfitされ、最大投影距離 **0.99995 mm**、最大移動量 **0.49994 mm**、surface weight 3頂点・最大1 influence・正規化済みを確認した。証拠はpublicへ素材を含めないprivate `private/PhysBonesSdkProbe-20260914/avatar-fit-weight-report.json`。これは実bodyメッシュとの座標・距離制限・weight正規化の接続確認であり、カフ全周の貫通・衣装の見た目・手動EditorWindow操作・VRChat内受入ではない。
 
+この照合後のCore再実行も **495 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-d89dc7e009834b1daaee015258361fb9`）。
+
 ChatGPT Proの持込Windows v1案を現行mainへ照合し、[採用修正版](docs/Windows-v1-Development-Plan.md)へタスク化した。方針は採用するが、実SDK／実VRChat未受入を完了扱いにせず、実装済みの衣装受け渡しを重複開発しない。製品全体のC0〜C5と進行中goalは維持する。以降の着手順はこの欄と採用修正版を優先し、下に残る日付付き記録の「次」は当時の履歴として読む。
 
 ## 2026-09-14 Downloads版Windows v1案の再確認
