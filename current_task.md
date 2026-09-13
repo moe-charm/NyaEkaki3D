@@ -1,3 +1,8 @@
+# 2026-09-13 latest Windows viewer navigation recheck
+
+`Builds/FeedbackRecheckV1/NyaForge.exe`を1280x800で起動し、パック選択、キャンセル時の文書／履歴保持、named session保存・再開、未保存変更の破棄確認、不正パス保持、最近／確認セット／設定／制作画面への遷移、utility panelの折りたたみ、viewportの利用可能領域を再確認した。Navigation suiteは **PASS**（`Artifacts/Navigation-20260913-125208-90befd32b95d416690cf89634a21c1f1/report.json`）。`main.png`／`sets.png`／`settings.png`は1280x800で文字欠けなし、制作入口の表示領域も確保されている。
+
+これは自動Playerナビゲーションと画面画像の証拠で、実マウス・DPI個体差・Explorerの実クリックは別手動受入境界とする。
 # 2026-09-13 pasted feedback recheck on current HEAD d440900
 
 添付されたレビュー（基準 `0d1e957`）を現行HEAD `d440900`へ再照合した。レビューのP1（複数graph metadataの混線、source skin二重変形、skinned node affine、inverse-bind欠落、装着後クリックずれ）は、現行のgraph単位session、SkinDeform入力差し替え後の再評価、skinned affineの監査保持、元行列の標準／拡張GLB出力、`WorldPoints`統一で対応済み。P2（linear material／metallic既定値、局所material slot、装着先保持、PhysBones source hash、揺れUndo、GLB共通root・morph bounds、normal/tangent morph）も回帰へ含まれている。
@@ -1572,3 +1577,4 @@ Core **459 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/N
 source skin表示はSkinDeform位置のoverride後にgraphを再評価し、後段EditMeshを保持する。標準GLB出力にはWorkBenchのimported source skinからinverse-bind行列をgraph object単位で渡せる経路を追加した（従来APIのidentity fallbackと明示instance affine互換は維持）。装着小物の頂点hit testはpreview rootのworld座標を使い、描画位置とクリック判定を一致させた。
 
 Core **460 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-57272bc5a1d74d37aed5a0f21cfab31f`）。Windows Player `Builds/ConsistencyFollowupV1/NyaForge.exe` のAuthoring suite（private一時RadDollV3 import指定、report `Artifacts/Authoring-20260913-074524-bcf817fd606e477eae95415f5f1d7032/report.json`）とUnity 2022.3.22f1 Bridge（`Artifacts/BridgeReceiver-20260913-074633-351-fcfd3de0c8c146328d42e82de7541f1b/bridge-report.json`）はPASS。実VRChat SDK、実マウス/DPI差、任意モデルの完全なnode transform互換は別受入境界として残す。
+
