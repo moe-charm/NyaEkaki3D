@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using NyaForge.Authoring;
 using UnityEngine.UIElements;
 
@@ -8,6 +10,8 @@ namespace NyaForge.UnityRuntime
     {
         Foldout objectSelectionPanel;
         Toggle showAllObjects;
+        Toggle referenceProtectionToggle;
+        readonly HashSet<string> referenceProtectedObjectIds = new HashSet<string>(StringComparer.Ordinal);
 
         void BuildObjectSelection(VisualElement parent)
         {
@@ -16,6 +20,10 @@ namespace NyaForge.UnityRuntime
             showAllObjects = new Toggle("他の制作対象も表示") { value = true, name = "object-show-all" };
             showAllObjects.RegisterValueChangedCallback(_ => { if (objectProjection != null) { objectProjection.Visible = showAllObjects.value; Refresh(); } });
             objectSelectionPanel.Add(showAllObjects);
+            referenceProtectionToggle = new Toggle("選択中を参照として保護（編集不可）") { name = "object-reference-protection" };
+            referenceProtectionToggle.tooltip = "avatarなどの基準objectを保護します。選択・表示・保存・出力はできますが、頂点・材質・リグ・graphの変更は停止します。設定はnative projectへ保存されます。";
+            referenceProtectionToggle.RegisterValueChangedCallback(e => Try(() => SetReferenceProtection(e.newValue)));
+            objectSelectionPanel.Add(referenceProtectionToggle);
             parent.Add(objectSelectionPanel);
         }
 
@@ -30,12 +38,16 @@ namespace NyaForge.UnityRuntime
             }
             RefreshImportedVrmSessionsForActiveGraph();
             SelectSecondaryMotionForActiveGraph();
-            while (objectSelectionPanel.childCount > 2) objectSelectionPanel.RemoveAt(2);
+            while (objectSelectionPanel.childCount > 3) objectSelectionPanel.RemoveAt(3);
             if (workspace == null || workspace.Document.IsEmpty)
             {
+                referenceProtectionToggle.SetValueWithoutNotify(false); referenceProtectionToggle.SetEnabled(false);
                 objectSelectionPanel.Add(new Label("制作対象はまだありません。"));
                 return;
             }
+            string activeId = workspace.Document.ActiveObjectId;
+            referenceProtectionToggle.SetValueWithoutNotify(referenceProtectedObjectIds.Contains(activeId));
+            referenceProtectionToggle.SetEnabled(!string.IsNullOrEmpty(activeId));
             foreach (var item in workspace.Document.Objects)
             {
                 string id = item.ObjectId;

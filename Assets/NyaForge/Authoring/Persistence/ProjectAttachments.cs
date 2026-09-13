@@ -10,13 +10,14 @@ namespace NyaForge.Authoring
     public sealed class ProjectAttachments
     {
         public const string Expressions = "vrm-expression-session.nyaforge.json";
-        public const int MaxCount = 7;
+        public const int MaxCount = 8;
         public const string ImportDiagnostics = "import-diagnostics.nyaforge.json";
         public const string PhysBones = "physbones-target.nyaforge.bin";
         public const string Rig = "imported-rig-session.nyaforge.json";
         public const string RigSessions = "imported-rig-sessions.nyaforge.bin";
         public const string Springs = "vrm-spring-session.nyaforge.json";
         public const string SecondaryMotion = "secondary-motion.nyaforge.bin";
+        public const string ReferenceProtection = "reference-protection.nyaforge.bin";
         public static readonly ProjectAttachments Empty = new ProjectAttachments(new Dictionary<string, byte[]>());
         readonly Dictionary<string, byte[]> values;
         public IReadOnlyDictionary<string, string> Hashes { get; }
@@ -24,7 +25,7 @@ namespace NyaForge.Authoring
 
         public ProjectAttachments(IDictionary<string, byte[]> source)
         {
-            Checks.Require(source != null && source.Count <= MaxCount, "INVALID_ATTACHMENT", "Expected at most seven owned project attachments.");
+            Checks.Require(source != null && source.Count <= MaxCount, "INVALID_ATTACHMENT", "Expected at most eight owned project attachments.");
             values = new Dictionary<string, byte[]>(StringComparer.Ordinal);
             var hashes = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var item in source.OrderBy(p => p.Key, StringComparer.Ordinal))
@@ -51,7 +52,7 @@ namespace NyaForge.Authoring
 
         internal static void ValidateName(string name)
         {
-            Checks.Require(name == Expressions || name == Springs || name == Rig || name == RigSessions || name == PhysBones || name == SecondaryMotion || name == ImportDiagnostics, "INVALID_ATTACHMENT", "Unknown project attachment name.");
+            Checks.Require(name == Expressions || name == Springs || name == Rig || name == RigSessions || name == PhysBones || name == SecondaryMotion || name == ReferenceProtection || name == ImportDiagnostics, "INVALID_ATTACHMENT", "Unknown project attachment name.");
         }
     }
 }

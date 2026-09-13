@@ -19,6 +19,7 @@ namespace NyaForge.UnityRuntime
             return delta=>Try(()=>
             {
                 envelope.Operations=new[]{AuthoringOperation.TransformUvIslands(context,faces,new UvTransformSettings(new Vec2(delta.x,delta.y),0,1))};
+                if (ReferenceProtectionBlocks(envelope.Operations)) throw new InvalidOperationException(ReferenceProtectionMessage);
                 var result=commands.Execute(envelope,projection);
                 Refresh();
                 if(!result.Success) throw new InvalidOperationException(result.Code+": "+result.Message);

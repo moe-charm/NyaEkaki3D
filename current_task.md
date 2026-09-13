@@ -2306,3 +2306,8 @@ Coreは **483 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 検証レポート: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-package-flow-20260913.json`（status `verified`、Unity probe `passed`）。UnityBridgeの合成受け取り回帰も **PASS**（`Artifacts/BridgeReceiver-20260913-193241-889-d5072cb90b02488cbd8d9ef8e6d8a161/bridge-report.json`）。SDK projectと一時packageはpublic repositoryへ追加していない。
 
 実アバターへのstable BoneId／collider手動割当、複数pose・root移動・停止／再開の挙動、VRChat Build & Test／実機の見た目とPhysBones挙動はSIM-07Aの別受入境界として残す。
+## 2026-09-14 参照body保護の保存・編集停止回帰
+
+制作対象パネルへ **選択中を参照として保護（編集不可）** を追加した。avatarなどの基準objectを保護すると、表示・選択・保存・出力は維持したまま、頂点・材質・リグ・graphの編集commandとMCP操作を`REFERENCE_PROTECTED`で停止する。保護対象IDはnative schema 4の許可attachment `reference-protection.nyaforge.bin`へ、sortedなGUID列として保存する。Save/OpenでIDとGUIトグルを復元し、解除後は通常編集へ戻れる。
+
+Coreは **497 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a7d03400063146bc8b010f7bf4e874bb`）。参照ID codecの重複・順序・破損入力とnative attachment roundtripを確認した。Unity **6000.4.3f1** Player `Builds/RefProtection/NyaForge.exe`は、2 objectの選択・表示・Save/Open・編集分離に加え、保護中の頂点編集停止、保護設定の保存・再読込、解除まで **PASS**（`Artifacts/Authoring-20260914-033432-f1362aff12ff4b2b8e1db3edfd231ac4/report.json`）。同成果物のUnity **2022.3.22f1** Bridge receiver suiteも **15 checks PASS**（`Artifacts/BridgeReceiver-20260914-033504-121-546e15ff46e24f19b28033b7b97acac7/bridge-report.json`）。これは自動fixtureでの保存・command境界回帰であり、実RadDollV3 EditorWindowの手動操作、実body全周fit・貫通・見た目、VRChat内表示は未受入である。

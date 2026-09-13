@@ -34,6 +34,10 @@ namespace NyaForge.UnityRuntime
         // state must be reread before the next status/playback action.
         internal CommandResult ExecuteMcpCommand(CommandEnvelope command)
         {
+            if (ReferenceProtectionBlocks(command?.Operations))
+                return new CommandResult { Success = false, Code = "REFERENCE_PROTECTED", Message = ReferenceProtectionMessage,
+                    DocumentRevision = workspace.Document.DocumentRevision, MeshContentHash = null,
+                    EvaluationComplete = workspace.Preview.IsComplete, PreviewRevision = workspace.Preview.OutputRevision };
             var result=commands.Execute(command,projection);
             // GUI Execute() refreshes metadata-backed secondary-motion state
             // after history operations. MCP bypasses that helper, so mirror the

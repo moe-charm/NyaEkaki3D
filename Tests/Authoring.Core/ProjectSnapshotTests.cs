@@ -51,7 +51,24 @@ internal static partial class Program
             var chain = new PhysBonesChain("tail", rootId, new[] { rootId }, PhysBonesEndpointMode.Auto, "", null, PhysBonesMultiChildType.Ignore, null, null, null, PhysBonesParameters.Default, PhysBonesInteraction.Default, null);
             var profile = new PhysBonesTargetProfile("vrchat.physbones", "sdk", "package", skeleton.ContentHash, "", new[] { chain });
             var bytes = PhysBonesTargetCodec.Write(profile); var w = Fresh(); w.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]> { [ProjectAttachments.PhysBones] = bytes })); string directory = Dir("snapshot-physbones"); ProjectStore.Save(directory, w, 0);
-            var opened = ProjectStore.Open(directory); var restored = opened.Attachments.Read(ProjectAttachments.PhysBones); True(bytes.SequenceEqual(restored)); Equal(profile.ContentHash, PhysBonesTargetCodec.Read(restored).ContentHash); False(opened.IsDirty); Equal(7, ProjectAttachments.MaxCount);
+            var opened = ProjectStore.Open(directory); var restored = opened.Attachments.Read(ProjectAttachments.PhysBones); True(bytes.SequenceEqual(restored)); Equal(profile.ContentHash, PhysBonesTargetCodec.Read(restored).ContentHash); False(opened.IsDirty); Equal(8, ProjectAttachments.MaxCount);
+        });
+
+        Test("reference protection metadata roundtrips through native Save/Open", () =>
+        {
+            var ids = new[] { Guid.NewGuid().ToString("D"), Guid.NewGuid().ToString("D") };
+            var bytes = ReferenceProtectionCodec.Write(ids.Reverse());
+            var decoded = ReferenceProtectionCodec.Read(bytes);
+            True(decoded.SequenceEqual(ids.OrderBy(id => id, StringComparer.Ordinal)));
+            var w = Fresh(); w.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]>
+            {
+                [ProjectAttachments.ReferenceProtection] = bytes
+            }));
+            string directory = Dir("snapshot-reference-protection"); ProjectStore.Save(directory, w, 0);
+            var opened = ProjectStore.Open(directory);
+            True(bytes.SequenceEqual(opened.Attachments.Read(ProjectAttachments.ReferenceProtection)));
+            True(ReferenceProtectionCodec.Read(opened.Attachments.Read(ProjectAttachments.ReferenceProtection)).SequenceEqual(ids.OrderBy(id => id, StringComparer.Ordinal)));
+            False(opened.IsDirty);
         });
 
         Test("secondary motion attachment survives schema 4 snapshot Open", () =>

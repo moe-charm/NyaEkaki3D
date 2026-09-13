@@ -257,6 +257,7 @@ namespace NyaForge.UnityRuntime
         {
             Try(() =>
             {
+                if (ReferenceProtectionBlocks(operations)) throw new InvalidOperationException(ReferenceProtectionMessage);
                 ClearSpringPlayback(true);
                 var result = ExecuteMeasured(operations);
                 if (!result.Success) { Refresh(); throw new InvalidOperationException(result.Code + ": " + result.Message); }

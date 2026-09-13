@@ -47,7 +47,23 @@ namespace NyaForge.UnityRuntime
                 var afterSecond = workspace.Document.Objects.ToDictionary(item => item.ObjectId,
                     item => GraphEvaluator.Evaluate(item.Graph).Output.Mesh.ContentHash, StringComparer.Ordinal);
                 Check(afterSecond[objectIds[1]] != before[objectIds[1]] && afterSecond[objectIds[0]] == afterFirst[objectIds[0]], "Second active object edit did not stay isolated");
-                checks.Add("multi-object GUI backdrop: two graph targets, Save/Open, active editing projection, isolated edits, visibility toggle and framing");
+
+                // A reference avatar can remain selectable and visible while all
+                // geometry/graph edits are rejected. Persist the protection marker
+                // through native Save/Open, then unlock it for the next fixture.
+                Execute(AuthoringOperation.SelectObject(objectIds[0]));
+                SelectEditStage(1); Select(new[] { 0 });
+                var protectedBefore = GraphEvaluator.Evaluate(workspace.Document.ActiveObject.Graph).Output.Mesh.ContentHash;
+                referenceProtectionToggle.value = true;
+                Check(referenceProtectionToggle.value && referenceProtectedObjectIds.Contains(objectIds[0]), "Reference protection toggle did not register the active object");
+                moveX.SetValueWithoutNotify(1); moveY.SetValueWithoutNotify(0); moveZ.SetValueWithoutNotify(0); MoveSelection();
+                var protectedAfter = GraphEvaluator.Evaluate(workspace.Document.ActiveObject.Graph).Output.Mesh.ContentHash;
+                Check(protectedAfter == protectedBefore && status.text.Contains("参照"), "Reference-protected object accepted a geometry edit (before=" + protectedBefore + ", after=" + protectedAfter + ", active=" + workspace.Document.ActiveObjectId + ", protected=" + referenceProtectedObjectIds.Contains(workspace.Document.ActiveObjectId) + ", status=" + status.text + ")");
+                SaveProject(); OpenProject();
+                Check(referenceProtectedObjectIds.Contains(objectIds[0]) && referenceProtectionToggle.value, "Reference protection was not restored by Save/Open");
+                referenceProtectionToggle.value = false;
+                Check(!referenceProtectedObjectIds.Contains(objectIds[0]), "Reference protection did not unlock the active object");
+                checks.Add("multi-object GUI backdrop: two graph targets, Save/Open, isolated edits, visibility/framing and persisted reference protection");
             }
             finally
             {

@@ -47,6 +47,7 @@ namespace NyaForge.UnityRuntime
             ClearImportedVrmSpring();
             ClearImportedSecondaryMotion();
             workspace = next; commands = new AuthoringCommandService(workspace);
+            RefreshReferenceProtectionFromWorkspace();
             saveIncomplete = false;
             savedDirectory = loadedPath == null ? null : Path.GetFullPath(loadedPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             projectPath.SetValueWithoutNotify(loadedPath ?? Path.Combine(Application.persistentDataPath, "Authoring", "Project-" + Guid.NewGuid().ToString("N").Substring(0, 8)));
