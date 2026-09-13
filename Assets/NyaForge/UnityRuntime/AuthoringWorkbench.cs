@@ -110,6 +110,11 @@ namespace NyaForge.UnityRuntime
                 uvPreview?.CancelIslandDrag();paintCanvas?.CancelStroke();ClearSurfacePreparation(); active = false; root.style.display = DisplayStyle.None; stage.SetActive(false); close?.Invoke();
             }, "authoring-close"));
             top.Add(Button("ノード表示 / 非表示", () => { graphCanvas.style.display = graphCanvas.resolvedStyle.display == DisplayStyle.None ? DisplayStyle.Flex : DisplayStyle.None; }, "graph-toggle"));
+            // Keep the navigation labels readable on a narrow DPI-scaled
+            // window. Row() already wraps; disabling shrink makes the two
+            // controls move to a second line instead of truncating text.
+            top.Q<Label>("authoring-title").style.flexShrink = 0;
+            top.Query<Button>().ForEach(button => button.style.flexShrink = 0);
             var body = new VisualElement();
             body.style.flexDirection = FlexDirection.Row;
             body.style.flexGrow = 1; body.style.flexBasis = 0; body.style.minHeight = 0;
