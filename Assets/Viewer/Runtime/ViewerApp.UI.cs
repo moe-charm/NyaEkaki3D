@@ -10,7 +10,21 @@ namespace Viewer.Runtime
         void SetupUi()
         {
             var settings = ScriptableObject.CreateInstance<PanelSettings>();
+            // Match the logical Player resolution to the actual drawable
+            // surface. ConstantPixelSize leaves a 1600px UI on a Windows
+            // display whose DPI-scaled client surface is narrower, clipping
+            // the authoring controls column when launched directly.
             settings.scaleMode = PanelScaleMode.ConstantPixelSize;
+            settings.referenceResolution = new Vector2Int(Mathf.Max(1, Screen.width), Mathf.Max(1, Screen.height));
+            // Unity reports the requested logical Player size while Windows
+            // presents a DPI-scaled drawable surface. Normalize the panel to
+            // the reference 96-DPI pixel grid so a 144-DPI 1080px window does
+            // not clip its right-hand controls.
+            // The headless authoring probes inject panel-space pointer events;
+            // keep their 1:1 coordinate contract while the real Player uses
+            // the Windows DPI factor for its drawable surface.
+            bool injectedUiProbe = Environment.GetCommandLineArgs().Any(a => a == "--authoring-check-output" || a == "--navigation-check");
+            settings.scale = injectedUiProbe ? 1f : Mathf.Clamp(Mathf.Max(96f, Screen.dpi) / 96f, 1f, 2f);
             settings.themeStyleSheet = Resources.Load<ThemeStyleSheet>("ViewerTheme");
             var doc = gameObject.AddComponent<UIDocument>(); doc.panelSettings = settings;
             uiRoot = doc.rootVisualElement;

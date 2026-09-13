@@ -76,6 +76,13 @@ namespace NyaForge.UnityRuntime
         void BuildUi(VisualElement parent)
         {
             root = new VisualElement { name = "authoring-workbench" };
+            // Authoring replaces the viewer's existing root children at runtime.
+            // Pin the workbench to the full panel instead of relying on a
+            // flex-grow-only child; when it is opened directly from a Player
+            // command line, the otherwise empty parent can resolve its content
+            // width from the viewport and push the controls column off-screen.
+            root.style.position = Position.Absolute;
+            root.style.left = root.style.top = root.style.right = root.style.bottom = 0;
             root.style.flexGrow = 1;
             root.style.minHeight = 0;
             parent.Add(root);
@@ -91,7 +98,7 @@ namespace NyaForge.UnityRuntime
             body.style.flexDirection = FlexDirection.Row;
             body.style.flexGrow = 1; body.style.flexBasis = 0; body.style.minHeight = 0;
             root.Add(body);
-            var left = new VisualElement(); left.style.flexGrow = 1; left.style.minWidth = 150; left.style.minHeight = 0; body.Add(left);
+            var left = new VisualElement(); left.style.flexGrow = 1; left.style.flexBasis = 0; left.style.flexShrink = 1; left.style.minWidth = 150; left.style.minHeight = 0; body.Add(left);
             view = new VisualElement { name = "authoring-viewport" };
             view.style.flexGrow = 1; view.style.minWidth = 150;
             view.style.minHeight = 100; left.Add(view);
@@ -107,7 +114,7 @@ namespace NyaForge.UnityRuntime
             emptyHint.style.left = 24; emptyHint.style.right = 24; emptyHint.style.fontSize = 22;
             emptyHint.style.unityTextAlign = TextAnchor.MiddleCenter; view.Add(emptyHint);
             var side = controls = new ScrollView { name = "authoring-controls" };
-            side.style.width = 356; side.style.flexShrink = 0;
+            side.style.width = 356; side.style.flexBasis = 356; side.style.flexGrow = 0; side.style.flexShrink = 0;
             side.style.paddingLeft = 14; side.style.paddingRight = 14; side.style.paddingTop = 10;
             side.style.backgroundColor = new Color(.11f, .15f, .19f);
             body.Add(side);
