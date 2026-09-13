@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 feedback再照合: 9855d43 → 515183a
+
+提示された衣装受け取り・材質処理レビューを現行`main`へ再照合した。P1（移動avatarへの配置、更新時ownership参照、UV1欠落）とP2（sparse material slot、MR係数、Cuff winding、sampler共有、適用前／削除後の割当読込）は、後続実装と回帰で解消済みであるため、本番コードの重複修正は行っていない。詳細は[現行HEAD再照合](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-515183a.md)へ固定した。
+
+現行Coreは **501 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0773c4378c4745aba2e7740d364f327a`）。ReleaseCandidateV2／private RadDollV3／Unity Bridgeの既存PASS証拠も有効だが、実EditorWindowのマウス／DPI、実アバター全周fit・貫通・見た目、VRChat Build & Test／実機表示、実運用の更新・削除は未受入として残す。
+
 ## 2026-09-14 NF-V1-06: surface clearance候補の読み取り検査
 
 fit後の確認を進めるため、`MeshSurfaceClearance`を追加した。指定された衣装頂点とavatar面領域について、最近面のwindingに対するsigned距離を計算し、裏側へ入った候補数、最小／最大距離、最大64件の頂点IDを返す。GUIの「fit状態を測定（変更なし）」とMCP `forge_surface_fit_inspect`／`forge_get_state.surfaceFitInspection`へ接続した。これは三角形交差・閉じた体積の内外判定・貫通ゼロの証明ではなく、候補値として明示する。
