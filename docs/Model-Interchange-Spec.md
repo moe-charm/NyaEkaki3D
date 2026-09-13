@@ -170,7 +170,7 @@ I04-Eのreport設計はAと同時に進め、完全取込の公開にはA〜Eの
 
 `VrmExportService.ExportVrm1` は、既存のrest-pose `SkinnedGeometry` GLBを基礎に、VRM 1.0の`VRMC_vrm` extension、明示的なmeta、humanoid必須15骨を付けて`.vrm`へ包装する。Workbenchでは、取込時のgraph単位`ImportedRigSession`からstable `BoneId`を出力GLTF nodeへ解決し、名前・作者・作品のlicense URLを入力して実行する。選択したhumanoid avatarと、同じskeleton hashへskin-bindした複数の衣装graph objectを一つのVRMへ含められる。static object、剛体attachment、異なるskeletonは出力先を作らず拒否する。保存済みsource skinがある場合は、BoneIdに対応するinverse-bindとsourceの親子を考慮したjoint local matrixも出力し、骨配列の並び替えで対応がずれないようにする。
 
-この初期profileはMorphSetへ解決できる`morphTargetBinds`と、詳細形状・gravityDirを持つVRM 1.0由来sessionの`VRMC_springBone`（sphere/capsule、collider group、spring joint）を出力する。VRM 0.x由来、詳細不足、空のcollider group、未対応BoneIdは変換せず拒否する。material bind、texture transform、LookAt、FirstPerson、MToon、アニメーションおよび任意VRM拡張は出力しない。これらの情報を保持した完全VRM出力とは扱わず、同梱`export-report.json`へ制限を記録する。出力後は`VrmMetadataReader`でextension、表情bind、SpringBone inventoryを再読込し、GLBのBIN／mesh geometryが変わらないことをCoreで検証する。
+この初期profileはMorphSetへ解決できる`morphTargetBinds`と、詳細形状・gravityDirを持つVRM 1.0由来sessionの`VRMC_springBone`（sphere/capsule、collider group、spring joint）を出力する。VRM 0.x由来、詳細不足、空のcollider group、未対応BoneIdは変換せず拒否する。material bind、texture transform、LookAt、FirstPerson、MToon、アニメーションおよび任意VRM拡張は出力しない。これらの情報を保持した完全VRM出力とは扱わず、同梱`export-report.json`へ制限とnative `sourceDiagnostics`を記録する。出力後は`VrmMetadataReader`でextension、表情bind、SpringBone inventoryを再読込し、GLBのBIN／mesh geometryが変わらないことをCoreで検証する。
 
 `GlbExportService` はnative制作データを変更せず、明示的な3 profileで標準glTF 2.0 GLBを生成する。
 
@@ -192,7 +192,7 @@ GLB/VRMの入出力にはnative blobと分離した128 MiBファイル予算と�
 | `SkinnedGeometry` | 単一graphのsource mesh、4 influence weight、骨階層、inverse bind、POSITION/NORMAL/TANGENT morph、標準PBR材質と埋め込みbase-color PNG | rest pose・identity source/output transformに限定。EditMeshによるトポロジー不変の頂点編集を保持する。未対応のtexture/image/samplerは出力しない。任意pose、非ゼロmorph変形、未対応nodeは拒否しnative/static exportを案内 |
 | `SkinnedGeometryExtended` | 単一graphのsource mesh、最大32 influence weightを全JOINTS_n/WEIGHTS_n setで保持、骨階層、inverse bind、POSITION/NORMAL/TANGENT morph、標準PBR材質と埋め込みbase-color PNG | rest pose・identity source/output transformに限定。標準profileで4 influenceを超える受取先には互換性を保証しない。未対応のtexture/image/samplerは出力しない。任意pose、非ゼロmorph変形、未対応nodeは拒否 |
 
-GUIには「標準GLB（表示形状）」「標準GLB（skin/morph保持）」「拡張GLB（全weight保持）」を分けて表示する。出力先は`<project>/exports/glb-*`の新規ディレクトリに限定し、失敗時はstagingを削除して既存制作状態を変更しない。各出力には`model.glb`と同じstagingから`export-report.json`を同梱し、document ID・revision・state hash・profile・対象件数・`model.glb`本体のSHA-256（`glbHash`）と、標準GLBへ出ないgraph／VRM metadataを記録する。GLBの読込確認はCore importerで行い、Unity・VRChat実機での外観／挙動受入とは分離して記録する。
+GUIには「標準GLB（表示形状）」「標準GLB（skin/morph保持）」「拡張GLB（全weight保持）」を分けて表示する。出力先は`<project>/exports/glb-*`の新規ディレクトリに限定し、失敗時はstagingを削除して既存制作状態を変更しない。各出力には`model.glb`と同じstagingから`export-report.json`を同梱し、document ID・revision・state hash・profile・対象件数・`model.glb`本体のSHA-256（`glbHash`）と、標準GLBへ出ないgraph／VRM metadataを記録する。nativeへ保存したGLB取込診断は`sourceDiagnostics`としてsource hash・mesh/skin/node locator・保持不可理由を同じreportへ複写する。GLBの読込確認はCore importerで行い、Unity・VRChat実機での外観／挙動受入とは分離して記録する。
 
 ### 8.1 skinned node instance affine（2026-09-13）
 
