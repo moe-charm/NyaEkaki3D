@@ -17,7 +17,7 @@ namespace NyaForge.UnityRuntime
         DropdownField attachmentTarget;
         DropdownField attachmentBone;
         FloatField attachmentOffsetX, attachmentOffsetY, attachmentOffsetZ;
-        Button attachmentApply, attachmentRemove;
+        Button attachmentApply, attachmentRemove, accessorySkinBind;
         readonly List<string> attachmentTargetIds = new List<string>();
         readonly List<string> attachmentBoneIds = new List<string>();
         string attachmentTargetChoice;
@@ -48,8 +48,9 @@ namespace NyaForge.UnityRuntime
             attachmentOffsetZ = Number(attachmentPanel, "bone local Z (mm)", 0, "object-attachment-offset-z");
             attachmentApply = Button("この小物を装着", ApplyAttachment, "object-attachment-apply");
             attachmentRemove = Button("装着を解除", RemoveAttachment, "object-attachment-remove");
-            attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove);
-            var help = new Label("明示したstable BoneIdへ剛体追従します。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。自動fitや貫通判定は別機能です。");
+            accessorySkinBind = Button("衣装をavatar骨格へskin-bind（Root初期化）", BindAccessoryToAvatar, "object-skin-bind");
+            attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind);
+            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。自動fitや貫通判定は別機能です。");
             help.style.whiteSpace = WhiteSpace.Normal; attachmentPanel.Add(help);
             parent.Add(attachmentPanel);
         }
@@ -149,7 +150,7 @@ namespace NyaForge.UnityRuntime
             if (!IsGraph)
             {
                 attachmentStatus.text = "装着: graph objectを選択してください。";
-                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); return;
+                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); return;
             }
             var targets = workspace.Document.Objects.Where(item => item.ObjectId != workspace.Document.ActiveObjectId && item.Graph != null).ToArray();
             attachmentTargetIds.AddRange(targets.Select(item => item.ObjectId));
@@ -180,6 +181,10 @@ namespace NyaForge.UnityRuntime
             }
             attachmentApply.SetEnabled(target != null && skeleton != null && attachmentBoneIds.Count > 0);
             attachmentRemove.SetEnabled(node != null);
+            bool canSkinBind = target != null && skeleton != null && workspace.Preview.IsComplete &&
+                workspace.Document.ActiveObject.Graph.Nodes.Values.Count(item => item.TypeId == BuiltinNodes.EditMesh) == 1 &&
+                workspace.Document.ActiveObject.Graph.Nodes.Values.All(item => item.TypeId != BuiltinNodes.Skeleton && item.TypeId != BuiltinNodes.SkinBind && item.TypeId != BuiltinNodes.SkinDeform && item.TypeId != BuiltinNodes.Pose && item.TypeId != BuiltinNodes.Attachment);
+            accessorySkinBind.SetEnabled(canSkinBind);
             if (node == null) attachmentStatus.text = "装着: 未設定。対象avatarとBoneIdを選んでください。";
             else if (diagnosticFor(node, target) != "") attachmentStatus.text = "装着: " + diagnosticFor(node, target);
             else attachmentStatus.text = "装着: " + node.AttachmentBoneId.Substring(0, 8) + "へ固定 · 保存対象";
@@ -220,6 +225,31 @@ namespace NyaForge.UnityRuntime
             if (nodes.Length == 0) return;
             Execute(nodes.Select(node => AuthoringOperation.RemoveNode(node.NodeId)).ToArray());
             SetStatus("小物の装着を解除しました。");
+        }
+
+        void BindAccessoryToAvatar()
+        {
+            Try(() =>
+            {
+                if (!IsGraph) throw new InvalidOperationException("衣装のgraph objectを選択してください。");
+                int targetIndex = attachmentTarget.index;
+                if (targetIndex < 0 || targetIndex >= attachmentTargetIds.Count) throw new InvalidOperationException("skin-bind先avatarを選択してください。");
+                var target = FindObject(attachmentTargetIds[targetIndex]);
+                var session = RigFor(target);
+                var skeleton = session == null ? null : TryResolveSkeleton(session, target.Graph);
+                if (skeleton == null) throw new InvalidOperationException("skin-bind先avatarのimported skeletonがありません。");
+                var graph = workspace.Document.ActiveObject.Graph;
+                var edit = graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.EditMesh);
+                if (edit == null) throw new InvalidOperationException("衣装へEditMeshを先に用意してください。");
+                if (!workspace.Preview.Evaluation.MeshOutputs.TryGetValue(edit.NodeId, out var editValue) || editValue?.Mesh == null)
+                    throw new InvalidOperationException("衣装EditMeshの評価結果を取得できません。");
+                var root = skeleton.Bones.FirstOrDefault(bone => string.IsNullOrEmpty(bone.ParentBoneId));
+                if (root == null) throw new InvalidOperationException("avatar skeletonにRoot boneがありません。");
+                var changed = AccessorySkinBindingAdapter.BindToSkeleton(graph, editValue.Mesh, skeleton, root.BoneId);
+                Execute(AuthoringOperation.ReplaceGraph(changed));
+                attachmentTargetChoice = target.ObjectId;
+                SetStatus("衣装をavatar骨格へskin-bindしました。全頂点をRootへ初期化済みです。Rig panelでweight paintし、poseと保存後の出力を確認してください。");
+            });
         }
     }
 }

@@ -123,6 +123,7 @@ internal static partial class Program
         RunVrmMetadataTests();
         RunSpringBoneTests();
         RunSkeletonGraphTests();
+        RunAccessorySkinBindingTests();
         RunPoseGraphTests();
         RunPaintPathSimplifierTests();
         Test("baseline and attribute ownership", () =>

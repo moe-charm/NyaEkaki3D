@@ -12,7 +12,7 @@
 
 **確認セット** に保存・復元、**設定** に起動設定・更新・詳細パス・再生速度をまとめています。同じ上部ボタンをもう一度押すと閉じます。視点ボタンはモデル表示の上、ポーズと再生は下にあります。詳細のパス欄ではパックのフォルダ自体も指定できます。
 
-ビューワーでは生成済みのパックと確認セットを開けます。制作画面の **GLBモデルを取り込む** を開くと、Windowsのファイル選択からGLB/VRMを選び、候補のmesh・skin・node instanceを確認して制作対象へ追加できます。static meshとskin付きmeshのどちらもEditMesh段から頂点編集を始められます。別graph objectとして取り込んだ小物はstable BoneIdへ装着できます。FBX・BLEND・Unity prefabの直接取り込みは未実装です。
+ビューワーでは生成済みのパックと確認セットを開けます。制作画面の **GLBモデルを取り込む** を開くと、Windowsのファイル選択からGLB/VRMを選び、候補のmesh・skin・node instanceを確認して制作対象へ追加できます。static meshとskin付きmeshのどちらもEditMesh段から頂点編集を始められます。別graph objectとして取り込んだ小物はstable BoneIdへ装着でき、同じパネルの **衣装をavatar骨格へskin-bind（Root初期化）** で選択avatarの骨格をコピーし、全頂点をRootへ初期化できます。変換後はRig panelのweight混合・weight paintで袖や裾などを骨へ割り当てます。FBX・BLEND・Unity prefabの直接取り込みは未実装です。
 
 実素材を用意せず取込経路だけを確認する場合は、リポジトリの公開fixtureを生成できます。PowerShellで次を実行すると、静的mesh 0と2骨skinned mesh 1を含む小さなGLBが `Artifacts/NyaForgeGlbFixture/clothing-fixture.glb` に作られます。
 
@@ -216,6 +216,12 @@ PNGはRGBA8・sRGB・straight alphaで、上下方向を標準PNGに合わせる
 装着後も小物の頂点編集、Undo、保存・再読込、pose変更時のプレビュー追従が同じ制作履歴で使える。装着情報を含む作品で「Unity用に書き出す」を押すと、通常の独立multi-object Bakeではなく、avatarと小物・graph・attachmentを含むnative project packageへ出力する。標準GLBはgeometry交換用でattachment metadataを表現しないため、位置と対応を保ったまま再開する場合はnative packageを保持する。
 
 現在の装着機能は剛体root追従までで、自動fit、体型補正、貫通検出、実VRChat内の見た目確認は別の受入項目である。offsetは基準姿勢のbone-localメートルとして保存される。
+
+## 衣装をavatar骨格へskin-bindする
+
+先にVRM/GLB avatarを取り込み、別のstatic GLBを衣装として取り込む。衣装をactive objectにした状態で「小物をボーンへ装着」を開き、対象avatarを選んで **衣装をavatar骨格へskin-bind（Root初期化）** を押す。既存の剛体attachmentがある場合は、先に「装着を解除」する。処理は衣装のSource／Morph／EditMesh／材質経路を保ったまま、avatarのskeleton・pose・skin-bind・skin-deformを追加する。
+
+初期状態では衣装の全頂点がRoot boneへ100%割り当てられる。続けて **Rig / weight編集** でboneを選び、選択頂点へのweight適用またはweight paintを使ってChild・胸・腕などへ配分する。骨格はその時点のavatarからコピーした制作データなので、avatarのposeを自動共有する機能や自動fit・貫通修正はまだない。skin-bind化した衣装はrig情報を含むnative projectとして保存・再開でき、標準skinned GLBはrest pose・identity transformなどのプロファイル条件を満たす場合に出力できる。
 
 
 ## 小物の制作から受け取り側の描画まで再検証

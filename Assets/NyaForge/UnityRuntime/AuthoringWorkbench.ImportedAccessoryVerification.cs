@@ -59,7 +59,41 @@ namespace NyaForge.UnityRuntime
                 var reopenedAttachment = workspace.Document.ActiveObject.Graph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.Attachment);
                 Check(reopenedAttachment.AttachmentTargetObjectId == avatarObjectId && reopenedAttachment.AttachmentBoneId == attachment.AttachmentBoneId,
                     "Imported accessory attachment identity was lost after Open");
-                checks.Add("separate VRM avatar + static GLB accessory: import, EditMesh vertex edit, stable BoneId attachment, native Save/Open and feature-preserving export");
+
+                // Convert the same edited accessory from rigid attachment to a
+                // proper skin graph. The command intentionally starts every
+                // vertex at the avatar root; the Rig panel can then paint the
+                // remaining weights without rebuilding the clothing mesh.
+                RemoveAttachment();
+                attachmentTargetChoice = avatarObjectId;
+                RefreshAttachmentControls();
+                BindAccessoryToAvatar();
+                var boundGraph = workspace.Document.ActiveObject.Graph;
+                var bound = boundGraph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.SkinBind);
+                Check(boundGraph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinDeform) &&
+                    bound.Binding.Weights.Count == workspace.Preview.Evaluation.MeshOutputs.Values.First(value => value.Mesh != null).Mesh.VertexCount &&
+                    bound.Binding.Weights.Values.SelectMany(values => values).Select(value => value.BoneId).Distinct().Count() == 1 &&
+                    bound.Binding.Weights.Values.All(values => values.Count == 1 && Math.Abs(values[0].Weight - 1f) < 1e-6f),
+                    "Accessory skin-bind did not initialize all vertices to the selected avatar root");
+                string skinProject = Path.Combine(output, "imported-accessory-skin-project");
+                projectPath.SetValueWithoutNotify(skinProject); SaveProject();
+                string skinHash = workspace.Document.StateHash;
+                string skinExport = ProjectExportService.Export(workspace, workspace.InstanceId, workspace.Document.DocumentId,
+                    workspace.Document.DocumentRevision, Path.Combine(skinProject, "exports", "native-skin")).ManifestPath;
+                Check(File.Exists(skinExport), "Skin-bound accessory native export was not published");
+                string glbDirectory = Path.Combine(skinProject, "exports", "skinned-glb");
+                var glb = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId,
+                    workspace.Document.DocumentRevision, glbDirectory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices());
+                Check(File.Exists(glb.Path), "Skin-bound accessory standard GLB export was not published");
+                var exportedInventory = GlbSceneInventoryReader.Read(File.ReadAllBytes(glb.Path));
+                Check(exportedInventory.Instances.Count == 2 && exportedInventory.Instances.All(item => item.SkinIndex.HasValue),
+                    "Skin-bound accessory GLB did not retain both avatar and clothing skin instances");
+                OpenProject();
+                Execute(AuthoringOperation.SelectObject(accessoryObjectId));
+                Check(workspace.Document.StateHash == skinHash && !workspace.IsDirty &&
+                    workspace.Document.ActiveObject.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinBind),
+                    "Skin-bound accessory changed after native Save/Open");
+                checks.Add("separate VRM avatar + static GLB accessory: EditMesh, rigid BoneId attachment, Save/Open, Root-initialized skin-bind, weight-ready native and standard GLB export");
             }
             finally { ReplaceWorkspace(previous, previousPath); }
         }

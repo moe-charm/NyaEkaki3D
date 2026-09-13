@@ -1,3 +1,9 @@
+# 2026-09-13 accessory skin-binding workflow
+
+衣装制作の次段として、別graph objectで取り込んだstatic GLBを、選択したVRM/GLB avatarの骨格へ変換する導線を追加した。`AccessorySkinBindingAdapter`は既存のSource／Morph／EditMesh／材質経路を保ったまま、avatarのskeleton・rest pose・skin-bind・skin-deformを追加し、全頂点をRoot boneへ100%で初期化する。Workbenchの「衣装をavatar骨格へskin-bind（Root初期化）」から実行でき、以降はRig panelのweight混合／weight paintで袖・裾などを割り当てられる。既存の剛体attachmentとの同時使用は拒否して二重変形を防ぐ。
+
+Coreは **468 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-37c2a84eee484c7e97ce92ae1f4652b4`）。新規回帰ではRoot初期化、pose変形、native Save/Open、剛体attachment競合拒否を確認した。Windows Player `Builds/AccessorySkinV2/NyaForge.exe` のAuthoring suiteは **PASS、79 checks**（`Artifacts/Authoring-20260913-103030-f7976291411648c4b15338855d36ad29/report.json`）で、VRM avatar＋static accessoryのEditMesh→剛体装着→Save/Open→skin-bind→native exportを通過した。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-103409-141-90be8f007e9443bea647d660eb64bf0d/bridge-report.json`）。これはRoot初期化とweight編集準備までの証拠で、avatar poseの自動共有、自動fit・貫通修正、実VRChat内受入は別境界として残す。
+
 # 2026-09-13 pasted feedback recheck on current HEAD
 
 今回の貼り付けレビュー（基準 `0d1e957`）を現行HEAD `c4fd4f4`へ再照合した。レビューにある5件のP1（複数graph metadataの所属、source skinの二重変形、skinned node affine、inverse-bind出力、装着後の選択判定）は、現行コードでそれぞれgraphId単位のsession table、SkinDeform入力差し替え後の再評価、skinned affineの監査metadata化、保持したinverse-bind行列の標準／拡張GLB出力、`WorldPoints`による描画・Frame・選択の統一として実装済み。P2の材質linear値・metallic既定値、primitive単位の材質、省略texture、装着先保持、PhysBones source hash、揺れUndo／再bind、GLB共通root・morph bounds、normal/tangent morph変換も現行回帰へ含まれている。静的小物の頂点編集導線も追加済みで、別VRM avatar＋static GLB accessoryのEditMesh→stable BoneId装着→native Save/Open→feature-preserving exportを確認している。
