@@ -142,7 +142,7 @@ namespace NyaForge.UnityRuntime
                 FitAccessoryToAvatarSurface();
                 Check(workspace.Evaluate().ContentHash != beforeFit,
                     "Accessory avatar-surface fit did not update the edited clothing geometry");
-                Check(status.text.Contains("移動") && status.text.Contains("最大投影距離") && status.text.Contains("最大移動量"),
+                Check(status.text.Contains("移動") && status.text.Contains("評価頂点") && status.text.Contains("最大投影距離") && status.text.Contains("最大移動量"),
                     "Accessory surface fit status did not expose measured quality metrics");
                 Check(status.text.Contains("1面領域"),
                     "Accessory surface fit did not report the selected avatar triangle region");

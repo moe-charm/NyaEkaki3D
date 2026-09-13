@@ -28,6 +28,8 @@ Workbenchの衣装表面処理へ`avatar面ID（カンマ区切り・空欄=全�
 
 fit確認操作を追加した。小物パネルの「fit状態を測定（変更なし）」は、現在のavatar面領域・衣装頂点・offset・最大距離で`MeshSurfaceFit`を候補計算し、評価頂点数・移動候補数・投影距離・移動量を表示する。`DocumentRevision`と`StateHash`は変更しない。`Builds/WindowsFitInspect/NyaForge.exe`のAuthoring suiteは **83 checks PASS**（`Artifacts/Authoring-20260914-030227-a55f54419e60452798ee222e164bdbdb/report.json`）、private RadDollV3 VRMを用いた同suiteは **PASS**（`Artifacts/Authoring-20260914-030309-66c524a30d684bfe8cb85a08a0f8b469/report.json`）、Unity Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260914-030556-920-7fcdd4cfcd2741d1a2c4cc6f699f82e2/bridge-report.json`）。これは候補形状の数値確認であり、貫通判定・見た目・実マウス・VRChat内表示は未受入である。
 
+fit本体のステータス表示も、範囲限定時の分母を全頂点数から評価頂点数へ揃え、「移動／評価頂点」と表示するよう修正した。`Builds/WindowsFitDisplay/NyaForge.exe`のAuthoring suiteは **83 checks PASS**（`Artifacts/Authoring-20260914-030940-df78d37dd7794790a84d4722f4b0deeb/report.json`）。
+
 レビューで挙がった `9855d43` 系のP1/P2を現行mainへ再照合した。対象は衣装受け取りの座標、割当保存、UV1、疎なmaterial slot、MR係数、カフ面向き、sampler共有、削除済み衣装の割当読込である。
 
 次の項目は現行実装と回帰で確認済みで、同じ修正を重ねて行わない。

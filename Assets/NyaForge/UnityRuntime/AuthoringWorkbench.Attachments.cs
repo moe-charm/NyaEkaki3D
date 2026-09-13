@@ -532,7 +532,7 @@ namespace NyaForge.UnityRuntime
                 attachmentTargetChoice = target.ObjectId;
                 string region = surfaceTriangles == null ? "全三角形" : surfaceTriangles.Count().ToString(CultureInfo.InvariantCulture) + "面領域";
                 string vertices = clothingVertices == null ? "全頂点" : clothingVertices.Count().ToString(CultureInfo.InvariantCulture) + "頂点";
-                SetStatus("衣装をavatar rest表面へfitしました（" + region + "、" + vertices + "、" + fit.MovedVertexCount + "/" + fitted.Length + "頂点移動、最大投影距離 " +
+                SetStatus("衣装をavatar rest表面へfitしました（" + region + "、" + vertices + "、" + fit.MovedVertexCount + "/" + fit.EvaluatedVertexCount + "評価頂点が移動、最大投影距離 " +
                     (fit.MaxProjectionDistance * 1000f).ToString("0.###") + " mm、最大移動量 " +
                     (fit.MaxDisplacement * 1000f).ToString("0.###") + " mm、offset " +
                     accessoryFitOffsetMm.value.ToString("0.###") + " mm）。Rig／poseで交差を確認してください。");
