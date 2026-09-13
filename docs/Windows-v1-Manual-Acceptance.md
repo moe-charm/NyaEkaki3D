@@ -1,6 +1,6 @@
 # Nya Ekaki 3D Windows v1 手動受入チェック
 
-この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/ReleaseCandidateV29/NyaForge.exe`（コード `dd76473`）。Authoring suiteを1080×700／1600×1000で確認した（証跡: `Artifacts/Authoring-20260914-081243-3ee4984084fb4b05828bbea7316d6edb/authoring.png`、`Artifacts/Authoring-20260914-081548-c6b6d08ca3f84bef9b44a8614b4fcc8c/authoring.png`）。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
+この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/ReleaseCandidateV29/NyaForge.exe`（コード `75c6674`）。Authoring suiteを1080×700／1600×1000で確認した（証跡: `Artifacts/Authoring-20260914-081243-3ee4984084fb4b05828bbea7316d6edb/authoring.png`、`Artifacts/Authoring-20260914-081548-c6b6d08ca3f84bef9b44a8614b4fcc8c/authoring.png`）。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
 
 ## 1. 実EditorWindow（Windows）
 
