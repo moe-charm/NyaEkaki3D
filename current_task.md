@@ -1,5 +1,16 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 feedback再照合: 9855d43 → bd30224
+
+今回のレビューは、基準 `9855d43` のP1（受け取りavatar移動後の配置、`SaveBindings`後のownership参照、UV1欠落）とP2（sparse material slot、MR係数、Cuff winding、sampler共有、適用前／削除後の割当読込）を指摘している。現行 `main` の `bd30224` へ再照合したところ、P1/P2はすでに後続修正と回帰で閉じており、同じ本番コードを重複修正しない。
+
+- `SkinnedClothingReceiver`は衣装をavatar-root localで保持し、rootへ一度だけ親子付けする。移動・90度回転・scale付きavatarのBridge回帰を維持する。
+- `NyaForgeSkinnedClothingBinding`はassignment identity（ObjectId）と生成object参照を分離し、同一ObjectIdのStateHash更新・削除後でも割当を読み込める。
+- Windows v1のUV契約はUV0。`TEXCOORD_1`は取込・semantic slot・GLB出力で`UNSUPPORTED_UV_SET`として明示停止し、データを黙って落とさない。
+- 材質slot、MR係数、Cuffの面向き、sampler variantはCore／Player／Bridge回帰で保持される。
+
+現行Coreを再実行し、**500 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-50e9228e6a0741478e09cb624f919963`）を確認した。レビューの機械的指摘に対する追加実装は不要で、残る受入境界は実EditorWindowのマウス／DPI、実RadDollV3への新規衣装全周fit・貫通・見た目、VRChat Build & Test／実機表示である。根拠と手動受入項目は[feedback再照合](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-bd30224.md)へ固定する。
+
 ## 2026-09-14 NF-V1-04: 剛体装着済みPolygonのskin派生
 
 Polygonで作ったチョーカー／カフを先にstable BoneIdへ剛体装着し、位置を確認してからskin衣装へ派生できるようにした。`AccessorySkinMaterializer`へ基準姿勢のattachment frame焼き込みを追加し、`BoneDefinition.Head + bone-local offset`をavatar-local座標へ変換して位置・normal・tangentを派生MeshSourceへ保持する。派生側からattachment nodeは除去し、元のPolygon graphとDerivedSource provenanceは残す。Workbenchの **Polygon造形をskin衣装へ派生** は、attachmentなしの従来経路と、同じavatarを対象にしたattachment付き経路の両方を扱う。現在poseの見た目を焼き込まず、基準姿勢で確定する契約である。
