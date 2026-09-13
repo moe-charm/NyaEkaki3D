@@ -1,3 +1,7 @@
+# 2026-09-13 material output guidance
+
+材質パネルに残っていた「材質付きUnity出力は開発中」という古い案内を、対応するUnity用profileへ書き出せる説明へ更新した。実装範囲とGUI案内の不一致を解消し、Windows Player `Builds/MaterialMessagingV1/NyaForge.exe` の800x600 Authoring suite **78 checks PASS**（`Artifacts/Authoring-20260913-090623-889afe772a2a44dba831a8fab5c80adf/report.json`）で既存操作の回帰がないことを確認した。
+
 # 2026-09-13 authoring validation skin capacity
 
 「出力チェック」でスキン付きgraphの骨数と頂点あたり最大influenceが常にunknownになる境界を修正した。評価済みの出力到達graphにある`SkinBindingOutputs`／`SkeletonOutputs`から実値を集計し、NyaForgeのauthoring容量（512骨／32 influence）へ明示判定する。未接続の作業用rigは集計から除外する。GUIには`actual/limit`も表示する。skin bindingが無い静的graphは従来どおりunknown、`fit`は実アバター受入を含むためunknownのままとする。Core **464 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-bce4bb3011f945c48f007146f1832ddf`）。Windows Player `Builds/ValidationSkinV3/NyaForge.exe` の800x600 Authoring suiteは **78 checks PASS**（`Artifacts/Authoring-20260913-090034-98ebf69a86954db2a008d2d70b6d785e/report.json`）。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-090105-766-345e4b00828e4a0e8926294900142ae7/bridge-report.json`）。さらに同じValidationSkinV3でprivate一時素材のRadDollV3 VRMを候補選択→EditMesh頂点編集→native Save/Open→標準skinned GLB出力→再取込まで再確認し、Authoring report `Artifacts/Authoring-20260913-090318-0e84c8ce478a4d03b9f76660af3b2802/report.json` とUnity Bridge `Artifacts/BridgeReceiver-20260913-090435-743-a95c669a3bad4760a2d6f6bd5f5ea377/bridge-report.json` はともに **PASS**。private素材はpublic repositoryへ追加していない。

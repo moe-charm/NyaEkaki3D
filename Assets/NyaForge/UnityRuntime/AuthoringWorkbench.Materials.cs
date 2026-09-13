@@ -50,7 +50,7 @@ namespace NyaForge.UnityRuntime
                 field.RegisterValueChangedCallback(_=>CancelMaterialGesture());
             }
             materialFields.Add(Button("材質の変更を適用",()=>Try(ApplyMaterial),"material-apply"));
-            var help=new Label("基本色と発光色はsRGB。画像に基本色を掛けて表示します。材質は作品へ保存できます。材質付きUnity出力は開発中です。");
+            var help=new Label("基本色と発光色はsRGB。画像に基本色を掛けて表示します。材質は作品へ保存でき、対応するUnity用profileへ書き出せます。");
             help.style.whiteSpace=WhiteSpace.Normal;materialFields.Add(help);
         }
         TextField MaterialColorField(string label,string name)
