@@ -14,6 +14,7 @@
 | Unity Bridge package | `com.nyaforge.unity-bridge` `0.1.0` | 固定 |
 | Rendering package | `com.nyaforge.rendering` `0.1.0` | 固定 |
 | package contract | `skinned-clothing-v1`、meters、`Storage.Coordinates`、stable BoneId明示割当 | 固定 |
+| private receiver SDK probe | VRChat `com.vrchat.base` / `com.vrchat.avatars` `3.7.6`、Unity `2022.3.22f1` | `VRCPhysBone`解決・生成・preflight PASS |
 | OS | Windows 11 Pro `10.0.26200` | 基準機 |
 | GPU | AMD Radeon(TM) Graphics / NVIDIA GeForce RTX 4090 | 基準機 |
 
@@ -26,10 +27,12 @@
 
 ## 未固定・受入待ち
 
-- 現行NyaForge projectには`com.vrchat.*` dependencyがなく、`Tools/Test-NyaForgePhysBonesSdk.ps1`は `unavailable`。実VRChat SDK／実クライアント／Build & Testは **BLOCKED** とする。
+- Authoring本体には`com.vrchat.*` dependencyを入れず、private receiver probeへSDK 3.7.6を導入して型解決・生成を確認済み。実RadDollV3 scene、実クライアント、Build & Test、実VRChatは **未受入/BLOCKED** とする。
 - UniVRMの受入版、実RadDollV3 Unity sceneの全BoneId割当、対象shader版は外部受入時に追加固定する。
 - EditorWindowの実マウス操作、DPI 100/150/200%、日本語・空白path、別Windows環境は未受入である。
 
+- SDK probe証拠: `private/PhysBonesSdkProbe-20260914/sdk-probe-report.json`（`status: verified`）。private project・SDK DLL・private avatar素材は公開しない。
+
 ## 使い方
 
-このmanifestのPASSはCore／Player／合成Bridgeの範囲だけを示す。実Unity avatar、実VRChat、他者視点、出荷候補の判定へ自動的に読み替えない。SDKを導入した受け取りprojectが用意できたら、同じfixtureとcommit hashを記録してNF-V1-02A/02Bを再実行する。
+このmanifestのPASSはCore／Player／合成Bridge／private SDK probeの範囲だけを示す。実Unity avatar、実VRChat、他者視点、出荷候補の判定へ自動的に読み替えない。private probeで型解決は済んだため、次は同じfixtureとcommit hashを使った実RadDollV3 sceneのNF-V1-02A/02B受入へ進む。

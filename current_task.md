@@ -10,11 +10,17 @@ ChatGPT Proの持込Windows v1案を現行mainへ照合し、[採用修正版](d
 
 semantic normal/MRは現行実装で一周したため、ここから先はAO/emissive・全shader・FBX/BLEND・完全VRM・Quest/macOSを増やさず、NF-V1-01/03の受け取り環境とNF-V1-04〜08のカフ一着手動完走を優先する。実SDKが用意できない間はBLOCKEDの証拠を維持し、Core 493件PASSや合成Bridge PASSを実VRChat合格へ読み替えない。
 
+## 2026-09-14 実VRChat SDK probe
+
+VCCキャッシュの`com.vrchat.base`／`com.vrchat.avatars` **3.7.6**を公開対象外の`private/PhysBonesSdkProbe-20260914`へ展開し、Unity **2022.3.22f1**で`Tools/Test-NyaForgePhysBonesSdk.ps1 -RunUnityProbe -RequireSdk`を実行した。`status: verified`、Unity probe `passed`。実型`VRC.SDK3.Dynamics.PhysBone.Components.VRCPhysBone`を解決し、capability（root/endpoint/exclusions/branches/colliders/limits/interaction/parameter）、非対応non-zero値の生成前拒否、実コンポーネント生成、stable root/BoneId設定を確認した。証拠はprivate `private/PhysBonesSdkProbe-20260914/sdk-probe-report.json` と一時Unity report/logに保存している。
+
+この結果でNF-V1-01のSDK版固定とNF-V1-02Aの「型解決・受け取り設定」部分は進んだが、実RadDollV3 Unity sceneへの全BoneId割当、Build & Test、実VRChat内の揺れ・外観・他者視点、実マウス/DPIはまだ未受入である。SDK DLL・private素材・検証projectはpublic repositoryへ追加しない。
+
 ## 次に実装するカード
 
 | 順 | ID | 状態 | 次の具体作業・完了条件 |
 |---|---|---|---|
-| 1 | NF-V1-01 / 03 | 部分実装・外部BLOCKED | 受け取り環境manifestとfixtureを固定し、衣装だけの出力対象・BoneId・所有領域を確定。SDK未導入のため実SDK／実VRChatはBLOCKEDの証拠を残す |
+| 1 | NF-V1-01 / 03 | manifest・実SDK probe済み / 実アバター外部受入BLOCKED | private受け取りprojectでSDK 3.7.6の実`VRCPhysBone`解決・生成・stable root/BoneId設定まで確認済み。次は実アバターsceneの明示割当とBuild & Testを行い、未実施の実VRChatはBLOCKEDとして残す |
 | 2 | NF-V1-03A | 実装・合成Bridge受入済み / 実アバター未受入 | `SkinnedClothingReceiver`、`skinned-clothing-v1`、割当GUI、ownership markerを重複実装しない。実RadDollV3 sceneでBoneId割当→初回適用→再適用を手動確認 |
 | 3 | NF-V1-04 / 05 / 06 / 07 | Core/Player実装済み・手動未受入 | Polygon派生→UV/paint→確定→範囲限定fit/weight→pose確認を実マウスで通し、参照body保護・Undo・Save/Openを確認 |
 | 4 | NF-V1-08 | カフ試作経路実装・Player受入済み / 実アバター未受入 | 低ポリ手首カフを頂点編集し、実RadDollV3へfit・weight・Unity適用・VRChat確認。自動テンプレート通過を販売品質と扱わない |

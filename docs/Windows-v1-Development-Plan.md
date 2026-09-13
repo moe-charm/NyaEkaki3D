@@ -27,7 +27,7 @@
 | fit/weight制限 | [MeshSurfaceFit](../Assets/NyaForge/Authoring/Geometry/MeshSurfaceFit.cs)は全頂点・全avatar面を最近面へ投影し距離制限あり。[SkinWeightTransfer](../Assets/NyaForge/Authoring/Rig/SkinWeightTransfer.cs)の表面転送は全頂点・全avatar面を使い距離引数なし | 選択頂点・元body面領域・距離制限を双方へ接続する06を採用 |
 | 材質・解像度 | [ImportMaterials](../Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ImportMaterials.cs)はbase colorを縮小してPaintへ所有保存。[PaintImage](../Assets/NyaForge/Authoring/Paint/PaintImage.cs)は最大1024px | base colorの縮小契約とsemantic mapの画像所有・出力品質を09Aで受入。未対応の画像slotは明示する |
 | semantic texture | `MaterialTextureSlot`がnormal／metallic-roughnessのchannel・色空間・UV set・sampler・bytesを保持し、GLB writer/readerへ接続。材質GUIは既存mapをscalar変更時に保持し、Explorer/パスからの画像取込、契約表示、Windows PBR previewへnormal／MRを接続 | Coreのnative/GLB回帰、Player GUI取込・Save/Open・scalar保持、shader preview接続まで実装済み。semantic map付き単体Material Bakeは拒否しGLB/graphへ分ける。実RadDollV3 sceneのtangent/外観、出力一致、occlusion/emissive、実VRChatは外部受入・後続範囲 |
-| SDK検証 | [互換記録](PhysBones-SDK-Compatibility.md)に一時環境のSDK 3.7.6で実component生成・写像の証拠あり。直近の本体project probeはunavailable | 「実SDKを一度も試していない」は誤り。常設receiverと実VRChat受入は別途必要 |
+| SDK検証 | [互換記録](PhysBones-SDK-Compatibility.md)とprivate probeにSDK 3.7.6の実component生成・写像・非対応値拒否の証拠あり。Authoring本体へSDKを同梱しない設計は維持 | 「実SDKを一度も試していない」は解消。実アバターscene、Build & Test、実VRChat受入は別途必要 |
 | 既存回帰 | 現行mainのCore493件、Playerのprivate RadDollV3往復、semantic textureを含む合成Unity Bridgeのpackage受入記録あり | 既存証拠は実マウス・実VRChatの成功を意味しない。変更箇所と外部受入を別に記録する |
 | 共有・更新基盤 | [共有方針](Shared-Resource-Policy.md)、BridgeのImportOwnership・UpdateJournal・PrefabManagedBindings | 同一target複数nodeと管理asset更新基盤を再利用。全mesh結合や全journalの新設は不要 |
 
