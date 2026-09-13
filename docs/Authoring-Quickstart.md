@@ -221,7 +221,7 @@ PNGはRGBA8・sRGB・straight alphaで、上下方向を標準PNGに合わせる
 
 先にVRM/GLB avatarを取り込み、別のstatic GLBを衣装として取り込む。衣装をactive objectにした状態で「小物をボーンへ装着」を開き、対象avatarを選んで **衣装をavatar骨格へskin-bind（Root初期化）** を押す。既存の剛体attachmentがある場合は、先に「装着を解除」する。処理は衣装のSource／Morph／EditMesh／材質経路を保ったまま、avatarのskeleton・pose・skin-bind・skin-deformを追加する。
 
-初期状態では衣装の全頂点がRoot boneへ100%割り当てられる。続けて **Rig / weight編集** でboneを選び、選択頂点へのweight適用またはweight paintを使ってChild・胸・腕などへ配分する。骨格はその時点のavatarからコピーした制作データなので、avatarのposeを自動共有する機能や自動fit・貫通修正はまだない。skin-bind化した衣装はrig情報を含むnative projectとして保存・再開でき、標準skinned GLBはrest pose・identity transformなどのプロファイル条件を満たす場合に出力できる。
+初期状態では衣装の全頂点がRoot boneへ100%割り当てられる。続けて **Rig / weight編集** でboneを選び、選択頂点へのweight適用またはweight paintを使ってChild・胸・腕などへ配分する。avatarと同じ姿勢で確認したいときは、衣装graphを選択したまま小物パネルでコピー元avatarを選び、**avatarの現在poseを衣装へコピー** を押す。これはその時点のposeを衣装側のPose nodeへ保存する明示操作で、avatarを後から動かしても自動共有はしない（姿勢を変えたら再度コピーする）。異なるskeletonの自動結合や自動fit・貫通修正はまだない。skin-bind化した衣装はrig情報を含むnative projectとして保存・再開でき、標準skinned GLBはrest pose・identity transformなどのプロファイル条件を満たす場合に出力できる。
 
 
 ## 小物の制作から受け取り側の描画まで再検証

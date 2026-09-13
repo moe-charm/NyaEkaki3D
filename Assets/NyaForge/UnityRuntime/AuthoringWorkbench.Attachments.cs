@@ -17,7 +17,7 @@ namespace NyaForge.UnityRuntime
         DropdownField attachmentTarget;
         DropdownField attachmentBone;
         FloatField attachmentOffsetX, attachmentOffsetY, attachmentOffsetZ;
-        Button attachmentApply, attachmentRemove, accessorySkinBind;
+        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPoseCopy;
         readonly List<string> attachmentTargetIds = new List<string>();
         readonly List<string> attachmentBoneIds = new List<string>();
         string attachmentTargetChoice;
@@ -49,8 +49,9 @@ namespace NyaForge.UnityRuntime
             attachmentApply = Button("この小物を装着", ApplyAttachment, "object-attachment-apply");
             attachmentRemove = Button("装着を解除", RemoveAttachment, "object-attachment-remove");
             accessorySkinBind = Button("衣装をavatar骨格へskin-bind（Root初期化）", BindAccessoryToAvatar, "object-skin-bind");
-            attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind);
-            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。自動fitや貫通判定は別機能です。");
+            accessoryPoseCopy = Button("avatarの現在poseを衣装へコピー", CopyAvatarPose, "object-skin-pose-copy");
+            attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryPoseCopy);
+            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。自動fitや貫通判定は別機能です。");
             help.style.whiteSpace = WhiteSpace.Normal; attachmentPanel.Add(help);
             parent.Add(attachmentPanel);
         }
@@ -150,7 +151,7 @@ namespace NyaForge.UnityRuntime
             if (!IsGraph)
             {
                 attachmentStatus.text = "装着: graph objectを選択してください。";
-                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); return;
+                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); return;
             }
             var targets = workspace.Document.Objects.Where(item => item.ObjectId != workspace.Document.ActiveObjectId && item.Graph != null).ToArray();
             attachmentTargetIds.AddRange(targets.Select(item => item.ObjectId));
@@ -185,6 +186,9 @@ namespace NyaForge.UnityRuntime
                 workspace.Document.ActiveObject.Graph.Nodes.Values.Count(item => item.TypeId == BuiltinNodes.EditMesh) == 1 &&
                 workspace.Document.ActiveObject.Graph.Nodes.Values.All(item => item.TypeId != BuiltinNodes.Skeleton && item.TypeId != BuiltinNodes.SkinBind && item.TypeId != BuiltinNodes.SkinDeform && item.TypeId != BuiltinNodes.Pose && item.TypeId != BuiltinNodes.Attachment);
             accessorySkinBind.SetEnabled(canSkinBind);
+            bool hasSkinPose = workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.SkinBind) &&
+                workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.Pose);
+            accessoryPoseCopy.SetEnabled(target != null && skeleton != null && hasSkinPose);
             if (node == null) attachmentStatus.text = "装着: 未設定。対象avatarとBoneIdを選んでください。";
             else if (diagnosticFor(node, target) != "") attachmentStatus.text = "装着: " + diagnosticFor(node, target);
             else attachmentStatus.text = "装着: " + node.AttachmentBoneId.Substring(0, 8) + "へ固定 · 保存対象";
@@ -249,6 +253,25 @@ namespace NyaForge.UnityRuntime
                 Execute(AuthoringOperation.ReplaceGraph(changed));
                 attachmentTargetChoice = target.ObjectId;
                 SetStatus("衣装をavatar骨格へskin-bindしました。全頂点をRootへ初期化済みです。Rig panelでweight paintし、poseと保存後の出力を確認してください。");
+            });
+        }
+
+        void CopyAvatarPose()
+        {
+            Try(() =>
+            {
+                if (!IsGraph) throw new InvalidOperationException("衣装のgraph objectを選択してください。");
+                int targetIndex = attachmentTarget.index;
+                if (targetIndex < 0 || targetIndex >= attachmentTargetIds.Count) throw new InvalidOperationException("poseのコピー元avatarを選択してください。");
+                var target = FindObject(attachmentTargetIds[targetIndex]);
+                if (target == null || target.Graph == null) throw new InvalidOperationException("poseのコピー元avatarが見つかりません。");
+                if (!TryResolvePose(out var poseNode, out var clothingSkeleton)) throw new InvalidOperationException("衣装のpose nodeへskeletonを接続してください。");
+                var targetPose = target.EvaluateGraph().PoseOutputs.Values.Select(value => value.Pose)
+                    .FirstOrDefault(pose => pose.SkeletonHash == clothingSkeleton.ContentHash);
+                if (targetPose == null) throw new InvalidOperationException("avatarのposeが衣装と同じskeletonではありません。");
+                Execute(AuthoringOperation.UpdateNode(GraphNode.PoseNode(poseNode.NodeId, PoseEditing.Rebind(targetPose, clothingSkeleton))));
+                attachmentTargetChoice = target.ObjectId;
+                SetStatus("avatarの現在poseを衣装へコピーしました。必要ならweightを調整して保存してください。");
             });
         }
     }
