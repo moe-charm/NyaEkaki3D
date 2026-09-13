@@ -1,6 +1,6 @@
 # Windows v1 検証環境マニフェスト
 
-記録日: 2026-09-14。検証対象コード: `main` `3d5de41`。直近Core証拠の実行対象commitは同commit。これは出荷環境の保証ではなく、同じ検証を再実行するための基準である。
+記録日: 2026-09-14。検証対象コード: `main` `43cb551`。直近Core証拠の実行対象commitは同commit。これは出荷環境の保証ではなく、同じ検証を再実行するための基準である。
 
 ## 現在固定できているもの
 
@@ -20,9 +20,9 @@
 
 ## fixtureと証拠
 
-- Core: `dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`。検証対象mainで **493 passed / 0 failed**（artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-d4c28c2bc0dc42b3b8c64498a3015986`）。最新package fixtureはpublic repositoryへ置かず、一時artifactへ出力する。
-- Windows Player: private一時RadDollV3 VRMを全mesh取込→EditMesh→native Save/Open→標準skinned GLB／VRM出力。入力SHA-256は `6e5e0a0a82c28b958ea18e5a0c71b8b02e85d4d500afbd95839b4b154c0e805c`。semantic texture GUI回帰の最新証拠は `Artifacts/Authoring-20260914-003943-0b9d326e06764675816a9e1ec792f9ce/report.json`（83 checks PASS）。private全mesh import smokeは `Artifacts/Authoring-20260914-003430-c52a6bd922294ac48cdaefed89760177/report.json`（89 checks PASS）。
-- Unity Bridge: 上記Player reportと衣装packageを使った合成receiver回帰。`Artifacts/BridgeReceiver-20260914-003656-365-b7fe74b7b31d48438c7fbfa4ad067559/bridge-report.json`（14 checks PASS）。packageのBoneId、bindpose、材質、ownership、semantic map適用を含む。
+- Core: `dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`。検証対象mainで **505 passed / 0 failed**（artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3e7fef879a9c462cbcd96fd1308958d8`）。最新package fixtureはpublic repositoryへ置かず、一時artifactへ出力する。
+- Windows Player: `Builds/ReleaseCandidateV10/NyaForge.exe`でprivate一時RadDollV3 VRMを全mesh取込→EditMesh→native Save/Open→標準skinned GLB／VRM出力。semantic texture、原画像source inspection、未編集base-color原画像再出力を含む。最新の実モデル証拠は `Artifacts/Authoring-20260914-063522-17459e1e1a1e466fb3ef816fa6103750/report.json`。
+- Unity Bridge: 上記Player reportと衣装packageを使った合成receiver回帰。`Artifacts/BridgeReceiver-20260914-063802-587-d17638bb920544bcb4192f9ef4b84e43/bridge-report.json`（PASS）。packageのBoneId、bindpose、材質、ownership、semantic map適用を含む。
 - private素材は公開リポジトリへ追加しない。入力pathやsceneはローカル証拠でのみ管理し、共有時はhashと匿名化したreportを使う。
 
 ## 未固定・受入待ち

@@ -2,7 +2,7 @@
 
 ## 2026-09-14: 手動受入表をReleaseCandidateV10へ同期
 
-手動チェック表の対象を古い`ReleaseCandidateV2`から、原画像sourceの未編集時再出力まで含む現行`ReleaseCandidateV10`（コード`43cb551`）へ更新した。衣装一周の項目へ、base-colorの原画像サイズ・作業画像サイズ・MIME・hashのinspection確認と、Paint編集後にpreviewへフォールバックするGLB確認を追加した。これは手動操作を実施した記録ではなく、次の実操作で使う候補・確認条件の同期である。
+手動チェック表の対象を古い`ReleaseCandidateV2`から、原画像sourceの未編集時再出力まで含む現行`ReleaseCandidateV10`（コード`43cb551`）へ更新した。衣装一周の項目へ、base-colorの原画像サイズ・作業画像サイズ・MIME・hashのinspection確認と、Paint編集後にpreviewへフォールバックするGLB確認を追加した。環境マニフェストもCore 505件とV10 Player／Bridge証跡へ同期した。これは手動操作を実施した記録ではなく、次の実操作で使う候補・確認条件の同期である。
 
 ## 2026-09-14 NF-V1-09D: 未編集base-colorの原画像出力
 
