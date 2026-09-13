@@ -4,7 +4,7 @@
 
 fit後の確認を進めるため、`MeshSurfaceClearance`を追加した。指定された衣装頂点とavatar面領域について、最近面のwindingに対するsigned距離を計算し、裏側へ入った候補数、最小／最大距離、最大64件の頂点IDを返す。GUIの「fit状態を測定（変更なし）」とMCP `forge_surface_fit_inspect`／`forge_get_state.surfaceFitInspection`へ接続した。これは三角形交差・閉じた体積の内外判定・貫通ゼロの証明ではなく、候補値として明示する。
 
-Coreは **501 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-29f35c8373914c3d831018a76a0f4bd3`）。`Builds/ReleaseCandidateV2/NyaForge.exe`（Unity 6000.4.3f1）のAuthoring suite、private RadDollV3全mesh取込・Save/Open・GLB／VRM1 smoke、生成衣装packageのUnity **2022.3.22f1** Bridge受け取りも **PASS**（Player `Artifacts/Authoring-20260914-053420-df1a6262b2bf4aa089a521373593050a/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-053713-618-f28c8e4e97c640ac99c22b85a92aeab4/bridge-report.json`）。手動の実EditorWindow、全周fit・交差・見た目、VRChat Build & Test／実機表示は未受入である。
+Coreは **501 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-29f35c8373914c3d831018a76a0f4bd3`）。MCP transportも **3項目PASS**（tool discovery／state／capture metadata）。`Builds/ReleaseCandidateV2/NyaForge.exe`（Unity 6000.4.3f1）のAuthoring suite、private RadDollV3全mesh取込・Save/Open・GLB／VRM1 smoke、生成衣装packageのUnity **2022.3.22f1** Bridge受け取りも **PASS**（Player `Artifacts/Authoring-20260914-053420-df1a6262b2bf4aa089a521373593050a/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-053713-618-f28c8e4e97c640ac99c22b85a92aeab4/bridge-report.json`）。手動の実EditorWindow、全周fit・交差・見た目、VRChat Build & Test／実機表示は未受入である。
 
 ## 2026-09-14 NF-V1-16: ReleaseCandidateV1の再実行
 

@@ -45,7 +45,7 @@
 
 ## 構成と契約
 
-Programはstdio MCP hostとDIだけを担当。ForgeToolsは型付きtool入口、InstanceConnectionはローカルnamed pipe通信だけを担当。現在公開するtoolは18個で、secondary-motionの7操作（state/play/pause/reset/rebuild/step/capture）を含む。stdoutはMCP専用、logはstderr。
+Programはstdio MCP hostとDIだけを担当。ForgeToolsは型付きtool入口、InstanceConnectionはローカルnamed pipe通信だけを担当。現在公開するtoolは20個で、secondary-motionの7操作（state/play/pause/reset/rebuild/step/capture）と読み取り専用のsurface fit検査を含む。stdoutはMCP専用、logはstderr。
 
 起動引数は --instance <GUID> 必須。接続先は NyaForge.Authoring.<GUID>。自動探索/別instanceへのfallbackなし。1接続1要求、UTF-8 JSON＋LF、version=1、requestId、expectedInstanceId、methodを送る。応答はversion/requestId/instanceIdを照合し、ok/resultまたはerrorを処理する。応答上限4MiB、深さ32、10秒timeout、CancellationToken対応。再試行なし。
 
