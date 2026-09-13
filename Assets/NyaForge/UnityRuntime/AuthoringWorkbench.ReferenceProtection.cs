@@ -49,5 +49,25 @@ namespace NyaForge.UnityRuntime
         }
 
         string ReferenceProtectionMessage => "このobjectは参照として保護されています。編集するには保護を解除してください。";
+
+        /// <summary>
+        /// Generic delivery exports enumerate the whole workspace. A protected
+        /// reference object (usually the source avatar body) must not silently
+        /// become part of a clothing delivery. The explicit clothing-package
+        /// command is the allowlisted path for that case.
+        /// </summary>
+        void EnsureGenericDeliveryExportAllowed()
+        {
+            if (workspace == null || workspace.Document?.Objects == null || referenceProtectedObjectIds.Count == 0)
+                return;
+            var present = referenceProtectedObjectIds
+                .Where(id => workspace.Document.Objects.Any(item => item != null && item.ObjectId == id))
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray();
+            if (present.Length == 0) return;
+            throw new AuthoringException("REFERENCE_EXPORT_BLOCKED",
+                "参照object（" + string.Join(", ", present.Select(id => id.Length > 8 ? id.Substring(0, 8) : id)) +
+                "）を含む汎用納品出力を停止しました。出力対象を明示するには、保護を維持したまま選択衣装をskin packageで出力してください。");
+        }
     }
 }

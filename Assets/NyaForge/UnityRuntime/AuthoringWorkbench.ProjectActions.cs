@@ -172,6 +172,7 @@ namespace NyaForge.UnityRuntime
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "bake-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
             if (workspace.Document.Objects.Count > 1 && !ProjectExportService.RequiresNativeProjectExport(workspace.Document))
             {
+                EnsureGenericDeliveryExportAllowed();
                 string manifest = MultiObjectExportService.Export(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory).ManifestPath;
                 SetStatus("Unity用に複数対象を書き出しました: " + manifest);
             }
@@ -184,6 +185,7 @@ namespace NyaForge.UnityRuntime
 
         void ExportGlbStatic() => Try(() =>
         {
+            EnsureGenericDeliveryExportAllowed();
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-static-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
             var result = GlbExportService.ExportStaticWithOverrides(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, StaticDisplayMeshesForExport());
             SetStatus("標準GLB（表示形状）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
@@ -212,6 +214,7 @@ namespace NyaForge.UnityRuntime
 
         void ExportGlbSkinned() => Try(() =>
         {
+            EnsureGenericDeliveryExportAllowed();
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
             var result = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms());
             SetStatus("標準GLB（skin/morph保持）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
@@ -219,6 +222,7 @@ namespace NyaForge.UnityRuntime
 
         void ExportGlbSkinnedExtended() => Try(() =>
         {
+            EnsureGenericDeliveryExportAllowed();
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "glb-skinned-extended-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
             var result = GlbExportService.ExportSkinnedExtendedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms());
             SetStatus("拡張GLB（全weight保持）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
@@ -229,6 +233,8 @@ namespace NyaForge.UnityRuntime
             var item = workspace?.Document?.ActiveObject;
             if (item == null || item.IsStaticProfile || item.Graph == null)
                 throw new InvalidOperationException("選択衣装のskin graphを選択してください。");
+            if (referenceProtectedObjectIds.Contains(item.ObjectId))
+                throw new AuthoringException("REFERENCE_EXPORT_BLOCKED", "参照として保護したobjectは衣装納品対象にできません。保護を解除するか、衣装objectを選択してください。");
             var evaluation = item.EvaluateGraph();
             if (!evaluation.IsComplete || evaluation.Output?.Mesh == null)
                 throw new InvalidOperationException("選択衣装のgraphが未完成です。");

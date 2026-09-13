@@ -21,7 +21,7 @@ namespace NyaForge.UnityRuntime
             showAllObjects.RegisterValueChangedCallback(_ => { if (objectProjection != null) { objectProjection.Visible = showAllObjects.value; Refresh(); } });
             objectSelectionPanel.Add(showAllObjects);
             referenceProtectionToggle = new Toggle("選択中を参照として保護（編集不可）") { name = "object-reference-protection" };
-            referenceProtectionToggle.tooltip = "avatarなどの基準objectを保護します。選択・表示・保存・出力はできますが、頂点・材質・リグ・graphの変更は停止します。設定はnative projectへ保存されます。";
+            referenceProtectionToggle.tooltip = "avatarなどの基準objectを保護します。選択・表示・保存はできますが、頂点・材質・リグ・graphの変更と汎用納品出力は停止します。衣装は選択衣装skin packageで明示出力します。設定はnative projectへ保存されます。";
             referenceProtectionToggle.RegisterValueChangedCallback(e => Try(() => SetReferenceProtection(e.newValue)));
             objectSelectionPanel.Add(referenceProtectionToggle);
             parent.Add(objectSelectionPanel);

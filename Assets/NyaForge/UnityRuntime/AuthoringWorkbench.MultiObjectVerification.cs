@@ -60,6 +60,13 @@ namespace NyaForge.UnityRuntime
                 Check(!referenceProtectedObjectIds.Contains(objectIds[0]) && !referenceProtectionToggle.value, "Reference protection was not restored after Undo");
                 Execute(AuthoringOperation.Redo());
                 Check(referenceProtectedObjectIds.Contains(objectIds[0]) && referenceProtectionToggle.value, "Reference protection was not restored after Redo");
+                // Generic GLB delivery enumerates every graph object. A
+                // protected reference avatar must stop that path before a
+                // destination folder is created; the clothing-only package is
+                // the explicit delivery path instead.
+                ExportGlbStatic();
+                Check(status.text.Contains("参照object") && !Directory.Exists(Path.Combine(directory, "exports")),
+                    "Generic GLB export included a protected reference object or created a destination");
                 moveX.SetValueWithoutNotify(1); moveY.SetValueWithoutNotify(0); moveZ.SetValueWithoutNotify(0); MoveSelection();
                 var protectedAfter = GraphEvaluator.Evaluate(workspace.Document.ActiveObject.Graph).Output.Mesh.ContentHash;
                 Check(protectedAfter == protectedBefore && status.text.Contains("参照"), "Reference-protected object accepted a geometry edit (before=" + protectedBefore + ", after=" + protectedAfter + ", active=" + workspace.Document.ActiveObjectId + ", protected=" + referenceProtectedObjectIds.Contains(workspace.Document.ActiveObjectId) + ", status=" + status.text + ")");

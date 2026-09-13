@@ -1,5 +1,15 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 feedback triage: 9855d43レビューの再照合と汎用出力ガード
+
+外部レビューの対象は `9855d43` で、現行 `main`（`ed27950`）より前の基準だった。P1の3件は現行mainで解消済みである。受け取り側のavatar-local配置（移動・回転・scaleを含む）は `e250372` と Bridge 回帰、同じObjectIdの新StateHash保存で生成object参照を保持する更新経路は `23a2b8a`、UV1を黙って落とさず `UNSUPPORTED_UV_SET`で停止する経路は `7ea1cc5` で確認した。P2の材質slot、MR係数、Cuff winding、sampler共有、ownership markerもそれぞれ既存Core／Bridge回帰へ接続済みである。
+
+残っていた設計上の穴として、参照bodyを保護しても汎用multi-object／GLB出力がworkspace全体を列挙できた。`EnsureGenericDeliveryExportAllowed()`を追加し、保護objectが存在する場合は出力先を作る前に `REFERENCE_EXPORT_BLOCKED` で停止する。GUIのUnity用multi-object出力、標準／拡張GLB、MCPの同経路へ適用し、参照bodyを含めない明示出口として選択衣装skin packageを案内する。native projectの保存と、avatar＋衣装を意図して同梱するVRM 1.0出力はこのガードの対象外とした。
+
+Windows Player `Builds/RefExportGuard/NyaForge.exe` をビルドし、Authoring suite **83 checks PASS**（`Artifacts/Authoring-20260914-035018-fd13f91381904083aad2e1cd01a66071/report.json`）。2 objectの参照保護後に静的GLB出力がメッセージを返し、`exports`を作成しない回帰を含む。Coreは **497 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-63ab3b928d7f42a9acf0dbbf029f8085`）。
+
+永続的な納品allowlistをGUI／MCP／manifestへ保存し、保存・再開・Undo後も同じobject集合を出力する作業は **NF-V1-03B** として切り出した。実EditorWindowの手動操作、実RadDollV3全周fit・貫通・見た目、VRChat Build & Test／実機表示は引き続き外部受入である。
+
 ## 2026-09-14 MCPへ参照保護状態を公開
 
 `get_state`へ`referenceProtectedObjectIds`と`activeObjectReferenceProtected`を追加した。AI側が参照bodyを編集対象から外せるよう、保護状態をエラー発生後ではなく編集前に取得できる。空projectのnamed pipe state回帰で配列とactive=falseを確認し、Windows Player `Builds/McpRefProtectionState/NyaForge.exe`のAuthoring suite **83 checks PASS**（`Artifacts/Authoring-20260914-034328-5750299d23c84ce8950a4f8308328a64/report.json`）。実MCP clientによる保護中objectの選択・編集拒否は、別途実アバター手動受入の境界として残る。

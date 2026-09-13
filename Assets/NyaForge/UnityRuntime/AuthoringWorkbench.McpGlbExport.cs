@@ -17,6 +17,7 @@ namespace NyaForge.UnityRuntime
                 string directory = Path.Combine(root, "exports", "glb-" + request.ExportId);
                 if (Directory.Exists(directory) || File.Exists(directory))
                     return new JObject { ["success"] = false, ["code"] = "EXPORT_DESTINATION_EXISTS", ["directory"] = directory };
+                EnsureGenericDeliveryExportAllowed();
                 GlbExportResult result;
                 switch (request.Profile)
                 {

@@ -16,6 +16,7 @@ namespace NyaForge.UnityRuntime
                 if(Directory.Exists(directory) || File.Exists(directory)) return new JObject { ["success"]=false,["code"]="EXPORT_DESTINATION_EXISTS",["directory"]=directory };
                 if (workspace.Document.Objects.Count > 1 && !ProjectExportService.RequiresNativeProjectExport(workspace.Document))
                 {
+                    EnsureGenericDeliveryExportAllowed();
                     var result = MultiObjectExportService.Export(workspace, pipeInstance, request.DocumentId, request.ExpectedRevision, directory);
                     SetStatus("AIから複数対象を書き出しました：" + result.ManifestPath);
                     return new JObject { ["success"] = true, ["code"] = "OK", ["manifestPath"] = result.ManifestPath, ["kind"] = "MultiObject", ["objectCount"] = result.ObjectCount, ["documentId"] = result.DocumentId, ["revision"] = result.Revision, ["stateHash"] = result.StateHash };

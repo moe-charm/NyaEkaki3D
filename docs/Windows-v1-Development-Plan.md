@@ -1,6 +1,6 @@
 # Nya Ekaki 3D Windows v1 実行計画
 
-更新: 2026-09-14。検証対象コード: `main`（`0d8a079`）。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership marker・複数package管理・semantic texture previewの実装が進んでいる。Downloads版原案の再確認結果は[current_task](../current_task.md)へ記録した。
+更新: 2026-09-14。検証対象コード: `main`（`ed27950`）。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership marker・複数package管理・semantic texture previewの実装が進んでいる。Downloads版原案の再確認結果は[current_task](../current_task.md)へ記録した。
 
 本書は持込「NyaForge Windows v1 開発計画」をコード照合して修正した実行計画。受入済み報告ではない。製品全体の目標・C0〜C5の要件は[設計v2](NyaForge-Authoring-Design2.md)を維持し、本書はWindows衣装制作v1へ至る着手順を定める。v1だけの合格を製品全体や進行中goalの完了へ読み替えない。直近の状態は[current_task](../current_task.md)。現行mainではCore 497 passed / 0 failed、Windows Playerのsemantic texture preview、private RadDollV3全mesh import smoke、実SDKのRadDollV3 Skirt chain PhysBone設定probe、実FBXへのskinned-clothing package初回・再適用・native roundtrip smoke、実body meshを使ったsurface fit／weight transfer接続probe、semantic textureを含む合成Unity Bridgeの衣装package回帰まで確認済みで、通常GLBのTEXCOORD_1は`UNSUPPORTED_UV_SET`で明示停止する。範囲限定fitの平均値は選択頂点数を分母にし、`EvaluatedVertexCount`として検査記録へ出す。実マウス・実EditorWindow・全周fit／貫通・見た目・Build & Test・実VRChatは未受入である。
 
@@ -48,7 +48,8 @@ NF-V1のIDは持込提案との対応用に維持。状態は実装済み・合�
 | ID | 作業・成果物 | 開始条件 | 完了条件 |
 |---|---|---|---|
 | NF-V1-01 | receiver環境manifest・既存fixture棚卸し | なし | [Windows-v1-Environment.md](Windows-v1-Environment.md)へPlayer/receiver/Core/OS/GPUとfixture・hash・保存場所を固定。SDK/UniVRM/shaderの未導入項目はBLOCKEDとして記録 |
-| NF-V1-03 | 衣装出力・骨対応・所有権契約 | 01の入力/target候補 | 参照body、納品allowlist、rest/骨対応、生成領域、更新key、競合/削除方針を定義。既存GLB＋sidecar／既存Bake拡張を比較し、receiverで実証する最小経路一つを選ぶ |
+| NF-V1-03 | 衣装出力・骨対応・所有権契約 | 01の入力/target候補 | 参照body、納品allowlist、rest/骨対応、生成領域、更新key、競合/削除方針を定義。既存GLB＋sidecar／既存Bake拡張を比較し、receiverで実証する最小経路一つを選ぶ。参照保護中の汎用multi-object／GLB納品は`REFERENCE_EXPORT_BLOCKED`で停止し、選択衣装skin packageを明示出口とするガードを実装済み。永続allowlistのGUI/MCP編集は03Bへ分離 |
+| NF-V1-03B | 納品対象allowlistの永続化 | 03 | 参照bodyを保護した状態で、GUI／MCPが同じ明示object集合だけをmulti-object／GLBへ出力し、manifest・reportへ対象IDを記録する。未選択objectを含めず、保存／再開／Undo後も対象集合を一致させる |
 | NF-V1-03A | 最小衣装packageと初回Unity適用 | 03 | `skinned-clothing-v1`で衣装GLB・stable skeleton・bindingを個別に渡す。参照bodyの非同梱、BoneId map・IBM対応、事前hash検証、失敗時無変更を確認。合成Unity receiver、明示割当GUI、ownership markerまで実証済み。実アバター適用と実更新結果は外部受入として残す |
 | NF-V1-02A | G1初回の独立reader・SDK・クライアント受入 | 01、03A（衣装ケース） | E01〜E05の現行対応分、E06のbase color/alpha、E08のlocal段階を確認。独立readerで骨/形状を比較。E07更新・未実装map・他者視点は後続へ明示的に分ける |
 | NF-V1-04 | Polygon造形確定command | 03の座標/出自契約 | 元graphを残し派生MeshSource/EditMesh graphを一括生成。UV seam/corner→render vertex対応、material/paint、元object/graph/revisionとhash、transformを保持。Undo一回、失敗無変更。新規skinへ進める |

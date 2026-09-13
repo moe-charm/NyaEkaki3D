@@ -1,6 +1,6 @@
-# NyaForge Unity Bridge (NF-0)
+# NyaForge Unity Bridge (Windows v1)
 
-NyaForge の静的メッシュを、別の Unity プロジェクトで通常の `Mesh.asset`・確認用 `Material`・`Prefab` として使う Editor パッケージです。Unity 2022.3 以降を対象とするコードです。実際に検証した Editor 版はリポジトリの `current_task.md` に記録します。
+NyaForge の静的メッシュ、標準PBR材質付きBake、PhysBones target、skinned clothing packageを、別の Unity プロジェクトで受け取る Editor パッケージです。Unity 2022.3 以降を対象とするコードです。実際に検証した Editor 版はリポジトリの `current_task.md` に記録します。
 
 ## 導入
 
@@ -58,13 +58,13 @@ Prefab の頂点は、Bake の正の均一スケールと平行移動を一度�
 
 「シーンにも配置する」を有効にすると、読み込んだ Prefab を配置します。親は任意のシーン Transform を明示して選べます。親子関係の変更時にはワールド位置を維持するため、骨名や首の位置からの推測はありません。親のスケールは正の均一値に限定します。これは首へのフィットや rest-pose の骨対応を実装した機能ではなく、通常の Unity の親子付けです。位置を調整して使ってください。シーン配置は Unity Undo で取り消せますが、書き出したアセットの削除は行いません。
 
-## NF-0 で扱う内容
+## 静的 mesh-only Bake（legacy NF-0）で扱う内容
 
 - 静的三角形メッシュ、UV0、法線、接線、複数サブメッシュ。
 - 通常の Transform / MeshFilter / MeshRenderer のみを持つ Prefab。
-- 各サブメッシュに確認用の単色材質。元の shader、texture、材質パラメーターの変換は未実装です。
+- 各サブメッシュに確認用の単色材質。元の shader、texture、材質パラメーターの変換はこのlegacy profileでは行いません。
 
-skin、blendshape、任意回転・非一様/負スケール、texture、リグ対応、VRChat SDK 設定、FBX/GLB 出力は含みません。Bake codec が未対応 feature を拒否します。静的Bakeだけを受け取る場合はNyaForge用の実行時MonoBehaviourは不要です。PhysBonesの明示割当をscene／prefabへ保存する場合だけ、`NyaForgePhysBonesBinding`をavatar rootへ追加します。Bridge の成功は VRChat の Build & Test や見た目の受け入れ確認を代替しません。
+skin、blendshape、任意回転・非一様/負スケール、texture、リグ対応、VRChat SDK 設定、FBX/GLB 出力はこのlegacy mesh-only profileには含みません。Bake codec が未対応 feature を拒否します。skinned clothing、semantic texture、PhysBones targetは上記の専用profileを使ってください。静的Bakeだけを受け取る場合はNyaForge用の実行時MonoBehaviourは不要です。PhysBonesの明示割当をscene／prefabへ保存する場合だけ、`NyaForgePhysBonesBinding`をavatar rootへ追加します。Bridge の成功は VRChat の Build & Test や見た目の受け入れ確認を代替しません。
 
 ## 受け取り側の自動検証
 
