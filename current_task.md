@@ -1810,3 +1810,5 @@ MCP／状態読取で形状の`stateHash`とは別に、VRM expression・Spring�
 Coreは **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2d4b6aa55f8b4a2288d8ab472f029123`）。
 
 Windows Player `Builds/StateIdentityV1/NyaForge.exe` のRadDollV3全mesh Authoring回帰も **PASS**（`Artifacts/Authoring-20260913-165352-4f8f0b1535304817bacbf22f607d5e4a/report.json`）。同じ成果物をUnity **2022.3.22f1** Bridgeへ渡した受け取り検証も **PASS**（`Artifacts/BridgeReceiver-20260913-165607-326-e4802bf2ad78487193be352cfc688dab/bridge-report.json`）。
+
+生成されたAuthoring画面（`Artifacts/Authoring-20260913-165352-4f8f0b1535304817bacbf22f607d5e4a/authoring.png`）を目視し、右側パネルの縦スクロール、制作対象表示、頂点操作案内、下部statusが同一画面内で欠けずに描画されることを確認した。これは自動capture画像の確認であり、実マウス・DPI別の手動受入ではない。
