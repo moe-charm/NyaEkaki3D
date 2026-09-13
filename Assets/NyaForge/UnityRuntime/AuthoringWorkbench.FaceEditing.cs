@@ -89,7 +89,11 @@ namespace NyaForge.UnityRuntime
             var value = DisplayedGraphValue(); if (activeEditContext == null || value?.PolygonRendering == null) return;
             var rect = view.worldBound;
             var ray = camera.ViewportPointToRay(new Vector3((panelPosition.x - rect.x) / rect.width, 1 - (panelPosition.y - rect.y) / rect.height, 0));
-            float nearest = float.PositiveInfinity; ulong? hit = null; int triangle = 0; var points = projection.Points;
+            float nearest = float.PositiveInfinity; ulong? hit = null; int triangle = 0;
+            // The ray is in camera/world space. Use the same world-space points
+            // that the mesh renderer uses so rigidly attached accessories (for
+            // example a choker) keep face picking aligned after attachment.
+            var points = projection.WorldPoints;
             foreach (var submesh in value.Mesh.Submeshes)
                 for (int i = 0; i < submesh.Length; i += 3, triangle++)
                 {
