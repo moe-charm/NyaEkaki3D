@@ -41,7 +41,7 @@ Unity BridgeはStandard shaderへnormal mapとmetallic-roughness mapを割り当
 
 材質パネルへWindows Explorer選択とパス適用を追加した。normal／metallic-roughnessそれぞれをPNG/JPEG（16 MiB以内、8192px以内）として検査し、UV0/UV1とnormal scaleを指定してtyped slotへ取り込む。既存のもう一方のmap、scalar値、base color Paintを保持し、native Save/Openで画像bytesを再読込できる。semantic mapがある状態では単体Material Bakeを拒否する既存契約を維持し、GLB／graph exportへ案内できる状態を保つ。
 
-1pxのGUI fixtureをExplorer相当のパス適用経路で取り込む回帰を追加した。Windows Player `Builds/SemanticTextureGuiV6/NyaForge.exe`、Authoring suite **PASS**（83 checks、`Artifacts/Authoring-20260914-003301-f96f98e3777f483aa745fb213d47c7b3/report.json`）で、normalのUV1/scale、MR slot、scalar変更後の保持、native Save/Openを確認した。選択中の作品が変わった場合は画像指定を無効化する。
+1pxのGUI fixtureをExplorer相当のパス適用経路で取り込む回帰を追加した。Windows Player `Builds/SemanticTextureGuiV6/NyaForge.exe`、Authoring suite **PASS**（83 checks、`Artifacts/Authoring-20260914-003301-f96f98e3777f483aa745fb213d47c7b3/report.json`）で、normalのUV1/scale、MR slot、scalar変更後の保持、native Save/Openを確認した。最新版へprivate RadDollV3を指定した全mesh import smokeも**89 checks PASS**（`Artifacts/Authoring-20260914-003430-c52a6bd922294ac48cdaefed89760177/report.json`）、同出力のUnity **2022.3.22f1** Bridgeも**14 checks PASS**（`Artifacts/BridgeReceiver-20260914-003656-365-b7fe74b7b31d48438c7fbfa4ad067559/bridge-report.json`）。選択中の作品が変わった場合は画像指定を無効化する。
 
 ## 2026-09-14 private RadDollV3 import/Bridge recheck
 
