@@ -20,6 +20,12 @@ fitと表面weight転送へ、avatar側の対象三角形を明示的に限定�
 
 回帰テストを追加し、離れた2面のfixtureで「選択面へ投影・選択面からのweight転送」と「誤った面を選んだ場合の無変更失敗」を確認した。Coreは **487 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f8e876f07220401a87ec2dd99e446230`）。これはCoreの範囲限定土台であり、Workbenchの面選択UI接続、実RadDollV3での服一周、Unity/VRChat受入は未完了のまま次カードへ残す。
 
+## 2026-09-13 NF-V1-02A / 04 Polygon→skin派生graph
+
+`AccessorySkinMaterializer`を追加し、`PolygonSource→PolygonEdit`の造形結果を、元のPolygon graphを変更せず新しいgraph IDの`MeshSource→EditMesh`へ一操作で派生できるようにした。評価済みの頂点・UV・サブメッシュを保ち、既存のappearance node（Paint、StandardMaterial、AssignMaterial(s)、Output）を引き継ぐ。Paintは同じ画像をpolygon domainなしのimmutable imageとして再接続し、Polygon編集後のUV配置を保つ。派生後に既存の`AccessorySkinBindingAdapter`でavatar skeleton・Pose・SkinDeformを接続し、元graph ID/hashを結果へ返す。
+
+形状を後段で暗黙に焼かないため、複数PolygonSource、後段の幾何modifier、LayeredPaint、既存rig/attachmentは明示的に拒否する。`EditMesh`からPaintとOutputへ複数のmesh downstreamがあるappearance graphにもskin deformationを挿入する。Coreで元graphのhash不変、派生graphのskin/pose、paint画像・出力geometry一致、2 objectのnative Save/Openを確認した。Coreは **488 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-7b21bff3e1a24040bc32e17b9835b820`）。Workbenchの派生操作ボタン、Undoを含む一操作command、実Unity receiverへの適用は未接続で、NF-V1-03Aの後続に残す。
+
 ## 今回のレビュー結論
 
 方向性は採用。原案の02→後続10/12→02という受入依存の逆転を02A/02Bへ分離し、未実装のskin衣装receiverを03Aとして前倒しした。1024pxへ縮小される画像の原本/作業/出力契約を09Aへ追加。12週間・週20〜25時間は未合意の仮定として採用しない。全身制作、FBX、完全VRM、全shader、共有資源の完全統合は既存backlogへ残し、今の衣装一周に必要な接続を先行する。

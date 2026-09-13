@@ -4,6 +4,8 @@ using NyaForge.Authoring;
 using NyaForge.Authoring.Geometry;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Rig;
+using NyaForge.Authoring.Topology;
+using NyaForge.Authoring.Paint;
 
 internal static partial class Program
 {
@@ -180,6 +182,62 @@ internal static partial class Program
                 workspace.Document.DocumentRevision, System.IO.Path.Combine(Root, "accessory-pose-source-glb-" + Guid.NewGuid().ToString("N")));
             True(System.IO.File.Exists(glb.Path));
             Equal(workspace.Preview.Output.Mesh.ContentHash, reopened.Preview.Output.Mesh.ContentHash);
+        });
+
+        Test("polygon materialization preserves source and appearance before skin binding", () =>
+        {
+            string source = GraphId(), edit = GraphId(), paint = GraphId(), material = GraphId(), assignment = GraphId(), output = GraphId();
+            var polygon = PolygonPrimitives.Plane(GraphId(), .2f, .2f);
+            var graph = new AuthoringGraph(GraphId(),
+                new[] {
+                    GraphNode.Polygon(source, polygon, new RestTransform(1, new Vec3())),
+                    GraphNode.PolygonEdit(edit),
+                    GraphNode.Paint(paint, 4, 4),
+                    GraphNode.StandardMaterial(material),
+                    GraphNode.AssignMaterial(assignment),
+                    GraphNode.Output(output)
+                },
+                new[] {
+                    new GraphEdge(source, "mesh", edit, "mesh"),
+                    new GraphEdge(edit, "mesh", paint, "mesh"),
+                    new GraphEdge(paint, "image", material, "baseColor"),
+                    new GraphEdge(edit, "mesh", assignment, "mesh"),
+                    new GraphEdge(material, "material", assignment, "material"),
+                    new GraphEdge(assignment, "mesh", output, "mesh")
+                }, output);
+            var before = GraphEvaluator.Evaluate(graph);
+            True(before.IsComplete && before.Output.Mesh != null && before.Output.BaseColor != null);
+            string sourceHash = GraphContentIdentity.Hash(graph);
+            string root = GraphId();
+            var skeleton = new SkeletonDefinition(new[] {
+                new BoneDefinition(root, "Root", "", new Vec3(), new Vec3(0, .1f, 0))
+            });
+            string derivedId = GraphId();
+            var result = AccessorySkinMaterializer.Materialize(graph, skeleton, root, GraphId(), derivedId);
+            Equal(graph.GraphId, result.SourceGraphId);
+            Equal(sourceHash, result.SourceGraphHash);
+            Equal(sourceHash, GraphContentIdentity.Hash(graph));
+            Equal(derivedId, result.Graph.GraphId);
+            True(result.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.MeshSource));
+            True(result.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.EditMesh));
+            True(result.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinBind));
+            True(result.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.PoseSource));
+            var after = GraphEvaluator.Evaluate(result.Graph);
+            True(after.IsComplete && after.Output.Mesh != null && after.Output.BaseColor != null);
+            Equal(before.Output.Mesh.ContentHash, after.Output.Mesh.ContentHash);
+            Equal(before.Output.BaseColor.ImageHash, after.Output.BaseColor.ImageHash);
+            var deform = result.Graph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.SkinDeform);
+            True(result.Graph.Edges.Count(edge => edge.FromNode == deform.NodeId && edge.FromPort == "mesh") >= 1);
+            var workspace = AuthoringWorkspace.CreateEmpty();
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(graph, GraphId())));
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(result.Graph, GraphId())));
+            string directory = Dir("polygon-materialized-native-" + Guid.NewGuid().ToString("N"));
+            ProjectStore.Save(directory, workspace, 0);
+            var reopened = ProjectStore.Open(directory);
+            Equal(2, reopened.Document.Objects.Count);
+            True(reopened.Document.Objects.Any(item => item.Graph.GraphId == graph.GraphId));
+            True(reopened.Document.Objects.Any(item => item.Graph.GraphId == result.Graph.GraphId &&
+                item.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinBind)));
         });
 
         Test("accessory skin binding refuses a rigid attachment conflict", () =>
