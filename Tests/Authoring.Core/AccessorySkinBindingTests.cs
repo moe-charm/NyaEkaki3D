@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using NyaForge.Authoring;
+using NyaForge.Authoring.Geometry;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Rig;
 
@@ -54,6 +55,20 @@ internal static partial class Program
                 new RestTransform(1, new Vec3()), avatarBinding, skeleton, 0));
             Expect("SKIN_TOPOLOGY_CHANGED", () => SkinWeightTransfer.BySurfaceProjection(clothing, new RestTransform(1, new Vec3()),
                 AuthoringFixtures.Panel(1), new RestTransform(1, new Vec3()), avatarBinding, skeleton, 2));
+        });
+
+        Test("clothing surface fit is bounded and preserves vertex count", () =>
+        {
+            var avatar = PrimitiveGeometry.Plane(.2f, .2f);
+            var clothing = PrimitiveGeometry.Plane(.1f, .1f);
+            var fitted = MeshSurfaceFit.ProjectPositions(clothing, new RestTransform(1, new Vec3(0, 0, .02f)),
+                avatar, new RestTransform(1, new Vec3()), .005f, .1f);
+            Equal(clothing.VertexCount, fitted.Length);
+            True(fitted.All(position => Math.Abs(position.Z + .025f) < 1e-5f));
+            Expect("SURFACE_FIT_DISTANCE", () => MeshSurfaceFit.ProjectPositions(clothing,
+                new RestTransform(1, new Vec3(0, 0, 1f)), avatar, new RestTransform(1, new Vec3()), 0f, .1f));
+            Expect("INVALID_SURFACE_FIT", () => MeshSurfaceFit.ProjectPositions(clothing, new RestTransform(1, new Vec3()),
+                avatar, new RestTransform(1, new Vec3()), .2f, .1f));
         });
 
         Test("static accessory can become a root-initialized avatar skin graph", () =>

@@ -23,6 +23,7 @@ namespace NyaForge.UnityBridge.Editor
             string reportPath = Argument("--nyaforge-report");
             var checks = new List<string>();
             GameObject avatar = null;
+            string packageDirectory = null;
             int exitCode = 1;
             try
             {
@@ -57,11 +58,16 @@ namespace NyaForge.UnityBridge.Editor
                 var context = new PhysBonesBridgeContext(avatar.transform,
                     new Dictionary<string, Transform> { [rootId] = avatar.transform, [childId] = child.transform });
 
-                var inspection = PhysBonesBridge.Inspect(profile, skeleton, context, backend);
+                packageDirectory = Path.Combine(Path.GetTempPath(), "NyaForge-PhysBonesSdkPackage-" + Guid.NewGuid().ToString("N"));
+                string manifest = PhysBonesTargetPackage.Export(packageDirectory, profile, skeleton, resolution.AssemblyQualifiedTypeName);
+                var package = PhysBonesTargetPackage.Read(manifest);
+                Require(package.ComponentTypeName == resolution.AssemblyQualifiedTypeName,
+                    "Real SDK package did not retain the resolved component type name");
+                var inspection = PhysBonesBridge.InspectPackage(manifest, context, backend);
                 Require(inspection.CreatedCount == 1 && !avatar.GetComponentsInChildren<Component>(true)
                     .Any(component => component.GetType() == resolution.ComponentType),
                     "preflight changed the scene or did not plan exactly one component");
-                checks.Add("preflight is non-mutating");
+                checks.Add("target package read and preflight is non-mutating");
 
                 // The current VRC SDK omits several generic fields. Verify that
                 // a value which cannot be represented is rejected before scene
@@ -73,9 +79,13 @@ namespace NyaForge.UnityBridge.Editor
                     unsupportedParameters, PhysBonesInteraction.Default, null);
                 var unsupportedProfile = new PhysBonesTargetProfile(VrcPhysBonesReflectionBackend.Target, "probe", "probe",
                     skeleton.ContentHash, "", new[] { unsupportedChain });
+                string unsupportedManifest = null;
                 try
                 {
-                    PhysBonesBridge.Inspect(unsupportedProfile, skeleton, context, backend);
+                    unsupportedManifest = PhysBonesTargetPackage.Export(
+                        Path.Combine(packageDirectory, "unsupported"), unsupportedProfile, skeleton,
+                        resolution.AssemblyQualifiedTypeName);
+                    PhysBonesBridge.InspectPackage(unsupportedManifest, context, backend);
                     throw new InvalidOperationException("unsupported nonzero SDK value was accepted");
                 }
                 catch (PhysBonesBridgeException error)
@@ -86,7 +96,7 @@ namespace NyaForge.UnityBridge.Editor
                 }
                 checks.Add("unsupported nonzero SDK values fail closed before component creation");
 
-                var applied = PhysBonesBridge.Apply(profile, skeleton, context, backend);
+                var applied = PhysBonesBridge.ApplyPackage(manifest, context, backend);
                 var component = applied.Components.Single();
                 Require(component.GetType() == resolution.ComponentType, "applied component type differs from resolved SDK type");
                 var rootField = resolution.ComponentType.GetField("rootTransform",
@@ -100,7 +110,7 @@ namespace NyaForge.UnityBridge.Editor
                 if (posingField != null && posingField.FieldType.IsEnum)
                     Require(string.Equals(Enum.GetName(posingField.FieldType, posingField.GetValue(component)), "False", StringComparison.OrdinalIgnoreCase),
                         "AdvancedBool allowPosing was not explicitly mapped to False");
-                checks.Add("real SDK component created and configured with stable root/bone mapping");
+                checks.Add("real SDK component created from the target package and configured with stable root/bone mapping");
                 exitCode = 0;
             }
             catch (Exception error)
@@ -110,6 +120,11 @@ namespace NyaForge.UnityBridge.Editor
             finally
             {
                 if (avatar != null) Object.DestroyImmediate(avatar);
+                if (packageDirectory != null && Directory.Exists(packageDirectory))
+                {
+                    try { Directory.Delete(packageDirectory, true); }
+                    catch (Exception error) { Debug.LogWarning("Could not remove temporary PhysBones package: " + error.Message); }
+                }
                 string componentType = "";
                 try
                 {

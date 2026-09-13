@@ -362,7 +362,7 @@ reflection型解決は`VrcPhysBonesReflectionResolver`へ分離し、assembly-qu
 | [ ] I04-D / P1 | 標準FBX Bridge入力と任意の変換adapter | Blender必須化なし。依存検出・変換前後比較・原本保護・失敗/取消を確認。実取込はA〜Cに依存 |
 | [ ] I04-E / P1 **継続** | 機能report、材質/animation/VRM意味情報/未知拡張の保持とGUI/MCP | GLB importerのコード付きdiagnosticsをnative attachmentへ保存し、MCP graph inspection・取込後status・GUI詳細パネルで表示。未実装の `extensionsRequired` は取込前拒否済み。依存資源込みopaque保持、既知VRM内の未保持field、完全材質/animation保持が残件 |
 | [ ] T04 / P2 **継続** | 時間超過・性能受入 | 高密度Paint合成fixtureでframe時間（30 samples、p95/max）、GC/managed heap/Unity allocatorを `dense-paint-profile.json` へ保存し、250ms観測境界を記録した。次は実アバター比較、長時間working-set、停止ポリシーを別試験で定める |
-| [ ] T05 / P1 **継続** | Windows実素材・実操作と受取側 | RadDollV3 VRMで取込→EditMesh→Save/Open→標準skinned GLB→再取込を合格（`RealModelMaterialClampV4`）。残りは実マウス・DPI/文字欠け・pose/揺れ・実VRChatの出力受取確認、追加texture mapと大画像の完全保持 |
+| [ ] T05 / P1 **継続** | Windows実素材・実操作と受取側 | RadDollV3 VRMで取込→EditMesh→Save/Open→標準skinned GLB→再取込を合格（`RealModelMaterialClampV4`）。bounded avatar-surface fitは合成fixtureとWorkbench回帰済み。残りは実マウス・DPI/文字欠け・実アバターでのpose/揺れ・実VRChatの出力受取確認、追加texture mapと大画像の完全保持 |
 | [ ] T06 / P2 | 外部MCP metadata保存受入 | 内部handlerと区別し、transport経由で保存/Open・失敗保護・再試行を確認 |
 
 ## 完了した前提と残る境界
@@ -390,7 +390,7 @@ reflection型解決は`VrcPhysBonesReflectionResolver`へ分離し、assembly-qu
 | [x] SIM-02B-2 / P1 | receiver component型の固定 | target package manifestへ完全修飾`ComponentTypeName`を保存し、receiverのreflection resolverへ渡す。旧manifestは既定型へフォールバックし、custom型と旧形式をCore／Bridgeで往復確認 |
 | [x] SIM-02B-3 / P1 | receiver型解決診断 | `VrcPhysBonesReflectionResolver`を分離し、assembly-qualified型、未導入、非Componentの診断をscene変更なしで確認。GUIの適用失敗へ理由を返す |
 | [x] SIM-02B-4 / P1 | receiver事前診断 | `PhysBonesBridge.Inspect`／`InspectPackage`を追加し、本適用と同じtarget／capability／scene／managed preflightをcomponent生成なしで実行。GUIの「事前診断（書き込みなし）」へ接続 |
-| [ ] SIM-02B / P1 **次に実行** | 実SDK受け取り側 | `NyaForgePhysBonesBinding`へpackage identity付きのstable BoneId／collider group手動割当を保存・読込できるようにした。reflection member catalogは継承元private field/propertyも対象にする。次は対象SDKの版・型を固定し、package読込→実component生成・更新を実SDKで確認。未対応項目は書込み前にloss reportで停止し、未管理componentを変更しない。SDK未導入時のpublic buildは維持 |
+| [x] SIM-02B / P1 | 実SDK受け取り側 | `NyaForgePhysBonesBinding`へpackage identity付きのstable BoneId／collider group手動割当を保存・読込できるようにし、reflection member catalogは継承元private field/propertyも対象にした。VRChat SDK 3.7.6（Unity 2022.3.22f1）でtarget packageをRead→InspectPackage（非破壊）→ApplyPackage（実VRCPhysBone生成・stable root設定）まで確認。未対応値は書込み前にloss reportで停止し、未管理componentを変更しない。SDK未導入時のpublic buildは維持 |
 | [x] SIM-03A / P1 | GUI/MCPの設定と再生所有者 | GUI・内部MCP handler・外部sidecar toolにplay/pause/reset/rebuild/fixed-step/stateを接続し、同じtransient owner／generationで保存対象外、編集・作品切替時の破棄を確認済み。非同期vendor構築の実SDK接続は後続タスク |
 | [x] SIM-03B / P1 | 連続撮影とbackend証拠 | `SecondaryMotionCaptureRecord`／codec、固定1/60秒・warmup・最大8frame・pixel budget、input/config hash、adapter／package版、target、Unity/build、pose/root/collider条件、各PNG hashと失敗statusを1 runへ束ね、`forge_secondary_motion_capture`の実MCPで3frameを確認済み。native revision／保存／制作姿勢は不変。実VRChat受入の証拠とは分ける |
 | [ ] SIM-04 / P2・任意 | MagicaCloth2 BoneCloth最小評価 | vendor packageをpublic repoへ入れず任意assemblyへ隔離。自作髪束1本でruntime生成・構築完了待ち・固定根・sphere衝突・rebuild/reset/破棄・写真列を確認し、未導入buildも成功させる。SIM-02B/03Aを置換しない |
@@ -1949,3 +1949,19 @@ Coreは **481 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 Coreは **482 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b1f45c67d67b48e8a8a943b09ee8aeec`）。Unity **6000.4.3f1** Windows Player `Builds/SurfaceWeightV1/NyaForge.exe` のビルドは成功（`Logs/build-player-20260913-191751-692.log`）。同PlayerのAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-192030-2dbe35b99eae47609522395e4f39c436/report.json`、画面 `authoring.png`）。最初の120秒実行はsuite全体が収まらずタイムアウトしたため、同じ検証をTimeoutSeconds 300で再実行して完了を確認した。private素材・生成物・SDKはpublic repositoryへ追加していない。
 
 実アバター衣装の表面対応品質、体形差への自動fit、貫通修正、実マウス／DPI差、実VRChat内の見た目・PhysBones挙動は引き続き別受入境界とする。
+
+# 2026-09-13 bounded avatar-surface fit
+
+衣装の位置合わせ用に、`MeshSurfaceFit.ProjectPositions` とWorkbenchの **衣装をavatar表面へfit** を追加した。衣装の現在のEditMesh結果をavatar rest meshの最近三角形へ投影し、指定したsurface offsetを法線方向へ加え、EditMeshのrest-space deltaとして一つのUndo commandへ置き換える。最大距離とoffsetをメートルで検査し、1頂点でも範囲を超えた場合は候補計算の段階で停止して文書を変更しない。トポロジー、UV、材質、weightは変更せず、fit後に既存のRig／pose確認へ進める。裏面への吸着、体形差、衣装同士の交差、販売品質を自動解決する機能ではない。
+
+Coreは **483 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-7cff4eefa45448e69311e4a2d6200a01`）。bounded距離、offset上限、頂点数保持、最近面投影を回帰した。Unity **6000.4.3f1** Windows Player `Builds/SurfaceFitV2/NyaForge.exe` のビルドは成功（`Logs/build-player-20260913-193017-936.log`）。同PlayerのAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-193038-9ce16edb544f4ce9a43e826872b969ab/report.json`、画面 `authoring.png`）で、avatar＋static GLB衣装のskin-bind、weight初期化、surface fit、pose copy、Save/Open、GLB／VRM出力を同じ検証へ通した。
+
+表面法線の向きが入力meshのwindingに依存するため、offsetの符号と複数poseの交差はRig確認が必要。実アバターでの体形差、自動fit品質、貫通修正、実マウス／DPI差、実VRChat内の見た目・PhysBones挙動は別受入境界とする。
+
+# 2026-09-13 PhysBones実SDK package-flow再検証
+
+実SDK検証を直接profile生成だけで終わらせず、`PhysBonesTargetPackage.Export`→`Read`→`InspectPackage`→`ApplyPackage`の受け取り経路へ更新した。対象はVRChat SDK 3.7.6（`com.vrchat.base`／`com.vrchat.avatars`）、Unity 2022.3.22f1。完全修飾 `VRC.SDK3.Dynamics.PhysBone.Components.VRCPhysBone` をmanifestへ保持し、preflightがシーンを変更しないこと、SDKで表現できない非ゼロ値をcomponent生成前に `SDK_MEMBER_MISSING` で停止すること、packageから実componentを生成してstable root／bone mappingを設定することを確認した。
+
+検証レポート: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-package-flow-20260913.json`（status `verified`、Unity probe `passed`）。UnityBridgeの合成受け取り回帰も **PASS**（`Artifacts/BridgeReceiver-20260913-193241-889-d5072cb90b02488cbd8d9ef8e6d8a161/bridge-report.json`）。SDK projectと一時packageはpublic repositoryへ追加していない。
+
+実アバターへのstable BoneId／collider手動割当、複数pose・root移動・停止／再開の挙動、VRChat Build & Test／実機の見た目とPhysBones挙動はSIM-07Aの別受入境界として残す。

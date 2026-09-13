@@ -104,6 +104,14 @@ namespace NyaForge.UnityRuntime
                 Check(bound.Binding.Weights.Values.All(values => values.Count >= 1 && values.Count <= 4 &&
                     Math.Abs(values.Sum(value => value.Weight) - 1f) < 1e-5f),
                     "Accessory avatar-surface weights were not normalized within the four-influence limit");
+                string beforeFit = workspace.Evaluate().ContentHash;
+                accessoryFitOffsetMm.SetValueWithoutNotify(2);
+                accessoryFitMaxDistanceMm.SetValueWithoutNotify(50);
+                attachmentTargetChoice = avatarObjectId;
+                RefreshAttachmentControls();
+                FitAccessoryToAvatarSurface();
+                Check(workspace.Evaluate().ContentHash != beforeFit,
+                    "Accessory avatar-surface fit did not update the edited clothing geometry");
 
                 // Exercise the same explicit pose-copy action exposed by the
                 // Workbench. Move the source avatar, copy its evaluated pose

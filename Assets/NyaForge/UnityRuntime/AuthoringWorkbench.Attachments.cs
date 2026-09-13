@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring;
+using NyaForge.Authoring.Geometry;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Rig;
@@ -17,7 +18,8 @@ namespace NyaForge.UnityRuntime
         DropdownField attachmentTarget;
         DropdownField attachmentBone;
         FloatField attachmentOffsetX, attachmentOffsetY, attachmentOffsetZ;
-        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryAutoWeight, accessorySurfaceWeight, accessoryPoseCopy;
+        FloatField accessoryFitOffsetMm, accessoryFitMaxDistanceMm;
+        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessoryPoseCopy;
         readonly List<string> attachmentTargetIds = new List<string>();
         readonly List<string> attachmentBoneIds = new List<string>();
         string attachmentTargetChoice;
@@ -51,8 +53,11 @@ namespace NyaForge.UnityRuntime
             accessorySkinBind = Button("衣装をavatar骨格へskin-bind（Root初期化）", BindAccessoryToAvatar, "object-skin-bind");
             accessoryAutoWeight = Button("衣装の自動weight初期化（骨近傍）", TransferAccessoryWeights, "object-skin-auto-weight");
             accessorySurfaceWeight = Button("衣装の自動weight初期化（avatar表面）", TransferAccessorySurfaceWeights, "object-skin-surface-weight");
+            accessoryFitOffsetMm = Number(attachmentPanel, "avatar表面からのfit offset (mm)", 2, "object-surface-fit-offset-mm");
+            accessoryFitMaxDistanceMm = Number(attachmentPanel, "surface fit最大距離 (mm)", 50, "object-surface-fit-max-distance-mm");
+            accessorySurfaceFit = Button("衣装をavatar表面へfit", FitAccessoryToAvatarSurface, "object-surface-fit");
             accessoryPoseCopy = Button("avatarの現在poseを衣装へコピー", CopyAvatarPose, "object-skin-pose-copy");
-            attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryAutoWeight); attachmentPanel.Add(accessorySurfaceWeight); attachmentPanel.Add(accessoryPoseCopy);
+            attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryAutoWeight); attachmentPanel.Add(accessorySurfaceWeight); attachmentPanel.Add(accessorySurfaceFit); attachmentPanel.Add(accessoryPoseCopy);
             var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。自動weight初期化（骨近傍）はrest骨segmentへの距離から最大4本を選ぶ簡易初期値です。avatar表面が評価できる場合は、表面上の最近三角形から既存avatar weightを補間するavatar表面方式を推奨します。どちらも必ず動作確認・Rig panelで手修正してください。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。自動fitや貫通判定は別機能です。");
             help.style.whiteSpace = WhiteSpace.Normal; attachmentPanel.Add(help);
             parent.Add(attachmentPanel);
@@ -153,7 +158,7 @@ namespace NyaForge.UnityRuntime
             if (!IsGraph)
             {
                 attachmentStatus.text = "装着: graph objectを選択してください。";
-                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); return;
+                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); return;
             }
             var targets = workspace.Document.Objects.Where(item => item.ObjectId != workspace.Document.ActiveObjectId && item.Graph != null).ToArray();
             attachmentTargetIds.AddRange(targets.Select(item => item.ObjectId));
@@ -195,6 +200,10 @@ namespace NyaForge.UnityRuntime
             accessoryAutoWeight.SetEnabled(canAutoWeight);
             bool canSurfaceWeight = canAutoWeight && target != null && target.Graph != null && TargetAvatarSurfaceAvailable(target);
             accessorySurfaceWeight.SetEnabled(canSurfaceWeight);
+            bool canSurfaceFit = target != null && target.Graph != null && skeleton != null && workspace.Preview.IsComplete &&
+                workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.EditMesh) &&
+                TargetAvatarSurfaceAvailable(target);
+            accessorySurfaceFit.SetEnabled(canSurfaceFit);
             bool hasSkinPose = workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.SkinBind) &&
                 workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.Pose);
             accessoryPoseCopy.SetEnabled(target != null && skeleton != null && hasSkinPose);
@@ -275,6 +284,48 @@ namespace NyaForge.UnityRuntime
                     evaluation.SkinBindingOutputs.TryGetValue(bind.NodeId, out var binding) && binding != null && binding.Binding != null;
             }
             catch (AuthoringException) { return false; }
+        }
+
+        void FitAccessoryToAvatarSurface()
+        {
+            Try(() =>
+            {
+                if (!IsGraph) throw new InvalidOperationException("衣装のgraph objectを選択してください。");
+                int targetIndex = attachmentTarget.index;
+                if (targetIndex < 0 || targetIndex >= attachmentTargetIds.Count) throw new InvalidOperationException("fit対象avatarを選択してください。");
+                var target = FindObject(attachmentTargetIds[targetIndex]);
+                var session = RigFor(target);
+                var skeleton = session == null || target == null ? null : TryResolveSkeleton(session, target.Graph);
+                if (skeleton == null) throw new InvalidOperationException("fit対象avatarのskeletonがありません。");
+                var avatarBind = target.Graph.Nodes.Values.SingleOrDefault(item => item.TypeId == BuiltinNodes.SkinBind && item.Binding != null);
+                if (avatarBind == null) throw new InvalidOperationException("avatarへ有効なSkinBindがありません。");
+                var avatarEvaluation = target.EvaluateGraph();
+                if (!avatarEvaluation.MeshInputs.TryGetValue(avatarBind.NodeId, out var avatarMeshValue) || avatarMeshValue?.Mesh == null)
+                    throw new InvalidOperationException("avatarのrest mesh評価結果を取得できません。");
+                var graph = workspace.Document.ActiveObject.Graph;
+                var edit = graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.EditMesh);
+                if (edit == null) throw new InvalidOperationException("衣装へEditMeshを先に用意してください。");
+                var evaluation = workspace.Preview.Evaluation;
+                if (!evaluation.MeshInputs.TryGetValue(edit.NodeId, out var editInput) || editInput?.Mesh == null ||
+                    !evaluation.MeshOutputs.TryGetValue(edit.NodeId, out var editValue) || editValue?.Mesh == null)
+                    throw new InvalidOperationException("衣装EditMeshの入力・評価結果を取得できません。");
+                float offset = accessoryFitOffsetMm.value / 1000f;
+                float maxDistance = accessoryFitMaxDistanceMm.value / 1000f;
+                var fitted = MeshSurfaceFit.ProjectPositions(editValue.Mesh, editValue.Transform,
+                    avatarMeshValue.Mesh, avatarMeshValue.Transform, offset, maxDistance);
+                var offsets = new Dictionary<int, Vec3>();
+                for (int vertex = 0; vertex < fitted.Length; vertex++)
+                {
+                    Vec3 before = editInput.Transform.ToAvatarPoint(editInput.Mesh.Positions[vertex]);
+                    Vec3 after = editInput.Transform.ToAvatarPoint(fitted[vertex]);
+                    Vec3 delta = after - before;
+                    if (delta.X != 0f || delta.Y != 0f || delta.Z != 0f) offsets[vertex] = delta;
+                }
+                var changed = graph.ReplaceNode(GraphNode.Edit(edit.NodeId, true, offsets, editInput.SnapshotHash, editInput.DomainId));
+                Execute(AuthoringOperation.ReplaceGraph(changed));
+                attachmentTargetChoice = target.ObjectId;
+                SetStatus("衣装をavatar rest表面へfitしました（offset " + accessoryFitOffsetMm.value.ToString("0.###") + " mm）。Rig／poseで交差を確認してください。");
+            });
         }
 
         void TransferAccessorySurfaceWeights()
