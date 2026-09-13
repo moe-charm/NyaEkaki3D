@@ -1,5 +1,13 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 feedback triage: 9855d43レビューの再照合
+
+外部レビューで挙がったP1 3件（avatar-local配置、`SaveBindings`の管理参照、UV1欠落）とP2 5件（sparse material slot、MR係数、Cuff winding、sampler共有、適用前／削除後の割当読込）を現行`main`（`0a52e45`）へ再照合した。いずれも既存修正と回帰で解消済みで、本番コードの重複修正は行わない。対応の詳細は[レビュー再照合](docs/reviews/2026-09-14-Feedback-9855d43-Triage.md)へ固定した。
+
+再実行結果はCore **499 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b47755e58fa5483999b956e2f5f39314`）、private RadDollV3 VRMを使う`Tools/Test-NyaForgeRealClothing.ps1`のWindows Player **93 checks PASS**（`Artifacts/Authoring-20260914-044139-265f4f8035bf42cb8556c1ff978e7a99/report.json`）、同成果物の衣装packageをUnity **2022.3.22f1**へ渡すBridge **16 checks PASS**（`Artifacts/BridgeReceiver-20260914-044430-218-36d67848e7d049dda79b3de3b62daefb/bridge-report.json`）。Bridgeの16件目は衣装packageのhash／sidecar／ApplyPackage回帰で、従来の15件から増えたものではなく現行suiteの全件数である。
+
+今回のPASSはCore／Windows Player／合成Bridge／private実RadDollV3の機械的経路を分けた証拠であり、実EditorWindowのマウス／DPI、実RadDollV3への新規衣装全周fit・貫通・見た目、VRChat Build & Test／実機表示は未受入として残す。
+
 ## 2026-09-14 NF-V1-04: 実RadDollV3モデルでの取込・保存・出力スモーク
 
 private一時ファイル `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm` を公開リポジトリへコピーせず、Windows Player `Builds/ClothingPackageV2/NyaForge.exe` へ直接渡した。再実行用 `Tools/Test-NyaForgeRealClothing.ps1` から、実RadDollV3の全mesh instance取込・生成EditMesh・頂点編集・native Save/Open・標準skinned GLB再取込・VRM 1.0出力と再読込に加え、制御されたaccessory fixtureの選択衣装だけのself-contained skin package出力を含む **93 checks PASS**（`Artifacts/Authoring-20260914-043303-8ecec8b61b36402385df0f65f9faaaae/report.json`）。10 mesh instanceを編集可能化し、feature-preserving native export roundtrip、VRM metadata、衣装packageのobject/document/mesh hashを確認した。衣装package用一時GLB stagingはWindowsの深い作業パスでMAX_PATHを超えない短い場所へ分離した。実RadDollV3から新規衣装を作る全周fit・package化そのものは、この検査とは別の手動受入である。RadDollV3はVRM 0.xのため、元のSpringBoneをVRM 1.0へ自動変換できることはこの検査の合格条件に含めず、明示的に省略した。
