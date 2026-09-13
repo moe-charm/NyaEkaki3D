@@ -1812,3 +1812,7 @@ Coreは **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 Windows Player `Builds/StateIdentityV1/NyaForge.exe` のRadDollV3全mesh Authoring回帰も **PASS**（`Artifacts/Authoring-20260913-165352-4f8f0b1535304817bacbf22f607d5e4a/report.json`）。同じ成果物をUnity **2022.3.22f1** Bridgeへ渡した受け取り検証も **PASS**（`Artifacts/BridgeReceiver-20260913-165607-326-e4802bf2ad78487193be352cfc688dab/bridge-report.json`）。
 
 生成されたAuthoring画面（`Artifacts/Authoring-20260913-165352-4f8f0b1535304817bacbf22f607d5e4a/authoring.png`）を目視し、右側パネルの縦スクロール、制作対象表示、頂点操作案内、下部statusが同一画面内で欠けずに描画されることを確認した。これは自動capture画像の確認であり、実マウス・DPI別の手動受入ではない。
+
+# 2026-09-13 PhysBones SDK受け取りpreflight
+
+実VRChat SDKをまだ導入していないWindows環境でも、受け取り先Unity projectの依存とPhysBone候補を先に確認できる読み取り専用`Tools/Test-NyaForgePhysBonesSdk.ps1`を追加した。target manifestの`ComponentTypeName`、`com.vrchat.*`依存、Unity-owned source/package locations内のPhysBone候補ファイルをJSONへ記録する。候補検出は型形状の完全一致や実component生成を保証せず、Unity Bridgeの事前診断と実SDK／実アバター受入へ明示的につなぐ。`-RequireSdk`で候補不足をCI上の失敗として扱える。

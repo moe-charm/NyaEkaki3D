@@ -301,6 +301,8 @@ Paint段を選び「レイヤー編集へ移行」を押すと、現在の画像
 
 受け取り側は同じ版のCore/Rendering/UnityBridgeパッケージを導入し、Built-In / Linear設定で `Tools > NyaForge > Import Static Bake...` からmanifestを選びます。「部位別PBR材質付き」が選択されます。新しい専用フォルダにMesh、材質、画像、Prefab、部位対応表が作られます。既存Prefabの更新はまだ未実装です。
 
+PhysBones targetを実SDKへ渡す場合は、先にUnity projectを変更しないSDK preflightを実行できます。`Tools/Test-NyaForgePhysBonesSdk.ps1 -UnityProjectPath <受け取りUnity project> -TargetManifestPath <physbones.nyaforge-target.json> -OutputPath <証跡JSON>` で、`com.vrchat.*`依存、PhysBone候補ファイル、targetが期待するComponentTypeNameを記録します。`candidate_found`は候補検出であり、型の完全一致を意味しません。続けてUnity Bridgeの「事前診断（書き込みなし）」と実SDK／実アバターの受け入れを行います。
+
 ### 2つの境界をつなぐ
 
 PolygonEdit段で「境界を閉じる」を開き、最初の境界（黄色）を選択。「2境界をつなぐ」を開いて相手（水色）を選び、「2つの境界をつなぐ」を押す。同じ頂点数の独立した閉ループ（3〜256頂点）が対象。接続ずれは -1 が距離による自動選択、0以上が接続位置の手動指定。Undo/Redo、native保存、Bakeに対応する。
