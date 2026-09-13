@@ -113,6 +113,12 @@ namespace NyaForge.UnityRuntime
                 Select(new[] { 0, 1 });
                 UseSelectedClothingVertices();
                 Check(accessoryClothingVertexIds.value == "0,1", "Selected clothing vertices were not copied into the surface tool");
+                string beforeFitInspection = workspace.Document.StateHash;
+                long beforeFitInspectionRevision = workspace.Document.DocumentRevision;
+                InspectAccessorySurfaceFit();
+                Check(workspace.Document.StateHash == beforeFitInspection && workspace.Document.DocumentRevision == beforeFitInspectionRevision &&
+                    status.text.Contains("変更なし") && status.text.Contains("評価 2頂点"),
+                    "Surface fit inspection changed the document or omitted the evaluated vertex count");
                 TransferAccessorySurfaceWeights();
                 boundGraph = workspace.Document.ActiveObject.Graph;
                 bound = boundGraph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.SkinBind);
@@ -235,7 +241,7 @@ namespace NyaForge.UnityRuntime
                 var vrmInventory = GlbSceneInventoryReader.Read(File.ReadAllBytes(vrmModel));
                 Check(vrmInventory.Instances.Count == 2 && vrmInventory.Instances.All(instance => instance.SkinIndex.HasValue),
                     "Skin-bound clothing VRM output did not retain both skinned mesh instances");
-                checks.Add("separate VRM avatar + static GLB accessory: EditMesh, rigid BoneId attachment, Save/Open, Root-initialized, bone-proximity and avatar-surface weight initialization, explicit avatar pose copy + Save/Open, multi-object GLB/VRM export");
+                checks.Add("separate VRM avatar + static GLB accessory: EditMesh, rigid BoneId attachment, Save/Open, Root-initialized, bone-proximity and avatar-surface weight initialization, read-only surface-fit inspection, explicit avatar pose copy + Save/Open, multi-object GLB/VRM export");
             }
             finally { ReplaceWorkspace(previous, previousPath); }
         }

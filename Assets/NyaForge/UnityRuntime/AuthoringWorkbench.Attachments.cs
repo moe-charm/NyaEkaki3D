@@ -24,7 +24,7 @@ namespace NyaForge.UnityRuntime
         TextField accessoryClothingVertexIds;
         Toggle accessorySurfacePickMode;
         readonly HashSet<int> selectedAvatarSurfaceTriangles = new HashSet<int>();
-        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPolygonMaterialize, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessoryPoseCopy, accessoryUseSelectedVertices, accessoryClearSurfaceSelection;
+        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPolygonMaterialize, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessorySurfaceInspect, accessoryPoseCopy, accessoryUseSelectedVertices, accessoryClearSurfaceSelection;
         readonly List<string> attachmentTargetIds = new List<string>();
         readonly List<string> attachmentBoneIds = new List<string>();
         string attachmentTargetChoice;
@@ -75,8 +75,9 @@ namespace NyaForge.UnityRuntime
             accessoryUseSelectedVertices = Button("現在の衣装頂点選択を適用対象にする", UseSelectedClothingVertices, "object-surface-use-selected-vertices");
             attachmentPanel.Add(accessoryUseSelectedVertices);
             accessorySurfaceFit = Button("衣装をavatar表面へfit", FitAccessoryToAvatarSurface, "object-surface-fit");
+            accessorySurfaceInspect = Button("fit状態を測定（変更なし）", InspectAccessorySurfaceFit, "object-surface-inspect");
             accessoryPoseCopy = Button("avatarの現在poseを衣装へコピー", CopyAvatarPose, "object-skin-pose-copy");
-            attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryPolygonMaterialize); attachmentPanel.Add(accessoryAutoWeight); attachmentPanel.Add(accessorySurfaceWeight); attachmentPanel.Add(accessorySurfaceFit); attachmentPanel.Add(accessoryPoseCopy);
+            attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryPolygonMaterialize); attachmentPanel.Add(accessoryAutoWeight); attachmentPanel.Add(accessorySurfaceWeight); attachmentPanel.Add(accessorySurfaceFit); attachmentPanel.Add(accessorySurfaceInspect); attachmentPanel.Add(accessoryPoseCopy);
             var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。Polygon造形をskin衣装へ派生すると、元のPolygon graphを残したまま編集結果をMeshSourceへ確定し、新しい衣装objectを作成します。自動weight初期化（骨近傍）はrest骨segmentへの距離から最大4本を選ぶ簡易初期値です。avatar表面が評価できる場合は、表面上の最近三角形から既存avatar weightを補間するavatar表面方式を推奨します。avatar面IDを指定するとfitとweightの対象面を同じ領域へ限定できます。衣装頂点IDを指定すると未選択頂点の位置・weightを保持できます。空欄は全てを対象にします。どちらも必ず動作確認・Rig panelで手修正してください。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。自動fitや貫通判定は別機能です。");
             help.style.whiteSpace = WhiteSpace.Normal; attachmentPanel.Add(help);
             parent.Add(attachmentPanel);
@@ -177,7 +178,7 @@ namespace NyaForge.UnityRuntime
             if (!IsGraph)
             {
                 attachmentStatus.text = "装着: graph objectを選択してください。";
-                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryPolygonMaterialize.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); accessoryUseSelectedVertices.SetEnabled(false); accessorySurfacePickMode.SetEnabled(false); accessoryClearSurfaceSelection.SetEnabled(false); return;
+                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryPolygonMaterialize.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessorySurfaceInspect.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); accessoryUseSelectedVertices.SetEnabled(false); accessorySurfacePickMode.SetEnabled(false); accessoryClearSurfaceSelection.SetEnabled(false); return;
             }
             var targets = workspace.Document.Objects.Where(item => item.ObjectId != workspace.Document.ActiveObjectId && item.Graph != null).ToArray();
             attachmentTargetIds.AddRange(targets.Select(item => item.ObjectId));
@@ -224,6 +225,7 @@ namespace NyaForge.UnityRuntime
                 workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.EditMesh) &&
                 TargetAvatarSurfaceAvailable(target);
             accessorySurfaceFit.SetEnabled(canSurfaceFit);
+            accessorySurfaceInspect.SetEnabled(canSurfaceFit);
             accessorySurfacePickMode.SetEnabled(canSurfaceFit);
             accessoryClearSurfaceSelection.SetEnabled(canSurfaceFit && !string.IsNullOrWhiteSpace(accessorySurfaceTriangleIds.value));
             bool hasSkinPose = workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.SkinBind) &&
@@ -451,6 +453,41 @@ namespace NyaForge.UnityRuntime
 
         IEnumerable<int> ClothingVertexSelection() => ParseIndexSelection(
             accessoryClothingVertexIds == null ? "" : accessoryClothingVertexIds.value, "衣装頂点ID");
+
+        void InspectAccessorySurfaceFit()
+        {
+            Try(() =>
+            {
+                if (!IsGraph) throw new InvalidOperationException("衣装のgraph objectを選択してください。");
+                int targetIndex = attachmentTarget.index;
+                if (targetIndex < 0 || targetIndex >= attachmentTargetIds.Count) throw new InvalidOperationException("fit検査対象avatarを選択してください。");
+                var target = FindObject(attachmentTargetIds[targetIndex]);
+                if (target == null || target.Graph == null) throw new InvalidOperationException("fit検査対象avatarが見つかりません。");
+                var avatarBind = target.Graph.Nodes.Values.SingleOrDefault(item => item.TypeId == BuiltinNodes.SkinBind && item.Binding != null);
+                if (avatarBind == null) throw new InvalidOperationException("avatarへ有効なSkinBindがありません。");
+                var avatarEvaluation = target.EvaluateGraph();
+                if (!avatarEvaluation.MeshInputs.TryGetValue(avatarBind.NodeId, out var avatarMeshValue) || avatarMeshValue?.Mesh == null)
+                    throw new InvalidOperationException("avatarのrest mesh評価結果を取得できません。");
+                var graph = workspace.Document.ActiveObject.Graph;
+                var edit = graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.EditMesh);
+                if (edit == null) throw new InvalidOperationException("衣装へEditMeshを先に用意してください。");
+                var evaluation = workspace.Preview.Evaluation;
+                if (!evaluation.MeshOutputs.TryGetValue(edit.NodeId, out var editValue) || editValue?.Mesh == null)
+                    throw new InvalidOperationException("衣装EditMeshの評価結果を取得できません。");
+                float offset = accessoryFitOffsetMm.value / 1000f;
+                float maxDistance = accessoryFitMaxDistanceMm.value / 1000f;
+                var surfaceTriangles = SurfaceTriangleSelection();
+                var clothingVertices = ClothingVertexSelection();
+                var fit = MeshSurfaceFit.Project(editValue.Mesh, editValue.Transform,
+                    avatarMeshValue.Mesh, avatarMeshValue.Transform, offset, maxDistance, clothingVertices, surfaceTriangles);
+                string region = surfaceTriangles == null ? "全三角形" : surfaceTriangles.Count().ToString(CultureInfo.InvariantCulture) + "面領域";
+                string vertices = clothingVertices == null ? "全頂点" : clothingVertices.Count().ToString(CultureInfo.InvariantCulture) + "頂点";
+                SetStatus("fit状態を測定しました（変更なし、" + region + "、" + vertices + "、評価 " + fit.EvaluatedVertexCount + "頂点、" +
+                    fit.MovedVertexCount + "頂点が移動する候補、最大投影距離 " + (fit.MaxProjectionDistance * 1000f).ToString("0.###") +
+                    " mm、平均 " + (fit.AverageProjectionDistance * 1000f).ToString("0.###") + " mm、最大移動量 " +
+                    (fit.MaxDisplacement * 1000f).ToString("0.###") + " mm）。貫通と見た目はposeで確認してください。" );
+            });
+        }
 
         void FitAccessoryToAvatarSurface()
         {

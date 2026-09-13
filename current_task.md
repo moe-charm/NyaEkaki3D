@@ -26,6 +26,8 @@ Workbenchの衣装表面処理へ`avatar面ID（カンマ区切り・空欄=全�
 
 同じ`WindowsFitMetrics` Playerへprivate一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）を指定し、実モデルの単体／全mesh instance取込、EditMesh頂点編集、native Save/Open、標準skin GLB再取込、VRM 1.0出力まで含むsuiteを **PASS**した。10 mesh instanceの編集可能化とfeature-preserving native exportを確認した証拠は`Artifacts/Authoring-20260914-025700-6f121300a2f5412f85f3339e36623660/report.json` と `authoring.png`。同成果物をUnity **2022.3.22f1** Bridgeへ渡したreceiver verificationも **PASS**（`Artifacts/BridgeReceiver-20260914-025952-761-5048146e313a4bd58ea2fa791936d1fd/bridge-report.json`）。これは実ファイル取込・保存・出力の自動smokeであり、実EditorWindowの手動操作、衣装の全周fit・貫通・見た目、VRChat内Build & Test／表示を完了扱いしない。
 
+fit確認操作を追加した。小物パネルの「fit状態を測定（変更なし）」は、現在のavatar面領域・衣装頂点・offset・最大距離で`MeshSurfaceFit`を候補計算し、評価頂点数・移動候補数・投影距離・移動量を表示する。`DocumentRevision`と`StateHash`は変更しない。`Builds/WindowsFitInspect/NyaForge.exe`のAuthoring suiteは **83 checks PASS**（`Artifacts/Authoring-20260914-030227-a55f54419e60452798ee222e164bdbdb/report.json`）、private RadDollV3 VRMを用いた同suiteは **PASS**（`Artifacts/Authoring-20260914-030309-66c524a30d684bfe8cb85a08a0f8b469/report.json`）、Unity Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260914-030556-920-7fcdd4cfcd2741d1a2c4cc6f699f82e2/bridge-report.json`）。これは候補形状の数値確認であり、貫通判定・見た目・実マウス・VRChat内表示は未受入である。
+
 レビューで挙がった `9855d43` 系のP1/P2を現行mainへ再照合した。対象は衣装受け取りの座標、割当保存、UV1、疎なmaterial slot、MR係数、カフ面向き、sampler共有、削除済み衣装の割当読込である。
 
 次の項目は現行実装と回帰で確認済みで、同じ修正を重ねて行わない。
