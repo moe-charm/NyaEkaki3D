@@ -61,6 +61,12 @@ Polygon→skinの疎な材質slot経路を追加確認した。Polygonのslot 3�
 
 これは自動Playerと合成／private smokeの証拠であり、実マウス・DPI差、実RadDollV3 sceneでの衣装fit／貫通、Build & Test、実VRChat内の見た目・負荷を完了扱いしない。private素材・SDKはpublic repositoryへ追加していない。
 
+## 2026-09-14 FeedbackFixV4 Player / Bridge再確認
+
+`772462d`の疎な材質slot修正を含む`Builds/FeedbackFixV4/NyaForge.exe`を再ビルドした。公開fixtureのAuthoring suiteは **83 checks PASS**（`Artifacts/Authoring-20260914-015221-c185ea72d2f94cdaa84944ebf3096b50/report.json`）、private一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）を指定したsuiteは **87 checks PASS**（`Artifacts/Authoring-20260914-015257-dc23649f52fe4f3e9d996431eab2a620/report.json`）。同private Player出力をUnity **2022.3.22f1** Bridgeへ渡し、receiver回帰も **passed**（`Artifacts/BridgeReceiver-20260914-015436-098-954aa70c383740c1a6b5ffe87b00b00b/bridge-report.json`）。
+
+この再確認はPlayer自動経路と合成Bridgeの証拠であり、疎なslotを含む実RadDollV3 sceneのfit・貫通・手動EditorWindow操作、Build & Test、実VRChat内の見た目・負荷を完了扱いしない。private素材・SDKはpublic repositoryへ追加していない。
+
 ## 2026-09-13 NF-V1-09/10 semantic texture contract
 
 `MaterialTextureSlot`／`MaterialTextureSet`を追加し、normal／metallic-roughness画像について、semantic、PNG/JPEG bytes、色空間（linear）、channel契約、UV set、normal scale、glTF samplerをtyped payloadとして保持するようにした。GLB取込は埋め込み画像と安全なローカル相対URIを解決し、native graph binaryは画像をblobとして所有してSave/Openする。GLB出力はnormalTextureとmetallicRoughnessTexture、samplerを再生成し、Coreで画像bytes・channel前提・sampler・native roundtripを確認した。通常のMaterial Bakeはこの情報を落とさないよう事前拒否する。
