@@ -1624,3 +1624,6 @@ Unity 6000.4.3f1のWindows Player `Builds/ValidationUiV1/NyaForge.exe` をビル
 出力チェックの`metrics`へ制作対象object数を追加し、GUIの縦型結果表示でも先頭に表示するようにした。複数objectを合算した判定であることを画面上でも確認できる。Coreの検証は **471 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ba80481a8387490f8bec0b941183a9dd`）。
 
 Unity 6000.4.3f1のWindows Player `Builds/ValidationUiV2/NyaForge.exe` をビルドし、1280x800 Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-135121-c60399d2161043dc8320f267b52fc99e/report.json`、画面 `authoring.png`）。同じ成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-135154-187-26dfd082c99b4bd3a373c6250f6d83d9/bridge-report.json`）。
+# 2026-09-13 validation UI real-model recheck
+
+最新 `Builds/ValidationUiV2/NyaForge.exe` で、private一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）を使った候補選択→EditMesh頂点編集→native Save/Open→標準skinned GLB出力→再取込を再確認した。Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-135407-87d2b19633744c218be890edbf327601/report.json`、画面 `authoring.png`）。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-135526-451-d3d9354f898c4191ac9cd27b56408543/bridge-report.json`）。private素材はpublic repositoryへ追加していない。これは自動Player経路の証拠で、実マウス・DPI差・実VRChat内受入とは分けて扱う。
