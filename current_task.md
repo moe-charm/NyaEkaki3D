@@ -1,3 +1,15 @@
+# 2026-09-13 review feedback recheck: 4fcd0fd
+
+提示されたレビュー（基準commit `4fcd0fd`）を現行HEAD `c4a2748`へ再照合した。P1の4件は現行mainで修正済みで、重複修正は行わない。
+
+- 複数モデル保存／再読込のmetadata混線: `ProjectActions.OpenProject`がgraph IDごとのrig／expression／Springを解決・検証してからworkspaceを置換する。旧single-session形式で割当先が曖昧な場合は未割当として停止し、混線を成功扱いにしない。
+- 16bit `JOINTS_n`誤読: `GlbSourceSkinImporter`は2 bytes単位でlittle-endian joint indexを復号し、8bit／16bit同値回帰を持つ。
+- 出力時のinverse-bind／骨姿勢ずれ: `GlbExportService.AddSkeleton`は安定BoneId順でinverse-bindとjoint local matrixを同じ順序へ揃え、元の回転・拡縮をmatrixとして出力する。非平行移動joint local transform回帰を含む。
+- ウェイト編集の表示不一致: `SourceSkinGraphAdapter`は評価済みの現在SkinBindをsource slotへ写像し、SkinDeform後に通常のgraphを再評価する。`SourceSkinDisplay`のcache keyも現在bindingを含む。
+
+現行Core回帰は **477 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b7a3c6657ed24dbca9eb448dd8a1f022`）。回帰名には16bit JOINTS、source skin graph downstream、standard／extended skinned GLB、non-translation joint local transforms、rest-pose vertex edit、native Save/Openが含まれる。
+
+レビューにあるP2のうち、静的GLB表示補正、装着後face picking、Frame二重変換、PhysBones curve clear、MCP camera metadata保持、負weight拒否は現行回帰で確認済み。共有mesh／morphの完全dedup、異なるsource skeletonの結合、実マウス／DPI、実VRChat／実SDK見た目、完全VRM意味情報は継続課題として残す。
 # 2026-09-13 multi-skin GLB regression lock
 
 同一sourceの共通安定 `BoneId` を持ちながらrest定義が異なる2つのskinを合成し、拡張skinned GLBがskin resourceを2つに分離してmesh nodeのskin参照を保持するCore回帰を追加した。各skinをmesh index／skin indexで再読込できること、異なるsourceの骨は従来どおり拒否することを同じ出力契約へ固定した。
@@ -1885,3 +1897,4 @@ GLB import diagnostics v2の`nodeIndex`を`AuthoringGraphReader`の`importDiagno
 Coreは **477 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-8309a09287bc4dc49422ce67a5ca60ac`）。Unity 6000.4.3f1 Windows Player `Builds/NodeLocatorV2/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-180920-947.log`）。公開fixtureのAuthoring suiteは **PASS・81 checks**（`Artifacts/Authoring-20260913-180942-182d788931524eeeb8914736c746607e/report.json`）。private一時RadDollV3 VRMの全mesh instance取込→EditMesh→native Save/Open→node／mesh／skin locator照合→native exportは **PASS・87 checks**（`Artifacts/Authoring-20260913-181029-3c9195c61881409aac8b50855128769a/report.json`）。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-181247-864-57000c26354b41449c18c00975c59778/bridge-report.json`）。private素材・生成物はpublic repositoryへ追加していない。
 
 完全なmesh／morph shared-resource dedup、異なるsource skeletonの結合、実マウス／DPI差、実VRChat内の見た目・PhysBones挙動、完全VRM意味情報は継続課題とする。
+
