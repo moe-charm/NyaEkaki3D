@@ -226,12 +226,18 @@ namespace NyaForge.UnityRuntime
         void ExportVrm1() => Try(() =>
         {
             var item = workspace?.Document?.ActiveObject;
-            if (item == null || item.IsStaticProfile || workspace.Document.Objects.Count != 1)
-                throw new InvalidOperationException("VRM 1.0出力は、humanoid avatarのgraph object 1個で実行してください。");
-            if (!importedRigSessions.TryGetValue(item.Graph.GraphId, out var session) || session == null)
+            if (item == null || item.IsStaticProfile)
+                throw new InvalidOperationException("VRM 1.0出力にはhumanoid avatar graphを選択してください。");
+            if (!importedRigSessions.TryGetValue(item.Graph.GraphId, out var session) || session == null || session.HumanoidNodes.Count == 0)
                 throw new InvalidOperationException("VRM 1.0出力には、humanoid mappingを持つVRM/GLB avatarの取込が必要です。");
             var skeletonNode = item.Graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.Skeleton && node.Skeleton != null);
             if (skeletonNode == null) throw new InvalidOperationException("VRM 1.0出力用のskeletonがありません。");
+            if (workspace.Document.Objects.Any(candidate => candidate.IsStaticProfile || candidate.Graph == null ||
+                candidate.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.Attachment)))
+                throw new InvalidOperationException("VRM 1.0出力にはskin済みgraphだけを含めてください。剛体装着は先にskin-bindへ変換してください。");
+            var skeletons = workspace.Document.Objects.Select(candidate => candidate.Graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.Skeleton && node.Skeleton != null)?.Skeleton).ToArray();
+            if (skeletons.Any(value => value == null || value.ContentHash != skeletonNode.Skeleton.ContentHash))
+                throw new InvalidOperationException("VRM 1.0出力のavatarと衣装は同じavatar骨格へskin-bindしてください。");
             var boneIndices = skeletonNode.Skeleton.Bones.Select((bone, index) => new { bone.BoneId, index }).ToDictionary(value => value.BoneId, value => value.index, StringComparer.Ordinal);
             var humanoid = new Dictionary<string, int>(StringComparer.Ordinal);
             foreach (var pair in session.HumanoidNodes)
@@ -308,7 +314,7 @@ namespace NyaForge.UnityRuntime
             var authors = (vrmAuthors?.value ?? "").Split(new[] { ',', '、', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(value => value.Trim()).Where(value => value.Length > 0).ToArray();
             var metadata = new VrmExportMetadata(vrmName?.value, authors, vrmLicenseUrl?.value, humanoid, expressions: expressions, springs: springs, usesAuthoredNodeTokens: true);
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "vrm1-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
-            var result = VrmExportService.ExportVrm1(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, metadata, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms());
+            var result = VrmExportService.ExportVrm1(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, metadata, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms(), item.ObjectId);
             SetStatus("VRM 1.0（humanoid）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
         });
 

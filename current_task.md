@@ -1925,3 +1925,11 @@ Core回帰は **480 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/N
 小物ワークフローへ、Root 100%初期化の後に「自動weight初期化（骨近傍）」を実行する検証を追加した。自動初期化がSkinBindの内容hashを更新し、全頂点を1〜4本の正のinfluenceへ正規化した状態で、後続のpose copy・native Save/Open・skinned GLB出力へ進めることを確認する。自動結果は骨segment距離による初期値であり、fit・貫通判定・販売品質を保証しないため、Rig panelでの確認・手修正を引き続き必須とする。
 
 Coreは **480 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-60e729da5dfc4547899e81182d56c397`）。Unity **6000.4.3f1** Windows Player `Builds/AutoWeightV2/NyaForge.exe` のAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-185647-a0e9524d71b94715aab9d5249cbf41ad/report.json`、画面 `authoring.png`）。
+
+# 2026-09-13 同一avatar骨格の衣装をVRMへ同梱
+
+従来のVRM1出力はgraph object 1個に限定され、skin-bindした衣装をavatarと一緒に出力できなかった。`VrmExportService`へmetadata対象object IDを追加し、同じskeleton hashを共有する複数のskinned graph objectを一つのGLB／VRMへ含めるようにした。Workbenchはactive humanoid avatarをmetadataの正本とし、static object、剛体attachment、異なるskeletonが残る場合は出力前に拒否する。humanoid・expression・Springのnode tokenはGLB writerの実node mapからavatar mesh／skeletonへ解決し、reportのobjectCountも実際の同梱件数を記録する。
+
+Coreは **481 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-fed81b349a32470c8386e9ce1584fb96`、multi-object VRM回帰を含む）。Unity **6000.4.3f1** Windows Player `Builds/VrmClothingV2/NyaForge.exe` のAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-190247-bcfa83cf90c34dbb904099e2a5bc7d45/report.json`）。private fixtureで、avatar＋skin-bound clothingの自動weight、pose、native Save/Open、GLB／VRM出力、両meshの再読込を確認した。fixture・生成物・SDKはpublic repositoryへ追加していない。
+
+これはVRM1初期profileの同一skeleton同梱であり、material bind、LookAt、FirstPerson、MToon、animation、任意拡張、実UniVRM／VRChat内の見た目・挙動は引き続き別受入境界とする。

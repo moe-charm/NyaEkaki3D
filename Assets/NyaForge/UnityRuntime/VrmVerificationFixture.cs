@@ -92,7 +92,14 @@ namespace NyaForge.UnityRuntime
             else
             {
                 vrm["meta"] = new JObject { ["name"] = "Modern fixture", ["authors"] = new JArray("Nya", "Moe, Charm"), ["licenseUrl"] = "https://example.invalid/license" };
-                vrm["humanoid"] = new JObject { ["humanBones"] = new JObject { ["hips"] = new JObject { ["node"] = 0 } } };
+                // The fixture deliberately maps the required humanoid profile
+                // to the small Root joint. This is valid for the bounded test
+                // model and lets the Player exercise VRM export together with
+                // a second skin-bound clothing object.
+                var humanBones = new JObject();
+                foreach (var bone in new[] { "hips", "spine", "head", "leftUpperLeg", "leftLowerLeg", "leftFoot", "rightUpperLeg", "rightLowerLeg", "rightFoot", "leftUpperArm", "leftLowerArm", "leftHand", "rightUpperArm", "rightLowerArm", "rightHand" })
+                    humanBones[bone] = new JObject { ["node"] = 0 };
+                vrm["humanoid"] = new JObject { ["humanBones"] = humanBones };
                 vrm["expressions"] = new JObject { ["preset"] = new JObject { ["happy"] = new JObject { ["morphTargetBinds"] = new JArray(new JObject { ["node"] = 2, ["index"] = 0, ["weight"] = .5 }) } } };
                 root["extensions"]["VRMC_springBone"] = new JObject { ["specVersion"] = "1.0",
                     ["colliders"] = new JArray(new JObject { ["node"] = 0, ["shape"] = new JObject { ["sphere"] = new JObject { ["radius"] = .1, ["offset"] = new JArray(0, 0, 0) } } }, new JObject { ["node"] = 0, ["shape"] = new JObject { ["sphere"] = new JObject { ["radius"] = .2, ["offset"] = new JArray(0, .1, 0) } } }, new JObject { ["node"] = 1, ["shape"] = new JObject { ["capsule"] = new JObject { ["radius"] = .1, ["offset"] = new JArray(0, 0, 0), ["tail"] = new JArray(0, .1, 0) } } }),

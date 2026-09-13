@@ -408,6 +408,44 @@ internal static partial class Program
             Equal("vrm1", VrmMetadataReader.Read(File.ReadAllBytes(result.Path)).Format);
         });
 
+        Test("VRM 1 export includes skin-bound clothing objects and maps metadata to the avatar mesh", () =>
+        {
+            string rootId = GraphId();
+            var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(rootId, "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
+            AuthoringGraph BuildGraph(MeshData mesh)
+            {
+                string sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), outputId = GraphId();
+                var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, rootId, 1f)));
+                var pose = PoseSet.Create(skeleton, new[] { new BonePose(rootId, PoseTransform.FromTranslation(new Vec3())) });
+                return new AuthoringGraph(GraphId(),
+                    new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                    new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
+            }
+            var workspace = AuthoringWorkspace.CreateEmpty();
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(BuildGraph(AuthoringFixtures.Panel(1)))));
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(BuildGraph(PrimitiveGeometry.Plane(.2f, .1f)))));
+            string avatarId = workspace.Document.Objects[0].ObjectId;
+            var mapping = VrmExportMetadata.RequiredHumanBones.ToDictionary(name => name, _ => 1, StringComparer.Ordinal);
+            var metadata = new VrmExportMetadata("Avatar with clothing", new[] { "NyaForge" }, "https://example.com/license", mapping, usesAuthoredNodeTokens: true);
+            string directory = Path.Combine(Root, "vrm-export-clothing-" + Guid.NewGuid().ToString("N"));
+            var result = VrmExportService.ExportVrm1(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, metadata, metadataObjectId: avatarId);
+            Equal(2, result.ObjectCount);
+            var report = JObject.Parse(File.ReadAllText(result.ReportPath));
+            Equal(2, (int)report["objectCount"]!);
+            var bytes = File.ReadAllBytes(result.Path);
+            var root = JObject.Parse(ReadJsonChunk(bytes));
+            var nodes = (JArray)root["nodes"]!;
+            var meshNodes = nodes.OfType<JObject>().Where(node => node["mesh"] != null).ToArray();
+            Equal(2, meshNodes.Length);
+            var profile = VrmMetadataReader.Read(bytes);
+            Equal(15, profile.HumanoidNodes.Count);
+            int rootNode = nodes.OfType<JObject>().Select((node, index) => new { node, index })
+                .Single(item => (string)item.node["name"]! == "Root").index;
+            True(profile.HumanoidNodes.Values.All(index => index == rootNode));
+            True(meshNodes.All(node => node["skin"] != null));
+            Equal((int)meshNodes[0]["skin"]!, (int)meshNodes[1]["skin"]!);
+        });
+
         Test("MCP GLB export request is revision pinned and profile strict", () =>
         {
             string instance = Guid.NewGuid().ToString("D"), document = Guid.NewGuid().ToString("D"), export = Guid.NewGuid().ToString("D");

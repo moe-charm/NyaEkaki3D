@@ -156,7 +156,28 @@ namespace NyaForge.UnityRuntime
                 Check(workspace.Document.StateHash == skinHash && !workspace.IsDirty &&
                     workspace.Document.ActiveObject.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinBind),
                     "Skin-bound accessory changed after native Save/Open");
-                checks.Add("separate VRM avatar + static GLB accessory: EditMesh, rigid BoneId attachment, Save/Open, Root-initialized skin-bind, explicit avatar pose copy + Save/Open, weight-ready native and standard GLB export");
+                // The same workflow can now publish the avatar and its
+                // skin-bound clothing as one VRM package. The humanoid and
+                // expression metadata belong to the selected avatar graph;
+                // the clothing graph contributes its own skinned mesh while
+                // reusing the copied stable skeleton.
+                Execute(AuthoringOperation.SelectObject(avatarObjectId));
+                vrmName.SetValueWithoutNotify("Avatar with clothing");
+                vrmAuthors.SetValueWithoutNotify("NyaForge");
+                vrmLicenseUrl.SetValueWithoutNotify("https://example.com/nyaforge-clothing-verification");
+                ExportVrm1();
+                var vrmExports = Directory.GetDirectories(Path.Combine(skinProject, "exports"), "vrm1-*");
+                Check(vrmExports.Length > 0, "Skin-bound clothing VRM export directory was not published");
+                var vrmModel = Path.Combine(vrmExports.OrderByDescending(path => Directory.GetLastWriteTimeUtc(path)).First(), VrmExportService.FileName);
+                var vrmReportPath = Path.Combine(Path.GetDirectoryName(vrmModel), VrmExportService.ReportFileName);
+                Check(File.Exists(vrmModel) && File.Exists(vrmReportPath), "Skin-bound clothing VRM package or report was not published");
+                var vrmReport = JObject.Parse(File.ReadAllText(vrmReportPath));
+                Check((int)vrmReport["objectCount"] == 2 && VrmMetadataReader.Read(File.ReadAllBytes(vrmModel)).HumanoidNodes.Count >= 15,
+                    "Skin-bound clothing VRM output did not retain both objects and humanoid metadata");
+                var vrmInventory = GlbSceneInventoryReader.Read(File.ReadAllBytes(vrmModel));
+                Check(vrmInventory.Instances.Count == 2 && vrmInventory.Instances.All(instance => instance.SkinIndex.HasValue),
+                    "Skin-bound clothing VRM output did not retain both skinned mesh instances");
+                checks.Add("separate VRM avatar + static GLB accessory: EditMesh, rigid BoneId attachment, Save/Open, Root-initialized and automatic skin-bind, explicit avatar pose copy + Save/Open, multi-object GLB/VRM export");
             }
             finally { ReplaceWorkspace(previous, previousPath); }
         }

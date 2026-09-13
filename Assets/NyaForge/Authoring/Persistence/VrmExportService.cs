@@ -176,15 +176,18 @@ namespace NyaForge.Authoring
             string directory, VrmExportMetadata metadata,
             IReadOnlyDictionary<string, SourceAffine> instanceWorldTransforms = null,
             IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMatrices = null,
-            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointLocalTransforms = null)
+            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointLocalTransforms = null,
+            string metadataObjectId = null)
         {
             Checks.Require(metadata != null, "VRM_METADATA_REQUIRED", "VRM export metadata is required.");
             if (workspace == null) throw new ArgumentNullException(nameof(workspace));
             lock (workspace.Gate)
             {
-                Checks.Require(workspace.Document.Objects.Count == 1, "VRM_OBJECT_COUNT", "VRM 1.0 export currently requires exactly one avatar graph object.");
-                Checks.Require(!workspace.Document.Objects[0].IsStaticProfile, "VRM_GRAPH_REQUIRED", "VRM 1.0 export requires a skinned avatar graph.");
-                Checks.Require(!workspace.Document.Objects[0].Graph.Nodes.Values.Any(node => node.TypeId == Graph.BuiltinNodes.Attachment), "VRM_ATTACHMENT_UNSUPPORTED", "VRM output cannot silently discard attachment metadata; convert the accessory to skin first.");
+                Checks.Require(workspace.Document.Objects.Count > 0, "VRM_OBJECT_COUNT", "VRM 1.0 export requires at least one graph object.");
+                Checks.Require(workspace.Document.Objects.All(item => !item.IsStaticProfile), "VRM_GRAPH_REQUIRED", "VRM 1.0 export requires every object to be a skinned graph.");
+                Checks.Require(workspace.Document.Objects.All(item => !item.Graph.Nodes.Values.Any(node => node.TypeId == Graph.BuiltinNodes.Attachment)), "VRM_ATTACHMENT_UNSUPPORTED", "VRM output cannot silently discard attachment metadata; convert every accessory to skin first.");
+                if (metadataObjectId != null)
+                    Checks.Require(workspace.Document.Objects.Any(item => item.ObjectId == metadataObjectId && !item.IsStaticProfile), "VRM_HUMANOID_OBJECT", "VRM humanoid metadata object is not in the export snapshot.");
                 Checks.Require(!Directory.Exists(directory) && !File.Exists(directory), "EXPORT_DESTINATION_EXISTS", "Export destination already exists.");
             }
 
@@ -199,7 +202,7 @@ namespace NyaForge.Authoring
             {
                 var glb = GlbExportService.ExportSkinnedWithTransforms(workspace, instance, document, revision, sourceDirectory, instanceWorldTransforms, inverseBindMatrices, jointLocalTransforms);
                 if (metadata.UsesAuthoredNodeTokens)
-                    metadata = ResolveAuthoredNodeTokens(metadata, glb.NodeMap, workspace.Document.Objects[0].ObjectId);
+                    metadata = ResolveAuthoredNodeTokens(metadata, glb.NodeMap, metadataObjectId ?? workspace.Document.Objects[0].ObjectId);
                 byte[] vrmBytes = Package(File.ReadAllBytes(glb.Path), metadata);
                 Checks.Require(vrmBytes.Length <= AuthoringLimits.MaxGlbExportBytes, "BUDGET_EXCEEDED", "VRM output exceeds the 128 MiB budget.");
                 Directory.CreateDirectory(staging);
@@ -215,14 +218,14 @@ namespace NyaForge.Authoring
                     ["documentRevision"] = workspace.Document.DocumentRevision,
                     ["stateHash"] = workspace.Document.StateHash,
                     ["vrmHash"] = Checks.Hash(vrmBytes),
-                    ["objectCount"] = 1,
+                    ["objectCount"] = workspace.Document.Objects.Count,
                     ["metadata"] = new JObject { ["name"] = metadata.Name, ["version"] = metadata.Version, ["authors"] = new JArray(metadata.Authors), ["licenseUrl"] = "other", ["otherLicenseUrl"] = metadata.LicenseUrl, ["humanoidBoneCount"] = metadata.HumanoidNodes.Count, ["expressionCount"] = metadata.Expressions.Count, ["springBone"] = metadata.Springs != null },
                     ["limitations"] = new JArray("VRM 1.0 humanoid/meta, resolved morphTargetBinds and optional VRMC_springBone 1.0 are emitted", "material binds, texture transforms, lookAt, firstPerson and animation are not emitted by this profile", "rest pose only", "graph and native metadata are not embedded")
                 };
                 File.WriteAllText(reportPath, report.ToString(Newtonsoft.Json.Formatting.Indented) + "\n", new UTF8Encoding(false));
                 string parent = System.IO.Path.GetDirectoryName(directory); if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent);
                 Directory.Move(staging, directory);
-                return new VrmExportResult(System.IO.Path.Combine(directory, FileName), System.IO.Path.Combine(directory, ReportFileName), 1);
+                return new VrmExportResult(System.IO.Path.Combine(directory, FileName), System.IO.Path.Combine(directory, ReportFileName), workspace.Document.Objects.Count);
             }
             catch
             {
