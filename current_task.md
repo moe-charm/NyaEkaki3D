@@ -1,3 +1,7 @@
+# 2026-09-13 Windows navigation smoke recheck
+
+最新の`Builds/ExportReportV4/NyaForge.exe`で`Tools/Test-NyaForgeNavigation.ps1 -BuildName ExportReportV4 -Width 1280 -Height 800`を実行し、**PASS**（`Artifacts/Navigation-20260913-120737-e54944adc0dc4bd89cc03ea2a5cf7060/report.json`）。パック選択、キャンセル時の現状態保持、不正パス保持、named sessionの保存/再読込、utility panelの折り畳み、制作画面への遷移とusable viewportを確認した。これはスクリプト化されたWindows Playerナビゲーション証拠で、実マウスの個体差・DPI設定差は別の手動受入境界とする。公開READMEにもGLBレポートの`glbHash`照合方法を追記した。
+
 # 2026-09-13 GLB export report hash binding recheck
 
 標準GLBの出力レポートへ `glbHash`（`model.glb`本体のSHA-256）を追加し、レポートとバイナリが同じ成果物か機械的に照合できるようにした。Core回帰の静的GLBレポート、Workbenchのskin-bound衣装検証、外部MCP→Player検証で本体ハッシュを確認する契約を揃えた。クイックスタートにも照合方法を記載した。
