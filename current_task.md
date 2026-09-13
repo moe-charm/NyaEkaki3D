@@ -1,5 +1,11 @@
 # 2026-09-13 review feedback recheck: 4fcd0fd
 
+# 2026-09-13 legacy sidecar migration acceptance
+
+旧形式移行の実行時経路をWindows Playerで追加確認した。旧形式VRM Aをlegacyの`Rig`／`Expressions`／`Springs` sidecarへ戻して保存・再読込し、metadataなしの通常skinned GLB Bを追加して再度保存・再読込した。最終状態はexpression／Springが1 graph、rigが2 graphのtableになり、AのmetadataがBへ混線しないことを確認した。
+
+Player `Builds/LegacyMigrationV1/NyaForge.exe` のAuthoring suiteは **82 checks PASS**（`Artifacts/Authoring-20260913-194633-8ce9a748a18e4a6d8c0d2cc81c6e4c7c/report.json`、画面 `authoring.png`）。Unity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-194944-534-6c031a7108e84385b302a177704509d4/bridge-report.json`）。旧形式実ファイルの任意モデル網羅、実マウス／DPI差、実VRChat内の見た目は別受入境界とする。
+
 # 2026-09-13 pasted review recheck: c4a2748 -> 267a734
 
 今回のレビュー（基準 `c4a2748`）を現行HEAD `267a734`へ再照合した。指摘されたP1の3件は、先行実装と追加回帰で閉じた。

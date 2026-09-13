@@ -122,6 +122,37 @@ namespace NyaForge.UnityRuntime
                     Check(shapes[2].Kind == "capsule" && shapes[2].Tail.Value.Y == .1f, "Imported VRM capsule tail changed");
                 }
             }
+            // Freeze one imported VRM into the pre-table attachment shape,
+            // reopen it, then add a plain skinned GLB with no expression or
+            // Spring metadata. Save/Open must migrate the existing A session
+            // into graph-keyed tables instead of pairing it with B.
+            string migrationDirectory = Path.Combine(output, "legacy-migration"); Directory.CreateDirectory(migrationDirectory);
+            string legacyAvatarPath = Path.Combine(migrationDirectory, "legacy-avatar.vrm"); File.WriteAllBytes(legacyAvatarPath, VrmVerificationFixture.Create(true));
+            string plainGlbPath = Path.Combine(migrationDirectory, "plain-skinned.glb"); File.WriteAllBytes(plainGlbPath, VrmVerificationFixture.CreateMultiMeshSelection());
+            ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null);
+            ImportModel(legacyAvatarPath);
+            var legacyRig = importedRigSession; var legacyExpression = importedVrmSession; var legacySpring = importedVrmSpringSession;
+            Check(legacyRig != null && legacyExpression != null && legacySpring != null, "Legacy migration fixture did not produce complete sessions");
+            workspace.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]>
+            {
+                [ProjectAttachments.Rig] = ImportedRigSessionCodec.Write(legacyRig),
+                [ProjectAttachments.Expressions] = VrmExpressionSessionCodec.Write(legacyExpression),
+                [ProjectAttachments.Springs] = VrmSpringSessionCodec.Write(legacySpring)
+            }));
+            string legacyProject = Path.Combine(migrationDirectory, "project"); projectPath.SetValueWithoutNotify(legacyProject);
+            Check(TrySaveProject(), "Legacy migration fixture could not save");
+            ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null); projectPath.SetValueWithoutNotify(legacyProject); OpenProject();
+            Check(importedVrmSession != null && importedVrmSpringSession != null && importedRigSession != null, "Legacy sidecars were not reopened");
+            modelImportMeshIndex.SetValueWithoutNotify(0); modelImportSkinIndex.SetValueWithoutNotify(0); modelImportInstanceIndex.SetValueWithoutNotify(-1);
+            ImportModel(plainGlbPath);
+            Check(workspace.Document.Objects.Count == 2, "Adding plain skinned GLB to legacy project did not add one graph");
+            Check(TrySaveProject(), "Mixed legacy/new project could not save");
+            ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null); projectPath.SetValueWithoutNotify(legacyProject); OpenProject();
+            var migratedExpressions = VrmExpressionSessionsCodec.Read(workspace.Attachments.Read(ProjectAttachments.Expressions));
+            var migratedSprings = VrmSpringSessionsCodec.Read(workspace.Attachments.Read(ProjectAttachments.Springs));
+            var migratedRigs = ImportedRigSessionsCodec.Read(workspace.Attachments.Read(ProjectAttachments.RigSessions));
+            Check(migratedExpressions.Count == 1 && migratedSprings.Count == 1 && migratedRigs.Count == 2, "Legacy metadata was not migrated per graph after adding plain GLB");
+            checks.Add("Legacy VRM A + plain skinned GLB B: sidecars migrate to graph-keyed tables without metadata cross-binding");
             VerifySpringPlayback(output, checks);
             checks.Add("VRM0/1 file import to Workbench graph, composite Save, empty workspace and Open: skin/morph graph, source identity, authors, expression weights and repeated collider nodes");
         }
