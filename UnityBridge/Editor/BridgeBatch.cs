@@ -204,15 +204,24 @@ namespace NyaForge.UnityBridge.Editor
                 string hash = new string('a', 64);
                 binding.Capture("C:/private/skinned-clothing.nyaforge.json", objectId, graphId, hash, hash, hash, hash, hash,
                     new[] { new KeyValuePair<string, Transform>(rootId, bone.transform) }, generated);
+                var secondGenerated = new GameObject("Managed Clothing B"); secondGenerated.transform.SetParent(avatar.transform, false);
+                var secondBinding = (NyaForgeSkinnedClothingBinding)avatar.AddComponent(typeof(NyaForgeSkinnedClothingBinding));
+                string secondObjectId = Guid.NewGuid().ToString("D");
+                secondBinding.Capture("C:/private/skinned-clothing-b.nyaforge.json", secondObjectId, graphId, hash, hash, hash, hash, hash,
+                    new[] { new KeyValuePair<string, Transform>(rootId, bone.transform) }, secondGenerated);
                 Require(binding.Matches(objectId, hash, hash, hash) && binding.MatchesObject(objectId),
                     "Skinned clothing ownership identity did not round-trip.");
+                Require(avatar.GetComponents<NyaForgeSkinnedClothingBinding>().Length == 2 &&
+                    secondBinding.Matches(secondObjectId, hash, hash, hash) && secondBinding.MatchesObject(secondObjectId) &&
+                    !secondBinding.MatchesObject(objectId),
+                    "Multiple clothing package bindings were not kept independent on one avatar.");
                 Require(binding.TryGetBone(rootId, out var resolved) && resolved == bone.transform,
                     "Skinned clothing BoneId binding lookup failed.");
                 binding.ClearGeneratedObject();
                 Require(binding.GeneratedObject == null && !binding.MatchesObject(objectId),
                     "Skinned clothing binding did not clear the managed generated object.");
                 VerifySkinnedClothingManagedUndo(checks);
-                checks.Add("Skinned clothing ownership marker preserves package identity and explicit BoneId map.");
+                checks.Add("Skinned clothing ownership marker preserves package identity, explicit BoneId map, and independent bindings for multiple packages on one avatar.");
             }
             finally { Object.DestroyImmediate(avatar); }
         }

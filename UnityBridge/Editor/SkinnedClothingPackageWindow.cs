@@ -75,7 +75,7 @@ namespace NyaForge.UnityBridge.Editor
             if (avatarRoot != previousRoot)
             {
                 boneBindings.Clear();
-                binding = avatarRoot == null ? null : avatarRoot.GetComponent<NyaForgeSkinnedClothingBinding>();
+                binding = FindBindingForPackage();
             }
             managedOnly = EditorGUILayout.ToggleLeft("管理対象だけを更新する（既存が無ければ停止）", managedOnly);
 
@@ -137,7 +137,7 @@ namespace NyaForge.UnityBridge.Editor
             {
                 package = SkinnedClothingPackage.Read(manifestPath);
                 boneBindings.Clear();
-                binding = avatarRoot == null ? null : avatarRoot.GetComponent<NyaForgeSkinnedClothingBinding>();
+                binding = FindBindingForPackage();
                 status = "読み込みました。stable boneを手動対応してください。";
                 statusType = MessageType.Info;
             }
@@ -296,6 +296,15 @@ namespace NyaForge.UnityBridge.Editor
         bool bindingMatchesObject()
         {
             return binding != null && binding.MatchesObject(package.ObjectId) && binding.GeneratedObject != null;
+        }
+
+        NyaForgeSkinnedClothingBinding FindBindingForPackage()
+        {
+            if (avatarRoot == null || package == null) return null;
+            return avatarRoot.GetComponents<NyaForgeSkinnedClothingBinding>()
+                .Where(candidate => candidate != null && candidate.ObjectId == package.ObjectId)
+                .OrderByDescending(candidate => candidate.GeneratedObject != null)
+                .FirstOrDefault();
         }
 
         Validation ValidateCurrentBindings()

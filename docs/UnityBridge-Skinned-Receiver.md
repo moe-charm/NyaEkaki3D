@@ -51,7 +51,9 @@ the base Bridge fixture remains independent of any private clothing asset.
 For an editor user, `Tools/NyaForge/Import Skinned Clothing Package...` opens
 `SkinnedClothingPackageWindow`. It provides a file picker, explicit mapping for
 every package BoneId, a read-only preflight, and a saved
-`NyaForgeSkinnedClothingBinding` on the avatar root. Reapplying a newer package
+`NyaForgeSkinnedClothingBinding` on the avatar root. There is one binding
+component per package, so clothing and accessory packages can coexist on one
+avatar without overwriting each other's identity. Reapplying a newer package
 reuses the managed object only when its stable ObjectId matches; an unrelated
 managed object is refused. A failed package read or receiver validation leaves
 the previous generated object in place. The same window also offers

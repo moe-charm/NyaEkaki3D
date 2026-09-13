@@ -24,9 +24,9 @@ namespace NyaForge.UnityBridge
 
     /// <summary>
     /// Persistent ownership marker for one clothing package applied to an avatar.
-    /// The generated object may be replaced only when its stable ObjectId matches.
+    /// An avatar may have one component per package; the generated object may be
+    /// replaced only when its stable ObjectId matches.
     /// </summary>
-    [DisallowMultipleComponent]
     public sealed class NyaForgeSkinnedClothingBinding : MonoBehaviour
     {
         [SerializeField] string manifestPath = "";

@@ -48,6 +48,10 @@ GUI/MCP共通command（13）と保存・復旧（14）は各実装と同時に�
 
 ownership markerが生成したmesh・material・base-color textureを、更新／明示削除時に同じUndoグループで破棄・復元するよう補強した。失敗時は即時片付け、外部Materialは所有対象に含めない。Unity **2022.3.22f1**の合成Bridgeで、3資産を一括削除後に1回のUndoで生成objectと全資産が復元されることを確認した（**PASS**、`Artifacts/BridgeReceiver-20260913-230234-754-918978ce45d44e5385c2a4c9aa0f4046/bridge-report.json`）。実EditorWindowをマウス操作した更新／削除受入は未実施として残す。
 
+## 2026-09-13 同一avatarへの複数package管理
+
+`NyaForgeSkinnedClothingBinding`を「1 packageにつき1 component」とし、同じavatar rootへ衣装A・衣装B・小物を順番に適用してもidentity／生成object参照を上書きしないようにした。GUIは選択中packageのObjectIdに一致するbindingだけを読み書きし、更新・削除対象を限定する。Unity **2022.3.22f1**の合成Bridgeで、同一avatar上の2 bindingが独立して一致し、異なるObjectIdを互いに更新対象としないことを確認した（`Artifacts/BridgeReceiver-20260913-230652-034-f7eb2e45e6a44017973e7e1349ba502a/bridge-report.json`）。実EditorWindowで複数packageをマウス操作する受入は未実施。
+
 ## 2026-09-13 現行Playerのprivate RadDollV3回帰
 
 `Builds/ClothingOwnershipV1/NyaForge.exe`へprivate一時RadDollV3 VRMを指定し、全mesh取込→EditMesh頂点編集→native Save/Open→標準skinned GLB／VRM出力まで再実行した。**91 checks PASS**（`Artifacts/Authoring-20260913-225717-54b8d7c9f0bc4ed8a7fa5c93574b5656/report.json`、画面 `authoring.png`）。同じPlayer reportと衣装packageをUnity **2022.3.22f1** Bridgeへ渡し、package／receiver／ownership／削除参照回帰も **PASS**（`Artifacts/BridgeReceiver-20260913-230018-288-e08b8d8aba4a41f99f34f6a0cd2f34b1/bridge-report.json`）。
