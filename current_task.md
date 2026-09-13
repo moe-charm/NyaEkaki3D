@@ -6,6 +6,8 @@ fit後の確認を進めるため、`MeshSurfaceClearance`を追加した。指�
 
 Coreは **501 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-29f35c8373914c3d831018a76a0f4bd3`）。MCP transportも **3項目PASS**（tool discovery／state／capture metadata）。`Builds/ReleaseCandidateV2/NyaForge.exe`（Unity 6000.4.3f1）のAuthoring suite、private RadDollV3全mesh取込・Save/Open・GLB／VRM1 smoke、生成衣装packageのUnity **2022.3.22f1** Bridge受け取りも **PASS**（Player `Artifacts/Authoring-20260914-053420-df1a6262b2bf4aa089a521373593050a/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-053713-618-f28c8e4e97c640ac99c22b85a92aeab4/bridge-report.json`）。手動の実EditorWindow、全周fit・交差・見た目、VRChat Build & Test／実機表示は未受入である。
 
+手動受入の実施手順と記録欄を [Windows-v1-Manual-Acceptance.md](docs/Windows-v1-Manual-Acceptance.md) に固定した。自動fixture／実RadDollV3 smoke／Unity Bridgeを、実マウス・実アバター全周fit・VRChat実機の結果と混同しないためのチェック表である。
+
 ## 2026-09-14 NF-V1-16: ReleaseCandidateV1の再実行
 
 現行 `main` の出荷候補Playerを `Builds/ReleaseCandidateV1/NyaForge.exe`（Unity 6000.4.3f1、NVIDIA GeForce RTX 4090）へ別出力し、Authoring suiteを **PASS**（`Artifacts/Authoring-20260914-052458-36a6f92a0af24da28d27f780f349f008/report.json`）で確認した。private一時入力 `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm` を公開ツリーへコピーせず、実RadDollV3の全mesh取込、EditMesh、native Save/Open、標準skinned GLB／VRM1出力と再読込を一周した。制御fixtureの衣装packageも同じPlayerから生成した。
