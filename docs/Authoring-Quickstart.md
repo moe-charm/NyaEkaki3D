@@ -64,7 +64,7 @@ Rigを試すときは、空の制作projectでgraph上部の **＋ Rigサンプ�
 - **開く**: 保存したフォルダを指定します。編集状態は戻りますが、Undo/Redo履歴はここから新しく始まります。
 - **Explorerで選ぶ…**: Windows Explorerで`project.nyaforge.json`を直接選びます。選択したマニフェストの親フォルダを制作フォルダとして検証し、別のJSONやマニフェストのないフォルダは開きません。ダイアログ中に作品が変わった場合も置き換えを取り消します。
 - 空のままでも保存・読込できます。出力はメッシュ追加後に行います。
-- 旧schema 1の制作データは読めますが、上書き保存しません。別の新しいフォルダを指定して保存するとschema 2へ移行できます。確認セットの `.viewer.json` はこの移行とは別です。
+- 旧schema 1〜3の制作データは読めますが、上書き保存しません。別の新しいフォルダを指定して保存すると現行schema 4へ移行できます。確認セットの `.viewer.json` はこの移行とは別です。
 - 未保存で新規作成・別プロジェクトを開く・終了する場合は、保存または破棄を選べます。ビューワーへ戻るだけなら制作状態はメモリーに残ります。
 
 別プロセスの保存、破損blob、不明なschemaや属性はエラーにします。元のmanifestを失わないよう、新しいblobを書いてからmanifestを置き換えます。初期版は不要blobの自動削除をしません。
@@ -85,7 +85,7 @@ VRM 1.0を出力する場合は、humanoidのskinned avatar graph objectを1つ�
 
 実装済み: 空project、typed graph、Plane/EditMesh/Polygon/Mirror/UV/Paint/Material、頂点・面編集、Undo/Redo、schema 4 native保存（旧schema読込互換）、画像付きBake、Rig skeleton/skin binding/pose/skin-deform、weight paint、GLB/VRMのstatic／skin取込、stable BoneId装着、標準GLB出力、MCP、Unity Bridgeでの受け取り。
 
-未実装: FBX/BLEND import、humanoid自動配置、完全なVRM export、任意pose/morphのskin変換、自動fit／貫通修正、実VRChat SDK／VRChat内の見た目受入。VRM 1.0は、humanoid/metaと解決可能なmorph bind、詳細付きVRM1 SpringBoneを含む初期profileを出力できますが、material bind・LookAt・FirstPerson・MToon・animation・任意拡張は対象外です。GLB/VRMは選択した1 mesh/skinの取込とrest pose EditMesh編集に対応し、別static GLB小物のBoneId装着とnative package保存も検証しています。標準GLBは表示形状profileと、rest pose・トポロジー不変の頂点編集まで対応するskin/morph profileをGUIから選べます。今回の往復検証はVRChat内の動作検証ではありません。
+未実装: FBX/BLEND import、humanoid自動配置、完全なVRM export、任意pose/morphのskin変換、自動fit／貫通修正、実VRChat SDK／VRChat内の見た目受入。VRM 1.0は、humanoid/metaと解決可能なmorph bind、詳細付きVRM1 SpringBoneを含む初期profileを出力できますが、material bind・LookAt・FirstPerson・MToon・animation・任意拡張は対象外です。GLB/VRMは候補から1 mesh/skinを選ぶ取込と、同一ファイルの全mesh instanceをまとめて追加する取込の両方に対応し、rest pose EditMesh編集、別static GLB小物のBoneId装着、native package保存を検証しています。標準GLBは表示形状profileと、rest pose・トポロジー不変の頂点編集まで対応するskin/morph profileをGUIから選べます。今回の往復検証はVRChat内の動作検証ではありません。
 
 ## 検証の再実行
 

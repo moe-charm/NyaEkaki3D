@@ -1739,3 +1739,7 @@ GraphId付きsession tableがある現行projectでは既にobject単位でmetad
 Unity 6000.4.3f1のWindows Player `Builds/LegacySessionGuardV1/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-155431-565.log`）。private一時RadDollV3 VRMを使った単体＋全mesh Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-155503-e7bd9bac89c34afa9da61b58b3ceef4f/report.json`）。候補選択、複数mesh取込、graph-keyed rig/session、native Save/Open、skin／extended GLB出力、VRM0/1 playback lifecycleを含む既存回帰を通過した。
 
 Core回帰も **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-fd7df009a97b4f20b7b165ec691d24c4`）。この変更はUnity Open互換ガードのため、Coreの件数は前回と同じ。実VRChat／UniVRM受取、legacy sidecarを意図的に複数graphへ混在させる破損fixtureの手動確認は別境界とする。
+
+# 2026-09-13 Quickstartの保存・取込範囲同期
+
+`docs/Authoring-Quickstart.md`の古いschema 2移行表記を現行schema 4へ更新した。GLB／VRMの説明も、単一mesh/skin選択取込に加えて同一ファイルの全mesh instance原子的取込を明記し、実装・検証済みの範囲と一致させた。
