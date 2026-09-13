@@ -56,6 +56,19 @@ namespace NyaForge.UnityRuntime
         return BuildGlbContainer(Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), bin);
     }
 
+    internal static byte[] CreateStaticAccessory()
+    {
+        var original = Create(false);
+        int jsonLength = BitConverter.ToInt32(original, 12), binHeader = 20 + jsonLength, binLength = BitConverter.ToInt32(original, binHeader);
+        var root = JObject.Parse(Encoding.UTF8.GetString(original, 20, jsonLength).TrimEnd(' ', '\0', '\n', '\r', '\t'));
+        root.Remove("extensions"); root.Remove("skins");
+        root["nodes"] = new JArray(new JObject { ["name"] = "Imported accessory", ["mesh"] = 0, ["translation"] = new JArray(0, .02, 0) });
+        var attributes = (JObject)root["meshes"][0]["primitives"][0]["attributes"];
+        attributes.Remove("JOINTS_0"); attributes.Remove("WEIGHTS_0");
+        var bin = new byte[binLength]; Buffer.BlockCopy(original, binHeader + 8, bin, 0, binLength);
+        return BuildGlbContainer(Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), bin);
+    }
+
     static void WriteIdentity(BinaryWriter writer) { for (int i = 0; i < 16; i++) writer.Write(i == 0 || i == 5 || i == 10 || i == 15 ? 1f : 0f); }
     static void WriteTranslationInverse(BinaryWriter writer, float y) { for (int i = 0; i < 16; i++) writer.Write(i == 0 || i == 5 || i == 10 || i == 15 ? 1f : i == 13 ? -y : 0f); }
 

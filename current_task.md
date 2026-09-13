@@ -1,5 +1,11 @@
 # 2026-09-13 pasted feedback recheck on current main
 
+## Separate avatar and accessory authoring workflow
+
+静的GLBをgraph objectへ取り込む経路にEditMesh段が無く、保存はできても頂点編集できない穴を修正した。static／skinの両方でSource（必要ならMorph）→EditMesh→Material/Outputを構成し、別ファイルのVRM avatarとstatic GLB小物を同じ作品へ追加できるようにした。小物をrest-spaceで頂点編集した後、GUIからavatar objectとstable BoneIdを選んで`object.attachment`を作成し、native Save/Openではtarget・BoneId・編集結果を保持する。attachment付きのUnity出力は情報を落とさないnative project packageへルーティングする。
+
+Coreは再実行して **466 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-8ab2aaa111a84a5c972dd2855fb0df67`）。`Builds/ImportedAccessoryV2/NyaForge.exe` の800x600 Authoring suiteは **PASS、82 checks**（private一時RadDollV3 VRMを含む取込→EditMesh頂点編集→stable BoneId装着→native Save/Open→feature-preserving export、report `Artifacts/Authoring-20260913-101222-7c49de2909e0473990c6eaa4364c2e0d/report.json`）。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-101342-514-202f68aad9c94bd08fdb86c8c8b10c9c/bridge-report.json`）。画面キャプチャ `Artifacts/Authoring-20260913-101222-7c49de2909e0473990c6eaa4364c2e0d/authoring.png` はUIと制作cameraの非空描画を確認した。これは合成static accessoryとprivate avatarの自動経路であり、実マウス/DPI差、実VRChat内の見た目、衣装の自動fit・貫通修正は別境界として残る。
+
 ## Graph-keyed secondary-motion attachment
 
 複数graphを一つのnative projectへ追加した際、旧来の単一 `secondary-motion.nyaforge.bin` が別graphの揺れ設定として表示される境界を閉じた。`SecondaryMotionSessionsCodec`（`NVSX` v1）で共通揺れassetをGraphIdごとに保存し、active object切替時はそのgraphのassetだけを表示・再生・再bind対象にする。旧単一assetは読込時にactive graphへ互換移行し、次回保存時にtableへ変換する。既存のVRM expression／Spring／rig session tableと同じ所有単位へ揃えた。

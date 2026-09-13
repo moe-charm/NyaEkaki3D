@@ -12,7 +12,7 @@
 
 **確認セット** に保存・復元、**設定** に起動設定・更新・詳細パス・再生速度をまとめています。同じ上部ボタンをもう一度押すと閉じます。視点ボタンはモデル表示の上、ポーズと再生は下にあります。詳細のパス欄ではパックのフォルダ自体も指定できます。
 
-ビューワーでは生成済みのパックと確認セットを開けます。制作画面の **GLBモデルを取り込む** を開くと、Windowsのファイル選択からGLB/VRMを選び、候補のmesh・skin・node instanceを確認して制作対象へ追加できます。skin付きの取り込みはrest poseのEditMesh段から頂点編集を始められます。FBX・BLEND・Unity prefabの直接取り込みは未実装です。
+ビューワーでは生成済みのパックと確認セットを開けます。制作画面の **GLBモデルを取り込む** を開くと、Windowsのファイル選択からGLB/VRMを選び、候補のmesh・skin・node instanceを確認して制作対象へ追加できます。static meshとskin付きmeshのどちらもEditMesh段から頂点編集を始められます。別graph objectとして取り込んだ小物はstable BoneIdへ装着できます。FBX・BLEND・Unity prefabの直接取り込みは未実装です。
 
 実素材を用意せず取込経路だけを確認する場合は、リポジトリの公開fixtureを生成できます。PowerShellで次を実行すると、静的mesh 0と2骨skinned mesh 1を含む小さなGLBが `Artifacts/NyaForgeGlbFixture/clothing-fixture.glb` に作られます。
 
@@ -47,7 +47,7 @@ Rigを試すときは、空の制作projectでgraph上部の **＋ Rigサンプ�
 
 右側の **Rig / weight編集** で対象boneを選び、選択頂点へweightを適用できます。`weight paintモード`をオンにしてブラシ半径を指定すると、中央のviewportをドラッグした頂点へweightを混合します。ドラッグ1回が1つのUndo単位です。poseはX/Y/Z回転を度数で入力して適用します。rest boneを動かした場合はbindingとposeがstaleになるため、確認後に **新しいrest骨へbinding / poseを再bind** を押します。
 
-このRigサンプルは制作パイプラインの検証用です。FBX・BLENDの直接取込とhumanoid自動配置はまだ接続していません。GLB/VRMは候補から1 mesh/skinを選んでgraphへ取り込め、skin取込時はrest poseのEditMesh段から頂点編集を始められます。GLB/VRMのmorph取込・編集、複数graph objectのactive切替、標準GLBの明示出力profileに対応しています。
+このRigサンプルは制作パイプラインの検証用です。FBX・BLENDの直接取込とhumanoid自動配置はまだ接続していません。GLB/VRMは候補から1 mesh/skinを選んでgraphへ取り込め、static／skin取込のどちらもrest-space EditMesh段から頂点編集を始められます。GLB/VRMのmorph取込・編集、複数graph objectのactive切替、stable BoneId装着、標準GLBの明示出力profileに対応しています。
 
 ## 保存と開き直し
 
@@ -75,9 +75,9 @@ Rigを試すときは、空の制作projectでgraph上部の **＋ Rigサンプ�
 
 ## 現在の範囲
 
-実装済み: 空project、typed graph、Plane/EditMesh/Polygon/Mirror/UV/Paint/Material、頂点・面編集、Undo/Redo、schema 3 native保存、画像付きBake、Rig skeleton/skin binding/pose/skin-deform、weight paint、Unity Bridgeでの受け取り。
+実装済み: 空project、typed graph、Plane/EditMesh/Polygon/Mirror/UV/Paint/Material、頂点・面編集、Undo/Redo、schema 4 native保存（旧schema読込互換）、画像付きBake、Rig skeleton/skin binding/pose/skin-deform、weight paint、GLB/VRMのstatic／skin取込、stable BoneId装着、標準GLB出力、MCP、Unity Bridgeでの受け取り。
 
-未実装: FBX/BLEND import、humanoid自動配置、標準VRM export、任意pose/morphのskin変換、実RadDollV3を使ったGUI見た目受入。GLB/VRMは選択した1 mesh/skinの取込とrest pose EditMesh編集に対応します。標準GLBは表示形状profileと、rest pose・トポロジー不変の頂点編集まで対応するskin/morph profileをGUIから選べます。今回の往復検証はVRChat内の動作検証ではありません。
+未実装: FBX/BLEND import、humanoid自動配置、標準VRM export、任意pose/morphのskin変換、自動fit／貫通修正、実VRChat SDK／VRChat内の見た目受入。GLB/VRMは選択した1 mesh/skinの取込とrest pose EditMesh編集に対応し、別static GLB小物のBoneId装着とnative package保存も検証しています。標準GLBは表示形状profileと、rest pose・トポロジー不変の頂点編集まで対応するskin/morph profileをGUIから選べます。今回の往復検証はVRChat内の動作検証ではありません。
 
 ## 検証の再実行
 

@@ -79,7 +79,10 @@ namespace NyaForge.UnityRuntime
             }
             var instanceWorld = instanceIndex >= 0 ? inventory.Instances[instanceIndex].WorldTransform : null;
             var imported = instanceWorld == null ? GlbImporter.Read(bytes, meshIndex) : GlbImporter.Read(bytes, meshIndex, instanceWorld);
-            string sourceId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
+            string sourceId = Guid.NewGuid().ToString("D"), editId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
+            // Static accessories are still authored graph objects. Keep an explicit
+            // rest-space EditMesh stage so an imported choker or clothing piece can
+            // be vertex-edited before it is attached to an avatar bone.
             var nodes = new List<GraphNode> { GraphNode.Source(sourceId, imported.Mesh, new RestTransform(1, new Vec3())) };
             var edges = new List<GraphEdge>(); string finalNode = sourceId;
             if (imported.Morphs != null)
@@ -89,6 +92,9 @@ namespace NyaForge.UnityRuntime
                 nodes.Add(GraphNode.MorphSetNode(morphId, imported.Morphs)); nodes.Add(GraphNode.MorphDeformNode(deformId, zeroWeights));
                 edges.Add(new GraphEdge(sourceId, "mesh", deformId, "mesh")); edges.Add(new GraphEdge(morphId, "morphs", deformId, "morphs")); finalNode = deformId;
             }
+            nodes.Add(GraphNode.Edit(editId));
+            edges.Add(new GraphEdge(finalNode, "mesh", editId, "mesh"));
+            finalNode = editId;
             var materialWarnings = new List<string>();
             finalNode = AppendImportedMaterials(nodes, edges, finalNode, imported.Mesh.Submeshes.Count, imported.Materials, materialWarnings);
             nodes.Add(GraphNode.Output(outputId)); edges.Add(new GraphEdge(finalNode, "mesh", outputId, "mesh"));
