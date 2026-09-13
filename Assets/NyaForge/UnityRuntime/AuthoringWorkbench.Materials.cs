@@ -168,6 +168,12 @@ namespace NyaForge.UnityRuntime
             materialEmission.SetValueWithoutNotify(loadedEmission);materialEmissionStrength.SetValueWithoutNotify(loadedEmissionStrength);
             materialAlphaMode.SetValueWithoutNotify(materialAlphaMode.choices[(int)p.AlphaMode]);materialCutoff.SetValueWithoutNotify(p.AlphaCutoff);materialCutoff.SetEnabled(p.AlphaMode==MaterialAlphaMode.Cutout);
             semanticTextureInfo.text=SemanticTextureSummary(p.Textures);
+            if (normalTextureScale != null) normalTextureScale.SetValueWithoutNotify(p.Textures?.Normal?.NormalScale ?? 1f);
+            if (semanticTextureTexCoord != null)
+            {
+                var preferred = p.Textures?.Normal ?? p.Textures?.MetallicRoughness;
+                semanticTextureTexCoord.SetValueWithoutNotify(preferred?.TexCoord == 1 ? "UV1" : "UV0");
+            }
         }
 
         static string SemanticTextureSummary(MaterialTextureSet textures)
