@@ -1757,3 +1757,8 @@ Windows Player `Builds/LegacySessionGuardV2/NyaForge.exe` はビルド成功（`
 Coreは **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-164ca8b20e1b46919318228bbab20ed2`）。Unity 6000.4.3f1のWindows Player `Builds/ImportAtomicV1/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-160853-398.log`）。private一時RadDollV3 VRMの単体＋全mesh Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-160919-4fff40e348e744e19ff68e3529e966f0/report.json`、画面`authoring.png`）。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-161135-894-38ef39ad8ded4282b5a0f5945d6795e2/bridge-report.json`）。
 
 codec失敗を意図的に注入する破損fixture、実マウス・DPI差、UniVRM／VRChat受取、実VRChat内の外観・PhysBones挙動は別受入境界とする。
+# 2026-09-13 Quickstartの点選択上限表記修正
+
+実装済みの点マーカー／クリック選択が全編集点を対象とし、2,048点単位で描画をまとめる仕様に対して、Quickstartに残っていた「先頭256頂点まで」という古い説明を修正した。ID指定も全頂点を対象とする記述を維持した。
+
+これはドキュメント整合性の修正で、製品コード・保存形式は変更していない。直近のWindows Player Authoring／Unity Bridge／Core検証結果は前項の `ImportAtomicV1` 記録を正本とする。
