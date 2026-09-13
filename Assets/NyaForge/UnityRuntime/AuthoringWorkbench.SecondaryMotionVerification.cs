@@ -29,8 +29,17 @@ namespace NyaForge.UnityRuntime
             Check(importedSecondaryMotionDocument != null && importedSecondaryMotionDocument.RawHash == beforeRebind, "Secondary-motion rebind Undo did not restore the imported attachment");
             Execute(AuthoringOperation.Redo());
             Check(importedSecondaryMotionDocument != null && importedSecondaryMotionDocument.RawHash == afterRebind, "Secondary-motion rebind Redo did not restore the rebound attachment");
+            // Exercise the actual MCP command path as well. It must reread the
+            // restored ProjectAttachments before exposing state to the next
+            // playback/status request, just like the GUI history path.
+            var mcpUndo = ExecuteMcpCommand(workspace.NewCommand(AuthoringOperation.Undo()));
+            Check(mcpUndo.Success && importedSecondaryMotionDocument != null && importedSecondaryMotionDocument.RawHash == beforeRebind,
+                "MCP secondary-motion Undo did not refresh the restored attachment");
+            var mcpRedo = ExecuteMcpCommand(workspace.NewCommand(AuthoringOperation.Redo()));
+            Check(mcpRedo.Success && importedSecondaryMotionDocument != null && importedSecondaryMotionDocument.RawHash == afterRebind,
+                "MCP secondary-motion Redo did not refresh the rebound attachment");
             Check(workspace.IsDirty, "Identity rebind should require a project save");
-            checks.Add("Secondary-motion GUI rebind: stale skeleton exposes same-BoneId rebind, repins hash, and Undo/Redo restores attachment bytes");
+            checks.Add("Secondary-motion GUI/MCP rebind: stale skeleton exposes same-BoneId rebind, repins hash, and GUI/MCP Undo/Redo restores attachment bytes and refreshes the active cache");
         }
     }
 }

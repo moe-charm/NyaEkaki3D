@@ -1788,3 +1788,11 @@ Unity 6000.4.3f1の`Builds/AuthoringResponsiveV2/NyaForge.exe`はビルド成功
 Coreは **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-72abf8521b22410480b1013456745ce0`）。Unity 6000.4.3f1のWindows Player `Builds/OutputConsistencyV1/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-163056-409.log`）。private一時RadDollV3 VRMの全mesh取込→編集→native Save/Open→拡張skinned GLB出力を含むAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-163128-9961c8b0bc08419bbf7d066126f789ef/report.json`、`authoring.png`）。同成果物のUnity **2022.3.22f1 Bridge**も **PASS**（`Artifacts/BridgeReceiver-20260913-163342-168-0dd45298a43349f6859ac54fd0b4e83b/bridge-report.json`）。
 
 この回帰はCore・Windows Player・Bridgeの自動証跡であり、実マウス／DPI差、UniVRM／VRChat実機での受け取りと見た目、完全VRM semanticsは別の手動受入境界として残す。
+
+# 2026-09-13 MCP Undo/Redoの揺れ設定キャッシュ同期
+
+MCPのapply経路がGUIのExecuteを経由しないため、history.undo／history.redoでProjectAttachmentsだけ復元され、共通揺れ設定の表示・再生キャッシュが古いまま残る可能性を修正した。MCPも専用のcommand helperを通し、履歴操作が成功した直後にactive graphのsecondary-motion attachmentを再読込してから選択・表示を更新する。これでGUIとMCPの保存済み揺れ設定の復元境界が一致する。
+
+回帰検証へ、GUIのrebind Undo/Redoに加えてMCP Undo/Redoを追加し、復元前後のattachment raw hashがactive cacheへ反映されることを確認した。Coreは **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4e68ec5a34524831a4a9cc0a84b173dd`）。Unity 6000.4.3f1のWindows Player `Builds/McpHistorySyncV2/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-163945-132.log`）。private一時RadDollV3 VRMを使ったAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-164008-0387e88c1cb14a4a91110187259842c2/report.json`、`authoring.png`）。同成果物のUnity **2022.3.22f1 Bridge**も **PASS**（`Artifacts/BridgeReceiver-20260913-164225-649-8406d9aa891c42fdbc2403176809679d/bridge-report.json`）。
+
+これは自動Player／Core／Bridgeでの履歴同期証跡であり、外部sidecarを使った実MCPプロセス接続、実マウス／DPI差、実VRChat内の受取・外観・挙動は別受入境界として残す。

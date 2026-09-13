@@ -1,3 +1,4 @@
+using NyaForge.Authoring;
 using NyaForge.Authoring.Inspection;
 using Newtonsoft.Json.Linq;
 namespace NyaForge.UnityRuntime
@@ -17,8 +18,7 @@ namespace NyaForge.UnityRuntime
             if(request.Method.StartsWith("secondary_motion_",System.StringComparison.Ordinal)) return DispatchSecondaryMotionMcp(request.Method,request.SecondaryCapture);
             if(request.Method!="apply" && request.Method!="import_image") return AuthoringReadService.Read(workspace,pipeInstance,request.Method);
             var command=request.Method=="import_image" ? NyaForge.Authoring.CommandWireReader.Read(request.ImageImport,PaintPngImporter.Read) : request.Command;
-            var result=commands.Execute(command,projection);
-            selection.RemoveWhere(i=>i<0 || i>=projection.Points.Length);projection.Select(selection);Refresh();
+            var result=ExecuteMcpCommand(command);
             SetStatus(result.Success ? "AIの編集を反映しました。Undoで戻せます。" : "AIの編集を適用できませんでした："+result.Code);
             return new JObject
             {
@@ -26,6 +26,24 @@ namespace NyaForge.UnityRuntime
                 ["revision"]=result.DocumentRevision,["meshContentHash"]=result.MeshContentHash,
                 ["evaluationComplete"]=result.EvaluationComplete,["previewRevision"]=result.PreviewRevision
             };
+        }
+
+        // Keep the MCP command path's projection, selection and metadata refresh
+        // identical to the GUI command path. In particular, history operations
+        // restore ProjectAttachments after projection commit, so secondary-motion
+        // state must be reread before the next status/playback action.
+        internal CommandResult ExecuteMcpCommand(CommandEnvelope command)
+        {
+            var result=commands.Execute(command,projection);
+            // GUI Execute() refreshes metadata-backed secondary-motion state
+            // after history operations. MCP bypasses that helper, so mirror the
+            // refresh here; otherwise an MCP Undo/Redo can restore attachment
+            // bytes while the status panel and playback owner keep the old asset.
+            if (result.Success && command?.Operations?.Length == 1 &&
+                (command.Operations[0].Kind == "history.undo" || command.Operations[0].Kind == "history.redo"))
+                RefreshSecondaryMotionAttachmentFromWorkspace();
+            selection.RemoveWhere(i=>i<0 || i>=projection.Points.Length);projection.Select(selection);Refresh();
+            return result;
         }
     }
 }
