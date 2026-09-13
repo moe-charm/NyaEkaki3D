@@ -83,7 +83,7 @@ static GLBは選択された評価結果を出力し、複数objectを含む場�
 
 実装済み: 空project、typed graph、Plane/EditMesh/Polygon/Mirror/UV/Paint/Material、頂点・面編集、Undo/Redo、schema 4 native保存（旧schema読込互換）、画像付きBake、Rig skeleton/skin binding/pose/skin-deform、weight paint、GLB/VRMのstatic／skin取込、stable BoneId装着、標準GLB出力、MCP、Unity Bridgeでの受け取り。
 
-未実装: FBX/BLEND import、humanoid自動配置、標準VRM export、任意pose/morphのskin変換、自動fit／貫通修正、実VRChat SDK／VRChat内の見た目受入。GLB/VRMは選択した1 mesh/skinの取込とrest pose EditMesh編集に対応し、別static GLB小物のBoneId装着とnative package保存も検証しています。標準GLBは表示形状profileと、rest pose・トポロジー不変の頂点編集まで対応するskin/morph profileをGUIから選べます。今回の往復検証はVRChat内の動作検証ではありません。
+未実装: FBX/BLEND import、humanoid自動配置、完全なVRM export、任意pose/morphのskin変換、自動fit／貫通修正、実VRChat SDK／VRChat内の見た目受入。VRM 1.0は、humanoid/metaと解決可能なmorph bind、詳細付きVRM1 SpringBoneを含む初期profileを出力できますが、material bind・LookAt・FirstPerson・MToon・animation・任意拡張は対象外です。GLB/VRMは選択した1 mesh/skinの取込とrest pose EditMesh編集に対応し、別static GLB小物のBoneId装着とnative package保存も検証しています。標準GLBは表示形状profileと、rest pose・トポロジー不変の頂点編集まで対応するskin/morph profileをGUIから選べます。今回の往復検証はVRChat内の動作検証ではありません。
 
 ## 検証の再実行
 

@@ -1695,3 +1695,7 @@ Unity 6000.4.3f1のWindows Player `Builds/FrameFixV1/NyaForge.exe` はビルド�
 # 2026-09-13 FrameFixV1 複数mesh実モデル再確認
 
 Frame修正後の最新Playerで、private一時RadDollV3 VRMの全mesh instance取込を再実行した。body・hair等を複数graph objectへ展開し、各EditMesh、native Save/Open、graph-keyed metadata、feature-preserving native exportまで含むAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-153007-1f6a00200ada48a3949c7ecc8d206868/report.json`）。同じcheck directoryを使ったUnity **2022.3.22f1 Bridge**も **PASS**（`Artifacts/BridgeReceiver-20260913-153215-866-247a7f0038f04e1985530cd1123e3031/bridge-report.json`）。
+
+# 2026-09-13 ドキュメントのVRM出力範囲同期
+
+`docs/Authoring-Quickstart.md`の古い「標準VRM export未実装」という記述を、現行実装へ更新した。現在はVRM 1.0の初期profile（humanoid/meta、解決可能なmorph bind、詳細付きVRM1 SpringBone）を出力できる。一方、material bind・LookAt・FirstPerson・MToon・animation・任意拡張と、VRM 0.xの自動変換は引き続き対象外で、完全VRM出力とは扱わない。
