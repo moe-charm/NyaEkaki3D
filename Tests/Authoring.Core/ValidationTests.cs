@@ -30,6 +30,9 @@ internal static partial class Program
             var result = AuthoringValidationReader.Read(workspace, workspace.InstanceId, request);
             Equal("pass", (string)result["status"]);
             Equal(2, (int)result["metrics"]["objects"]);
+            Equal(2, result["objects"].Count());
+            Equal(4, (int)result["objects"][0]["triangles"]);
+            Equal("pass", (string)result["objects"][1]["status"]);
             Equal(8, (int)result["metrics"]["triangles"]);
             Equal(16, (int)result["metrics"]["renderVertices"]);
         });

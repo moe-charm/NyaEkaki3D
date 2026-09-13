@@ -52,6 +52,19 @@ namespace NyaForge.UnityRuntime
                 foreach (var name in names)
                     if (metrics[name] != null) lines.Add(name + ": " + (string)metrics[name]);
             }
+            var objects = result["objects"]?.Values<JObject>().ToArray();
+            if (objects != null && objects.Length > 0)
+            {
+                lines.Add("対象別:");
+                foreach (var item in objects)
+                {
+                    string id = ((string)item["objectId"] ?? "");
+                    if (id.Length > 8) id = id.Substring(0, 8);
+                    string detail = item["status"]?.ToString() ?? "unknown";
+                    if (item["triangles"] != null) detail += " · △" + item["triangles"] + " · 頂点" + item["renderVertices"];
+                    lines.Add("・" + id + ": " + detail);
+                }
+            }
             foreach (var check in checks) lines.Add(FormatValidationCheck(check));
             var warnings = result["warnings"]?.Values<string>().Where(value => !string.IsNullOrWhiteSpace(value)).ToArray();
             if (warnings != null && warnings.Length > 0)

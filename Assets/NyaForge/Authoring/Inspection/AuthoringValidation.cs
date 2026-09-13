@@ -61,6 +61,7 @@ namespace NyaForge.Authoring.Inspection
                 var checks = new JArray();
                 var evaluations = new List<Tuple<AuthoringObject, GraphEvaluation>>();
                 var incomplete = new List<string>();
+                var objectMetrics = new JArray();
                 foreach (var item in workspace.Document.Objects)
                 {
                     GraphEvaluation evaluation = item == workspace.Document.ActiveObject
@@ -70,9 +71,19 @@ namespace NyaForge.Authoring.Inspection
                     if (evaluation == null || stale || !evaluation.IsComplete || evaluation.Output == null || evaluation.Output.Mesh == null)
                     {
                         incomplete.Add(item.ObjectId);
+                        objectMetrics.Add(new JObject { ["objectId"] = item.ObjectId, ["status"] = "unknown" });
                         continue;
                     }
                     evaluations.Add(Tuple.Create(item, evaluation));
+                    objectMetrics.Add(new JObject
+                    {
+                        ["objectId"] = item.ObjectId,
+                        ["status"] = "pass",
+                        ["triangles"] = evaluation.Output.Mesh.TriangleCount,
+                        ["renderVertices"] = evaluation.Output.Mesh.VertexCount,
+                        ["materials"] = evaluation.Output.SlotMaterials?.Count ?? (evaluation.Output.Material == null ? 0 : 1),
+                        ["textures"] = Images(evaluation.Output).Count()
+                    });
                 }
                 if (incomplete.Count > 0 || evaluations.Count == 0)
                 {
@@ -81,7 +92,7 @@ namespace NyaForge.Authoring.Inspection
                         warnings.Add("Final output is incomplete or has no renderable mesh for object(s): " + string.Join(", ", incomplete));
                     else
                         warnings.Add("Final output is incomplete or has no renderable mesh.");
-                    return Result(workspace, request, limits, "unknown", checks, null, null, null, null, null, null, warnings);
+                    return Result(workspace, request, limits, "unknown", checks, null, null, null, null, null, null, warnings, objectMetrics);
                 }
 
                 int triangles = evaluations.Sum(pair => pair.Item2.Output.Mesh.TriangleCount);
@@ -113,7 +124,7 @@ namespace NyaForge.Authoring.Inspection
                 }
                 checks.Add(new JObject { ["name"] = "fit", ["status"] = "unknown", ["reason"] = "Avatar fit and pose deformation are not part of this static profile." });
                 string status = checks.OfType<JObject>().Any(c => (string)c["status"] == "fail") ? "fail" : "pass";
-                return Result(workspace, request, limits, status, checks, triangles, vertices, materials, textures, maxTexture, skin, new JArray());
+                return Result(workspace, request, limits, status, checks, triangles, vertices, materials, textures, maxTexture, skin, new JArray(), objectMetrics);
             }
         }
 
@@ -203,7 +214,7 @@ namespace NyaForge.Authoring.Inspection
         }
 
         static JObject Result(AuthoringWorkspace workspace, AuthoringValidationRequest request, Limits limits, string status, JArray checks,
-            int? triangles, int? vertices, int? materials, int? textures, int? maxTexture, SkinSummary skin, JArray warnings)
+            int? triangles, int? vertices, int? materials, int? textures, int? maxTexture, SkinSummary skin, JArray warnings, JArray objectMetrics)
         {
             var metrics = new JObject();
             metrics["objects"] = workspace.Document.Objects.Count;
@@ -227,6 +238,7 @@ namespace NyaForge.Authoring.Inspection
                 ["revision"] = workspace.Document.DocumentRevision,
                 ["stateHash"] = workspace.Document.StateHash,
                 ["metrics"] = metrics,
+                ["objects"] = objectMetrics ?? new JArray(),
                 ["checks"] = checks,
                 ["warnings"] = warnings
             };

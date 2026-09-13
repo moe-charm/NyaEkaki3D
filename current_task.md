@@ -1630,3 +1630,10 @@ Unity 6000.4.3f1のWindows Player `Builds/ValidationUiV2/NyaForge.exe` をビル
 # 2026-09-13 validation UI all-mesh recheck
 
 最新 `Builds/ValidationUiV2/NyaForge.exe` でprivate一時RadDollV3 VRMの **全mesh instance取込** を実行し、body・hair等を複数graph objectとして公開した。全objectの頂点編集、native Save/Open、feature-preserving native export、拡張skinned GLB出力と再読込までのAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-135624-c8605946d44b464c94e50b95aa4a59d7/report.json`、画面 `authoring.png`）。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-135831-583-5cc12364c6b6485c8902bb5320ae5c3e/bridge-report.json`）。private素材はpublic repositoryへ追加していない。
+# 2026-09-13 per-object validation details
+
+出力チェック結果に、制作対象ごとの状態と規模を追加した。集計の`metrics.objects`に加えて、結果JSONの`objects`へ`objectId`、`status`、`triangles`、`renderVertices`、`materials`、`textures`を保存する。未完成またはメッシュなしの対象は`status: unknown`として原因候補を残し、完成対象は評価済みメッシュの実測値を記録する。判定ロジックと合計値は変更していない。
+
+Unityの出力チェック画面にも「対象別」欄を追加し、対象ID先頭8文字、状態、頂点数、三角形数を縦に表示する。これにより、複数オブジェクトの合計だけでは分からなかった「どの衣装／小物が未完成か」を画面上で確認できる。Core回帰では2オブジェクトの個別結果と合計値を固定した。
+
+Coreは **471 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3d71370b6873449e9888a1fe109e47ec`）。Windows Player `Builds/ValidationObjectsV1/NyaForge.exe`のAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-140207-6001fe322ecb477cb9333b5a243c6b94/report.json`、画面`authoring.png`）。Unity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-140240-211-18db2ee56ab14264af3fc677cb032408/bridge-report.json`）。実マウス、DPI個体差、実VRChat内の見た目・挙動は別の手動受入境界とする。
