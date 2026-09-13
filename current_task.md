@@ -1871,3 +1871,10 @@ VRM 1.0のmaterial bind・LookAt・FirstPerson・MToon・animation・任意拡�
 private一時RadDollV3 VRMを使ったWindows Player `Builds/AllModelLocatorV1/NyaForge.exe` のAuthoring suiteは **PASS・87 checks**（`Artifacts/Authoring-20260913-175755-355fae7f46f34d2884f677bf6e3a832c/report.json`）。全mesh instance取込、各graph EditMesh、native Save/Open、locator一致、native export、拡張skinned GLB出力を確認した。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-180013-231-0bb75aeca3664743a70c922a437e19c5/bridge-report.json`）。private素材・生成物はpublic repositoryへ追加していない。
 
 共有mesh／morphの完全共有保持、異なるsource skeletonの結合、実マウス／DPI差、実VRChat内の見た目・PhysBones挙動、完全VRM意味情報は引き続き別受入境界とする。
+# 2026-09-13 GLB diagnostics v2: node instance locator
+
+同一mesh／skin resourceを複数nodeが参照するGLBで、mesh indexとskin indexだけでは別instanceを区別できないため、`ImportedGlbDiagnostics`をv2へ拡張して任意のsource `nodeIndex`を保存するようにした。v1 sidecarはnodeなしとして後方互換読込し、新規writerはnode indexを含める。単体／全mesh取込では明示したnode instanceのindexをrecordへ渡し、取込診断GUIにも表示する。全mesh Save/Open回帰は元inventoryのnode・mesh・skin locator集合とsource hashを比較し、同一resourceの別nodeを潰していないことを検証する。
+
+Coreは **477 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f29beb3b99ac413785703172d22f4d19`）。旧v1 payloadの読込、v2 node locatorのroundtrip、空診断のsnapshot Save/Openを含む。Unity 6000.4.3f1 Windows Player `Builds/NodeLocatorV1/NyaForge.exe` のprivate一時RadDollV3全mesh Authoring suiteは **PASS・87 checks**（`Artifacts/Authoring-20260913-180434-a0ccdab3ae5c41d8bc58ac7f2327f4be/report.json`、画面`authoring.png`）。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-180656-635-b2f92b767fbf44f6ab3409efe8790e96/bridge-report.json`）。private素材・生成物はpublic repositoryへ追加していない。
+
+完全なmesh／morph shared-resource dedup、異なるsource skeletonの結合、実マウス／DPI差、実VRChat内の見た目・PhysBones挙動、完全VRM意味情報は継続課題とする。

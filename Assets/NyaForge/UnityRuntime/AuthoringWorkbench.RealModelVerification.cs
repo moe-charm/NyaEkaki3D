@@ -143,11 +143,11 @@ namespace NyaForge.UnityRuntime
             var diagnostics = ImportedGlbDiagnosticsCodec.Read(diagnosticsBytes);
             Check(diagnostics.Count == expected && diagnostics.Values.All(item => item.SourceHash == inventory.SourceHash), "All-mesh command-line source locator count or hash changed after Save/Open.");
             var expectedLocatorValues = inventory.Instances.Count > 0
-                ? inventory.Instances.Select(item => item.MeshIndex + ":" + (item.SkinIndex.HasValue ? item.SkinIndex.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "-1"))
-                : inventory.Meshes.Select((item, index) => index + ":-1");
+                ? inventory.Instances.Select(item => (item.NodeIndex + ":" + item.MeshIndex + ":" + (item.SkinIndex.HasValue ? item.SkinIndex.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "-1")))
+                : inventory.Meshes.Select((item, index) => ("-1:" + index + ":-1"));
             var expectedLocators = expectedLocatorValues
                 .OrderBy(value => value, StringComparer.Ordinal).ToArray();
-            var actualLocators = diagnostics.Values.Select(item => item.MeshIndex + ":" + (item.SkinIndex.HasValue ? item.SkinIndex.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "-1"))
+            var actualLocators = diagnostics.Values.Select(item => ((item.NodeIndex.HasValue ? item.NodeIndex.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "-1") + ":" + item.MeshIndex + ":" + (item.SkinIndex.HasValue ? item.SkinIndex.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "-1")))
                 .OrderBy(value => value, StringComparer.Ordinal).ToArray();
             Check(expectedLocators.SequenceEqual(actualLocators), "All-mesh command-line source locators changed mesh/skin selection after Save/Open.");
 

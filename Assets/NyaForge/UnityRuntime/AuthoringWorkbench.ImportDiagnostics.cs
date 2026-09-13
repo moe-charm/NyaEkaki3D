@@ -78,7 +78,8 @@ namespace NyaForge.UnityRuntime
                 header.style.whiteSpace = WhiteSpace.Normal;
                 modelImportDiagnosticsItems.Add(header);
                 string locator = "source " + record.SourceHash + " · mesh " + record.MeshIndex +
-                    (record.SkinIndex.HasValue ? " · skin " + record.SkinIndex.Value : " · skinなし");
+                    (record.SkinIndex.HasValue ? " · skin " + record.SkinIndex.Value : " · skinなし") +
+                    (record.NodeIndex.HasValue ? " · node " + record.NodeIndex.Value : " · nodeなし");
                 var locatorLabel = new Label(locator) { name = "model-import-diagnostics-locator" };
                 locatorLabel.style.whiteSpace = WhiteSpace.Normal;
                 modelImportDiagnosticsItems.Add(locatorLabel);

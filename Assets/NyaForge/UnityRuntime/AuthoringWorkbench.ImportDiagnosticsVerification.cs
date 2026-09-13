@@ -32,7 +32,7 @@ namespace NyaForge.UnityRuntime
                 // Clean imports still carry the source locator. The diagnostics
                 // list is empty, but the serialized record must still expose
                 // enough identity for a shared mesh to be traced back.
-                var clean = new ImportedGlbDiagnostics(graphId, new string('e', 64), 7, 3, Array.Empty<GlbImportDiagnostic>());
+                var clean = new ImportedGlbDiagnostics(graphId, new string('e', 64), 7, 3, Array.Empty<GlbImportDiagnostic>(), 11);
                 workspace.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]>
                 {
                     [ProjectAttachments.ImportDiagnostics] = ImportedGlbDiagnosticsCodec.Write(new[] { clean })
@@ -40,7 +40,7 @@ namespace NyaForge.UnityRuntime
                 RefreshImportedGlbDiagnostics();
                 Check(modelImportDiagnosticsSummary.text.Contains("保存済み 1 object") && modelImportDiagnosticsSummary.text.Contains("保持不可 0") && modelImportDiagnosticsSummary.text.Contains("一部保持 0"), "Clean GLB locator summary is incomplete");
                 var locator = modelImportDiagnosticsItems.Q<Label>("model-import-diagnostics-locator");
-                Check(locator != null && locator.text.Contains(new string('e', 64)) && locator.text.Contains("mesh 7") && locator.text.Contains("skin 3"), "Clean GLB source locator is not visible");
+                Check(locator != null && locator.text.Contains(new string('e', 64)) && locator.text.Contains("mesh 7") && locator.text.Contains("skin 3") && locator.text.Contains("node 11"), "Clean GLB source locator is not visible");
                 Check(modelImportDiagnosticsItems.Q<Label>("model-import-diagnostics-empty") != null, "Clean GLB diagnostics should show an empty diagnostic state");
                 checks.Add("clean GLB import locator: source hash, mesh/skin selection and empty diagnostics survive attachment refresh");
             }

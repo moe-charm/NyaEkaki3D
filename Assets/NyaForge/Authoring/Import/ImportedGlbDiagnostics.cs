@@ -16,20 +16,21 @@ namespace NyaForge.Authoring.Import
         public string SourceHash { get; }
         public int MeshIndex { get; }
         public int? SkinIndex { get; }
+        public int? NodeIndex { get; }
         public IReadOnlyList<GlbImportDiagnostic> Diagnostics { get; }
 
-        public ImportedGlbDiagnostics(string graphId, string sourceHash, int meshIndex, int? skinIndex, IEnumerable<GlbImportDiagnostic> diagnostics)
+        public ImportedGlbDiagnostics(string graphId, string sourceHash, int meshIndex, int? skinIndex, IEnumerable<GlbImportDiagnostic> diagnostics, int? nodeIndex = null)
         {
-            Checks.Id(graphId); Checks.HashText(sourceHash); Checks.Require(meshIndex >= 0 && (skinIndex == null || skinIndex.Value >= 0), "INVALID_IMPORT", "GLB diagnostic locator is invalid.");
+            Checks.Id(graphId); Checks.HashText(sourceHash); Checks.Require(meshIndex >= 0 && (skinIndex == null || skinIndex.Value >= 0) && (nodeIndex == null || nodeIndex.Value >= 0), "INVALID_IMPORT", "GLB diagnostic locator is invalid.");
             var values = (diagnostics ?? Array.Empty<GlbImportDiagnostic>()).ToArray(); Checks.Require(values.Length <= 64 && values.All(item => item != null), "INVALID_IMPORT", "GLB diagnostics exceed capacity.");
-            GraphId = graphId; SourceHash = sourceHash; MeshIndex = meshIndex; SkinIndex = skinIndex; Diagnostics = Array.AsReadOnly(values);
+            GraphId = graphId; SourceHash = sourceHash; MeshIndex = meshIndex; SkinIndex = skinIndex; NodeIndex = nodeIndex; Diagnostics = Array.AsReadOnly(values);
         }
     }
 
     /// <summary>Strict bounded JSON codec for persisted GLB import loss reports.</summary>
     public static class ImportedGlbDiagnosticsCodec
     {
-        const int Version = 1;
+        const int Version = 2;
 
         public static byte[] Write(IEnumerable<ImportedGlbDiagnostics> records)
         {
@@ -38,6 +39,7 @@ namespace NyaForge.Authoring.Import
             {
                 ["graphId"] = item.GraphId, ["sourceHash"] = item.SourceHash, ["meshIndex"] = item.MeshIndex,
                 ["skinIndex"] = item.SkinIndex.HasValue ? (JToken)new JValue(item.SkinIndex.Value) : JValue.CreateNull(),
+                ["nodeIndex"] = item.NodeIndex.HasValue ? (JToken)new JValue(item.NodeIndex.Value) : JValue.CreateNull(),
                 ["diagnostics"] = new JArray(item.Diagnostics.Select(d => new JObject { ["code"] = d.Code, ["path"] = d.Path, ["isBlocking"] = d.IsBlocking, ["message"] = d.Message }))
             })) };
             var bytes = new UTF8Encoding(false).GetBytes(root.ToString(Formatting.Indented) + "\n"); Checks.Require(bytes.Length <= AuthoringLimits.MaxBlobBytes, "BUDGET_EXCEEDED", "GLB diagnostics exceed capacity."); return bytes;
@@ -53,19 +55,21 @@ namespace NyaForge.Authoring.Import
                 {
                     root = JObject.Load(reader, new JsonLoadSettings { DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error }); Checks.Require(!reader.Read(), "INVALID_IMPORT", "Trailing GLB diagnostics data is not allowed.");
                 }
-                RequireFields(root, "version", "records"); Checks.Require(Int(root, "version") == Version, "UNSUPPORTED_FORMAT", "GLB diagnostics version is unsupported.");
+                RequireFields(root, "version", "records"); int version = Int(root, "version"); Checks.Require(version == 1 || version == Version, "UNSUPPORTED_FORMAT", "GLB diagnostics version is unsupported.");
                 var array = root["records"] as JArray; Checks.Require(array != null && array.Count <= 64, "INVALID_IMPORT", "GLB diagnostics records are invalid."); var result = new Dictionary<string, ImportedGlbDiagnostics>(StringComparer.Ordinal);
                 foreach (var token in array)
                 {
-                    var item = token as JObject; Checks.Require(item != null, "INVALID_IMPORT", "GLB diagnostic record is invalid."); RequireFields(item, "graphId", "sourceHash", "meshIndex", "skinIndex", "diagnostics");
-                    string graphId = String(item, "graphId", 36); string sourceHash = String(item, "sourceHash", 64); int meshIndex = Int(item, "meshIndex"); int? skinIndex = item["skinIndex"]?.Type == JTokenType.Null ? (int?)null : Int(item, "skinIndex");
+                    var item = token as JObject; Checks.Require(item != null, "INVALID_IMPORT", "GLB diagnostic record is invalid.");
+                    if (version == 1) RequireFields(item, "graphId", "sourceHash", "meshIndex", "skinIndex", "diagnostics");
+                    else RequireFields(item, "graphId", "sourceHash", "meshIndex", "skinIndex", "nodeIndex", "diagnostics");
+                    string graphId = String(item, "graphId", 36); string sourceHash = String(item, "sourceHash", 64); int meshIndex = Int(item, "meshIndex"); int? skinIndex = item["skinIndex"]?.Type == JTokenType.Null ? (int?)null : Int(item, "skinIndex"); int? nodeIndex = version == 1 || item["nodeIndex"]?.Type == JTokenType.Null ? (int?)null : Int(item, "nodeIndex");
                     var diagnostics = item["diagnostics"] as JArray; Checks.Require(diagnostics != null && diagnostics.Count <= 64, "INVALID_IMPORT", "GLB diagnostic list is invalid."); var values = new List<GlbImportDiagnostic>();
                     foreach (var diagnosticToken in diagnostics)
                     {
                         var diagnostic = diagnosticToken as JObject; Checks.Require(diagnostic != null, "INVALID_IMPORT", "GLB diagnostic entry is invalid."); RequireFields(diagnostic, "code", "path", "isBlocking", "message");
                         values.Add(new GlbImportDiagnostic(String(diagnostic, "code", 128), String(diagnostic, "path", 256), Bool(diagnostic, "isBlocking"), String(diagnostic, "message", 2048, true)));
                     }
-                    var record = new ImportedGlbDiagnostics(graphId, sourceHash, meshIndex, skinIndex, values); Checks.Require(result.TryAdd(graphId, record), "INVALID_IMPORT", "GLB diagnostics graph identity repeats.");
+                    var record = new ImportedGlbDiagnostics(graphId, sourceHash, meshIndex, skinIndex, values, nodeIndex); Checks.Require(result.TryAdd(graphId, record), "INVALID_IMPORT", "GLB diagnostics graph identity repeats.");
                 }
                 return new ReadOnlyDictionary<string, ImportedGlbDiagnostics>(result);
             }

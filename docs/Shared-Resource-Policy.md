@@ -8,7 +8,7 @@ GLBでは一つの`mesh` resourceを複数nodeが参照でき、一つの`skin` 
 - 同じmesh resourceを複数nodeが参照している場合、全mesh instance取込はnodeごとの独立graph objectを作る。GUIには共有数と「取込後は個別編集」を表示する。
 - 一つのmesh resourceに複数skin resourceが対応する場合、node instanceを選ばない取込は停止する。skin slotをindexだけで推測しない。
 - morph target IDはsource hashとmesh indexを含むため、同名targetが別mesh resourceで衝突しない。
-- skinned graphのnative sessionはsource hash、skin index、source skin packageを保持する。static graphのimport diagnosticsはsource hashとmesh indexを保持する。
+- skinned graphのnative sessionはsource hash、skin index、source skin packageを保持する。GLB import diagnosticsはsource hash、mesh index、skin indexに加えて、明示したnode instanceを選んだ場合のnode indexを保持する。node indexがないresource選択は「nodeなし」として区別し、同じmesh/skinを別nodeで参照した記録を一つへ潰さない。
 
 ## 出力
 
