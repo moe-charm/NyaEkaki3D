@@ -102,7 +102,7 @@ flowchart LR
 
 衣装の初期weight生成はauthoring補助として二つの明示操作を持つ。avatarのrest meshとSkinBindingを解決できる場合、`自動weight初期化（avatar表面）` は衣装頂点を最近三角形へ投影し、三頂点の既存weightをバリセントリック補間して最大4本へ正規化する。解決できない場合の `自動weight初期化（骨近傍）` はrest骨segment距離から最大4本を選ぶ。どちらも推定値で、位置合わせ・貫通修正・pose品質・販売品質を保証しない。生成結果は通常のSkinBindingとしてUndo・Save/Open・GLB/VRM出力へ渡し、Rig確認と手修正を必須とする。
 
-位置合わせ補助の `衣装をavatar表面へfit` は、衣装の現在EditMeshをavatar rest meshの最近三角形へ投影し、指定offsetを法線方向へ加えた頂点deltaをEditMeshへ一括保存する。最大距離とoffsetの範囲を検査し、範囲外の頂点が一つでもある場合は文書へcommitしない。これは参照姿勢でのbounded projectionであり、体形morph、裏面選択、衣装間交差、貫通修正を自動で解決したとは扱わない。
+位置合わせ補助の `衣装をavatar表面へfit` は、衣装の現在EditMeshをavatar rest meshの最近三角形へ投影し、指定offsetを法線方向へ加えた頂点deltaをEditMeshへ一括保存する。最大距離とoffsetの範囲を検査し、範囲外の頂点が一つでもある場合は文書へcommitしない。評価結果には移動頂点数、最大／平均の最近表面までの距離、最大／平均のワールド移動量を含め、GUIはこの計測値を表示する。これは参照姿勢でのbounded projectionであり、体形morph、裏面選択、衣装間交差、貫通修正を自動で解決したとは扱わない。
 - 材質slot、primitiveへの割当、texture参照、UV set、sampler、alpha等を対応表で保持する。NyaForge内部に材質機能があっても、外部材質importが完成した証拠にはならない。現行のGLB readerは選択primitiveの基本PBR係数（baseColorFactorをlinear化、metallic/roughness、emissive、alpha）をnative `StandardMaterial`／`AssignMaterials`へルーティングし、埋め込みまたはモデルフォルダ内の安全な相対URIによるbase colorのPNG/JPEGをnative Paintノードへ保存する。外部URIはpercent encodingを復号してから相対性・traversalを検査し、16MiB上限付きstreamで読み込む。remote/data URI、モデルフォルダ外の相対URI、metallic-roughness/normal/occlusion/emissive画像、sampler、追加拡張は未保持または拒否として診断する。
 - glTF animationとVRM表情/揺れ設定は別の機能。animation未実装時は存在を報告し、現在poseで代用しない。
 - 既知のVRM拡張でも内部フィールドごとに能力を判定する。metaの利用条件/permissions、lookAt、firstPerson、expressionの材質/texture binding・制御flag等も在庫に含める。拡張名を認識しただけで全情報保持と表示しない。未保持・未解決の意味情報がある場合は完全VRM出力を拒否し、勝手に既定値や許諾条件を作らない。

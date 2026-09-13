@@ -311,8 +311,9 @@ namespace NyaForge.UnityRuntime
                     throw new InvalidOperationException("衣装EditMeshの入力・評価結果を取得できません。");
                 float offset = accessoryFitOffsetMm.value / 1000f;
                 float maxDistance = accessoryFitMaxDistanceMm.value / 1000f;
-                var fitted = MeshSurfaceFit.ProjectPositions(editValue.Mesh, editValue.Transform,
+                var fit = MeshSurfaceFit.Project(editValue.Mesh, editValue.Transform,
                     avatarMeshValue.Mesh, avatarMeshValue.Transform, offset, maxDistance);
+                var fitted = fit.Positions;
                 var offsets = new Dictionary<int, Vec3>();
                 for (int vertex = 0; vertex < fitted.Length; vertex++)
                 {
@@ -324,7 +325,10 @@ namespace NyaForge.UnityRuntime
                 var changed = graph.ReplaceNode(GraphNode.Edit(edit.NodeId, true, offsets, editInput.SnapshotHash, editInput.DomainId));
                 Execute(AuthoringOperation.ReplaceGraph(changed));
                 attachmentTargetChoice = target.ObjectId;
-                SetStatus("衣装をavatar rest表面へfitしました（offset " + accessoryFitOffsetMm.value.ToString("0.###") + " mm）。Rig／poseで交差を確認してください。");
+                SetStatus("衣装をavatar rest表面へfitしました（" + fit.MovedVertexCount + "/" + fitted.Length + "頂点移動、最大投影距離 " +
+                    (fit.MaxProjectionDistance * 1000f).ToString("0.###") + " mm、最大移動量 " +
+                    (fit.MaxDisplacement * 1000f).ToString("0.###") + " mm、offset " +
+                    accessoryFitOffsetMm.value.ToString("0.###") + " mm）。Rig／poseで交差を確認してください。");
             });
         }
 

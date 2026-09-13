@@ -1,3 +1,11 @@
+# 2026-09-13 surface fit quality metrics Player acceptance
+
+Unity **6000.4.3f1** Windows Player `Builds/FitMetricsV1/NyaForge.exe` を再ビルドし、Authoring suiteを **PASS / 82 checks**（`Artifacts/Authoring-20260913-201218-cd4cc58d2e6c43928975c3fdbe5fb11/report.json`、画面 `authoring.png`）で確認した。avatar＋static GLB衣装のsurface fit後ステータスが移動頂点数・最大投影距離・最大移動量を含むこと、距離超過時の文書不変、既存のUndo／Save/Open／GLB出力導線が継続して通ることを回帰した。ビルドログは`Logs/build-player-20260913-201154-323.log`。
+# 2026-09-13 surface fit quality metrics
+
+`MeshSurfaceFit.Project`を追加し、既存の`ProjectPositions` APIを維持したまま、fit結果に移動頂点数、最近表面までの最大／平均距離、最大／平均ワールド移動量を付与した。Workbenchのfit完了ステータスにも移動頂点数・最大距離・最大移動量を表示し、近接投影の結果を人が確認してからRig／poseへ進めるようにした。bounded距離・offset・原子commit・従来出力の互換性は維持している。
+
+Coreは **485 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-4e23717a9c774fecb8a7dae26997315e`）。`docs/Model-Interchange-Spec.md` と `docs/Authoring-Quickstart.md` に計測値の意味と確認手順を追記した。交差判定・体形morph・裏面誤吸着の自動解決ではなく、fit品質を可視化する受入補助である。
 # 2026-09-13 feedback recheck: c4a2748 against current main c74c1f9
 
 提示されたレビュー（基準 `c4a2748`）を現行mainへ再照合した。P1の3件は後続コミットと既存回帰で解消済み。VRM出力は`GlbExportNodeMap`の実node対応表をhumanBones／expression／Springへ渡し、複数skinはstable `BoneId`とskin単位の順序でJOINTSを出力し、旧形式sidecarへ通常GLBを追加する場合もgraph単位のsession tableへ移行する。
@@ -2000,4 +2008,3 @@ Coreは **483 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 検証レポート: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-package-flow-20260913.json`（status `verified`、Unity probe `passed`）。UnityBridgeの合成受け取り回帰も **PASS**（`Artifacts/BridgeReceiver-20260913-193241-889-d5072cb90b02488cbd8d9ef8e6d8a161/bridge-report.json`）。SDK projectと一時packageはpublic repositoryへ追加していない。
 
 実アバターへのstable BoneId／collider手動割当、複数pose・root移動・停止／再開の挙動、VRChat Build & Test／実機の見た目とPhysBones挙動はSIM-07Aの別受入境界として残す。
-

@@ -112,6 +112,8 @@ namespace NyaForge.UnityRuntime
                 FitAccessoryToAvatarSurface();
                 Check(workspace.Evaluate().ContentHash != beforeFit,
                     "Accessory avatar-surface fit did not update the edited clothing geometry");
+                Check(status.text.Contains("移動") && status.text.Contains("最大投影距離") && status.text.Contains("最大移動量"),
+                    "Accessory surface fit status did not expose measured quality metrics");
                 string failedFitState = workspace.Document.StateHash;
                 long failedFitRevision = workspace.Document.DocumentRevision;
                 accessoryFitMaxDistanceMm.SetValueWithoutNotify(1);
