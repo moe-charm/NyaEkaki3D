@@ -38,13 +38,13 @@ internal static partial class Program
         Test("skinned clothing package exports one object with stable rig sidecars", () =>
         {
             var mesh = PrimitiveGeometry.Plane(.2f, .1f);
-            string rootId = GraphId(), sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), outputId = GraphId();
+            string rootId = GraphId(), sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), paintId = GraphId(), materialId = GraphId(), assignId = GraphId(), outputId = GraphId();
             var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(rootId, "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
             var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, rootId, 1f)));
             var pose = PoseSet.Create(skeleton, new[] { new BonePose(rootId, PoseTransform.FromTranslation(new Vec3())) });
             var graph = new AuthoringGraph(GraphId(),
-                new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
-                new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
+                new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Paint(paintId, 2, 1, new PaintImage(2, 1, new Rgba32(255, 0, 128, 255))), GraphNode.StandardMaterial(materialId), GraphNode.AssignMaterial(assignId), GraphNode.Output(outputId) },
+                new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", paintId, "mesh"), new GraphEdge(paintId, "image", materialId, "baseColor"), new GraphEdge(deformId, "mesh", assignId, "mesh"), new GraphEdge(materialId, "material", assignId, "material"), new GraphEdge(assignId, "mesh", outputId, "mesh") }, outputId);
             var workspace = AuthoringWorkspace.CreateEmpty(); Ok(Execute(workspace, AuthoringOperation.AddGraph(graph)));
             string glbDirectory = Path.Combine(Root, "clothing-glb-" + Guid.NewGuid().ToString("N"));
             var glb = GlbExportService.ExportSkinnedObject(workspace, workspace.InstanceId, workspace.Document.DocumentId,
@@ -60,6 +60,7 @@ internal static partial class Program
             Equal(mesh.ContentHash, package.Mesh.ContentHash); Equal(skeleton.ContentHash, package.Skeleton.ContentHash);
             Equal(binding.ContentHash, package.Binding.ContentHash); Equal(mesh.VertexCount, package.Mesh.VertexCount);
             True(package.Glb.Length > 0 && package.Binding.Weights.Count == mesh.VertexCount);
+            Equal(1, package.Materials.Count); True(package.Materials[0].HasEmbeddedBaseColorImage);
         });
 
         Test("GLB export report carries source import diagnostics", () =>

@@ -56,6 +56,13 @@ reuses the managed object only when its stable ObjectId matches; an unrelated
 managed object is refused. A failed package read or receiver validation leaves
 the previous generated object in place.
 
+When the caller omits explicit `Material[]`, `ApplyPackage` creates one Unity
+Standard material per submesh from the package GLB's imported base-color
+factor, metallic/roughness, emission, alpha mode, and embedded base-color image.
+The receiver owns those generated materials and decoded textures for the scene.
+Normal, metallic-roughness, occlusion, and emissive image slots remain outside
+this first receiver profile and are reported by the authoring import contract.
+
 This is a receiver-side Unity scene operation. It does not claim VRChat SDK or
 VRChat runtime acceptance, PhysBones conversion, automatic body fitting,
 material/shader equivalence, or final VRM semantic export. Those remain later

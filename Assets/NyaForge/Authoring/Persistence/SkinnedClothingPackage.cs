@@ -51,6 +51,7 @@ namespace NyaForge.Authoring
         public SkeletonDefinition Skeleton { get; private set; }
         public SkinBinding Binding { get; private set; }
         public byte[] Glb { get; private set; }
+        public System.Collections.Generic.IReadOnlyList<GlbMaterialSource> Materials { get; private set; }
 
         SkinnedClothingPackage(SkinnedClothingManifest manifest, string manifestPath, byte[] glb,
             MeshData mesh, SkeletonDefinition skeleton, SkinBinding binding)
@@ -58,6 +59,7 @@ namespace NyaForge.Authoring
             ManifestPath = manifestPath; DocumentId = manifest.DocumentId; ObjectId = manifest.ObjectId;
             GraphId = manifest.GraphId; StateHash = manifest.StateHash; GraphHash = manifest.GraphHash;
             GlbHash = manifest.GlbHash; BindingHash = manifest.BindingHash; Glb = glb; Mesh = mesh; Skeleton = skeleton; Binding = binding;
+            Materials = Array.AsReadOnly(Array.Empty<GlbMaterialSource>());
         }
 
         /// <summary>Writes a clothing-only package after validating the exact GLB geometry.</summary>
@@ -136,7 +138,9 @@ namespace NyaForge.Authoring
             var binding = RigCodec.ReadBinding(bindingBytes, imported.Mesh, skeleton);
             Checks.Require(binding.MeshTopologyHash == manifest.MeshTopologyHash && binding.SkeletonHash == skeleton.ContentHash,
                 "CLOTHING_RIG_MISMATCH", "Clothing package binding does not match its skeleton or mesh.");
-            return new SkinnedClothingPackage(manifest, manifestPath, glb, imported.Mesh, skeleton, binding);
+            var result = new SkinnedClothingPackage(manifest, manifestPath, glb, imported.Mesh, skeleton, binding);
+            result.Materials = imported.Materials;
+            return result;
         }
     }
 }

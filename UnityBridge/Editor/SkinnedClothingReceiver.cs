@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring;
+using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Rig;
 using UnityEditor;
@@ -49,8 +50,22 @@ namespace NyaForge.UnityBridge.Editor
         {
             if (string.IsNullOrWhiteSpace(manifestPath)) throw new ArgumentException("Package manifest is required.", "manifestPath");
             var package = SkinnedClothingPackage.Read(manifestPath);
-            return Apply(package.Mesh, new RestTransform(1f, new Vec3()), package.Skeleton, package.Binding,
-                avatarRoot, boneMap, string.IsNullOrWhiteSpace(objectName) ? package.ObjectId : objectName, materials);
+            if (materials != null)
+                return Apply(package.Mesh, new RestTransform(1f, new Vec3()), package.Skeleton, package.Binding,
+                    avatarRoot, boneMap, string.IsNullOrWhiteSpace(objectName) ? package.ObjectId : objectName, materials);
+            Material[] packageMaterials = null;
+            try
+            {
+                packageMaterials = BuildPackageMaterials(package.Materials, package.Mesh.Submeshes.Count);
+                return Apply(package.Mesh, new RestTransform(1f, new Vec3()), package.Skeleton, package.Binding,
+                    avatarRoot, boneMap, string.IsNullOrWhiteSpace(objectName) ? package.ObjectId : objectName, packageMaterials);
+            }
+            catch
+            {
+                if (packageMaterials != null)
+                    DestroyOwnedMaterials(packageMaterials);
+                throw;
+            }
         }
 
         public static Result Apply(
@@ -193,6 +208,93 @@ namespace NyaForge.UnityBridge.Editor
             var result = new Material[count];
             for (int i = 0; i < result.Length; i++) result[i] = new Material(shader) { name = "NyaForge Clothing Material " + i };
             return result;
+        }
+
+        static Material[] BuildPackageMaterials(IReadOnlyList<GlbMaterialSource> sources, int submeshCount)
+        {
+            var shader = Shader.Find("Standard");
+            if (shader == null) throw new AuthoringException("SKIN_SHADER_UNAVAILABLE", "Unity Standard shader is unavailable.");
+            var result = new Material[submeshCount];
+            try
+            {
+                for (int i = 0; i < result.Length; i++)
+                {
+                    var source = sources == null ? null : sources.FirstOrDefault(value => value != null && value.SubmeshIndex == i);
+                    var parameters = source == null ? MaterialParameters.Default : source.Parameters;
+                    var material = result[i] = new Material(shader) { name = string.IsNullOrWhiteSpace(source?.Name) ? "NyaForge Clothing Material " + i : source.Name };
+                    var tint = parameters.BaseColor;
+                    material.SetColor("_Color", new Color(tint.X, tint.Y, tint.Z, tint.W));
+                    if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", parameters.Metallic);
+                    if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", 1f - parameters.Roughness);
+                    if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 1f - parameters.Roughness);
+                    if (source != null && source.HasEmbeddedBaseColorImage)
+                    {
+                        var bytes = source.CopyBaseColorImageBytes();
+                        var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, false) { name = material.name + " BaseColor" };
+                        if (!texture.LoadImage(bytes, false))
+                        {
+                            Object.DestroyImmediate(texture);
+                            throw new AuthoringException("IMAGE_DECODE_FAILED", "Clothing base-color image could not be decoded.");
+                        }
+                        texture.wrapMode = TextureWrapMode.Repeat;
+                        texture.filterMode = FilterMode.Bilinear;
+                        material.mainTexture = texture;
+                    }
+                    if (parameters.Emission.X > 0f || parameters.Emission.Y > 0f || parameters.Emission.Z > 0f)
+                    {
+                        material.EnableKeyword("_EMISSION");
+                        if (material.HasProperty("_EmissionColor")) material.SetColor("_EmissionColor", new Color(parameters.Emission.X, parameters.Emission.Y, parameters.Emission.Z, 1f));
+                    }
+                    ConfigureAlpha(material, parameters);
+                }
+                return result;
+            }
+            catch
+            {
+                DestroyOwnedMaterials(result);
+                throw;
+            }
+        }
+
+        static void DestroyOwnedMaterials(IEnumerable<Material> materials)
+        {
+            foreach (var material in materials)
+            {
+                if (material == null) continue;
+                var texture = material.mainTexture;
+                if (texture != null && texture != Texture2D.whiteTexture) Object.DestroyImmediate(texture);
+                Object.DestroyImmediate(material);
+            }
+        }
+
+        static void ConfigureAlpha(Material material, MaterialParameters parameters)
+        {
+            if (parameters.AlphaMode == MaterialAlphaMode.Cutout)
+            {
+                material.SetFloat("_Mode", 1f);
+                material.SetFloat("_Cutoff", parameters.AlphaCutoff);
+                material.SetOverrideTag("RenderType", "TransparentCutout");
+                material.EnableKeyword("_ALPHATEST_ON");
+                material.renderQueue = (int)RenderQueue.AlphaTest;
+            }
+            else if (parameters.AlphaMode == MaterialAlphaMode.Blend)
+            {
+                material.SetFloat("_Mode", 3f);
+                material.SetOverrideTag("RenderType", "Transparent");
+                material.EnableKeyword("_ALPHABLEND_ON");
+                material.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
+                material.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+                material.SetInt("_ZWrite", 0);
+                material.renderQueue = (int)RenderQueue.Transparent;
+            }
+            else
+            {
+                material.SetFloat("_Mode", 0f);
+                material.SetOverrideTag("RenderType", "Opaque");
+                material.DisableKeyword("_ALPHATEST_ON");
+                material.DisableKeyword("_ALPHABLEND_ON");
+                material.renderQueue = (int)RenderQueue.Geometry;
+            }
         }
     }
 }

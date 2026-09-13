@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Rig;
 using NyaForge.UnityBridge;
@@ -166,12 +167,9 @@ namespace NyaForge.UnityBridge.Editor
                 target.transform.localPosition = new Vector3(localHead.X, localHead.Y, localHead.Z);
                 map.Add(bone.BoneId, target.transform);
             }
-            var shader = Shader.Find("Standard");
-            Require(shader != null, "Unity Standard shader is unavailable for clothing package fixture.");
-            var material = new Material(shader);
             try
             {
-                var result = SkinnedClothingReceiver.ApplyPackage(manifestPath, avatar.transform, map, "Package Fixture Clothing", new[] { material });
+                var result = SkinnedClothingReceiver.ApplyPackage(manifestPath, avatar.transform, map, "Package Fixture Clothing");
                 string rootBoneId = null;
                 foreach (var bone in package.Skeleton.Bones)
                     if (string.IsNullOrEmpty(bone.ParentBoneId)) { rootBoneId = bone.BoneId; break; }
@@ -179,13 +177,15 @@ namespace NyaForge.UnityBridge.Editor
                     "Skinned clothing package did not create the expected renderer.");
                 Require(result.Renderer.sharedMesh.vertexCount == package.Mesh.VertexCount && result.Renderer.rootBone == map[rootBoneId],
                     "Skinned clothing package geometry or root mapping changed.");
+                if (package.Materials.Any(material => material != null && material.HasEmbeddedBaseColorImage))
+                {
+                    Require(result.Renderer.sharedMaterials.Any(material => material != null &&
+                        (material.mainTexture != null || material.GetTexture("_MainTex") != null || material.GetTexture("_BaseMap") != null)),
+                        "Skinned clothing package embedded base-color texture was not assigned (materials=" + result.Renderer.sharedMaterials.Length + ").");
+                }
                 checks.Add("Skinned clothing package hashes, sidecars and ApplyPackage scene creation passed.");
             }
-            finally
-            {
-                Object.DestroyImmediate(avatar);
-                Object.DestroyImmediate(material);
-            }
+            finally { Object.DestroyImmediate(avatar); }
         }
 
         static void VerifySkinnedClothingBinding(List<string> checks)
