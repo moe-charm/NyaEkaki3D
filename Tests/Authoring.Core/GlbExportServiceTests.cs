@@ -405,6 +405,35 @@ internal static partial class Program
             True(imported.Materials[0].HasEmbeddedBaseColorImage); True(imported.Materials[0].CopyBaseColorImageBytes().Length > 8);
         });
 
+        Test("GLB export uses retained original base color only while preview is unchanged", () =>
+        {
+            var mesh = AuthoringFixtures.Panel(1);
+            var preview = new PaintImage(2, 1, new Rgba32(255, 0, 128, 255));
+            var originalBytes = PaintPng.Encode(new PaintImage(4, 2, new Rgba32(12, 34, 56, 255)));
+            var image = new GraphImageValue(preview, "", "fixture-domain");
+            var source = new GraphOriginalImage(GraphId(), 4, 2, "image/png", originalBytes, image.ImageHash);
+            var material = new GraphMaterialValue(MaterialParameters.Default, image);
+            var unchanged = GlbWriter.Build(new[] { new GlbExportService.MeshObject {
+                Mesh = mesh, Material = material, Name = "original-source",
+                OriginalImagesByPreviewHash = new Dictionary<string, GraphOriginalImage> { [image.ImageHash] = source }
+            } }, null, GlbExportProfile.StaticGeometry);
+            var importedOriginal = GlbImporter.Read(unchanged).Materials.Single();
+            True(originalBytes.SequenceEqual(importedOriginal.CopyBaseColorImageBytes()));
+            var originalHeader = PaintPngInput.Read(importedOriginal.CopyBaseColorImageBytes());
+            Equal(4, originalHeader.Width); Equal(2, originalHeader.Height);
+
+            var edited = new PaintImage(2, 1, new Rgba32(1, 2, 3, 255));
+            var editedImage = new GraphImageValue(edited, "", "fixture-domain");
+            var editedGlb = GlbWriter.Build(new[] { new GlbExportService.MeshObject {
+                Mesh = mesh, Material = new GraphMaterialValue(MaterialParameters.Default, editedImage), Name = "edited-source",
+                OriginalImagesByPreviewHash = new Dictionary<string, GraphOriginalImage> { [image.ImageHash] = source }
+            } }, null, GlbExportProfile.StaticGeometry);
+            var importedEdited = GlbImporter.Read(editedGlb).Materials.Single();
+            True(!originalBytes.SequenceEqual(importedEdited.CopyBaseColorImageBytes()));
+            var editedHeader = PaintPngInput.Read(importedEdited.CopyBaseColorImageBytes());
+            Equal(2, editedHeader.Width); Equal(1, editedHeader.Height);
+        });
+
         Test("GLB export preserves semantic normal and metallic-roughness images", () =>
         {
             var mesh = AuthoringFixtures.Panel(1);

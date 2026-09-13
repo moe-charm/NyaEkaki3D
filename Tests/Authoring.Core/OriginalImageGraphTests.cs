@@ -27,6 +27,7 @@ internal static partial class Program
             Equal(paintId, restoredSource.PaintNodeId);
             Equal(4096, restoredSource.Width); Equal(2048, restoredSource.Height);
             Equal("image/png", restoredSource.MimeType); Equal(encoded.Length, restoredSource.EncodedByteCount);
+            Equal("", restoredSource.PreviewImageHash);
             True(encoded.SequenceEqual(restoredSource.CopyEncodedBytes()));
             Equal(GraphContentIdentity.Hash(graph), GraphContentIdentity.Hash(restored));
             encoded[encoded.Length - 1] ^= 0x7f;

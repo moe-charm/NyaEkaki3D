@@ -43,7 +43,7 @@ namespace NyaForge.UnityRuntime
                     {
                         image = DecodeEmbeddedImage(material, out sourceWidth, out sourceHeight);
                         string sourceMime = ImageMime(material);
-                        original = new GraphOriginalImage(imageId, sourceWidth, sourceHeight, sourceMime, material.CopyBaseColorImageBytes());
+                        original = new GraphOriginalImage(imageId, sourceWidth, sourceHeight, sourceMime, material.CopyBaseColorImageBytes(), Checks.Hash(PaintImageCodec.Write(image)));
                     }
                     catch (AuthoringException error)
                     {

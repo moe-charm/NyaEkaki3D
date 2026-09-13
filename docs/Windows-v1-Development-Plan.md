@@ -1,6 +1,6 @@
 # Nya Ekaki 3D Windows v1 実行計画
 
-更新: 2026-09-14。検証対象コード: `main`（`51cb197`、NF-V1-09C原画像source inspectionまで実装済み）。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership marker・複数package管理・semantic texture preview・納品対象allowlist・base-color原画像sourceのnative保持・検査公開まで実装が進んでいる。Downloads版原案の再確認結果は[current_task](../current_task.md)へ記録した。
+更新: 2026-09-14。検証対象コード: `main`（NF-V1-09D未編集base-colorの原画像出力まで実装済み）。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership marker・複数package管理・semantic texture preview・納品対象allowlist・base-color原画像sourceのnative保持・検査公開・未編集時の原画像出力まで実装が進んでいる。Downloads版原案の再確認結果は[current_task](../current_task.md)へ記録した。
 
 本書は持込「NyaForge Windows v1 開発計画」をコード照合して修正した実行計画。受入済み報告ではない。製品全体の目標・C0〜C5の要件は[設計v2](NyaForge-Authoring-Design2.md)を維持し、本書はWindows衣装制作v1へ至る着手順を定める。v1だけの合格を製品全体や進行中goalの完了へ読み替えない。直近の状態は[current_task](../current_task.md)。現行main（`51cb197`）ではCore 503 passed / 0 failed、`Builds/ReleaseCandidateV7/NyaForge.exe`のAuthoring suite、private RadDollV3全mesh import／Save/Open／GLB・VRM1 smoke、実SDKのRadDollV3 Skirt chain PhysBone設定probe、実FBXへのskinned-clothing package初回・再適用・native roundtrip smoke、実body meshを使ったsurface fit／weight transfer接続probe、semantic textureを含む合成Unity Bridgeの衣装package回帰、明示納品対象allowlistのGUI／MCP／GLB subsetとSave/Open回帰まで確認済みで、通常GLBのTEXCOORD_1は`UNSUPPORTED_UV_SET`で明示停止する。semantic textureのGUIもUV1新規適用を拒否し、UV0へ戻してから保存・出力する契約を持つ。base-colorを1024pxへ縮小した場合は原画像サイズと作業画像サイズを表示し、PNG/JPEGの原画像bytesを`image.original-source`としてnative graphへ別保持する。未編集時の原画像再出力は未接続で、原画像sourceを持たない既存projectから復元を装わない。範囲限定fitの平均値は選択頂点数を分母にし、`EvaluatedVertexCount`として検査記録へ出す。実マウス・実EditorWindow・全周fit／貫通・見た目・Build & Test・実VRChatは未受入である。
 
@@ -60,7 +60,7 @@ NF-V1のIDは持込提案との対応用に維持。状態は実装済み・合�
 | NF-V1-07 | 衣装検査GUIと参照保護 | 05、06 | rest編集/pose確認、bodyと衣装の表示、参照ロック、既存weight修正、固定pose群をGUIへ接続。参照object保護のnative保存・Open復元・Undo/Redo同期と頂点編集停止はPlayer回帰済み。実EditorWindowの手動操作、実アバターの全周fit・貫通・見た目は別受入として残す。新ブラシは一周で必要性が判明したものに限定 |
 | NF-V1-08 | 自作衣装1点の全工程 | 03A、07。外部判定は02A | `PolygonPrimitives.Cuff`で低ポリ手首カフのprimitive→造形→UV/paint→確定→weight→保存再開→Unity→VRChatを手順だけで再現。Player自動経路は確認済み、実アバター・実VRChat・販売品質は未受入 |
 | NF-V1-09 | 材質semantic slot設計 | 03 | 既存材質を拡張し、用途・色空間・channel・UV・sampler・adapter版を定義。Windows v1はUV0を出荷対象とし、GUIもUV1の新規適用を拒否する。Unity shader固有名はadapter。全面IR置換なし |
-| NF-V1-09A〜C | 画像解像度・所有・出力品質 | 09 | 入力/作業/出力解像度とhashを表示・保存・inspectionへ。1024px作業previewとは別にPNG/JPEG原画像bytesを`image.original-source`としてnative graphへ保持し、inspectionでは原寸・MIME・byte数・hashだけを返す。未編集原本のGLB再出力接続、編集後出力の規則とsampler／メモリ予算は次段で確定し、元画像sourceを持たない既存projectから原画を復元したとは扱わない |
+| NF-V1-09A〜D | 画像解像度・所有・出力品質 | 09 | 入力/作業/出力解像度とhashを表示・保存・inspectionへ。1024px作業previewとは別にPNG/JPEG原画像bytesを`image.original-source`としてnative graphへ保持し、inspectionでは原寸・MIME・byte数・hashだけを返す。preview hashが未編集と一致する場合だけ原画像bytesをGLBへ戻し、編集後・旧project・曖昧な複数sourceはpreview PNGへフォールバックする。元画像sourceを持たない既存projectから原画を復元したとは扱わない |
 | NF-V1-10 | normal/MR画像の一周 | 09、09A、03Aのshader決定 | 衣装の画像指定・プレビュー・native・出力・receiverで一致。normal方向/tangent、MRのG=roughness/B=metallic、linear値とsRGB色、alphaを検証。専用paint/AO/emissive/bakeは追加しない |
 | NF-V1-11 | 同一targetの複数object受入 | 03A、08、10 | 衣装2点＋小物1点を独立nodeで受取。同名骨/順序違い/別source負例。物理的mesh結合やdedupを必須にしない |
 | NF-V1-12 | Unity更新・再適用 | 03A。最終複数回帰は11 | ownership/journalを衣装へ拡張。同じObjectIdのStateHash更新でBoneId割当と既存管理参照を保持し、更新時の管理object付け替えをBridge回帰で確認済み。A→B→再起動の実EditorWindow操作、削除・取消・失敗・利用者変更の競合、元avatar設定保護は手動受入として残る |
