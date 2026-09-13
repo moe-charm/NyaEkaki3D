@@ -112,6 +112,13 @@ namespace NyaForge.UnityRuntime
                 FitAccessoryToAvatarSurface();
                 Check(workspace.Evaluate().ContentHash != beforeFit,
                     "Accessory avatar-surface fit did not update the edited clothing geometry");
+                string failedFitState = workspace.Document.StateHash;
+                long failedFitRevision = workspace.Document.DocumentRevision;
+                accessoryFitMaxDistanceMm.SetValueWithoutNotify(1);
+                FitAccessoryToAvatarSurface();
+                Check(workspace.Document.StateHash == failedFitState && workspace.Document.DocumentRevision == failedFitRevision,
+                    "Out-of-range avatar-surface fit changed the clothing document");
+                accessoryFitMaxDistanceMm.SetValueWithoutNotify(50);
 
                 // Exercise the same explicit pose-copy action exposed by the
                 // Workbench. Move the source avatar, copy its evaluated pose

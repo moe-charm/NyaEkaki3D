@@ -1954,7 +1954,7 @@ Coreは **482 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 
 衣装の位置合わせ用に、`MeshSurfaceFit.ProjectPositions` とWorkbenchの **衣装をavatar表面へfit** を追加した。衣装の現在のEditMesh結果をavatar rest meshの最近三角形へ投影し、指定したsurface offsetを法線方向へ加え、EditMeshのrest-space deltaとして一つのUndo commandへ置き換える。最大距離とoffsetをメートルで検査し、1頂点でも範囲を超えた場合は候補計算の段階で停止して文書を変更しない。トポロジー、UV、材質、weightは変更せず、fit後に既存のRig／pose確認へ進める。裏面への吸着、体形差、衣装同士の交差、販売品質を自動解決する機能ではない。
 
-Coreは **483 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-7cff4eefa45448e69311e4a2d6200a01`）。bounded距離、offset上限、頂点数保持、最近面投影を回帰した。Unity **6000.4.3f1** Windows Player `Builds/SurfaceFitV2/NyaForge.exe` のビルドは成功（`Logs/build-player-20260913-193017-936.log`）。同PlayerのAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-193038-9ce16edb544f4ce9a43e826872b969ab/report.json`、画面 `authoring.png`）で、avatar＋static GLB衣装のskin-bind、weight初期化、surface fit、pose copy、Save/Open、GLB／VRM出力を同じ検証へ通した。
+Coreは **483 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-7cff4eefa45448e69311e4a2d6200a01`）。bounded距離、offset上限、頂点数保持、最近面投影を回帰した。Unity **6000.4.3f1** Windows Player `Builds/SurfaceFitV3/NyaForge.exe` のビルドは成功（`Logs/build-player-20260913-193531-032.log`）。同PlayerのAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-193552-8e2244be8e9041678fd90f84ad6746ec/report.json`、画面 `authoring.png`）で、avatar＋static GLB衣装のskin-bind、weight初期化、surface fit、最大距離超過時の文書不変、pose copy、Save/Open、GLB／VRM出力を同じ検証へ通した。
 
 表面法線の向きが入力meshのwindingに依存するため、offsetの符号と複数poseの交差はRig確認が必要。実アバターでの体形差、自動fit品質、貫通修正、実マウス／DPI差、実VRChat内の見た目・PhysBones挙動は別受入境界とする。
 
