@@ -36,9 +36,17 @@ namespace NyaForge.UnityRuntime
                 var result = AuthoringValidationReader.Read(workspace, workspace.InstanceId, request);
                 string status = (string)result["status"];
                 var checks = result["checks"]?.Values<JObject>() ?? Enumerable.Empty<JObject>();
-                validationResult.text = "判定: " + status + "\n" + string.Join(" / ", checks.Select(c => (string)c["name"] + ": " + (string)c["status"]));
+                validationResult.text = "判定: " + status + "\n" + string.Join(" / ", checks.Select(FormatValidationCheck));
                 SetStatus("出力チェック: " + status);
             });
+        }
+
+        static string FormatValidationCheck(JObject check)
+        {
+            string text = (string)check["name"] + ": " + (string)check["status"];
+            return check["actual"] != null && check["limit"] != null
+                ? text + " (" + (string)check["actual"] + "/" + (string)check["limit"] + ")"
+                : text;
         }
 
         void RefreshValidation()
