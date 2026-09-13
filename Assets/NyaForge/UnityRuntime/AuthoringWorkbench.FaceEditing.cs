@@ -94,11 +94,18 @@ namespace NyaForge.UnityRuntime
             // the editing-point list, which can be shorter when UV seams split
             // vertices) and apply the same attachment root as the renderer.
             var renderMesh = value.PolygonRendering.Mesh;
-            var rootTransform = projection.DisplayObject != null ? projection.DisplayObject.transform : null;
-            var points = renderMesh.Positions.Select(point =>
-                rootTransform == null
-                    ? OwnedMeshProjection.ToUnity(value.Transform.ToAvatarPoint(point))
-                    : rootTransform.TransformPoint(OwnedMeshProjection.ToUnity(value.Transform.ToAvatarPoint(point)))).ToArray();
+            var points = projection.RenderWorldPoints;
+            if (points.Length != renderMesh.VertexCount)
+            {
+                // Keep a defensive fallback for a projection being rebuilt in
+                // the same frame as a click; the normal path is the cached array
+                // above and does not allocate per click.
+                var rootTransform = projection.DisplayObject != null ? projection.DisplayObject.transform : null;
+                points = renderMesh.Positions.Select(point =>
+                    rootTransform == null
+                        ? OwnedMeshProjection.ToUnity(value.Transform.ToAvatarPoint(point))
+                        : rootTransform.TransformPoint(OwnedMeshProjection.ToUnity(value.Transform.ToAvatarPoint(point)))).ToArray();
+            }
             foreach (var submesh in renderMesh.Submeshes)
                 for (int i = 0; i < submesh.Length; i += 3, triangle++)
                 {

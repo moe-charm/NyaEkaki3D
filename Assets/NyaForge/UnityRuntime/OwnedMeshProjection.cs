@@ -25,6 +25,8 @@ namespace NyaForge.UnityRuntime
         public Vector3[] Points => current?.Points ?? Array.Empty<Vector3>();
         /// <summary>Points in the preview world's coordinates, including rigid attachment pose.</summary>
         public Vector3[] WorldPoints => current?.WorldPoints ?? Array.Empty<Vector3>();
+        /// <summary>Rendered vertices in preview-world coordinates, including UV-seam splits.</summary>
+        public Vector3[] RenderWorldPoints => current?.RenderWorldPoints ?? Array.Empty<Vector3>();
         public string PreviewNodeId { get; set; } = "";
         public int HighlightedTriangleCount => current?.FaceHighlight?.TriangleCount ?? 0;
         public bool ShowFinalResult { get; set; } = true;
@@ -127,6 +129,8 @@ namespace NyaForge.UnityRuntime
                 candidate.Renderer=meshObject.AddComponent<MeshRenderer>();candidate.Renderer.sharedMaterials=candidate.BaseColor.Materials;
                 candidate.FaceHighlight = new FaceHighlightProjection(meshObject.transform, candidate.Mesh, selectedFace);
                 if (final != null) candidate.FinalResult = new FinalResultProjection(candidate.Root.transform, final, finalSurface, attachmentPose);
+                candidate.RenderWorldPoints = evaluated.Positions.Select(p =>
+                    candidate.Root.transform.TransformPoint(ToUnity(transform.ToAvatarPoint(p)))).ToArray();
                 candidate.Points = evaluated.Positions.Select(p => ToUnity(transform.ToAvatarPoint(p))).ToArray();
                 if(PreviewNodeId!="" && appearance?.Polygon!=null)
                     candidate.Points=NyaForge.Authoring.Topology.PolygonEditPoints.VertexIds(appearance.Polygon).Select(id=>ToUnity(transform.ToAvatarPoint(appearance.Polygon.Vertices[id].Position))).ToArray();
@@ -202,6 +206,7 @@ namespace NyaForge.UnityRuntime
             public MaterialSurfaceSet BaseColor;
             public Vector3[] Points = Array.Empty<Vector3>();
             public Vector3[] WorldPoints = Array.Empty<Vector3>();
+            public Vector3[] RenderWorldPoints = Array.Empty<Vector3>();
             public NyaForge.Authoring.Topology.PolygonMesh EditPolygon;
             public EditPointProjection PointMarkers;
             public Prepared(OwnedMeshProjection owner) { this.owner = owner; }

@@ -1713,3 +1713,9 @@ Frame修正後の最新Playerで、private一時RadDollV3 VRMの全mesh instance
 面クリック判定を編集点配列から分離し、`PolygonRendering.Mesh`のrender頂点を使うよう補強した。UV seamで同じ制作頂点が複数render頂点へ分割される場合も配列範囲を誤らず、装着rootのワールドTransformを描画と同じく一度だけ適用する。Quickstartへ挙動を追記した。
 
 Unity 6000.4.3f1のWindows Player `Builds/FacePickFixV2/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-153738-772.log`）。private一時RadDollV3 VRMを使うAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-153802-08b46c08414f48148c6070fba145c34b/report.json`）。1000x700 Navigationも **PASS**（`Artifacts/Navigation-20260913-153928-dc07eec7a79c4c0ea09f7c2534f038aa/report.json`）。
+
+# 2026-09-13 面選択ワールド頂点キャッシュ
+
+高密度モデルでの軽量性を保つため、面クリックごとのrender頂点ワールド座標配列生成をやめ、`OwnedMeshProjection`構築時に`RenderWorldPoints`をキャッシュするようにした。UV seam分割を含むrender domainと、頂点編集用の`WorldPoints`を別々に保持し、通常クリックは追加割り当てなしで判定する。projection再構築（mesh／Transform／attachment変更）時だけキャッシュを更新する。
+
+Coreは **475 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-6d3e3e05bc934e43900a2ccad27b6101`）。Unity 6000.4.3f1のWindows Player `Builds/FacePickPerfV1/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-154110-759.log`）。RadDollV3全mesh取込を含むAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-154132-e96fc21de38f4fa59f67b3b123813c5a/report.json`）。1000x700 Navigationも **PASS**（`Artifacts/Navigation-20260913-154343-66577ae7461f400d9b3d0249ef459056/report.json`）。
