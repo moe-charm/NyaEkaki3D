@@ -8,6 +8,22 @@ internal static partial class Program
 {
     static void RunAccessorySkinBindingTests()
     {
+        Test("clothing weight transfer seeds deterministic nearest bone influences", () =>
+        {
+            var mesh = PrimitiveGeometry.Plane(.2f, .2f);
+            string root = GraphId(), upper = GraphId();
+            var skeleton = new SkeletonDefinition(new[] {
+                new BoneDefinition(root, "Root", "", new Vec3(0, 0, 0), new Vec3(0, .1f, 0)),
+                new BoneDefinition(upper, "Upper", root, new Vec3(0, .1f, 0), new Vec3(0, .3f, 0))
+            });
+            var first = SkinWeightTransfer.ByBoneProximity(mesh, skeleton, .02f, 2);
+            var second = SkinWeightTransfer.ByBoneProximity(mesh, skeleton, .02f, 2);
+            Equal(first.ContentHash, second.ContentHash);
+            True(first.Weights.Values.All(values => values.Count == 2 && Math.Abs(values.Sum(value => value.Weight) - 1f) < 1e-6f));
+            True(first.Weights.Values.SelectMany(values => values).All(value => value.BoneId == root || value.BoneId == upper));
+            Expect("INVALID_WEIGHT", () => SkinWeightTransfer.ByBoneProximity(mesh, skeleton, 0f));
+        });
+
         Test("static accessory can become a root-initialized avatar skin graph", () =>
         {
             var mesh = AuthoringFixtures.Panel(1);

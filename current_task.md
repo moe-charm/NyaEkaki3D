@@ -1912,3 +1912,10 @@ Core回帰は **479 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/N
 Using private temporary input `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-RealModelSmoke\RadDollV3_VRM.vrm` with `Builds/FeedbackFix2/NyaForge.exe`, the 800x600 Authoring suite passed. The checks included command-line real GLB/VRM import, generated EditMesh and vertex edit, native Save/Open, standard skinned GLB export and reimport, then VRM 1.0 package export with metadata re-read. The output package preserved source skinned GLB topology, vertex/triangle counts, and skeleton cardinality. Evidence: `Artifacts/Authoring-20260913-184347-065d9267276c4e609d16320a0443080c/report.json` and `authoring.png`.
 
 This confirms the node-map and authored-token resolution path on the private model. VRM0 SpringBone was intentionally omitted from this VRM1 export check. Real UniVRM/VRChat runtime appearance and behavior, complete VRM extensions, automatic clothing fit/penetration repair, and manual mouse/DPI acceptance remain separate gates.
+# 2026-09-13 clothing weight transfer initialisation
+
+衣装skin-bind後のRoot 100%初期化だけでは、毎回すべての頂点を手作業で割り当てる必要があった。`SkinWeightTransfer.ByBoneProximity`をAuthoring/Rigへ追加し、rest骨segmentまでの距離から最大4本を選び、決定的に正規化した初期weightを生成する。GUIの小物パネルに「自動weight初期化（骨近傍）」を追加した。これはfit・貫通判定・最終weight品質を保証する機能ではなく、Rig panelでの確認・手修正とpose確認を必須とする初期化支援である。既存のRoot初期化とstable BoneId装着は変更していない。
+
+Core回帰は **480 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0d70cc4826e642758fddfe38da6debad`）。自動weightの決定性、全頂点の正規化、最大4 influence、不正falloff拒否を追加確認した。Unity **6000.4.3f1**で `Builds/WeightTransferV1/NyaForge.exe` をビルドし、800x600 Authoring suite **PASS**（`Artifacts/Authoring-20260913-185032-5f9e24cf1ea146f8a6a4c2005557dbb5/report.json`、画面 `authoring.png`）。
+
+自動fit・貫通修正、nearest-surface transfer、衣装の実アバター内見た目、手動mouse/DPI受入は別タスクとして残す。

@@ -12,7 +12,7 @@
 
 **確認セット** に保存・復元、**設定** に起動設定・更新・詳細パス・再生速度をまとめています。同じ上部ボタンをもう一度押すと閉じます。視点ボタンはモデル表示の上、ポーズと再生は下にあります。詳細のパス欄ではパックのフォルダ自体も指定できます。
 
-ビューワーでは生成済みのパックと確認セットを開けます。制作画面の **GLBモデルを取り込む** を開くと、Windowsのファイル選択からGLB/VRMを選び、候補のmesh・skin・node instanceを確認して制作対象へ追加できます。static meshとskin付きmeshのどちらもEditMesh段から頂点編集を始められます。別graph objectとして取り込んだ小物はstable BoneIdへ装着でき、同じパネルの **衣装をavatar骨格へskin-bind（Root初期化）** で選択avatarの骨格をコピーし、全頂点をRootへ初期化できます。変換後はRig panelのweight混合・weight paintで袖や裾などを骨へ割り当てます。FBX・BLEND・Unity prefabの直接取り込みは未実装です。
+ビューワーでは生成済みのパックと確認セットを開けます。制作画面の **GLBモデルを取り込む** を開くと、Windowsのファイル選択からGLB/VRMを選び、候補のmesh・skin・node instanceを確認して制作対象へ追加できます。static meshとskin付きmeshのどちらもEditMesh段から頂点編集を始められます。別graph objectとして取り込んだ小物はstable BoneIdへ装着でき、同じパネルの **衣装をavatar骨格へskin-bind（Root初期化）** で選択avatarの骨格をコピーし、全頂点をRootへ初期化できます。続けて **自動weight初期化（骨近傍）** を押すと、rest骨segmentへの距離から最大4本の初期weightを作成できます。これは初期値なので、Rig panelのweight混合・weight paintとpose確認で袖や裾などを必ず調整します。FBX・BLEND・Unity prefabの直接取り込みは未実装です。
 
 実素材を用意せず取込経路だけを確認する場合は、リポジトリの公開fixtureを生成できます。PowerShellで次を実行すると、静的mesh 0と2骨skinned mesh 1を含む小さなGLBが `Artifacts/NyaForgeGlbFixture/clothing-fixture.glb` に作られます。
 
@@ -229,7 +229,7 @@ PNGはRGBA8・sRGB・straight alphaで、上下方向を標準PNGに合わせる
 
 先にVRM/GLB avatarを取り込み、別のstatic GLBを衣装として取り込む。衣装をactive objectにした状態で「小物をボーンへ装着」を開き、対象avatarを選んで **衣装をavatar骨格へskin-bind（Root初期化）** を押す。既存の剛体attachmentがある場合は、先に「装着を解除」する。処理は衣装のSource／Morph／EditMesh／材質経路を保ったまま、avatarのskeleton・pose・skin-bind・skin-deformを追加する。
 
-初期状態では衣装の全頂点がRoot boneへ100%割り当てられる。続けて **Rig / weight編集** でboneを選び、選択頂点へのweight適用またはweight paintを使ってChild・胸・腕などへ配分する。avatarと同じ姿勢で確認したいときは、衣装graphを選択したまま小物パネルでコピー元avatarを選び、**avatarの現在poseを衣装へコピー** を押す。これはその時点のposeを衣装側のPose nodeへ保存し、コピー元object IDもmetadataとして保持する明示操作で、保存して開き直した後も同じavatarを候補として復元できる。avatarを後から動かしても自動共有はしない（姿勢を変えたら再度コピーする）。異なるskeletonの自動結合や自動fit・貫通修正はまだない。skin-bind化した衣装はrig情報を含むnative projectとして保存・再開でき、標準skinned GLBはpose-source metadataを無視してrest pose・identity transformなどのプロファイル条件を満たす場合に出力できる。
+初期状態では衣装の全頂点がRoot boneへ100%割り当てられる。必要なら **自動weight初期化（骨近傍）** を押して初期weightを作り、続けて **Rig / weight編集** でboneを選び、選択頂点へのweight適用またはweight paintを使ってChild・胸・腕などへ配分する。自動weightは距離ベースの候補であり、衣装の体へのfitや貫通判定を行わない。avatarと同じ姿勢で確認したいときは、衣装graphを選択したまま小物パネルでコピー元avatarを選び、**avatarの現在poseを衣装へコピー** を押す。これはその時点のposeを衣装側のPose nodeへ保存し、コピー元object IDもmetadataとして保持する明示操作で、保存して開き直した後も同じavatarを候補として復元できる。avatarを後から動かしても自動共有はしない（姿勢を変えたら再度コピーする）。異なるskeletonの自動結合や自動fit・貫通修正はまだない。skin-bind化した衣装はrig情報を含むnative projectとして保存・再開でき、標準skinned GLBはpose-source metadataを無視してrest pose・identity transformなどのプロファイル条件を満たす場合に出力できる。
 
 
 ## 小物の制作から受け取り側の描画まで再検証

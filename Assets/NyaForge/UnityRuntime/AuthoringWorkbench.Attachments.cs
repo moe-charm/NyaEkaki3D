@@ -17,7 +17,7 @@ namespace NyaForge.UnityRuntime
         DropdownField attachmentTarget;
         DropdownField attachmentBone;
         FloatField attachmentOffsetX, attachmentOffsetY, attachmentOffsetZ;
-        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPoseCopy;
+        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryAutoWeight, accessoryPoseCopy;
         readonly List<string> attachmentTargetIds = new List<string>();
         readonly List<string> attachmentBoneIds = new List<string>();
         string attachmentTargetChoice;
@@ -49,9 +49,10 @@ namespace NyaForge.UnityRuntime
             attachmentApply = Button("この小物を装着", ApplyAttachment, "object-attachment-apply");
             attachmentRemove = Button("装着を解除", RemoveAttachment, "object-attachment-remove");
             accessorySkinBind = Button("衣装をavatar骨格へskin-bind（Root初期化）", BindAccessoryToAvatar, "object-skin-bind");
+            accessoryAutoWeight = Button("衣装の自動weight初期化（骨近傍）", TransferAccessoryWeights, "object-skin-auto-weight");
             accessoryPoseCopy = Button("avatarの現在poseを衣装へコピー", CopyAvatarPose, "object-skin-pose-copy");
-            attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryPoseCopy);
-            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。自動fitや貫通判定は別機能です。");
+            attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryAutoWeight); attachmentPanel.Add(accessoryPoseCopy);
+            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。自動weight初期化はrest骨segmentへの距離から最大4本を選ぶ初期値で、必ず動作確認・手修正してください。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。自動fitや貫通判定は別機能です。");
             help.style.whiteSpace = WhiteSpace.Normal; attachmentPanel.Add(help);
             parent.Add(attachmentPanel);
         }
@@ -187,6 +188,10 @@ namespace NyaForge.UnityRuntime
                 workspace.Document.ActiveObject.Graph.Nodes.Values.Count(item => item.TypeId == BuiltinNodes.EditMesh) == 1 &&
                 workspace.Document.ActiveObject.Graph.Nodes.Values.All(item => item.TypeId != BuiltinNodes.Skeleton && item.TypeId != BuiltinNodes.SkinBind && item.TypeId != BuiltinNodes.SkinDeform && item.TypeId != BuiltinNodes.Pose && item.TypeId != BuiltinNodes.Attachment);
             accessorySkinBind.SetEnabled(canSkinBind);
+            bool canAutoWeight = target != null && skeleton != null && workspace.Preview.IsComplete &&
+                workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.EditMesh) &&
+                workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.SkinBind && item.Binding != null);
+            accessoryAutoWeight.SetEnabled(canAutoWeight);
             bool hasSkinPose = workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.SkinBind) &&
                 workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.Pose);
             accessoryPoseCopy.SetEnabled(target != null && skeleton != null && hasSkinPose);
@@ -277,6 +282,29 @@ namespace NyaForge.UnityRuntime
                 Execute(sourceNode == null ? AuthoringOperation.AddNode(sourceUpdate) : AuthoringOperation.UpdateNode(sourceUpdate));
                 RefreshAttachmentControls();
                 SetStatus("avatarの現在poseを衣装へコピーしました。必要ならweightを調整して保存してください。");
+            });
+        }
+
+        void TransferAccessoryWeights()
+        {
+            Try(() =>
+            {
+                if (!IsGraph) throw new InvalidOperationException("衣装のgraph objectを選択してください。");
+                int targetIndex = attachmentTarget.index;
+                if (targetIndex < 0 || targetIndex >= attachmentTargetIds.Count) throw new InvalidOperationException("weight移行元avatarを選択してください。");
+                var target = FindObject(attachmentTargetIds[targetIndex]); var session = RigFor(target);
+                var skeleton = session == null ? null : TryResolveSkeleton(session, target.Graph);
+                if (skeleton == null) throw new InvalidOperationException("weight移行元avatarのskeletonがありません。");
+                var graph = workspace.Document.ActiveObject.Graph;
+                var edit = graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.EditMesh);
+                var bind = graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);
+                if (edit == null || bind == null) throw new InvalidOperationException("衣装を先にskin-bindしてください。");
+                if (!workspace.Preview.Evaluation.MeshOutputs.TryGetValue(edit.NodeId, out var editValue) || editValue?.Mesh == null)
+                    throw new InvalidOperationException("衣装EditMeshの評価結果を取得できません。");
+                var transferred = SkinWeightTransfer.ByBoneProximity(editValue.Mesh, skeleton, .05f, 4);
+                Execute(AuthoringOperation.UpdateNode(GraphNode.SkinBindNode(bind.NodeId, transferred)));
+                attachmentTargetChoice = target.ObjectId;
+                SetStatus("骨segment近傍から衣装weightの初期値を作成しました。Rig panelで必ず確認・手修正してください。");
             });
         }
     }
