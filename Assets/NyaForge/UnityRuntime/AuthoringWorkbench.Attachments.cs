@@ -24,7 +24,7 @@ namespace NyaForge.UnityRuntime
         TextField accessoryClothingVertexIds;
         Toggle accessorySurfacePickMode;
         readonly HashSet<int> selectedAvatarSurfaceTriangles = new HashSet<int>();
-        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPolygonMaterialize, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessoryPoseCopy, accessoryUseSelectedVertices;
+        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPolygonMaterialize, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessoryPoseCopy, accessoryUseSelectedVertices, accessoryClearSurfaceSelection;
         readonly List<string> attachmentTargetIds = new List<string>();
         readonly List<string> attachmentBoneIds = new List<string>();
         string attachmentTargetChoice;
@@ -67,6 +67,8 @@ namespace NyaForge.UnityRuntime
             accessorySurfacePickMode = new Toggle("クリックでavatar面を選択（Shiftで追加）") { name = "object-surface-pick-mode" };
             accessorySurfacePickMode.tooltip = "有効にするとビューポートのavatar面をクリックして領域を作ります。衣装頂点のクリック選択は一時停止します。";
             attachmentPanel.Add(accessorySurfacePickMode);
+            accessoryClearSurfaceSelection = Button("avatar面領域を解除（全三角形）", ClearSurfaceTriangleSelection, "object-surface-clear-selection");
+            attachmentPanel.Add(accessoryClearSurfaceSelection);
             accessoryClothingVertexIds = new TextField("衣装頂点ID（カンマ区切り・空欄=全て）") { name = "object-surface-clothing-vertex-ids" };
             accessoryClothingVertexIds.tooltip = "衣装EditMeshの頂点IDを限定します。空欄なら全頂点を対象にし、指定時は未選択頂点の位置・weightを保持します。";
             attachmentPanel.Add(accessoryClothingVertexIds);
@@ -175,7 +177,7 @@ namespace NyaForge.UnityRuntime
             if (!IsGraph)
             {
                 attachmentStatus.text = "装着: graph objectを選択してください。";
-                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryPolygonMaterialize.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); accessoryUseSelectedVertices.SetEnabled(false); accessorySurfacePickMode.SetEnabled(false); return;
+                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryPolygonMaterialize.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); accessoryUseSelectedVertices.SetEnabled(false); accessorySurfacePickMode.SetEnabled(false); accessoryClearSurfaceSelection.SetEnabled(false); return;
             }
             var targets = workspace.Document.Objects.Where(item => item.ObjectId != workspace.Document.ActiveObjectId && item.Graph != null).ToArray();
             attachmentTargetIds.AddRange(targets.Select(item => item.ObjectId));
@@ -223,6 +225,7 @@ namespace NyaForge.UnityRuntime
                 TargetAvatarSurfaceAvailable(target);
             accessorySurfaceFit.SetEnabled(canSurfaceFit);
             accessorySurfacePickMode.SetEnabled(canSurfaceFit);
+            accessoryClearSurfaceSelection.SetEnabled(canSurfaceFit && !string.IsNullOrWhiteSpace(accessorySurfaceTriangleIds.value));
             bool hasSkinPose = workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.SkinBind) &&
                 workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.Pose);
             accessoryPoseCopy.SetEnabled(target != null && skeleton != null && hasSkinPose);
@@ -377,6 +380,14 @@ namespace NyaForge.UnityRuntime
             {
                 avatarSurfaceSelection.Refresh(null, new RestTransform(1, new Vec3()), null);
             }
+        }
+
+        void ClearSurfaceTriangleSelection()
+        {
+            selectedAvatarSurfaceTriangles.Clear();
+            accessorySurfaceTriangleIds.SetValueWithoutNotify("");
+            RefreshAvatarSurfaceSelection();
+            SetStatus("avatar面領域を解除しました。fit／weightは全三角形を対象にします。");
         }
 
         bool SurfaceTrianglePickingActive => accessorySurfacePickMode != null && accessorySurfacePickMode.value && accessorySurfacePickMode.enabledSelf;

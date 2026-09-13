@@ -14,6 +14,8 @@ Workbenchの衣装表面処理へ`avatar面ID（カンマ区切り・空欄=全�
 
 選択面を見失わないよう、avatar面領域のオレンジ色overlayを追加した。対象avatarのrest meshを表示と同じ座標変換で描画し、選択解除・対象変更・不正IDでoverlayを無効化する。`Builds/WindowsSurfaceHighlight/NyaForge.exe`（Unity **6000.4.3f1**）のAuthoring suite **83 checks PASS**（`Artifacts/Authoring-20260914-024129-11599e7c9b1c4209ac635afec67b6415/report.json` と `authoring.png`）で、既存の衣装選択・fit／weight経路への影響がないことを確認した。overlayの見た目は自動fixture画像で確認し、実RadDollV3の全周外観・DPI・VRChat内表示は未受入である。
 
+面領域の解除操作をボタン化し、「avatar面領域を解除（全三角形）」で入力欄・選択集合・overlayを一度にクリアできるようにした。最新`Builds/WindowsSurfaceClear/NyaForge.exe`（Unity **6000.4.3f1**）のAuthoring suite **83 checks PASS**（`Artifacts/Authoring-20260914-024400-8ba2a334092c4dd6b93351665a7b9e5f/report.json` と `authoring.png`）。
+
 レビューで挙がった `9855d43` 系のP1/P2を現行mainへ再照合した。対象は衣装受け取りの座標、割当保存、UV1、疎なmaterial slot、MR係数、カフ面向き、sampler共有、削除済み衣装の割当読込である。
 
 次の項目は現行実装と回帰で確認済みで、同じ修正を重ねて行わない。
