@@ -5,6 +5,7 @@ using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Import;
+using NyaForge.Authoring.Rig;
 
 namespace NyaForge.UnityRuntime
 {
@@ -75,6 +76,42 @@ namespace NyaForge.UnityRuntime
                     bound.Binding.Weights.Values.SelectMany(values => values).Select(value => value.BoneId).Distinct().Count() == 1 &&
                     bound.Binding.Weights.Values.All(values => values.Count == 1 && Math.Abs(values[0].Weight - 1f) < 1e-6f),
                     "Accessory skin-bind did not initialize all vertices to the selected avatar root");
+
+                // Exercise the same explicit pose-copy action exposed by the
+                // Workbench. Move the source avatar, copy its evaluated pose
+                // into the clothing graph, and prove the saved pose survives
+                // reopening before resetting both graphs for GLB export.
+                Execute(AuthoringOperation.SelectObject(avatarObjectId));
+                var avatarGraph = workspace.Document.ActiveObject.Graph;
+                var avatarPoseNode = avatarGraph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.Pose);
+                var avatarSkeleton = TryResolveSkeleton(RigFor(workspace.Document.ActiveObject), avatarGraph);
+                var avatarRoot = avatarSkeleton.Bones.First(bone => string.IsNullOrEmpty(bone.ParentBoneId));
+                var copiedAvatarPose = PoseEditing.SetRotationZ(avatarPoseNode.Pose, avatarSkeleton, avatarRoot.BoneId, 25);
+                Execute(AuthoringOperation.UpdateNode(GraphNode.PoseNode(avatarPoseNode.NodeId, copiedAvatarPose)));
+                Execute(AuthoringOperation.SelectObject(accessoryObjectId));
+                attachmentTargetChoice = avatarObjectId; RefreshAttachmentControls();
+                CopyAvatarPose();
+                var copiedClothingPose = workspace.Document.ActiveObject.Graph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.Pose).Pose;
+                Check(copiedClothingPose.ContentHash == copiedAvatarPose.ContentHash,
+                    "Explicit avatar pose copy did not rebind the clothing Pose node");
+                string poseProject = Path.Combine(output, "imported-accessory-pose-project");
+                projectPath.SetValueWithoutNotify(poseProject); SaveProject();
+                OpenProject(); Execute(AuthoringOperation.SelectObject(accessoryObjectId));
+                var reopenedCopiedPose = workspace.Document.ActiveObject.Graph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.Pose).Pose;
+                Check(reopenedCopiedPose.ContentHash == copiedAvatarPose.ContentHash && !workspace.IsDirty,
+                    "Explicit avatar pose copy changed after native Save/Open");
+
+                // Standard skinned GLB output is a rest-pose profile. Restore
+                // both source and clothing poses explicitly before continuing.
+                var restAvatarPose = PoseSet.Create(avatarSkeleton, avatarSkeleton.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head))));
+                Execute(AuthoringOperation.SelectObject(avatarObjectId));
+                avatarPoseNode = workspace.Document.ActiveObject.Graph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.Pose);
+                Execute(AuthoringOperation.UpdateNode(GraphNode.PoseNode(avatarPoseNode.NodeId, restAvatarPose)));
+                Execute(AuthoringOperation.SelectObject(accessoryObjectId));
+                GraphNode clothingPoseNode; SkeletonDefinition clothingSkeleton;
+                if (!TryResolvePose(out clothingPoseNode, out clothingSkeleton)) throw new InvalidOperationException("clothing pose node was not restored");
+                var restClothingPose = PoseSet.Create(clothingSkeleton, clothingSkeleton.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head))));
+                Execute(AuthoringOperation.UpdateNode(GraphNode.PoseNode(clothingPoseNode.NodeId, restClothingPose)));
                 string skinProject = Path.Combine(output, "imported-accessory-skin-project");
                 projectPath.SetValueWithoutNotify(skinProject); SaveProject();
                 string skinHash = workspace.Document.StateHash;
@@ -93,7 +130,7 @@ namespace NyaForge.UnityRuntime
                 Check(workspace.Document.StateHash == skinHash && !workspace.IsDirty &&
                     workspace.Document.ActiveObject.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinBind),
                     "Skin-bound accessory changed after native Save/Open");
-                checks.Add("separate VRM avatar + static GLB accessory: EditMesh, rigid BoneId attachment, Save/Open, Root-initialized skin-bind, weight-ready native and standard GLB export");
+                checks.Add("separate VRM avatar + static GLB accessory: EditMesh, rigid BoneId attachment, Save/Open, Root-initialized skin-bind, explicit avatar pose copy + Save/Open, weight-ready native and standard GLB export");
             }
             finally { ReplaceWorkspace(previous, previousPath); }
         }

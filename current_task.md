@@ -2,7 +2,7 @@
 
 skin-bindした衣装をavatarと同じ姿勢で確認できるよう、Workbenchの小物パネルへ「avatarの現在poseを衣装へコピー」を追加した。選択したavatarの評価済みPoseを、同じstable skeletonを持つ衣装側Pose nodeへ明示的に再bindして保存する。avatarとのライブ共有ではなく、姿勢を変更した場合は再度コピーする運用とし、異なるskeletonの自動結合や自動fit・貫通修正は対象外とする。Rig panelのweight編集と組み合わせ、Root初期化後の袖・裾などの確認をしやすくする。
 
-Coreは **468 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b7ea42deef8749aba7e5b2d4e9cbca98`）。新規回帰ではavatar poseを衣装skeletonへ明示rebindした変形がnative Save/Open後も一致することを確認した。Windows Player `Builds/AccessorySkinV5/NyaForge.exe` の800x600 Authoring suiteは **PASS、79 checks**（`Artifacts/Authoring-20260913-105042-77f5aaa61bdd4d3dba403a61da5bc49f/report.json`、画面 `authoring.png`）。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-105419-027-17acd263e28e4992ba2eff6186d46a80/bridge-report.json`）。これは明示poseコピーを含むPlayerビルドの回帰と、skin-bind後の姿勢確認導線を示す自動証拠であり、ボタン操作そのものの実マウス受入、DPI差、実VRChat SDK・実アバター内の見た目受入は別境界として記録する。
+Coreは **468 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b7ea42deef8749aba7e5b2d4e9cbca98`）。新規回帰ではavatar poseを衣装skeletonへ明示rebindした変形がnative Save/Open後も一致することを確認した。Windows Player `Builds/AccessorySkinV7/NyaForge.exe` の800x600 Authoring suiteは **PASS、79 checks**（`Artifacts/Authoring-20260913-110144-8f97721ee38d4c8ab91f23fcc2b90c77/report.json`、画面 `authoring.png`）。このsuiteではavatar poseを変更→衣装へコピー→pose hashをnative Save/Openで照合→restへ戻してGLB出力まで確認した。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-110519-475-d0a0b7d6b45b42bd92e6c657e521d56d/bridge-report.json`）。これはskin-bind後の姿勢確認導線を示す自動証拠であり、ボタン操作そのものの実マウス受入、DPI差、実VRChat SDK・実アバター内の見た目受入は別境界として記録する。
 
 # 2026-09-13 accessory skin-binding workflow
 
