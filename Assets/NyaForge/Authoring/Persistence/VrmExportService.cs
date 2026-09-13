@@ -211,6 +211,12 @@ namespace NyaForge.Authoring
                     metadata = ResolveAuthoredNodeTokens(metadata, glb.NodeMap, metadataObjectId ?? workspace.Document.Objects[0].ObjectId);
                 byte[] vrmBytes = Package(File.ReadAllBytes(glb.Path), metadata);
                 Checks.Require(vrmBytes.Length <= AuthoringLimits.MaxGlbExportBytes, "BUDGET_EXCEEDED", "VRM output exceeds the 128 MiB budget.");
+                // Re-read the exact packaged bytes before publishing. The
+                // package must satisfy both the glTF structure and the VRM
+                // metadata reader that downstream tools use.
+                GlbSceneInventoryReader.Read(vrmBytes);
+                var readback = VrmMetadataReader.Read(vrmBytes);
+                Checks.Require(readback.Format == "vrm1", "VRM_READBACK_FAILED", "VRM 1.0 output did not pass metadata readback.");
                 Directory.CreateDirectory(staging);
                 string path = System.IO.Path.Combine(staging, FileName); File.WriteAllBytes(path, vrmBytes);
                 string reportPath = System.IO.Path.Combine(staging, ReportFileName);
@@ -227,6 +233,7 @@ namespace NyaForge.Authoring
                     ["objectCount"] = workspace.Document.Objects.Count,
                     ["metadata"] = new JObject { ["name"] = metadata.Name, ["version"] = metadata.Version, ["authors"] = new JArray(metadata.Authors), ["licenseUrl"] = "other", ["otherLicenseUrl"] = metadata.LicenseUrl, ["humanoidBoneCount"] = metadata.HumanoidNodes.Count, ["expressionCount"] = metadata.Expressions.Count, ["springBone"] = metadata.Springs != null },
                     ["sourceDiagnostics"] = ReadSourceDiagnostics(workspace),
+                    ["validation"] = new JObject { ["glbSceneInventory"] = "passed", ["vrmMetadataReader"] = "passed" },
                     ["limitations"] = new JArray("VRM 1.0 humanoid/meta, resolved morphTargetBinds and optional VRMC_springBone 1.0 are emitted", "material binds, texture transforms, lookAt, firstPerson and animation are not emitted by this profile", "rest pose only", "graph and native metadata are not embedded")
                 };
                 File.WriteAllText(reportPath, report.ToString(Newtonsoft.Json.Formatting.Indented) + "\n", new UTF8Encoding(false));

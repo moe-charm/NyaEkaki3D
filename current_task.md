@@ -1,3 +1,6 @@
+# 2026-09-13 output readback validation
+
+GLB出力は公開前に生成済みbytesを`GlbSceneInventoryReader`で再読込し、VRM 1.0出力はさらに`VrmMetadataReader`で`vrm1`を確認するようにした。失敗時はstagingを公開せず既存作品を変更しない。reportへ`validation.glbSceneInventory=passed`、VRMでは`validation.vrmMetadataReader=passed`も記録する。Coreは **486 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-911e5ba9bbab4a3592278f8879567019`）。`Builds/OutputValidationV1/NyaForge.exe`のprivate RadDollV3 VRM suiteは **89 checks PASS**（`Artifacts/Authoring-20260913-203001-70c5a66f9f7f40aaa8bba6e85a42498d/report.json`）で、標準GLB・衣装付きGLB・VRMの全reportにreadback validationを確認した。ビルドログは`Logs/build-player-20260913-202929-488.log`。
 # 2026-09-13 VRM export source diagnostics report
 
 `VrmExportService.ExportVrm1`にも、現行graphに対応するnative import diagnosticsを`sourceDiagnostics`として同梱した。GLB内部の一時reportを削除しても、VRM成果物だけでsource hash／mesh・skin・node locator／保持不可理由を追跡できる。Coreは **486 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f2418aa50b504420a11a771ea515f1ba`）。`Builds/DiagnosticsReportV2/NyaForge.exe`でprivate RadDollV3 VRMの取込→編集→Save/Open→GLB／VRM出力・再読込を **89 checks PASS**（`Artifacts/Authoring-20260913-202425-f2aef0e5518240d2b5f8d3cb81455ff3/report.json`）し、標準GLB／衣装付きGLB／VRMの各reportに対応するsource diagnosticsが残ることを確認した。private素材はpublic repositoryへ追加していない。

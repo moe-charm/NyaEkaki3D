@@ -316,6 +316,10 @@ namespace NyaForge.Authoring
                 Directory.CreateDirectory(staging);
                 var built = GlbWriter.BuildMany(objects, skinned, profile); byte[] bytes = built.Bytes;
                 Checks.Require(bytes.Length <= AuthoringLimits.MaxGlbExportBytes, "BUDGET_EXCEEDED", "GLB output exceeds the 128 MiB budget.");
+                // Validate the exact bytes before publishing the destination. This
+                // keeps a malformed writer result from appearing as a successful
+                // export even when a later consumer would reject it.
+                GlbSceneInventoryReader.Read(bytes);
                 string path = Path.Combine(staging, FileName); File.WriteAllBytes(path, bytes);
                 string reportPath = Path.Combine(staging, ReportFileName);
                 var report = new JObject
@@ -350,6 +354,7 @@ namespace NyaForge.Authoring
                                 ["code"] = d.Code, ["path"] = d.Path, ["isBlocking"] = d.IsBlocking, ["message"] = d.Message
                             }))
                         })),
+                    ["validation"] = new JObject { ["glbSceneInventory"] = "passed" },
                     ["limitations"] = new JArray(profile == GlbExportProfile.StaticGeometry
                         ? new[] { "graph and native metadata are not embedded", "VRM extensions are not emitted" }
                         : profile == GlbExportProfile.SkinnedGeometry
