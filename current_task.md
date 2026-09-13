@@ -39,6 +39,16 @@ VCCキャッシュの`com.vrchat.base`／`com.vrchat.avatars` **3.7.6**を公開
 
 GUI/MCP共通command（13）と保存・復旧（14）は各実装と同時に検証する。SDKや他者視点待ちでも、独立した08/09等のCore・GUI作業は継続できる。外部検査の未実施は未実施のまま残す。全身キャラ制作、FBX／BLEND parser、完全VRM互換、全shader、Quest対応はv1受入まで着手しない。
 
+## 2026-09-14 clothing receiver feedback fixes
+
+レビュー `9855d43` の受け取り・材質指摘を現行mainへ反映した。`SkinnedClothingReceiver` はpackageのavatar-rest座標を受け取り側avatar rootのlocal座標として保持し、生成objectをrootへ親子付けするだけにした。これによりavatar rootの移動・90度回転・scaleを`worldToLocalMatrix`で二重に打ち消さない。合成Bridge fixtureへ変形avatar（translation／rotation／scale）のlocal/world一致確認を追加した。
+
+衣装更新時の割当保存は、state／skeleton／binding hashが新revisionへ変わっても同じObjectIdの管理生成物と親rootを保持する。保存済み生成物が削除済みでも`MatchesAssignment`でstable BoneId割当を読み込め、GUIの適用ボタンは同一ObjectIdのassignmentを再利用できる。異なるObjectIdのbindingは従来どおり置換対象にしない。
+
+semantic textureはUV1のメッシュ保持が未実装のため、Windows v1の出荷契約をUV0へ固定した。GLB semantic texture取込・出力でUV1を`UNSUPPORTED_UV_SET`として画像や作品を書き込む前に停止し、従来の無言欠落をなくした。出力側の画像共有keyへsampler hashを含め、同一画像をRepeat／Clampで使う材質を統合しないようにした。Polygon→skin materializationでは評価済み`PolygonRenderMesh.MaterialSlotMap`を派生sourceへ保持する。
+
+カフprimitiveは外側・上下・内側・底面のquad windingを反転し、指定normalと片面描画の向きを一致させた。PBR preview shaderはdecoded MR mapへmetallic factor／roughness factorを適用し、Unity package receiverもmap適用時にmetallic factorを1へ固定しない。Coreは **493 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-6a8f4aae83fc4c98bb3d8664b51980ae`）。BridgeのUnity実行と実RadDollV3 scene再確認は次の受入カードで行い、Core合格を実VRChat表示合格へ読み替えない。
+
 ## 2026-09-13 NF-V1-09/10 semantic texture contract
 
 `MaterialTextureSlot`／`MaterialTextureSet`を追加し、normal／metallic-roughness画像について、semantic、PNG/JPEG bytes、色空間（linear）、channel契約、UV set、normal scale、glTF samplerをtyped payloadとして保持するようにした。GLB取込は埋め込み画像と安全なローカル相対URIを解決し、native graph binaryは画像をblobとして所有してSave/Openする。GLB出力はnormalTextureとmetallicRoughnessTexture、samplerを再生成し、Coreで画像bytes・channel前提・sampler・native roundtripを確認した。通常のMaterial Bakeはこの情報を落とさないよう事前拒否する。

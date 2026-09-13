@@ -484,12 +484,14 @@ namespace NyaForge.Authoring
                 var semantic = parameters.Textures;
                 if (semantic?.Normal != null)
                 {
+                    Checks.Require(semantic.Normal.TexCoord == 0, "UNSUPPORTED_UV_SET", "Semantic textures using TEXCOORD_1 are not supported in Windows v1.");
                     var normal = new JObject { ["index"] = AddImage(semantic.Normal), ["texCoord"] = semantic.Normal.TexCoord };
                     if (Math.Abs(semantic.Normal.NormalScale - 1f) > 0.000001f) normal["scale"] = semantic.Normal.NormalScale;
                     json["normalTexture"] = normal;
                 }
                 if (semantic?.MetallicRoughness != null)
                 {
+                    Checks.Require(semantic.MetallicRoughness.TexCoord == 0, "UNSUPPORTED_UV_SET", "Semantic textures using TEXCOORD_1 are not supported in Windows v1.");
                     pbr["metallicRoughnessTexture"] = new JObject { ["index"] = AddImage(semantic.MetallicRoughness), ["texCoord"] = semantic.MetallicRoughness.TexCoord };
                 }
                 if (parameters.Emission.X != 0f || parameters.Emission.Y != 0f || parameters.Emission.Z != 0f)
@@ -511,7 +513,8 @@ namespace NyaForge.Authoring
 
             int AddImage(MaterialTextureSlot image)
             {
-                byte[] bytes = image.CopyEncodedBytes(); string key = Checks.Hash(bytes) + ":" + image.MimeType;
+                byte[] bytes = image.CopyEncodedBytes();
+                string key = Checks.Hash(bytes) + ":" + image.MimeType + ":" + (image.Sampler ?? MaterialTextureSampler.Default).ContentHash;
                 if (imageIds.TryGetValue(key, out var existing)) return existing;
                 int offset = binary.Write(writer => writer.Write(bytes));
                 int view = AddRawView(views, offset, bytes.Length);
@@ -624,14 +627,17 @@ namespace NyaForge.Authoring
                 // without appearance data keeps the historical single primitive.
                 if (meshObject.SlotMaterials != null)
                 {
-                    for (int slot = 0; slot < mesh.Submeshes.Count; slot++)
+                    var authoredSlots = meshObject.SlotMaterials.Keys.OrderBy(value => value).ToArray();
+                    Checks.Require(authoredSlots.Length == mesh.Submeshes.Count, "MATERIAL_SLOT_MISMATCH", "Material bindings must cover every render submesh.");
+                    for (int submesh = 0; submesh < mesh.Submeshes.Count; submesh++)
                     {
                         // Keep each slot primitive's POSITION count local to
                         // its index buffer. Sharing the full mesh accessor for
                         // every slot makes concatenating readers count the same
                         // vertices repeatedly and can exceed the authoring cap.
-                        meshObject.SlotMaterials.TryGetValue(slot, out var binding);
-                        primitiveTemplates.Add(BuildSlotPrimitive(binary, views, accessors, mesh, mesh.Submeshes[slot],
+                        var authoredSlot = authoredSlots[submesh];
+                        meshObject.SlotMaterials.TryGetValue(authoredSlot, out var binding);
+                        primitiveTemplates.Add(BuildSlotPrimitive(binary, views, accessors, mesh, mesh.Submeshes[submesh],
                             binding?.Material, materialRegistry, currentSkinned, profile, meshObject.Morphs));
                     }
                 }

@@ -128,6 +128,9 @@ namespace NyaForge.UnityBridge.Editor
                 new SkinBinding.VertexWeightInput(1, childId, 1f),
                 new SkinBinding.VertexWeightInput(2, childId, 1f) });
             var avatar = new GameObject("NyaForge Receiver Fixture Avatar");
+            avatar.transform.position = new Vector3(10f, 2f, -3f);
+            avatar.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+            avatar.transform.localScale = Vector3.one * 2f;
             var root = new GameObject("Root"); root.transform.SetParent(avatar.transform, false);
             var child = new GameObject("Child"); child.transform.SetParent(root.transform, false); child.transform.localPosition = new Vector3(0, .1f, 0);
             var shader = Shader.Find("Standard");
@@ -143,7 +146,10 @@ namespace NyaForge.UnityBridge.Editor
                 Require(result.Renderer.rootBone == root.transform && result.Mesh.bindposes.Length == 2, "Skinned receiver root/bindposes are incomplete.");
                 Require(result.Mesh.boneWeights.Length == 3 && result.Mesh.boneWeights[1].boneIndex0 == 1 && result.Mesh.boneWeights[1].weight0 > .99f,
                     "Skinned receiver BoneWeight mapping is incorrect.");
-                checks.Add("SkinnedClothingReceiver creates an explicit BoneId-mapped SkinnedMeshRenderer with bindposes and four-slot weights.");
+                Near(result.Mesh.vertices[1], new Vector3(.1f, 0f, 0f), "Skinned receiver avatar-local vertex");
+                Near(result.GameObject.transform.TransformPoint(result.Mesh.vertices[1]), avatar.transform.TransformPoint(new Vector3(.1f, 0f, 0f)),
+                    "Skinned receiver transformed-avatar placement");
+                checks.Add("SkinnedClothingReceiver creates an explicit BoneId-mapped SkinnedMeshRenderer with bindposes and four-slot weights; translated/rotated/scaled avatar roots preserve avatar-local clothing placement.");
             }
             finally
             {

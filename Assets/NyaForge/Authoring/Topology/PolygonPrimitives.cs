@@ -111,25 +111,27 @@ namespace NyaForge.Authoring.Topology
 
                 // Outer wall, top cap, inner wall and bottom cap form a closed shell.
                 faces.Add(new CageFace((ulong)(i + 1), 0, new[] {
+                    // Reverse the geometric winding so the supplied outward
+                    // normals agree with the rendered front face.
                     Corner(i, 0, segments, u0, 0, radial, tangent, ref nextCorner),
-                    Corner(next, 0, segments, u1, 0, nextRadial, nextTangent, ref nextCorner),
+                    Corner(i, 1, segments, u0, 1, radial, tangent, ref nextCorner),
                     Corner(next, 1, segments, u1, 1, nextRadial, nextTangent, ref nextCorner),
-                    Corner(i, 1, segments, u0, 1, radial, tangent, ref nextCorner) }));
+                    Corner(next, 0, segments, u1, 0, nextRadial, nextTangent, ref nextCorner) }));
                 faces.Add(new CageFace((ulong)(segments + i + 1), 0, new[] {
                     Corner(i, 1, segments, u0, 0, new Vec3(0, 1, 0), tangent, ref nextCorner),
-                    Corner(next, 1, segments, u1, 0, new Vec3(0, 1, 0), nextTangent, ref nextCorner),
+                    Corner(i, 3, segments, u0, 1, new Vec3(0, 1, 0), tangent, ref nextCorner),
                     Corner(next, 3, segments, u1, 1, new Vec3(0, 1, 0), nextTangent, ref nextCorner),
-                    Corner(i, 3, segments, u0, 1, new Vec3(0, 1, 0), tangent, ref nextCorner) }));
+                    Corner(next, 1, segments, u1, 0, new Vec3(0, 1, 0), nextTangent, ref nextCorner) }));
                 faces.Add(new CageFace((ulong)(segments * 2 + i + 1), 0, new[] {
                     Corner(i, 3, segments, u0, 0, Negate(radial), tangent, ref nextCorner),
-                    Corner(next, 3, segments, u1, 0, Negate(nextRadial), nextTangent, ref nextCorner),
+                    Corner(i, 2, segments, u0, 1, Negate(radial), tangent, ref nextCorner),
                     Corner(next, 2, segments, u1, 1, Negate(nextRadial), nextTangent, ref nextCorner),
-                    Corner(i, 2, segments, u0, 1, Negate(radial), tangent, ref nextCorner) }));
+                    Corner(next, 3, segments, u1, 0, Negate(nextRadial), nextTangent, ref nextCorner) }));
                 faces.Add(new CageFace((ulong)(segments * 3 + i + 1), 0, new[] {
                     Corner(i, 2, segments, u0, 0, new Vec3(0, -1, 0), tangent, ref nextCorner),
-                    Corner(next, 2, segments, u1, 0, new Vec3(0, -1, 0), nextTangent, ref nextCorner),
+                    Corner(i, 0, segments, u0, 1, new Vec3(0, -1, 0), tangent, ref nextCorner),
                     Corner(next, 0, segments, u1, 1, new Vec3(0, -1, 0), nextTangent, ref nextCorner),
-                    Corner(i, 0, segments, u0, 1, new Vec3(0, -1, 0), tangent, ref nextCorner) }));
+                    Corner(next, 2, segments, u1, 0, new Vec3(0, -1, 0), nextTangent, ref nextCorner) }));
             }
             return new PolygonMesh(domainId, vertices, faces);
         }

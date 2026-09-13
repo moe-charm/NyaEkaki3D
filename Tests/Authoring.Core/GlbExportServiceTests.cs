@@ -401,8 +401,13 @@ internal static partial class Program
             var normalBytes = PaintPng.Encode(new PaintImage(2, 1, new Rgba32(128, 128, 255, 255)));
             var metallicRoughnessBytes = PaintPng.Encode(new PaintImage(2, 1, new Rgba32(16, 192, 0, 255)));
             var sampler = new MaterialTextureSampler(33071, 33648, 9984, 9728);
-            var textureSet = new MaterialTextureSet(
+            var unsupportedSet = new MaterialTextureSet(
                 new MaterialTextureSlot(MaterialTextureSemantic.Normal, normalBytes, "image/png", 1, .75f, sampler),
+                new MaterialTextureSlot(MaterialTextureSemantic.MetallicRoughness, metallicRoughnessBytes, "image/png", 0, 1f, sampler));
+            var unsupportedParameters = new MaterialParameters(new Vec4(1, 1, 1, 1), .1f, .9f, new Vec3(), MaterialAlphaMode.Opaque, .5f, unsupportedSet);
+            Expect("UNSUPPORTED_UV_SET", () => GlbWriter.Build(new[] { new GlbExportService.MeshObject { Mesh = mesh, Material = new GraphMaterialValue(unsupportedParameters, null), Name = "semantic-pbr-uv1" } }, null, GlbExportProfile.StaticGeometry));
+            var textureSet = new MaterialTextureSet(
+                new MaterialTextureSlot(MaterialTextureSemantic.Normal, normalBytes, "image/png", 0, .75f, sampler),
                 new MaterialTextureSlot(MaterialTextureSemantic.MetallicRoughness, metallicRoughnessBytes, "image/png", 0, 1f, sampler));
             var parameters = new MaterialParameters(new Vec4(1, 1, 1, 1), .1f, .9f, new Vec3(), MaterialAlphaMode.Opaque, .5f, textureSet);
             var material = new GraphMaterialValue(parameters, null);
@@ -413,7 +418,7 @@ internal static partial class Program
             Equal(1, ((JArray)json["samplers"]!).Count); Equal(2, ((JArray)json["images"]!).Count);
             var imported = GlbImporter.Read(bytes).Materials.Single();
             True(imported.NormalTexture != null && imported.NormalTexture.HasImageBytes); True(imported.MetallicRoughnessTexture != null && imported.MetallicRoughnessTexture.HasImageBytes);
-            Equal(1, imported.NormalTexture.TexCoord); Near(.75f, imported.NormalTexture.NormalScale); Equal(33071, imported.NormalTexture.Sampler.WrapS); Equal(9984, imported.NormalTexture.Sampler.MinFilter);
+            Equal(0, imported.NormalTexture.TexCoord); Near(.75f, imported.NormalTexture.NormalScale); Equal(33071, imported.NormalTexture.Sampler.WrapS); Equal(9984, imported.NormalTexture.Sampler.MinFilter);
             True(normalBytes.SequenceEqual(imported.NormalTexture.CopyImageBytes())); True(metallicRoughnessBytes.SequenceEqual(imported.MetallicRoughnessTexture.CopyImageBytes()));
         });
 

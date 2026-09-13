@@ -52,6 +52,14 @@ namespace NyaForge.Authoring.Graph
             return new GraphMeshValue(mesh, transform, domain);
         }
 
+        internal static GraphMeshValue Source(string nodeId, MeshData mesh, RestTransform transform,
+            NyaForge.Authoring.Topology.PolygonMesh polygon,
+            NyaForge.Authoring.Topology.PolygonRenderMesh rendering)
+        {
+            string domain = Checks.Hash(Encoding.UTF8.GetBytes(nodeId + ":" + mesh.TopologyHash));
+            return new GraphMeshValue(mesh, transform, domain, polygon, rendering);
+        }
+
         /// <summary>Creates a value with replaced geometry while retaining graph identity and appearance.</summary>
         internal GraphMeshValue WithMesh(MeshData mesh)
         {
@@ -212,7 +220,7 @@ namespace NyaForge.Authoring.Graph
                     else if(node.TypeId==BuiltinNodes.AssignMaterials) outputs[id]=MaterialSlotEvaluation.Assign(input,node.MaterialSlots.ToDictionary(s=>s,s=>
                     {
                         var edge=links[id+"/"+GraphNode.MaterialSlotPort(s)];return new MaterialSlotBinding(edge.FromNode,materials[edge.FromNode]);
-                    }));
+                    }), node.MaterialSlots);
                     else if (node.TypeId == BuiltinNodes.Plane)
                     {
                         GraphEdge width, height;

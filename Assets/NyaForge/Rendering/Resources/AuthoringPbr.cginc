@@ -16,8 +16,11 @@ void surf(Input input, inout SurfaceOutputStandard output)
     #ifdef _METALLICGLOSSMAP
     float2 metallicGlossUv = _MetallicGlossTexCoord > 0.5 ? input.uv2_MetallicGlossMap : input.uv_MetallicGlossMap;
     half4 metallicGloss = tex2D(_MetallicGlossMap, metallicGlossUv);
-    output.Metallic = metallicGloss.r;
-    output.Smoothness = metallicGloss.a;
+    // glTF stores metallic in B and roughness in G. The decoded preview map
+    // carries metallic in R and smoothness (1-roughness) in A; apply the
+    // scalar factors here so a textured material keeps both image and factor.
+    output.Metallic = saturate(metallicGloss.r * _Metallic);
+    output.Smoothness = saturate(1.0h - (1.0h - metallicGloss.a) * (1.0h - _Smoothness));
     #else
     output.Metallic = _Metallic;
     output.Smoothness = _Smoothness;

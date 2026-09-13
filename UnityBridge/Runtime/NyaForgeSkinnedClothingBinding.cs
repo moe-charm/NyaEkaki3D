@@ -63,6 +63,13 @@ namespace NyaForge.UnityBridge
             return objectId == (expectedObjectId ?? "") && generatedObject != null;
         }
 
+        /// <summary>Matches the authored package identity even when its generated
+        /// scene object has not been applied yet or was removed.</summary>
+        public bool MatchesAssignment(string expectedObjectId)
+        {
+            return objectId == (expectedObjectId ?? "");
+        }
+
         /// <summary>Replaces the complete explicit mapping after the editor has validated it.</summary>
         public void Capture(string path, string packageObjectId, string packageGraphId, string packageStateHash,
             string packageGraphHash, string packageGlbHash, string packageSkeletonHash, string packageBindingHash,

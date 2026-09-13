@@ -66,7 +66,10 @@ namespace NyaForge.Authoring.Graph
                 "POLYGON_MATERIALIZE_INCOMPLETE", "PolygonEdit must produce a renderable mesh.");
 
             var materializedSource = GraphNode.Source(source.NodeId, editValue.Mesh, editValue.Transform);
-            var sourceValue = GraphMeshValue.Source(source.NodeId, editValue.Mesh, editValue.Transform);
+            // Preserve the evaluated polygon rendering metadata, especially
+            // the authored->dense MaterialSlotMap when slots have gaps.
+            var sourceValue = GraphMeshValue.Source(source.NodeId, editValue.Mesh, editValue.Transform,
+                editValue.Polygon, editValue.PolygonRendering);
             var materializedEdit = GraphNode.Edit(edit.NodeId, true, null, sourceValue.SnapshotHash, sourceValue.DomainId);
             var sourceMarker = GraphNode.DerivedSourceNode(Guid.NewGuid().ToString("D"), polygonGraph.GraphId, GraphContentIdentity.Hash(polygonGraph));
             var nodes = polygonGraph.Nodes.Values.Select(node =>

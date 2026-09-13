@@ -129,6 +129,7 @@ namespace NyaForge.Authoring.Import
             string label = semantic == MaterialTextureSemantic.Normal ? "normal" : "metallic-roughness";
             byte[] bytes = ReadImageBytes(image, bin, views, sourceDirectory, ref mime, label);
             int texCoord = reference["texCoord"] == null ? 0 : Integer(reference["texCoord"], "texture texCoord");
+            Checks.Require(texCoord == 0, "UNSUPPORTED_UV_SET", "Semantic textures using TEXCOORD_1 are not supported in Windows v1.");
             float normalScale = semantic == MaterialTextureSemantic.Normal ? Number(reference["scale"], 1f, "normal scale", 8f) : 1f;
             var sampler = ReadSampler(root, texture);
             return new GlbTextureImage(semantic, textureIndex, imageIndex, texCoord, normalScale, mime, sampler, bytes);

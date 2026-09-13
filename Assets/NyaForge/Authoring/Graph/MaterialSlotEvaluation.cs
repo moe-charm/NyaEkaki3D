@@ -11,10 +11,13 @@ namespace NyaForge.Authoring.Graph
     }
     internal static class MaterialSlotEvaluation
     {
-        internal static GraphMeshValue Assign(GraphMeshValue mesh,IDictionary<int,MaterialSlotBinding> bindings)
+        internal static GraphMeshValue Assign(GraphMeshValue mesh,IDictionary<int,MaterialSlotBinding> bindings, IReadOnlyList<int> declaredSlots = null)
         {
             Checks.Require(mesh.Material==null && mesh.SlotMaterials==null && mesh.BaseColor==null,"MATERIAL_ALREADY_ASSIGNED","Assign materials only once after geometry and Paint.");
-            var used=mesh.PolygonRendering?.MaterialSlotMap ?? Enumerable.Range(0,mesh.Mesh.Submeshes.Count).ToArray();
+            // Materialized polygon sources may not carry the optional render
+            // adapter, while the assignment node still records sparse authored
+            // slot keys. Prefer that declaration over assuming dense slots.
+            var used=mesh.PolygonRendering?.MaterialSlotMap ?? declaredSlots ?? Enumerable.Range(0,mesh.Mesh.Submeshes.Count).ToArray();
             Checks.Require(used.All(bindings.ContainsKey),"MATERIAL_SLOT_UNASSIGNED","Every used geometry slot needs a material connection.");
             foreach(var binding in bindings.Values) PaintEvaluation.Bind(mesh,binding.Material.BaseColor);
             return new GraphMeshValue(mesh.Mesh,mesh.Transform,mesh.DomainId,mesh.Polygon,mesh.PolygonRendering,null,null,new ReadOnlyDictionary<int,MaterialSlotBinding>(new Dictionary<int,MaterialSlotBinding>(bindings)));

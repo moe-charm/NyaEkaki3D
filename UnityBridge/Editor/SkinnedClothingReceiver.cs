@@ -97,14 +97,17 @@ namespace NyaForge.UnityBridge.Editor
                 boneIndex.Add(bone.BoneId, i);
             }
 
-            // The source mesh is authored in avatar-rest space. Convert once to
-            // the receiving avatar root's local space before assigning bindposes.
-            var rootWorldToLocal = avatarRoot.worldToLocalMatrix;
+            // The source mesh is authored in avatar-rest (avatar-root local)
+            // space. Keep those coordinates local to the receiving root. The
+            // generated object is parented to avatarRoot and the bindposes
+            // already express each mapped bone relative to that same space;
+            // applying avatarRoot.worldToLocalMatrix here would cancel the
+            // receiver's translation/rotation/scale a second time.
             var positions = new Vector3[mesh.VertexCount];
             for (int i = 0; i < positions.Length; i++)
             {
                 Vec3 point = meshTransform.ToAvatarPoint(mesh.Positions[i]);
-                positions[i] = rootWorldToLocal.MultiplyPoint3x4(new Vector3(point.X, point.Y, point.Z));
+                positions[i] = new Vector3(point.X, point.Y, point.Z);
             }
             var resultMesh = new Mesh
             {
@@ -260,7 +263,10 @@ namespace NyaForge.UnityBridge.Editor
                     {
                         var texture = DecodeMetallicRoughness(source.MetallicRoughnessTexture.CopyImageBytes(), source.MetallicRoughnessTexture.MimeType, source.MetallicRoughnessTexture.Sampler, material.name + " MetallicRoughness");
                         if (material.HasProperty("_MetallicGlossMap")) material.SetTexture("_MetallicGlossMap", texture);
-                        if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", 1f);
+                        // Unity's Standard shader multiplies the map channels
+                        // by these scalar factors. Preserve the glTF factors
+                        // instead of forcing metallic to one when a map exists.
+                        if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", parameters.Metallic);
                         material.EnableKeyword("_METALLICGLOSSMAP");
                     }
                     if (parameters.Emission.X > 0f || parameters.Emission.Y > 0f || parameters.Emission.Z > 0f)

@@ -82,6 +82,7 @@ namespace NyaForge.UnityBridge.Editor
             bool exact = binding != null && binding.Matches(package.ObjectId, package.StateHash,
                 package.Skeleton.ContentHash, package.BindingHash);
             bool reusable = binding != null && binding.MatchesObject(package.ObjectId);
+            bool sameAssignment = binding != null && binding.MatchesAssignment(package.ObjectId);
             if (binding == null)
                 EditorGUILayout.HelpBox("このavatar rootには保存済みの衣装割当がありません。", MessageType.Info);
             else if (!exact && reusable)
@@ -108,7 +109,7 @@ namespace NyaForge.UnityBridge.Editor
             {
                 if (GUILayout.Button("現在の割当を保存")) SaveBindings();
             }
-            using (new EditorGUI.DisabledScope(binding == null || !binding.MatchesObject(package.ObjectId)))
+            using (new EditorGUI.DisabledScope(binding == null || !binding.MatchesAssignment(package.ObjectId)))
             {
                 if (GUILayout.Button("保存済み割当を読み込む")) LoadBindings();
             }
@@ -118,7 +119,7 @@ namespace NyaForge.UnityBridge.Editor
             {
                 if (GUILayout.Button("事前診断（書き込みなし）")) InspectPackage();
             }
-            using (new EditorGUI.DisabledScope(!validation.IsValid || managedOnly && !reusable || !reusable && binding != null && !exact))
+            using (new EditorGUI.DisabledScope(!validation.IsValid || managedOnly && !reusable || binding != null && !sameAssignment && !exact))
             {
                 if (GUILayout.Button(managedOnly ? "管理対象へ更新" : "衣装を作成／更新", GUILayout.Height(32))) ApplyPackage();
             }
@@ -158,7 +159,12 @@ namespace NyaForge.UnityBridge.Editor
                 if (!validation.IsValid) throw new InvalidOperationException(validation.Message);
                 if (binding == null) binding = (NyaForgeSkinnedClothingBinding)Undo.AddComponent(avatarRoot.gameObject, typeof(NyaForgeSkinnedClothingBinding));
                 Undo.RecordObject(binding, "Save NyaForge clothing bone bindings");
-                var generated = binding.Matches(package.ObjectId, package.StateHash, package.Skeleton.ContentHash, package.BindingHash)
+                // Bone assignments are reusable across package revisions. Keep
+                // the existing managed object reference so an update can replace
+                // it deterministically; exact state hashes describe the package
+                // revision, not ownership identity.
+                var generated = binding.MatchesAssignment(package.ObjectId) &&
+                    binding.GeneratedObject != null && binding.GeneratedObject.transform.parent == avatarRoot
                     ? binding.GeneratedObject : null;
                 binding.Capture(manifestPath, package.ObjectId, package.GraphId, package.StateHash, package.GraphHash,
                     package.GlbHash, package.Skeleton.ContentHash, package.BindingHash, boneBindings, generated);
@@ -173,7 +179,7 @@ namespace NyaForge.UnityBridge.Editor
         {
             try
             {
-                if (binding == null || !binding.MatchesObject(package.ObjectId))
+                if (binding == null || !binding.MatchesAssignment(package.ObjectId))
                     throw new InvalidOperationException("保存済み割当のObjectIdがこのpackageと一致しません。");
                 boneBindings.Clear();
                 foreach (var bone in binding.Bones)
