@@ -269,8 +269,9 @@ namespace NyaForge.UnityRuntime
                 var targetPose = target.EvaluateGraph().PoseOutputs.Values.Select(value => value.Pose)
                     .FirstOrDefault(pose => pose.SkeletonHash == clothingSkeleton.ContentHash);
                 if (targetPose == null) throw new InvalidOperationException("avatarのposeが衣装と同じskeletonではありません。");
-                Execute(AuthoringOperation.UpdateNode(GraphNode.PoseNode(poseNode.NodeId, PoseEditing.Rebind(targetPose, clothingSkeleton))));
                 attachmentTargetChoice = target.ObjectId;
+                Execute(AuthoringOperation.UpdateNode(GraphNode.PoseNode(poseNode.NodeId, PoseEditing.Rebind(targetPose, clothingSkeleton))));
+                RefreshAttachmentControls();
                 SetStatus("avatarの現在poseを衣装へコピーしました。必要ならweightを調整して保存してください。");
             });
         }

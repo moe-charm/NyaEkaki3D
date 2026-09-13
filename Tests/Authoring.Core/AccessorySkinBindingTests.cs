@@ -34,6 +34,19 @@ internal static partial class Program
             var posed = GraphEvaluator.Evaluate(changed.ReplaceNode(GraphNode.PoseNode(pose.NodeId, movedPose)));
             True(posed.IsComplete && posed.Output.Mesh.ContentHash != after.Output.Mesh.ContentHash);
 
+            // Copying an avatar pose is a rebind onto the clothing's copied
+            // skeleton. Keep the operation explicit and prove that the
+            // non-rest pose survives native persistence with its deformation.
+            var copiedPose = PoseEditing.Rebind(movedPose, skeleton);
+            Equal(movedPose.ContentHash, copiedPose.ContentHash);
+            var posedGraph = changed.ReplaceNode(GraphNode.PoseNode(pose.NodeId, copiedPose));
+            var posedWorkspace = AuthoringWorkspace.CreateEmpty();
+            Ok(Execute(posedWorkspace, AuthoringOperation.AddGraph(posedGraph)));
+            string posedDirectory = Dir("accessory-pose-copy-native");
+            ProjectStore.Save(posedDirectory, posedWorkspace, 0);
+            var posedReopened = ProjectStore.Open(posedDirectory);
+            Equal(posedWorkspace.Preview.Output.Mesh.ContentHash, posedReopened.Preview.Output.Mesh.ContentHash);
+
             var workspace = AuthoringWorkspace.CreateEmpty();
             Ok(Execute(workspace, AuthoringOperation.AddGraph(changed)));
             string directory = Dir("accessory-skin-native");
