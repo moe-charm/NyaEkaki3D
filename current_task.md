@@ -14,6 +14,10 @@
 
 同じ `Builds/GoalAuditV1/NyaForge.exe` の高密度Paint合成fixture（131,072 triangles、30 frame samples）を観測した。`dense-paint-profile.json`（`Artifacts/Authoring-20260913-093945-3fdc0fe97a464f3892f01c7d5808d139/dense-paint-profile.json`）では平均 **66.6668 ms**、P95 **66.6672 ms**、最大 **66.6673 ms**、観測予算250 msを超過しなかった。設定はtargetFrameRate 15、vSync 0、RTX 4090、Unity 6000.4.3f1。GC generation 0は305→335、managed heapは152,080,384→207,351,808 bytesだった。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-094052-865-3fb874064601480299724519f74346cf/bridge-report.json`）。これは合成fixtureと現行GPUでの観測であり、実アバター・別GPU・通常の60fps設定の性能保証ではない。
 
+# 2026-09-13 goal audit external MCP acceptance
+
+同じ `Builds/GoalAuditV1/NyaForge.exe` と `Tests/Mcp.Transport/bin/Debug/net10.0/Mcp.Transport.Tests.dll` を使い、外部MCP client→sidecar→live Playerの経路を再検証した。Authoring suiteは **PASS**（report `Artifacts/Authoring-20260913-094343-a58800080c474e95b92512b941da0228/report.json`）。revision固定の標準GLB出力、既存出力先の再実行拒否、文書状態不変を確認した。別実行ではsecondary-motionのstate/play/pause/rebuild/fixed-step/resetも **PASS**（report `Artifacts/Authoring-20260913-094233-ca3a879a1b2a461bb4e129a21e816145/report.json`、`mcp-external.log`）。GLB export成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-094512-926-b7d3cd6946e84fceb09827135c45f99c/bridge-report.json`）。
+
 # 2026-09-13 native UI acceptance bridge check
 
 提示されたレビュー（基準 `0d1e957`）のP1/P2は、実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。
