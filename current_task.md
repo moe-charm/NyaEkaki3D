@@ -1878,3 +1878,10 @@ private一時RadDollV3 VRMを使ったWindows Player `Builds/AllModelLocatorV1/N
 Coreは **477 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f29beb3b99ac413785703172d22f4d19`）。旧v1 payloadの読込、v2 node locatorのroundtrip、空診断のsnapshot Save/Openを含む。Unity 6000.4.3f1 Windows Player `Builds/NodeLocatorV1/NyaForge.exe` のprivate一時RadDollV3全mesh Authoring suiteは **PASS・87 checks**（`Artifacts/Authoring-20260913-180434-a0ccdab3ae5c41d8bc58ac7f2327f4be/report.json`、画面`authoring.png`）。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-180656-635-b2f92b767fbf44f6ab3409efe8790e96/bridge-report.json`）。private素材・生成物はpublic repositoryへ追加していない。
 
 完全なmesh／morph shared-resource dedup、異なるsource skeletonの結合、実マウス／DPI差、実VRChat内の見た目・PhysBones挙動、完全VRM意味情報は継続課題とする。
+# 2026-09-13 GLB diagnostics v2のinspection接続
+
+GLB import diagnostics v2の`nodeIndex`を`AuthoringGraphReader`の`importDiagnostics`へ公開した。保存済みのsource hash・mesh/skin・node locatorをMCPの`graph_inspect`でも読めるため、共有meshを別nodeへ誤結合せずAI側から確認できる。v1 sidecarの互換読込、v2 codec、snapshot Save/Open、Workbench UI表示、全mesh実モデルlocator照合を同じ契約へ揃えた。
+
+Coreは **477 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-8309a09287bc4dc49422ce67a5ca60ac`）。Unity 6000.4.3f1 Windows Player `Builds/NodeLocatorV2/NyaForge.exe` はビルド成功（`Logs/build-all-20260913-180920-947.log`）。公開fixtureのAuthoring suiteは **PASS・81 checks**（`Artifacts/Authoring-20260913-180942-182d788931524eeeb8914736c746607e/report.json`）。private一時RadDollV3 VRMの全mesh instance取込→EditMesh→native Save/Open→node／mesh／skin locator照合→native exportは **PASS・87 checks**（`Artifacts/Authoring-20260913-181029-3c9195c61881409aac8b50855128769a/report.json`）。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-181247-864-57000c26354b41449c18c00975c59778/bridge-report.json`）。private素材・生成物はpublic repositoryへ追加していない。
+
+完全なmesh／morph shared-resource dedup、異なるsource skeletonの結合、実マウス／DPI差、実VRChat内の見た目・PhysBones挙動、完全VRM意味情報は継続課題とする。

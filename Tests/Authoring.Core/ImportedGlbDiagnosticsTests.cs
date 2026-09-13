@@ -38,10 +38,10 @@ internal static partial class Program
         {
             var workspace = AuthoringWorkspace.CreateEmpty("diagnostic snapshot"); string source, edit; var graph = PlaneGraph(out source, out edit);
             Ok(Execute(workspace, AuthoringOperation.AddGraph(graph)));
-            var record = new ImportedGlbDiagnostics(graph.GraphId, new string('c', 64), 4, null, new[] { new GlbImportDiagnostic("ANIMATIONS_NOT_RETAINED", "animations", true, "animation is not retained") });
+            var record = new ImportedGlbDiagnostics(graph.GraphId, new string('c', 64), 4, null, new[] { new GlbImportDiagnostic("ANIMATIONS_NOT_RETAINED", "animations", true, "animation is not retained") }, 6);
             workspace.SetAttachments(new ProjectAttachments(new System.Collections.Generic.Dictionary<string, byte[]> { [ProjectAttachments.ImportDiagnostics] = ImportedGlbDiagnosticsCodec.Write(new[] { record }) }));
             var directory = Dir("import-diagnostics-snapshot"); ProjectStore.Save(directory, workspace, 0); var reopened = ProjectStore.Open(directory);
-            var inspected = AuthoringGraphReader.Read(reopened, reopened.InstanceId); Equal(1, inspected["graph"]["importDiagnostics"]["items"].Count()); Equal("ANIMATIONS_NOT_RETAINED", (string)inspected["graph"]["importDiagnostics"]["items"][0]["code"]); False(reopened.IsDirty);
+            var inspected = AuthoringGraphReader.Read(reopened, reopened.InstanceId); Equal(1, inspected["graph"]["importDiagnostics"]["items"].Count()); Equal("ANIMATIONS_NOT_RETAINED", (string)inspected["graph"]["importDiagnostics"]["items"][0]["code"]); Equal(6, (int)inspected["graph"]["importDiagnostics"]["nodeIndex"]); False(reopened.IsDirty);
 
             var clean = new ImportedGlbDiagnostics(graph.GraphId, new string('f', 64), 7, 3, Array.Empty<GlbImportDiagnostic>(), 8);
             workspace.SetAttachments(new ProjectAttachments(new System.Collections.Generic.Dictionary<string, byte[]> { [ProjectAttachments.ImportDiagnostics] = ImportedGlbDiagnosticsCodec.Write(new[] { clean }) }));

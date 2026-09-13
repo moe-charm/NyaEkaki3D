@@ -118,7 +118,7 @@ namespace NyaForge.Authoring.Inspection
         static JToken ImportDiagnostics(IReadOnlyDictionary<string, ImportedGlbDiagnostics> records, string graphId)
         {
             if (records == null || !records.TryGetValue(graphId, out var record)) return JValue.CreateNull();
-            return new JObject { ["sourceHash"] = record.SourceHash, ["meshIndex"] = record.MeshIndex, ["skinIndex"] = record.SkinIndex.HasValue ? (JToken)new JValue(record.SkinIndex.Value) : JValue.CreateNull(), ["items"] = new JArray(record.Diagnostics.Select(item => new JObject { ["code"] = item.Code, ["path"] = item.Path, ["isBlocking"] = item.IsBlocking, ["message"] = item.Message })) };
+            return new JObject { ["sourceHash"] = record.SourceHash, ["meshIndex"] = record.MeshIndex, ["skinIndex"] = record.SkinIndex.HasValue ? (JToken)new JValue(record.SkinIndex.Value) : JValue.CreateNull(), ["nodeIndex"] = record.NodeIndex.HasValue ? (JToken)new JValue(record.NodeIndex.Value) : JValue.CreateNull(), ["items"] = new JArray(record.Diagnostics.Select(item => new JObject { ["code"] = item.Code, ["path"] = item.Path, ["isBlocking"] = item.IsBlocking, ["message"] = item.Message })) };
         }
     }
 }
