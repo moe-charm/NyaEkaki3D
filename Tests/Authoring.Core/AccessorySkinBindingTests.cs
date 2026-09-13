@@ -84,6 +84,37 @@ internal static partial class Program
                 avatar, new RestTransform(1, new Vec3()), .2f, .1f));
         });
 
+        Test("surface clearance reports back-side candidates without claiming collision proof", () =>
+        {
+            var avatar = new MeshData(
+                new[] { new Vec3(-1, -1, 0), new Vec3(1, -1, 0), new Vec3(0, 1, 0) },
+                new[] { new Vec3(0, 0, 1), new Vec3(0, 0, 1), new Vec3(0, 0, 1) },
+                new[] { new Vec4(1, 0, 0, 1), new Vec4(1, 0, 0, 1), new Vec4(1, 0, 0, 1) },
+                new[] { new Vec2(0, 0), new Vec2(1, 0), new Vec2(.5f, 1) },
+                new[] { new[] { 0, 1, 2 } });
+            var clothing = new MeshData(
+                new[] { new Vec3(-.1f, -.1f, -.01f), new Vec3(.1f, -.1f, -.01f), new Vec3(0, .1f, -.01f) },
+                new[] { new Vec3(0, 0, -1), new Vec3(0, 0, -1), new Vec3(0, 0, -1) },
+                new[] { new Vec4(1, 0, 0, -1), new Vec4(1, 0, 0, -1), new Vec4(1, 0, 0, -1) },
+                new[] { new Vec2(0, 0), new Vec2(1, 0), new Vec2(.5f, 1) },
+                new[] { new[] { 0, 1, 2 } });
+            var behind = MeshSurfaceClearance.Inspect(clothing, new RestTransform(1, new Vec3()), avatar,
+                new RestTransform(1, new Vec3()), toleranceMetres: .0001f);
+            Equal(3, behind.EvaluatedVertexCount);
+            Equal(3, behind.BehindSurfaceVertexCount);
+            Equal(3, behind.BehindSurfaceVertexIndices.Count);
+            Near(-.01f, behind.MinimumSignedDistance);
+            Near(-.01f, behind.MaximumSignedDistance);
+
+            var clear = MeshSurfaceClearance.Inspect(clothing, new RestTransform(1, new Vec3(0, 0, .02f)), avatar,
+                new RestTransform(1, new Vec3()), new[] { 0, 2 });
+            Equal(2, clear.EvaluatedVertexCount);
+            Equal(0, clear.BehindSurfaceVertexCount);
+            True(clear.MinimumSignedDistance > .009f && clear.MaximumSignedDistance > .009f);
+            Expect("SELECTION_EMPTY", () => MeshSurfaceClearance.Inspect(clothing, new RestTransform(1, new Vec3()), avatar,
+                new RestTransform(1, new Vec3()), Array.Empty<int>()));
+        });
+
         Test("clothing fit and surface weights respect an explicit avatar triangle region", () =>
         {
             var avatar = new MeshData(

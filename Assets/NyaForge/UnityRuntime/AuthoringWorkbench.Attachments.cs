@@ -42,8 +42,12 @@ namespace NyaForge.UnityRuntime
         float surfaceFitInspectionAverageDisplacement;
         float surfaceFitInspectionOffset;
         float surfaceFitInspectionMaxDistance;
+        int surfaceFitInspectionBehindSurfaceVertexCount;
+        float surfaceFitInspectionMinimumSignedDistance;
+        float surfaceFitInspectionMaximumSignedDistance;
         int[] surfaceFitInspectionTriangleIds;
         int[] surfaceFitInspectionVertexIds;
+        int[] surfaceFitInspectionBehindSurfaceVertexIds;
 
         void BuildAttachments(VisualElement parent)
         {
@@ -93,7 +97,7 @@ namespace NyaForge.UnityRuntime
             accessorySurfaceInspect = Button("fit状態を測定（変更なし）", InspectAccessorySurfaceFit, "object-surface-inspect");
             accessoryPoseCopy = Button("avatarの現在poseを衣装へコピー", CopyAvatarPose, "object-skin-pose-copy");
             attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryPolygonMaterialize); attachmentPanel.Add(accessoryAutoWeight); attachmentPanel.Add(accessorySurfaceWeight); attachmentPanel.Add(accessorySurfaceFit); attachmentPanel.Add(accessorySurfaceInspect); attachmentPanel.Add(accessoryPoseCopy);
-            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。Polygon造形をskin衣装へ派生すると、元のPolygon graphを残したまま編集結果をMeshSourceへ確定し、新しい衣装objectを作成します。自動weight初期化（骨近傍）はrest骨segmentへの距離から最大4本を選ぶ簡易初期値です。avatar表面が評価できる場合は、表面上の最近三角形から既存avatar weightを補間するavatar表面方式を推奨します。avatar面IDを指定するとfitとweightの対象面を同じ領域へ限定できます。衣装頂点IDを指定すると未選択頂点の位置・weightを保持できます。空欄は全てを対象にします。どちらも必ず動作確認・Rig panelで手修正してください。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。自動fitや貫通判定は別機能です。");
+            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。Polygon造形をskin衣装へ派生すると、元のPolygon graphを残したまま編集結果をMeshSourceへ確定し、新しい衣装objectを作成します。自動weight初期化（骨近傍）はrest骨segmentへの距離から最大4本を選ぶ簡易初期値です。avatar表面が評価できる場合は、表面上の最近三角形から既存avatar weightを補間するavatar表面方式を推奨します。avatar面IDを指定するとfitとweightの対象面を同じ領域へ限定できます。衣装頂点IDを指定すると未選択頂点の位置・weightを保持できます。空欄は全てを対象にします。どちらも必ず動作確認・Rig panelで手修正してください。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。fit状態の測定では最近面の法線に対する裏側候補も表示しますが、交差や貫通ゼロを保証する検査ではありません。");
             help.style.whiteSpace = WhiteSpace.Normal; attachmentPanel.Add(help);
             parent.Add(attachmentPanel);
         }
@@ -493,6 +497,7 @@ namespace NyaForge.UnityRuntime
         sealed class SurfaceFitMeasurement
         {
             public MeshSurfaceFitResult Result;
+            public MeshSurfaceClearanceResult Clearance;
             public string TargetObjectId;
             public string Region;
             public string Vertices;
@@ -526,6 +531,8 @@ namespace NyaForge.UnityRuntime
             var clothingVertices = ClothingVertexSelection()?.ToArray();
             var fit = MeshSurfaceFit.Project(editValue.Mesh, editValue.Transform,
                 avatarMeshValue.Mesh, avatarMeshValue.Transform, offset, maxDistance, clothingVertices, surfaceTriangles);
+            var clearance = MeshSurfaceClearance.Inspect(editValue.Mesh, editValue.Transform,
+                avatarMeshValue.Mesh, avatarMeshValue.Transform, clothingVertices, surfaceTriangles);
             string region = surfaceTriangles == null ? "全三角形" : surfaceTriangles.Length.ToString(CultureInfo.InvariantCulture) + "面領域";
             string vertices = clothingVertices == null ? "全頂点" : clothingVertices.Length.ToString(CultureInfo.InvariantCulture) + "頂点";
             surfaceFitInspectionObjectId = workspace.Document.ActiveObjectId;
@@ -540,9 +547,13 @@ namespace NyaForge.UnityRuntime
             surfaceFitInspectionAverageDisplacement = fit.AverageDisplacement;
             surfaceFitInspectionOffset = offset;
             surfaceFitInspectionMaxDistance = maxDistance;
+            surfaceFitInspectionBehindSurfaceVertexCount = clearance.BehindSurfaceVertexCount;
+            surfaceFitInspectionMinimumSignedDistance = clearance.MinimumSignedDistance;
+            surfaceFitInspectionMaximumSignedDistance = clearance.MaximumSignedDistance;
             surfaceFitInspectionTriangleIds = surfaceTriangles;
             surfaceFitInspectionVertexIds = clothingVertices;
-            return new SurfaceFitMeasurement { Result = fit, TargetObjectId = target.ObjectId, Region = region, Vertices = vertices,
+            surfaceFitInspectionBehindSurfaceVertexIds = clearance.BehindSurfaceVertexIndices.ToArray();
+            return new SurfaceFitMeasurement { Result = fit, Clearance = clearance, TargetObjectId = target.ObjectId, Region = region, Vertices = vertices,
                 TriangleIds = surfaceTriangles, VertexIds = clothingVertices, Offset = offset, MaxDistance = maxDistance };
         }
 
@@ -555,7 +566,8 @@ namespace NyaForge.UnityRuntime
                 SetStatus("fit状態を測定しました（変更なし、" + measurement.Region + "、" + measurement.Vertices + "、評価 " + fit.EvaluatedVertexCount + "頂点、" +
                     fit.MovedVertexCount + "頂点が移動する候補、最大投影距離 " + (fit.MaxProjectionDistance * 1000f).ToString("0.###") +
                     " mm、平均 " + (fit.AverageProjectionDistance * 1000f).ToString("0.###") + " mm、最大移動量 " +
-                    (fit.MaxDisplacement * 1000f).ToString("0.###") + " mm）。貫通と見た目はposeで確認してください。" );
+                    (fit.MaxDisplacement * 1000f).ToString("0.###") + " mm、裏側候補 " + measurement.Clearance.BehindSurfaceVertexCount + "頂点）。" +
+                    "これは最近面の法線による候補値で、貫通ゼロの証明ではありません。見た目はposeで確認してください。" );
             });
         }
 
@@ -591,8 +603,12 @@ namespace NyaForge.UnityRuntime
             result["averageDisplacementMetres"] = surfaceFitInspectionAverageDisplacement;
             result["offsetMetres"] = surfaceFitInspectionOffset;
             result["maxDistanceMetres"] = surfaceFitInspectionMaxDistance;
+            result["behindSurfaceVertexCount"] = surfaceFitInspectionBehindSurfaceVertexCount;
+            result["minimumSignedDistanceMetres"] = surfaceFitInspectionMinimumSignedDistance;
+            result["maximumSignedDistanceMetres"] = surfaceFitInspectionMaximumSignedDistance;
             result["avatarTriangleIds"] = surfaceFitInspectionTriangleIds == null ? JValue.CreateNull() : new JArray(surfaceFitInspectionTriangleIds);
             result["clothingVertexIds"] = surfaceFitInspectionVertexIds == null ? JValue.CreateNull() : new JArray(surfaceFitInspectionVertexIds);
+            result["behindSurfaceVertexIds"] = surfaceFitInspectionBehindSurfaceVertexIds == null ? JValue.CreateNull() : new JArray(surfaceFitInspectionBehindSurfaceVertexIds);
             return result;
         }
 

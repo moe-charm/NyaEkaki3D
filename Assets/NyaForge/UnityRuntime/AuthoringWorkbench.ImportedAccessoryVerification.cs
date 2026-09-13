@@ -122,8 +122,11 @@ namespace NyaForge.UnityRuntime
                 var fitInspection = SurfaceFitInspectionState();
                 Check((bool)fitInspection["available"] && (string)fitInspection["objectId"] == accessoryObjectId &&
                     (string)fitInspection["targetObjectId"] == avatarObjectId && (int)fitInspection["evaluatedVertexCount"] == 2 &&
-                    ((Newtonsoft.Json.Linq.JArray)fitInspection["clothingVertexIds"]).Count == 2,
-                    "Surface fit inspection state did not retain its pinned identity and selection");
+                    ((Newtonsoft.Json.Linq.JArray)fitInspection["clothingVertexIds"]).Count == 2 &&
+                    (int)fitInspection["behindSurfaceVertexCount"] >= 0 &&
+                    ((Newtonsoft.Json.Linq.JArray)fitInspection["behindSurfaceVertexIds"]).Count <= 64,
+                    "Surface fit inspection state did not retain its pinned identity, selection and clearance sample");
+                Check(status.text.Contains("裏側候補"), "Surface fit inspection did not report the conservative back-side candidate count");
                 TransferAccessorySurfaceWeights();
                 boundGraph = workspace.Document.ActiveObject.Graph;
                 bound = boundGraph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.SkinBind);
