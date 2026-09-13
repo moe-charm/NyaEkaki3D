@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09R: 現行候補Playerの通常起動・ナビゲーション再確認
+
+現行候補 `Builds/PerformanceV30/NyaForge.exe` を標準fixture付きで通常起動し、1280×800のWindows Playerナビゲーション回帰を再実行した。**PASS**（`Artifacts/Navigation-20260914-084753-296013c54cbd4e36a6eed014577dbea7/report.json`）。pack選択、キャンセル保持、名前付きsession保存、dirty切替、壊れたpath保持、fresh packの既定表示、saved session復元、utility panelの折りたたみ、authoring入口、viewport領域を確認した。画像証跡は同ディレクトリの`main.png`／`sets.png`／`settings.png`。
+
+これは自動ナビゲーション回帰であり、実マウス・IME・Explorerの手動操作、実RadDollV3衣装の全周fit／貫通・見た目、VRChat Build & Test／実機表示は未受入として残る。
+
 ## 2026-09-14 NF-V1-09Q: 9855d43衣装・材質フィードバック再照合（現行HEAD）
 
 提示された`9855d43`基準のP1 3件／P2 5件を、現行HEAD `f010146`へ再照合した。avatar移動後の座標、衣装更新時のownership、UV1の明示拒否、sparse material slot、MR係数、Cuff winding、sampler variant、適用前・削除後の割当読込はいずれも後続実装と回帰で解消済みで、本番コードの重複修正は行っていない。詳細は[現行HEAD再照合](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-f010146.md)へ固定した。
