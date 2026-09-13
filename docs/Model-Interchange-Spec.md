@@ -166,7 +166,7 @@ I04-Eのreport設計はAと同時に進め、完全取込の公開にはA〜Eの
 
 `VrmExportService.ExportVrm1` は、既存のrest-pose `SkinnedGeometry` GLBを基礎に、VRM 1.0の`VRMC_vrm` extension、明示的なmeta、humanoid必須15骨を付けて`.vrm`へ包装する。Workbenchでは、取込時のgraph単位`ImportedRigSession`からstable `BoneId`を出力GLTF nodeへ解決し、名前・作者・作品のlicense URLを入力して実行する。1つのskinned avatar graph objectだけを対象とし、対応できない骨・装着metadata・不正なlicense URLは出力先を作らず拒否する。
 
-この初期profileは表情、LookAt、FirstPerson、SpringBone、MToon、アニメーションおよび任意VRM拡張を出力しない。これらの情報を保持した完全VRM出力とは扱わず、同梱`export-report.json`へ制限を記録する。出力後は`VrmMetadataReader`でextensionを再読込し、GLBのBIN／mesh geometryが変わらないことをCoreで検証する。
+この初期profileはMorphSetへ解決できる`morphTargetBinds`だけを表情として出力する。material bind、texture transform、LookAt、FirstPerson、SpringBone、MToon、アニメーションおよび任意VRM拡張は出力しない。これらの情報を保持した完全VRM出力とは扱わず、同梱`export-report.json`へ制限を記録する。出力後は`VrmMetadataReader`でextensionと表情bindを再読込し、GLBのBIN／mesh geometryが変わらないことをCoreで検証する。
 
 `GlbExportService` はnative制作データを変更せず、明示的な3 profileで標準glTF 2.0 GLBを生成する。
 

@@ -292,10 +292,10 @@ internal static partial class Program
 
         Test("VRM 1 package adds explicit humanoid metadata without changing GLB geometry", () =>
         {
-            var mesh = AuthoringFixtures.Panel(1);
-            var glb = GlbWriter.Build(new[] { new GlbExportService.MeshObject { Mesh = mesh, Name = "avatar" } }, null, GlbExportProfile.StaticGeometry);
+            var mesh = AuthoringFixtures.Panel(1); var morph = MorphTarget.Create(mesh, GraphId(), "Happy", new[] { new MorphDelta(0, new Vec3(.01f, 0, 0)) });
+            var glb = GlbWriter.Build(new[] { new GlbExportService.MeshObject { Mesh = mesh, Morphs = MorphSet.Create(mesh, new[] { morph }), Name = "avatar" } }, null, GlbExportProfile.StaticGeometry);
             var humanoid = VrmExportMetadata.RequiredHumanBones.ToDictionary(name => name, _ => 0, StringComparer.Ordinal);
-            var metadata = new VrmExportMetadata("Nya test avatar", new[] { "Moe, Charm" }, "https://example.com/license", humanoid);
+            var metadata = new VrmExportMetadata("Nya test avatar", new[] { "Moe, Charm" }, "https://example.com/license", humanoid, expressions: new[] { new VrmExpressionExport("happy", "happy", false, new[] { new VrmMorphBind(0, 0, .75f) }) });
             var vrm = VrmExportService.Package(glb, metadata);
             var root = JObject.Parse(ReadJsonChunk(vrm));
             Equal("1.0", (string)root["extensions"]!["VRMC_vrm"]!["specVersion"]!);
@@ -308,6 +308,7 @@ internal static partial class Program
             Equal("vrm1", profile.Format);
             Equal("Nya test avatar", profile.Title);
             Equal(15, profile.HumanoidNodes.Count);
+            Equal(1, profile.Expressions.Count); Equal("happy", profile.Expressions[0].Name); Equal(1, profile.Expressions[0].MorphTargetBindCount); Near(.75f, profile.Expressions[0].MorphBindings[0].Weight);
         });
 
         Test("VRM 1 export writes a revision-pinned package directory", () =>

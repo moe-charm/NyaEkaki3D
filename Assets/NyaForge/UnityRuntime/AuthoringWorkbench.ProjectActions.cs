@@ -207,8 +207,26 @@ namespace NyaForge.UnityRuntime
                 // authored skeleton nodes in SkeletonDefinition order.
                 humanoid[pair.Key] = 1 + boneIndex;
             }
+            var expressions = new List<VrmExpressionExport>();
+            if (importedVrmSessions.TryGetValue(item.Graph.GraphId, out var expressionSession) && expressionSession != null && expressionSession.Expressions.Count > 0)
+            {
+                var morphNode = item.Graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.MorphSet && node.Morphs != null);
+                if (morphNode == null) throw new InvalidOperationException("VRM表情を出力するには、MorphSetが必要です。");
+                var morphIndices = morphNode.Morphs.Targets.Select((target, index) => new { target.TargetId, index }).ToDictionary(value => value.TargetId, value => value.index, StringComparer.Ordinal);
+                foreach (var expression in expressionSession.Expressions)
+                {
+                    var binds = new List<VrmMorphBind>();
+                    foreach (var weight in expression.Weights)
+                    {
+                        if (!morphIndices.TryGetValue(weight.Key, out var morphIndex))
+                            throw new InvalidOperationException("VRM表情のmorph targetを出力へ対応できません: " + expression.Name);
+                        binds.Add(new VrmMorphBind(0, morphIndex, weight.Value));
+                    }
+                    if (binds.Count > 0) expressions.Add(new VrmExpressionExport(expression.Name, expression.Preset, expression.IsCustom, binds));
+                }
+            }
             var authors = (vrmAuthors?.value ?? "").Split(new[] { ',', '、', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(value => value.Trim()).Where(value => value.Length > 0).ToArray();
-            var metadata = new VrmExportMetadata(vrmName?.value, authors, vrmLicenseUrl?.value, humanoid);
+            var metadata = new VrmExportMetadata(vrmName?.value, authors, vrmLicenseUrl?.value, humanoid, expressions: expressions);
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "vrm1-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
             var result = VrmExportService.ExportVrm1(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, metadata, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices());
             SetStatus("VRM 1.0（humanoid）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
