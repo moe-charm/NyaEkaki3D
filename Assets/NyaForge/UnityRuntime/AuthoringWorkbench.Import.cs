@@ -20,7 +20,7 @@ namespace NyaForge.UnityRuntime
 
         void BuildModelImport(VisualElement parent)
         {
-            modelImportPanel = new Foldout { text = "GLBモデルを取り込む", value = false, name = "model-import" };
+            modelImportPanel = new Foldout { text = "GLB / VRMモデルを取り込む", value = false, name = "model-import" };
             modelImportStatus = new Label { name = "model-import-status" }; modelImportStatus.style.whiteSpace = WhiteSpace.Normal; modelImportPanel.Add(modelImportStatus);
             var importHelp = new Label("GLB / VRMを取り込みます。候補を確認してnode instance（-1ならmesh / skin resource）を選べます。nodeを選ぶと、そのmeshとskinの対応を使います。対応するVRM0・VRM1では揺れをプレビューできます。選択した1メッシュを取り込み、骨のTRS・行列とinverse-bindはsource原本へ保持します。FBXの直接読込は未対応です。");
             importHelp.style.whiteSpace = WhiteSpace.Normal; modelImportPanel.Add(importHelp);
@@ -28,10 +28,10 @@ namespace NyaForge.UnityRuntime
             BuildPhysBonesStatus(modelImportPanel);
             BuildImportedRigStatus(modelImportPanel);
             BuildModelImportDiagnostics(modelImportPanel);
-            modelImportPanel.Add(Button("GLBを選ぶ", () => { if (!modelPickerOpen) StartCoroutine(PickModel()); }, "model-import-browse"));
+            modelImportPanel.Add(Button("GLB / VRMを選ぶ", () => { if (!modelPickerOpen) StartCoroutine(PickModel()); }, "model-import-browse"));
             modelImportPath = new TextField("ファイルパス") { name = "model-import-path" }; modelImportPath.style.flexDirection = FlexDirection.Column; modelImportPanel.Add(modelImportPath);
             BuildModelImportSelection(modelImportPanel);
-            modelImportPanel.Add(Button("このGLBをgraph objectへ取り込む", () => Try(() => ImportModel(modelImportPath.value)), "model-import-apply"));
+            modelImportPanel.Add(Button("このGLB / VRMをgraph objectへ取り込む", () => Try(() => ImportModel(modelImportPath.value)), "model-import-apply"));
             parent.Add(modelImportPanel);
         }
 

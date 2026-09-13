@@ -1,6 +1,10 @@
 # 2026-09-13 native UI acceptance bridge check
 
-提示されたレビュー（基準 `0d1e957`）のP1/P2は、現行main（`8e2aa27`）の実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。
+提示されたレビュー（基準 `0d1e957`）のP1/P2は、現行main（`68f0564`）の実装・Core回帰・Windows Player/Unity Bridge検証で閉じている。追加でWindowsの実マウス/DPI受入を確認するため、既存の `Builds/ValidationSkinV3/NyaForge.exe` を起動してComputer UseのネイティブUI列挙を試したが、このセッションのブリッジは `apps: []`（ブラウザのみ）を返し、Playerのアクセシビリティ状態やクリック結果を取得できなかった。したがって実マウス、DPI差、Explorer実クリックの受入証拠は作成していない。自動Authoring suiteのPASSを実操作受入へ読み替えず、次回はネイティブUIブリッジが有効な環境で、起動画面→制作画面→スクロール→候補選択→保存導線を一操作ずつ確認する。
+
+# 2026-09-13 GLB / VRM import labels
+
+取込機能はGLBとVRMの両方に対応しているため、制作画面の折りたたみ見出し、ファイル選択ボタン、graph object取込ボタンの表示を「GLB / VRM」へ統一した。内部の候補選択・保存・出力契約は変更していない。`Builds/ImportLabelV1/NyaForge.exe` の800x600 Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-092256-409e806db2ca462c875c481c54b16f22/report.json`、画面 `authoring.png`）。同じ成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-092326-908-354689949db74e6a869bb488cab0d506/bridge-report.json`）。
 
 # 2026-09-13 real RadDollV3 recheck after validation fix
 
