@@ -1,3 +1,6 @@
+# 2026-09-13 VRM report snapshot pin
+
+VRM1 exportではGLB生成・package・metadata再読込の後、report作成直前にdocument ID／revisionを再確認するようにした。workspaceが変わっていた場合は`REVISION_CONFLICT`でstagingを破棄し、本体とreportのsnapshot不一致を防ぐ。Core **486 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-229a3ea3029d4c10b4d52b408b349140`）。Unity **6000.4.3f1** Player `Builds/SnapshotPinV1/NyaForge.exe`のAuthoring suiteは **PASS / 82 checks**（`Artifacts/Authoring-20260913-203351-90824516204b4e3ebb61385f086716a9/report.json`）。ビルドログは`Logs/build-player-20260913-203329-835.log`。
 # 2026-09-13 output readback validation
 
 GLB出力は公開前に生成済みbytesを`GlbSceneInventoryReader`で再読込し、VRM 1.0出力はさらに`VrmMetadataReader`で`vrm1`を確認するようにした。失敗時はstagingを公開せず既存作品を変更しない。reportへ`validation.glbSceneInventory=passed`、VRMでは`validation.vrmMetadataReader=passed`も記録する。Coreは **486 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-911e5ba9bbab4a3592278f8879567019`）。`Builds/OutputValidationV1/NyaForge.exe`のprivate RadDollV3 VRM suiteは **89 checks PASS**（`Artifacts/Authoring-20260913-203001-70c5a66f9f7f40aaa8bba6e85a42498d/report.json`）で、標準GLB・衣装付きGLB・VRMの全reportにreadback validationを確認した。ビルドログは`Logs/build-player-20260913-202929-488.log`。

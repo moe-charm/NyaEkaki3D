@@ -217,6 +217,23 @@ namespace NyaForge.Authoring
                 GlbSceneInventoryReader.Read(vrmBytes);
                 var readback = VrmMetadataReader.Read(vrmBytes);
                 Checks.Require(readback.Format == "vrm1", "VRM_READBACK_FAILED", "VRM 1.0 output did not pass metadata readback.");
+                long outputRevision;
+                string outputStateHash;
+                int outputObjectCount;
+                JArray outputDiagnostics;
+                lock (workspace.Gate)
+                {
+                    // The GLB export is revision-pinned, but packaging and
+                    // readback happen afterwards. Recheck before publishing so
+                    // the report can never describe a different workspace state
+                    // from the bytes it accompanies.
+                    Checks.Require(workspace.Document.DocumentId == document && workspace.Document.DocumentRevision == revision,
+                        "REVISION_CONFLICT", "Document changed before VRM report publication.");
+                    outputRevision = workspace.Document.DocumentRevision;
+                    outputStateHash = workspace.Document.StateHash;
+                    outputObjectCount = workspace.Document.Objects.Count;
+                    outputDiagnostics = ReadSourceDiagnostics(workspace);
+                }
                 Directory.CreateDirectory(staging);
                 string path = System.IO.Path.Combine(staging, FileName); File.WriteAllBytes(path, vrmBytes);
                 string reportPath = System.IO.Path.Combine(staging, ReportFileName);
@@ -227,12 +244,12 @@ namespace NyaForge.Authoring
                     ["units"] = "meters",
                     ["coordinates"] = Storage.Coordinates,
                     ["documentId"] = workspace.Document.DocumentId,
-                    ["documentRevision"] = workspace.Document.DocumentRevision,
-                    ["stateHash"] = workspace.Document.StateHash,
+                    ["documentRevision"] = outputRevision,
+                    ["stateHash"] = outputStateHash,
                     ["vrmHash"] = Checks.Hash(vrmBytes),
-                    ["objectCount"] = workspace.Document.Objects.Count,
+                    ["objectCount"] = outputObjectCount,
                     ["metadata"] = new JObject { ["name"] = metadata.Name, ["version"] = metadata.Version, ["authors"] = new JArray(metadata.Authors), ["licenseUrl"] = "other", ["otherLicenseUrl"] = metadata.LicenseUrl, ["humanoidBoneCount"] = metadata.HumanoidNodes.Count, ["expressionCount"] = metadata.Expressions.Count, ["springBone"] = metadata.Springs != null },
-                    ["sourceDiagnostics"] = ReadSourceDiagnostics(workspace),
+                    ["sourceDiagnostics"] = outputDiagnostics,
                     ["validation"] = new JObject { ["glbSceneInventory"] = "passed", ["vrmMetadataReader"] = "passed" },
                     ["limitations"] = new JArray("VRM 1.0 humanoid/meta, resolved morphTargetBinds and optional VRMC_springBone 1.0 are emitted", "material binds, texture transforms, lookAt, firstPerson and animation are not emitted by this profile", "rest pose only", "graph and native metadata are not embedded")
                 };
