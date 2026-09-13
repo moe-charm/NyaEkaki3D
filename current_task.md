@@ -1,3 +1,9 @@
+# 2026-09-13 pasted feedback recheck on current HEAD
+
+今回の貼り付けレビュー（基準 `0d1e957`）を現行HEAD `c4fd4f4`へ再照合した。レビューにある5件のP1（複数graph metadataの所属、source skinの二重変形、skinned node affine、inverse-bind出力、装着後の選択判定）は、現行コードでそれぞれgraphId単位のsession table、SkinDeform入力差し替え後の再評価、skinned affineの監査metadata化、保持したinverse-bind行列の標準／拡張GLB出力、`WorldPoints`による描画・Frame・選択の統一として実装済み。P2の材質linear値・metallic既定値、primitive単位の材質、省略texture、装着先保持、PhysBones source hash、揺れUndo／再bind、GLB共通root・morph bounds、normal/tangent morph変換も現行回帰へ含まれている。静的小物の頂点編集導線も追加済みで、別VRM avatar＋static GLB accessoryのEditMesh→stable BoneId装着→native Save/Open→feature-preserving exportを確認している。
+
+再実行した `dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore` は **466 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f7d63fcb0ae944dca2e73c04bc182ba8`）。この結果はCore回帰の証拠で、実マウス／DPI差／Explorer実クリック、実Unity SDK・実VRChat内の見た目とPhysBones、衣装の自動fit・貫通修正、異なるskeletonの結合、完全なVRM出力は別境界として残す。次の開発カードは、共有mesh／skin／morph参照の仕様化か、固定した実SDK受け取り検証のどちらか一つに絞る。
+
 # 2026-09-13 pasted feedback recheck on current main
 
 ## Separate avatar and accessory authoring workflow
