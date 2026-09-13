@@ -9,6 +9,32 @@ using Newtonsoft.Json.Linq;
 
 namespace NyaForge.Authoring.Import
 {
+    /// <summary>Resolved normal or metallic-roughness image and its glTF sampling contract.</summary>
+    public sealed class GlbTextureImage
+    {
+        public MaterialTextureSemantic Semantic { get; }
+        public int TextureIndex { get; }
+        public int ImageIndex { get; }
+        public int TexCoord { get; }
+        public float NormalScale { get; }
+        public string MimeType { get; }
+        public MaterialTextureSampler Sampler { get; }
+        public bool HasImageBytes { get { return imageBytes != null; } }
+        readonly byte[] imageBytes;
+
+        internal GlbTextureImage(MaterialTextureSemantic semantic, int textureIndex, int imageIndex, int texCoord,
+            float normalScale, string mimeType, MaterialTextureSampler sampler, byte[] imageBytes)
+        {
+            Semantic = semantic; TextureIndex = textureIndex; ImageIndex = imageIndex; TexCoord = texCoord;
+            NormalScale = normalScale; MimeType = mimeType ?? ""; Sampler = sampler ?? MaterialTextureSampler.Default;
+            this.imageBytes = imageBytes == null ? null : (byte[])imageBytes.Clone();
+            Checks.Require(TextureIndex >= 0 && ImageIndex >= 0 && (TexCoord == 0 || TexCoord == 1), "INVALID_IMPORT", "GLB semantic texture reference is invalid.");
+            Checks.Require(!HasImageBytes || MimeType == "image/png" || MimeType == "image/jpeg", "UNSUPPORTED_FORMAT", "Only PNG and JPEG semantic texture images are supported.");
+        }
+
+        public byte[] CopyImageBytes() { return imageBytes == null ? null : (byte[])imageBytes.Clone(); }
+    }
+
     /// <summary>One glTF material assignment for an imported submesh.</summary>
     public sealed class GlbMaterialSource
     {
@@ -18,11 +44,13 @@ namespace NyaForge.Authoring.Import
         public MaterialParameters Parameters { get; }
         public bool HasTextureReferences { get; }
         public bool HasEmbeddedBaseColorImage { get { return baseColorImage != null; } }
+        public GlbTextureImage NormalTexture { get; }
+        public GlbTextureImage MetallicRoughnessTexture { get; }
         public int BaseColorImageIndex { get; }
         public string BaseColorImageMimeType { get; }
         readonly byte[] baseColorImage;
 
-        internal GlbMaterialSource(int submeshIndex, int sourceMaterialIndex, string name, MaterialParameters parameters, bool hasTextureReferences, int baseColorImageIndex = -1, string baseColorImageMimeType = "", byte[] baseColorImage = null)
+        internal GlbMaterialSource(int submeshIndex, int sourceMaterialIndex, string name, MaterialParameters parameters, bool hasTextureReferences, int baseColorImageIndex = -1, string baseColorImageMimeType = "", byte[] baseColorImage = null, GlbTextureImage normalTexture = null, GlbTextureImage metallicRoughnessTexture = null)
         {
             Checks.Require(submeshIndex >= 0 && sourceMaterialIndex >= 0 && parameters != null, "INVALID_IMPORT", "GLB material source is incomplete.");
             Checks.Require(name != null && name.Length <= 256, "INVALID_IMPORT", "GLB material name is invalid.");
@@ -31,6 +59,7 @@ namespace NyaForge.Authoring.Import
             Checks.Require(baseColorImage == null || baseColorImage.Length > 0 && baseColorImage.Length <= 16 * 1024 * 1024, "IMAGE_BUDGET_EXCEEDED", "Embedded GLB image exceeds the 16 MiB image budget.");
             SubmeshIndex = submeshIndex; SourceMaterialIndex = sourceMaterialIndex; Name = name; Parameters = parameters; HasTextureReferences = hasTextureReferences;
             BaseColorImageIndex = baseColorImageIndex; BaseColorImageMimeType = baseColorImageMimeType; this.baseColorImage = baseColorImage == null ? null : (byte[])baseColorImage.Clone();
+            NormalTexture = normalTexture; MetallicRoughnessTexture = metallicRoughnessTexture;
         }
 
         public byte[] CopyBaseColorImageBytes() { return baseColorImage == null ? null : (byte[])baseColorImage.Clone(); }
@@ -79,8 +108,62 @@ namespace NyaForge.Authoring.Import
             bool textures = pbr?["baseColorTexture"] != null || pbr?["metallicRoughnessTexture"] != null || token["normalTexture"] != null || token["occlusionTexture"] != null || token["emissiveTexture"] != null;
             int imageIndex; string imageMimeType; byte[] imageBytes;
             ReadBaseColorImage(root, pbr?["baseColorTexture"] as JObject, bin, views, sourceDirectory, out imageIndex, out imageMimeType, out imageBytes);
+            var normal = ReadSemanticTexture(root, token["normalTexture"] as JObject, bin, views, sourceDirectory, MaterialTextureSemantic.Normal);
+            var metallicRoughness = ReadSemanticTexture(root, pbr?["metallicRoughnessTexture"] as JObject, bin, views, sourceDirectory, MaterialTextureSemantic.MetallicRoughness);
             return new GlbMaterialSource(submeshIndex, sourceIndex, name,
-                new MaterialParameters(new Vec4(baseColor[0], baseColor[1], baseColor[2], baseColor[3]), metallic, roughness, new Vec3(emission[0], emission[1], emission[2]), alpha, cutoff), textures, imageIndex, imageMimeType, imageBytes);
+                new MaterialParameters(new Vec4(baseColor[0], baseColor[1], baseColor[2], baseColor[3]), metallic, roughness, new Vec3(emission[0], emission[1], emission[2]), alpha, cutoff), textures, imageIndex, imageMimeType, imageBytes, normal, metallicRoughness);
+        }
+
+        static GlbTextureImage ReadSemanticTexture(JObject root, JObject reference, byte[] bin, JArray views, string sourceDirectory, MaterialTextureSemantic semantic)
+        {
+            if (reference == null) return null;
+            var textures = root["textures"] as JArray; var images = root["images"] as JArray;
+            Checks.Require(textures != null && images != null && reference["index"] != null && reference["index"].Type == JTokenType.Integer,
+                "INVALID_IMPORT", "GLB semantic texture index is invalid.");
+            int textureIndex = (int)reference["index"]; Checks.Require(textureIndex >= 0 && textureIndex < textures.Count, "INVALID_IMPORT", "GLB semantic texture index is out of range.");
+            var texture = textures[textureIndex] as JObject; Checks.Require(texture != null && texture["source"] != null && texture["source"].Type == JTokenType.Integer,
+                "INVALID_IMPORT", "GLB semantic texture source is invalid.");
+            int imageIndex = (int)texture["source"]; Checks.Require(imageIndex >= 0 && imageIndex < images.Count, "INVALID_IMPORT", "GLB semantic texture source is out of range.");
+            var image = images[imageIndex] as JObject; Checks.Require(image != null, "INVALID_IMPORT", "GLB semantic image is invalid.");
+            string mime = image["mimeType"]?.Type == JTokenType.String ? (string)image["mimeType"] : "";
+            string label = semantic == MaterialTextureSemantic.Normal ? "normal" : "metallic-roughness";
+            byte[] bytes = ReadImageBytes(image, bin, views, sourceDirectory, ref mime, label);
+            int texCoord = reference["texCoord"] == null ? 0 : Integer(reference["texCoord"], "texture texCoord");
+            float normalScale = semantic == MaterialTextureSemantic.Normal ? Number(reference["scale"], 1f, "normal scale", 8f) : 1f;
+            var sampler = ReadSampler(root, texture);
+            return new GlbTextureImage(semantic, textureIndex, imageIndex, texCoord, normalScale, mime, sampler, bytes);
+        }
+
+        static MaterialTextureSampler ReadSampler(JObject root, JObject texture)
+        {
+            var samplers = root["samplers"] as JArray;
+            if (samplers == null || texture["sampler"] == null) return MaterialTextureSampler.Default;
+            int index = Integer(texture["sampler"], "sampler"); Checks.Require(index < samplers.Count, "INVALID_IMPORT", "GLB texture sampler is out of range.");
+            var token = samplers[index] as JObject; Checks.Require(token != null, "INVALID_IMPORT", "GLB texture sampler is invalid.");
+            int wrapS = token["wrapS"] == null ? MaterialTextureSampler.DefaultWrap : Integer(token["wrapS"], "wrapS");
+            int wrapT = token["wrapT"] == null ? MaterialTextureSampler.DefaultWrap : Integer(token["wrapT"], "wrapT");
+            int min = token["minFilter"] == null ? MaterialTextureSampler.DefaultMinFilter : Integer(token["minFilter"], "minFilter");
+            int mag = token["magFilter"] == null ? MaterialTextureSampler.DefaultMagFilter : Integer(token["magFilter"], "magFilter");
+            return new MaterialTextureSampler(wrapS, wrapT, min, mag);
+        }
+
+        static byte[] ReadImageBytes(JObject image, byte[] bin, JArray views, string sourceDirectory, ref string mimeType, string label)
+        {
+            if (image["bufferView"] == null)
+            {
+                var uriToken = image["uri"];
+                if (uriToken == null) return null;
+                Checks.Require(uriToken.Type == JTokenType.String && !string.IsNullOrWhiteSpace((string)uriToken), "INVALID_IMPORT", "GLB " + label + " image URI is invalid.");
+                return ReadExternalImage(sourceDirectory, (string)uriToken, ref mimeType, label);
+            }
+            Checks.Require(image["bufferView"].Type == JTokenType.Integer, "INVALID_IMPORT", "GLB " + label + " image bufferView is invalid.");
+            int viewIndex = (int)image["bufferView"]; Checks.Require(viewIndex >= 0 && viewIndex < views.Count, "INVALID_IMPORT", "GLB " + label + " image bufferView is out of range.");
+            var view = views[viewIndex] as JObject; Checks.Require(view != null, "INVALID_IMPORT", "GLB " + label + " image bufferView is invalid.");
+            int offset = view["byteOffset"] == null ? 0 : Integer(view["byteOffset"], "image byteOffset");
+            int length = Integer(view["byteLength"], "image byteLength");
+            Checks.Require(offset >= 0 && length > 0 && length <= 16 * 1024 * 1024 && (long)offset + length <= bin.Length, "IMAGE_BUDGET_EXCEEDED", "GLB " + label + " image exceeds the image budget or BIN chunk.");
+            Checks.Require(mimeType == "image/png" || mimeType == "image/jpeg", "UNSUPPORTED_FORMAT", "Only PNG and JPEG " + label + " images are supported.");
+            var bytes = new byte[length]; Buffer.BlockCopy(bin, offset, bytes, 0, length); return bytes;
         }
 
         static void ReadBaseColorImage(JObject root, JObject textureReference, byte[] bin, JArray views, string sourceDirectory, out int imageIndex, out string mimeType, out byte[] bytes)
@@ -102,7 +185,7 @@ namespace NyaForge.Authoring.Import
                 var uriToken = image["uri"];
                 if (uriToken == null) return;
                 Checks.Require(uriToken.Type == JTokenType.String && !string.IsNullOrWhiteSpace((string)uriToken), "INVALID_IMPORT", "GLB external image URI is invalid.");
-                bytes = ReadExternalImage(sourceDirectory, (string)uriToken, ref mimeType);
+                bytes = ReadExternalImage(sourceDirectory, (string)uriToken, ref mimeType, "base color");
                 return;
             }
             Checks.Require(image["bufferView"].Type == JTokenType.Integer, "INVALID_IMPORT", "GLB image bufferView is invalid.");
@@ -114,7 +197,7 @@ namespace NyaForge.Authoring.Import
             bytes = new byte[length]; Buffer.BlockCopy(bin, offset, bytes, 0, length);
         }
 
-        static byte[] ReadExternalImage(string sourceDirectory, string uri, ref string mimeType)
+        static byte[] ReadExternalImage(string sourceDirectory, string uri, ref string mimeType, string label)
         {
             Checks.Require(!string.IsNullOrWhiteSpace(sourceDirectory), "EXTERNAL_RESOURCE_UNAVAILABLE", "An external image requires the source model directory.");
             Checks.Require(uri.IndexOf('\0') < 0 && !uri.StartsWith("data:", StringComparison.OrdinalIgnoreCase), "UNSUPPORTED_FORMAT", "Data URI images are not supported; use a local relative image file.");
@@ -130,9 +213,9 @@ namespace NyaForge.Authoring.Import
             try { full = Path.GetFullPath(Path.Combine(root, relative)); }
             catch (Exception error) when (error is ArgumentException || error is NotSupportedException) { throw new AuthoringException("INVALID_IMPORT", "External image URI is not a valid local path."); }
             Checks.Require(full.StartsWith(root, StringComparison.OrdinalIgnoreCase), "UNSUPPORTED_FORMAT", "External image URI escapes the model directory.");
-            var info = new FileInfo(full); Checks.Require(info.Exists, "EXTERNAL_RESOURCE_MISSING", "External base color image was not found: " + uri);
+            var info = new FileInfo(full); Checks.Require(info.Exists, "EXTERNAL_RESOURCE_MISSING", "External " + label + " image was not found: " + uri);
             if (string.IsNullOrWhiteSpace(mimeType)) mimeType = MimeType(Path.GetExtension(full));
-            Checks.Require(mimeType == "image/png" || mimeType == "image/jpeg", "UNSUPPORTED_FORMAT", "Only PNG and JPEG external base color images are supported.");
+            Checks.Require(mimeType == "image/png" || mimeType == "image/jpeg", "UNSUPPORTED_FORMAT", "Only PNG and JPEG external " + label + " images are supported.");
             return ReadBoundedExternalBytes(full, uri);
         }
 

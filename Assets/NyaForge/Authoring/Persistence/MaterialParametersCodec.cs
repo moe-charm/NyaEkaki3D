@@ -10,6 +10,7 @@ namespace NyaForge.Authoring
     {
         internal static byte[] Write(MaterialParameters parameters)
         {
+            Checks.Require(parameters != null && (parameters.Textures == null || parameters.Textures.IsEmpty), "EXPORT_UNSUPPORTED_FEATURE", "Semantic texture slots require a graph or GLB export profile.");
             using(var stream=new MemoryStream()) using(var writer=new BinaryWriter(stream,Encoding.UTF8))
             { parameters.Write(writer);return stream.ToArray(); }
         }

@@ -71,7 +71,8 @@ namespace NyaForge.Authoring
                         writer.Write(node.Enabled); Text(writer, node.ExpectedInputSnapshot); Text(writer, node.ExpectedDomain);
                         Text(writer, addBlob(DeltaBinary.Write(node.Offsets))); break;
                     case BuiltinNodes.Output: break;
-                    case BuiltinNodes.StandardMaterial: node.Material.Write(writer);break;
+                    case BuiltinNodes.StandardMaterial:
+                        node.Material.Write(writer); WriteMaterialTextures(writer, node.Material.Textures, addBlob); break;
                     case BuiltinNodes.AssignMaterial: break;
                     case BuiltinNodes.AssignMaterials: writer.Write(node.MaterialSlots.Count);foreach(int slot in node.MaterialSlots) writer.Write(slot);break;
                     case BuiltinNodes.Skeleton: Text(writer, addBlob(RigCodec.WriteSkeleton(node.Skeleton))); break;
@@ -159,7 +160,10 @@ namespace NyaForge.Authoring
                         var offsets = DeltaBinary.Read(readBlob(Text(reader,64)), AuthoringLimits.MaxVertices);
                         node = GraphNode.Edit(id,flag == 1,new Dictionary<int, Vec3>(offsets),snapshot,domain); break;
                     case BuiltinNodes.Output: node = GraphNode.Output(id); break;
-                    case BuiltinNodes.StandardMaterial: node=GraphNode.StandardMaterial(id,MaterialParameters.Read(reader));break;
+                    case BuiltinNodes.StandardMaterial:
+                        var material=MaterialParameters.Read(reader);
+                        MaterialTextureSet textures = stream.Position == stream.Length ? null : ReadMaterialTextures(reader, readBlob);
+                        node=GraphNode.StandardMaterial(id, material, textures); break;
                     case BuiltinNodes.AssignMaterial: node=GraphNode.AssignMaterial(id);break;
                     case BuiltinNodes.AssignMaterials:
                         int slotsCount=Count(reader,AuthoringLimits.MaxSubmeshes);var slots=new int[slotsCount];
@@ -224,5 +228,38 @@ namespace NyaForge.Authoring
         static void Text(BinaryWriter writer, string value)
         { var bytes = Utf8.GetBytes(value); writer.Write(bytes.Length); writer.Write(bytes); }
         static string Text(BinaryReader reader, int maximum) { return Utf8.GetString(Exact(reader,Count(reader,maximum))); }
+
+        static void WriteMaterialTextures(BinaryWriter writer, MaterialTextureSet textures, Func<byte[], string> addBlob)
+        {
+            if (textures == null || textures.IsEmpty) return;
+            writer.Write((byte)1);
+            WriteMaterialTexture(writer, textures.Normal, addBlob);
+            WriteMaterialTexture(writer, textures.MetallicRoughness, addBlob);
+        }
+
+        static void WriteMaterialTexture(BinaryWriter writer, MaterialTextureSlot texture, Func<byte[], string> addBlob)
+        {
+            writer.Write(texture != null);
+            if (texture == null) return;
+            writer.Write((int)texture.Semantic); writer.Write(texture.TexCoord); writer.Write(Checks.Canonical(texture.NormalScale));
+            writer.Write(texture.Sampler.WrapS); writer.Write(texture.Sampler.WrapT); writer.Write(texture.Sampler.MinFilter); writer.Write(texture.Sampler.MagFilter);
+            Text(writer, texture.MimeType); Text(writer, addBlob(texture.CopyEncodedBytes()));
+        }
+
+        static MaterialTextureSet ReadMaterialTextures(BinaryReader reader, Func<string, byte[]> readBlob)
+        {
+            byte marker = reader.ReadByte(); Checks.Require(marker == 1, "INVALID_BLOB", "Invalid material texture extension marker.");
+            return new MaterialTextureSet(ReadMaterialTexture(reader, readBlob), ReadMaterialTexture(reader, readBlob));
+        }
+
+        static MaterialTextureSlot ReadMaterialTexture(BinaryReader reader, Func<string, byte[]> readBlob)
+        {
+            byte present = reader.ReadByte(); Checks.Require(present <= 1, "INVALID_BLOB", "Invalid material texture presence flag.");
+            if (present == 0) return null;
+            var semantic = (MaterialTextureSemantic)reader.ReadInt32(); int texCoord = reader.ReadInt32(); float normalScale = reader.ReadSingle();
+            var sampler = new MaterialTextureSampler(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
+            string mime = Text(reader, 32); string blobHash = Text(reader, 64); Checks.HashText(blobHash);
+            return new MaterialTextureSlot(semantic, readBlob(blobHash), mime, texCoord, normalScale, sampler);
+        }
     }
 }

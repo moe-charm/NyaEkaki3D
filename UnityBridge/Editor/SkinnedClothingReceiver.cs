@@ -249,6 +249,20 @@ namespace NyaForge.UnityBridge.Editor
                         texture.filterMode = FilterMode.Bilinear;
                         material.mainTexture = texture;
                     }
+                    if (source?.NormalTexture != null && source.NormalTexture.HasImageBytes)
+                    {
+                        var texture = DecodeSemanticTexture(source.NormalTexture.CopyImageBytes(), source.NormalTexture.MimeType, source.NormalTexture.Sampler, material.name + " Normal", true);
+                        if (material.HasProperty("_BumpMap")) material.SetTexture("_BumpMap", texture);
+                        if (material.HasProperty("_BumpScale")) material.SetFloat("_BumpScale", source.NormalTexture.NormalScale);
+                        material.EnableKeyword("_NORMALMAP");
+                    }
+                    if (source?.MetallicRoughnessTexture != null && source.MetallicRoughnessTexture.HasImageBytes)
+                    {
+                        var texture = DecodeMetallicRoughness(source.MetallicRoughnessTexture.CopyImageBytes(), source.MetallicRoughnessTexture.MimeType, source.MetallicRoughnessTexture.Sampler, material.name + " MetallicRoughness");
+                        if (material.HasProperty("_MetallicGlossMap")) material.SetTexture("_MetallicGlossMap", texture);
+                        if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", 1f);
+                        material.EnableKeyword("_METALLICGLOSSMAP");
+                    }
                     if (parameters.Emission.X > 0f || parameters.Emission.Y > 0f || parameters.Emission.Z > 0f)
                     {
                         material.EnableKeyword("_EMISSION");
@@ -267,14 +281,48 @@ namespace NyaForge.UnityBridge.Editor
 
         static void DestroyOwnedMaterials(IEnumerable<Material> materials)
         {
+            var textures = new HashSet<Texture>();
             foreach (var material in materials)
             {
                 if (material == null) continue;
-                var texture = material.mainTexture;
-                if (texture != null && texture != Texture2D.whiteTexture) Object.DestroyImmediate(texture);
+                AddOwnedTexture(textures, material.mainTexture);
+                if (material.HasProperty("_BumpMap")) AddOwnedTexture(textures, material.GetTexture("_BumpMap"));
+                if (material.HasProperty("_MetallicGlossMap")) AddOwnedTexture(textures, material.GetTexture("_MetallicGlossMap"));
                 Object.DestroyImmediate(material);
             }
+            foreach (var texture in textures) Object.DestroyImmediate(texture);
         }
+
+        static void AddOwnedTexture(HashSet<Texture> textures, Texture texture)
+        { if (texture != null && texture != Texture2D.whiteTexture) textures.Add(texture); }
+
+        static Texture2D DecodeSemanticTexture(byte[] bytes, string mimeType, MaterialTextureSampler sampler, string name, bool linear)
+        {
+            if (bytes == null || bytes.Length == 0) throw new AuthoringException("INVALID_IMAGE", "Semantic texture image is empty.");
+            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, linear) { name = name };
+            if (!texture.LoadImage(bytes, false)) { Object.DestroyImmediate(texture); throw new AuthoringException("IMAGE_DECODE_FAILED", "Semantic texture image could not be decoded."); }
+            texture.wrapMode = ToWrapMode(sampler?.WrapS ?? MaterialTextureSampler.DefaultWrap);
+            texture.filterMode = ToFilterMode(sampler?.MagFilter ?? MaterialTextureSampler.DefaultMagFilter);
+            return texture;
+        }
+
+        static Texture2D DecodeMetallicRoughness(byte[] bytes, string mimeType, MaterialTextureSampler sampler, string name)
+        {
+            var texture = DecodeSemanticTexture(bytes, mimeType, sampler, name, true);
+            var pixels = texture.GetPixels32();
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                byte metallic = pixels[i].b;
+                byte smoothness = (byte)(255 - pixels[i].g);
+                pixels[i] = new Color32(metallic, 0, 0, smoothness);
+            }
+            texture.SetPixels32(pixels); texture.Apply(false, false); return texture;
+        }
+
+        static TextureWrapMode ToWrapMode(int value)
+        { return value == 33071 ? TextureWrapMode.Clamp : value == 33648 ? TextureWrapMode.Mirror : TextureWrapMode.Repeat; }
+        static FilterMode ToFilterMode(int value)
+        { return value == 9728 || value == 9984 || value == 9986 ? FilterMode.Point : FilterMode.Bilinear; }
 
         static void ConfigureAlpha(Material material, MaterialParameters parameters)
         {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
+using NyaForge.Authoring.Paint;
 
 internal static partial class Program
 {
@@ -84,6 +85,28 @@ internal static partial class Program
             var blobs=new Dictionary<string,byte[]>();var wire=GraphBinaryCodec.Encode(f.graph,data=> { string hash=Checks.Hash(data);blobs[hash]=data;return hash; });
             var restored=GraphBinaryCodec.Decode(wire,key=>blobs[key]);True(GraphEvaluator.Evaluate(restored).IsComplete);
             True(wire.SequenceEqual(GraphBinaryCodec.Encode(restored,data=>Checks.Hash(data))));
+        });
+        Test("semantic normal and metallic-roughness textures survive graph storage",() =>
+        {
+            var f=MaterialFixture();
+            var normalBytes=PaintPng.Encode(new PaintImage(2,1,new Rgba32(128,128,255,255)));
+            var metallicRoughnessBytes=PaintPng.Encode(new PaintImage(2,1,new Rgba32(32,160,0,255)));
+            var sampler=new MaterialTextureSampler(33071,33648,9987,9728);
+            var textures=new MaterialTextureSet(
+                new MaterialTextureSlot(MaterialTextureSemantic.Normal,normalBytes,"image/png",1,.65f,sampler),
+                new MaterialTextureSlot(MaterialTextureSemantic.MetallicRoughness,metallicRoughnessBytes,"image/png",0,1f,sampler));
+            var parameters=new MaterialParameters(new Vec4(.8f,.7f,.6f,1),.2f,.4f,new Vec3(),MaterialAlphaMode.Opaque,.5f,textures);
+            var graph=f.graph.ReplaceNode(GraphNode.StandardMaterial(f.material,parameters,textures));
+            var workspace=AuthoringWorkspace.CreateEmpty(); Ok(new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph))));
+            True(workspace.Preview.IsComplete); Equal(textures.ContentHash,workspace.Preview.Output.Material.Parameters.Textures.ContentHash);
+            string directory=Dir("semantic-material-native"); ProjectStore.Save(directory,workspace,0); var reopened=ProjectStore.Open(directory);
+            var restored=reopened.Preview.Output.Material.Parameters.Textures;
+            True(restored.Normal!=null && restored.MetallicRoughness!=null); Equal(.65f,restored.Normal.NormalScale); Equal(1,restored.Normal.TexCoord); Equal(33071,restored.Normal.Sampler.WrapS); Equal(9728,restored.Normal.Sampler.MagFilter);
+            True(normalBytes.SequenceEqual(restored.Normal.CopyEncodedBytes())); True(metallicRoughnessBytes.SequenceEqual(restored.MetallicRoughness.CopyEncodedBytes()));
+            var blobs=new Dictionary<string,byte[]>(); var wire=GraphBinaryCodec.Encode(graph,data=>{string hash=Checks.Hash(data);blobs[hash]=data;return hash;});
+            var decoded=GraphBinaryCodec.Decode(wire,key=>blobs[key]); var decodedTextures=decoded.Nodes[f.material].Material.Textures;
+            True(decodedTextures!=null && decodedTextures.ContentHash==textures.ContentHash); True(wire.SequenceEqual(GraphBinaryCodec.Encode(decoded,data=>Checks.Hash(data))));
+            Expect("EXPORT_UNSUPPORTED_FEATURE",()=>MaterialParametersCodec.Write(parameters));
         });
     }
 }

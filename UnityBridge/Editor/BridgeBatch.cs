@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NyaForge.Authoring;
+using NyaForge.Authoring.Graph;
+using NyaForge.Authoring.Import;
+using NyaForge.Authoring.Paint;
 using NyaForge.Authoring.Rig;
 using NyaForge.UnityBridge;
 using UnityEditor;
@@ -71,6 +74,7 @@ namespace NyaForge.UnityBridge.Editor
                 VerifyPhysBonesBinding(checks);
                 VerifySkinnedClothingReceiver(checks);
                 VerifySkinnedClothingBinding(checks);
+                VerifySemanticTexturePackage(checks);
                 string clothingPackage = OptionalArgument(args, "--nyaforge-clothing-package");
                 if (!string.IsNullOrEmpty(clothingPackage)) VerifySkinnedClothingPackage(clothingPackage, checks);
                 if (Array.IndexOf(args,"--nyaforge-surface") >= 0)
@@ -189,6 +193,76 @@ namespace NyaForge.UnityBridge.Editor
                 checks.Add("Skinned clothing package hashes, sidecars and ApplyPackage scene creation passed.");
             }
             finally { Object.DestroyImmediate(avatar); }
+        }
+
+        static void VerifySemanticTexturePackage(List<string> checks)
+        {
+            string rootId = Guid.NewGuid().ToString("D");
+            var mesh = new MeshData(
+                new[] { new Vec3(-.1f, -.05f, 0), new Vec3(.1f, -.05f, 0), new Vec3(.1f, .05f, 0), new Vec3(-.1f, .05f, 0) },
+                new[] { new Vec3(0, 0, 1), new Vec3(0, 0, 1), new Vec3(0, 0, 1), new Vec3(0, 0, 1) },
+                new[] { new Vec4(1, 0, 0, 1), new Vec4(1, 0, 0, 1), new Vec4(1, 0, 0, 1), new Vec4(1, 0, 0, 1) },
+                new[] { new Vec2(0, 0), new Vec2(1, 0), new Vec2(1, 1), new Vec2(0, 1) },
+                new[] { new[] { 0, 1, 2 }, new[] { 0, 2, 3 } });
+            var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(rootId, "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
+            var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, rootId, 1f)));
+            var pose = PoseSet.Create(skeleton, new[] { new BonePose(rootId, PoseTransform.FromTranslation(new Vec3())) });
+            var normalBytes = PaintPng.Encode(new PaintImage(2, 1, new Rgba32(128, 128, 255, 255)));
+            var metallicRoughnessBytes = PaintPng.Encode(new PaintImage(2, 1, new Rgba32(16, 64, 200, 255)));
+            var textureSet = new MaterialTextureSet(
+                new MaterialTextureSlot(MaterialTextureSemantic.Normal, normalBytes, "image/png", 0, .7f),
+                new MaterialTextureSlot(MaterialTextureSemantic.MetallicRoughness, metallicRoughnessBytes, "image/png"));
+            string sourceId = Guid.NewGuid().ToString("D"), skeletonId = Guid.NewGuid().ToString("D"), bindId = Guid.NewGuid().ToString("D"), poseId = Guid.NewGuid().ToString("D"), deformId = Guid.NewGuid().ToString("D"), materialId = Guid.NewGuid().ToString("D"), assignId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
+            var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), new[] {
+                GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton),
+                GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId),
+                GraphNode.StandardMaterial(materialId, new MaterialParameters(new Vec4(1, 1, 1, 1), .1f, .8f, new Vec3(), MaterialAlphaMode.Opaque, .5f, textureSet)),
+                GraphNode.AssignMaterial(assignId), GraphNode.Output(outputId) }, new[] {
+                new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"),
+                new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"),
+                new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"),
+                new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", assignId, "mesh"),
+                new GraphEdge(materialId, "material", assignId, "material"), new GraphEdge(assignId, "mesh", outputId, "mesh") }, outputId);
+            var workspace = AuthoringWorkspace.CreateEmpty(); var commands = new AuthoringCommandService(workspace);
+            Require(commands.Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph))).Success, "Semantic texture fixture graph could not be created.");
+            string directory = Path.Combine(Path.GetTempPath(), "NyaForge-Bridge-Semantic-" + Guid.NewGuid().ToString("N"));
+            GameObject avatar = null;
+            try
+            {
+                string glbDirectory = directory + "-glb";
+                var glb = GlbExportService.ExportSkinnedObject(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.ActiveObjectId, glbDirectory);
+                // Package validation compares against the exact skinned GLB readback.
+                // Use that readback mesh for the fixture so the check exercises
+                // semantic material transport instead of duplicating exporter math.
+                byte[] glbBytes = File.ReadAllBytes(glb.Path);
+                var imported = GlbSkinImporter.Read(glbBytes);
+                var packageBinding = SkinBinding.Create(imported.Mesh, skeleton,
+                    Enumerable.Range(0, imported.Mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, rootId, 1f)));
+                string manifest = SkinnedClothingPackage.Export(directory, glbBytes, imported.Mesh, skeleton, packageBinding,
+                    workspace.Document.DocumentId, workspace.Document.ActiveObjectId, graph.GraphId, workspace.Document.StateHash, graph.ContentHash);
+                avatar = new GameObject("NyaForge Semantic Texture Avatar");
+                var bone = new GameObject("Root"); bone.transform.SetParent(avatar.transform, false);
+                var applied = SkinnedClothingReceiver.ApplyPackage(manifest, avatar.transform, new Dictionary<string, Transform> { [rootId] = bone.transform }, "Semantic Texture Clothing");
+                var material = applied.Renderer.sharedMaterials.Single();
+                Require(material.GetTexture("_BumpMap") != null, "Semantic normal texture was not assigned to the receiver material.");
+                Require(material.GetTexture("_MetallicGlossMap") != null, "Semantic metallic-roughness texture was not assigned to the receiver material.");
+                Near(material.GetFloat("_BumpScale"), .7f, "Semantic normal scale");
+                var converted = ((Texture2D)material.GetTexture("_MetallicGlossMap")).GetPixel(0, 0);
+                Near(converted.r, 200f / 255f, "Metallic-roughness metallic channel conversion");
+                Near(converted.a, 191f / 255f, "Metallic-roughness roughness-to-smoothness conversion");
+                checks.Add("Semantic normal/MR package maps and glTF-to-Unity channel conversion passed.");
+            }
+            finally
+            {
+                if (avatar != null)
+                {
+                    var marker = avatar.GetComponentInChildren<NyaForgeSkinnedClothingManaged>();
+                    if (marker != null) marker.ReleaseOwnedAssets();
+                    Object.DestroyImmediate(avatar);
+                }
+                if (Directory.Exists(directory)) Directory.Delete(directory, true);
+                if (Directory.Exists(directory + "-glb")) Directory.Delete(directory + "-glb", true);
+            }
         }
 
         static void VerifySkinnedClothingBinding(List<string> checks)

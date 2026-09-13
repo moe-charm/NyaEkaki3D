@@ -29,15 +29,21 @@ namespace NyaForge.UnityBridge
         public void ReleaseOwnedAssets()
         {
             if (mesh != null) UnityEngine.Object.DestroyImmediate(mesh);
+            var textures = new System.Collections.Generic.HashSet<Texture>();
             foreach (var material in Materials)
             {
                 if (material == null) continue;
-                var texture = material.mainTexture;
-                if (texture != null && texture != Texture2D.whiteTexture) UnityEngine.Object.DestroyImmediate(texture);
+                AddTexture(textures, material.mainTexture);
+                if (material.HasProperty("_BumpMap")) AddTexture(textures, material.GetTexture("_BumpMap"));
+                if (material.HasProperty("_MetallicGlossMap")) AddTexture(textures, material.GetTexture("_MetallicGlossMap"));
                 UnityEngine.Object.DestroyImmediate(material);
             }
+            foreach (var texture in textures) UnityEngine.Object.DestroyImmediate(texture);
             mesh = null;
             materials = Array.Empty<Material>();
         }
+
+        static void AddTexture(System.Collections.Generic.HashSet<Texture> textures, Texture texture)
+        { if (texture != null && texture != Texture2D.whiteTexture) textures.Add(texture); }
     }
 }

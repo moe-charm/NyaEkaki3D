@@ -54,6 +54,7 @@ namespace NyaForge.Authoring
                 var source=BakeSource.CaptureMaterials(workspace.Document);
                 Checks.Require(source.SlotOutput!=null,"MATERIAL_REQUIRED","Assign per-slot materials before this export.");
                 var output=source.SlotOutput;
+                Checks.Require(output.SlotMaterials.Values.All(value=>value.Material.Parameters.Textures==null || value.Material.Parameters.Textures.IsEmpty),"EXPORT_UNSUPPORTED_FEATURE","Semantic normal/metallic-roughness slots require the graph or GLB export profile.");
                 var slots=output.SlotMaterials.OrderBy(p=>p.Key).Select(p=>new BakedMaterialSlot {
                     Slot=p.Key,MaterialNodeId=p.Value.MaterialNodeId,MaterialHash=p.Value.Material.Parameters.ContentHash,
                     BaseColor=p.Value.Material.BaseColor==null ? Array.Empty<BakeImagePayload>() : new[]{BakeImagePayload.Describe(p.Value.Material.BaseColor)} }).ToArray();

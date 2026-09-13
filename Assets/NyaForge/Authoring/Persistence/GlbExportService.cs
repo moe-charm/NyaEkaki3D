@@ -454,11 +454,12 @@ namespace NyaForge.Authoring
 
         sealed class MaterialRegistry
         {
-            readonly BinaryBuffer binary; readonly JArray views, materials, images, textures;
+            readonly BinaryBuffer binary; readonly JArray views, materials, images, textures, samplers;
             readonly Dictionary<string, int> materialIds = new Dictionary<string, int>(StringComparer.Ordinal);
             readonly Dictionary<string, int> imageIds = new Dictionary<string, int>(StringComparer.Ordinal);
-            public MaterialRegistry(BinaryBuffer binary, JArray views, JArray materials, JArray images, JArray textures)
-            { this.binary = binary; this.views = views; this.materials = materials; this.images = images; this.textures = textures; }
+            readonly Dictionary<string, int> samplerIds = new Dictionary<string, int>(StringComparer.Ordinal);
+            public MaterialRegistry(BinaryBuffer binary, JArray views, JArray materials, JArray images, JArray textures, JArray samplers)
+            { this.binary = binary; this.views = views; this.materials = materials; this.images = images; this.textures = textures; this.samplers = samplers; }
 
             public int Get(GraphMaterialValue material, GraphImageValue fallbackImage)
             {
@@ -480,6 +481,17 @@ namespace NyaForge.Authoring
                     int imageIndex = AddImage(image);
                     pbr["baseColorTexture"] = new JObject { ["index"] = imageIndex };
                 }
+                var semantic = parameters.Textures;
+                if (semantic?.Normal != null)
+                {
+                    var normal = new JObject { ["index"] = AddImage(semantic.Normal), ["texCoord"] = semantic.Normal.TexCoord };
+                    if (Math.Abs(semantic.Normal.NormalScale - 1f) > 0.000001f) normal["scale"] = semantic.Normal.NormalScale;
+                    json["normalTexture"] = normal;
+                }
+                if (semantic?.MetallicRoughness != null)
+                {
+                    pbr["metallicRoughnessTexture"] = new JObject { ["index"] = AddImage(semantic.MetallicRoughness), ["texCoord"] = semantic.MetallicRoughness.TexCoord };
+                }
                 if (parameters.Emission.X != 0f || parameters.Emission.Y != 0f || parameters.Emission.Z != 0f)
                     json["emissiveFactor"] = new JArray(parameters.Emission.X, parameters.Emission.Y, parameters.Emission.Z);
                 if (parameters.AlphaMode == MaterialAlphaMode.Cutout) { json["alphaMode"] = "MASK"; json["alphaCutoff"] = parameters.AlphaCutoff; }
@@ -496,6 +508,25 @@ namespace NyaForge.Authoring
                 int imageId = images.Count; images.Add(new JObject { ["bufferView"] = view, ["mimeType"] = "image/png" });
                 textures.Add(new JObject { ["source"] = imageId }); imageIds.Add(image.ImageHash, imageId); return imageId;
             }
+
+            int AddImage(MaterialTextureSlot image)
+            {
+                byte[] bytes = image.CopyEncodedBytes(); string key = Checks.Hash(bytes) + ":" + image.MimeType;
+                if (imageIds.TryGetValue(key, out var existing)) return existing;
+                int offset = binary.Write(writer => writer.Write(bytes));
+                int view = AddRawView(views, offset, bytes.Length);
+                int imageId = images.Count; images.Add(new JObject { ["bufferView"] = view, ["mimeType"] = image.MimeType });
+                textures.Add(new JObject { ["source"] = imageId, ["sampler"] = GetSampler(image.Sampler) }); imageIds.Add(key, imageId); return imageId;
+            }
+
+            int GetSampler(MaterialTextureSampler sampler)
+            {
+                sampler = sampler ?? MaterialTextureSampler.Default;
+                if (samplerIds.TryGetValue(sampler.ContentHash, out var existing)) return existing;
+                int id = samplers.Count;
+                samplers.Add(new JObject { ["wrapS"] = sampler.WrapS, ["wrapT"] = sampler.WrapT, ["minFilter"] = sampler.MinFilter, ["magFilter"] = sampler.MagFilter });
+                samplerIds.Add(sampler.ContentHash, id); return id;
+            }
         }
 
         public static byte[] Build(GlbExportService.MeshObject[] objects, GlbExportService.SkinnedObject skinned, GlbExportProfile profile)
@@ -511,8 +542,8 @@ namespace NyaForge.Authoring
         public static BuildResult BuildMany(GlbExportService.MeshObject[] objects, GlbExportService.SkinnedObject[] skinnedObjects, GlbExportProfile profile)
         {
             var binary = new BinaryBuffer(); var views = new JArray(); var accessors = new JArray(); var meshes = new JArray(); var nodes = new JArray(); var skins = new JArray(); var sceneNodes = new JArray();
-            var materials = new JArray(); var images = new JArray(); var textures = new JArray();
-            var materialRegistry = new MaterialRegistry(binary, views, materials, images, textures);
+            var materials = new JArray(); var images = new JArray(); var textures = new JArray(); var samplers = new JArray();
+            var materialRegistry = new MaterialRegistry(binary, views, materials, images, textures, samplers);
             var meshNodeMap = new Dictionary<string, int>(StringComparer.Ordinal);
             var boneNodeMap = new Dictionary<string, IReadOnlyDictionary<string, int>>(StringComparer.Ordinal);
             var skeletonNodeMap = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
@@ -635,6 +666,7 @@ namespace NyaForge.Authoring
             if (skins.Count > 0) root["skins"] = skins;
             if (materials.Count > 0) root["materials"] = materials;
             if (images.Count > 0) { root["images"] = images; root["textures"] = textures; }
+            if (samplers.Count > 0) root["samplers"] = samplers;
             byte[] json = PadJson(System.Text.Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), 0x20); byte[] bin = binary.ToArray();
             using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream))
             {

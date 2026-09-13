@@ -41,6 +41,7 @@ namespace NyaForge.Authoring
                 Checks.Require(!workspace.Executing,"REENTRANT_EXPORT","Export requires a committed document.");
                 var source=BakeSource.CaptureMaterial(workspace.Document);
                 Checks.Require(source.Material!=null,"MATERIAL_REQUIRED","Assign an explicit material before material export.");
+                Checks.Require(source.Material.Textures==null || source.Material.Textures.IsEmpty,"EXPORT_UNSUPPORTED_FEATURE","Semantic normal/metallic-roughness slots require the graph or GLB export profile.");
                 var descriptor=source.BaseColor==null ? null : BakeImagePayload.Describe(source.BaseColor);
                 var manifest=new MaterialBakeManifest { Mesh=BakeStore.CreateManifest(workspace.Document,source),MaterialHash=source.Material.ContentHash,BaseColor=descriptor==null ? Array.Empty<BakeImagePayload>() : new[]{descriptor} };
                 var bytes=Storage.JsonBytes(manifest);

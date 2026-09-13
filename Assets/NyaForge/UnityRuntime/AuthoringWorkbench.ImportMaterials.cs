@@ -32,7 +32,8 @@ namespace NyaForge.UnityRuntime
             {
                 bySlot.TryGetValue(slot, out var material);
                 string materialId = Guid.NewGuid().ToString("D");
-                nodes.Add(GraphNode.StandardMaterial(materialId, material?.Parameters ?? MaterialParameters.Default));
+                var textures = BuildSemanticTextures(material, warnings);
+                nodes.Add(GraphNode.StandardMaterial(materialId, material?.Parameters ?? MaterialParameters.Default, textures));
                 edges.Add(new GraphEdge(materialId, "material", assignmentId, GraphNode.MaterialSlotPort(slot)));
                 if (material?.HasEmbeddedBaseColorImage == true)
                 {
@@ -83,6 +84,25 @@ namespace NyaForge.UnityRuntime
                 return PaintImage.FromRgbaBottomLeft(targetWidth, targetHeight, rgba);
             }
             finally { if (texture != null) UnityEngine.Object.Destroy(texture); }
+        }
+
+        static MaterialTextureSet BuildSemanticTextures(GlbMaterialSource material, List<string> warnings)
+        {
+            if (material == null) return null;
+            var normal = BuildSemanticTexture(material.NormalTexture, warnings);
+            var metallicRoughness = BuildSemanticTexture(material.MetallicRoughnessTexture, warnings);
+            return normal == null && metallicRoughness == null ? null : new MaterialTextureSet(normal, metallicRoughness);
+        }
+
+        static MaterialTextureSlot BuildSemanticTexture(GlbTextureImage source, List<string> warnings)
+        {
+            if (source == null) return null;
+            if (!source.HasImageBytes)
+            {
+                warnings?.Add((source.Semantic == MaterialTextureSemantic.Normal ? "normal" : "metallic-roughness") + " texture reference was not retained because its local image bytes were unavailable.");
+                return null;
+            }
+            return new MaterialTextureSlot(source.Semantic, source.CopyImageBytes(), source.MimeType, source.TexCoord, source.NormalScale, source.Sampler);
         }
 
         static byte[] ResizeRgba(Color32[] source, int sourceWidth, int sourceHeight, int targetWidth, int targetHeight)

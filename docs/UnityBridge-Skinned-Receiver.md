@@ -64,11 +64,18 @@ outside the selected avatar root or with a different ObjectId.
 When the caller omits explicit `Material[]`, `ApplyPackage` creates one Unity
 Standard material per submesh from the package GLB's imported base-color
 factor, metallic/roughness, emission, alpha mode, and embedded base-color image.
-The receiver owns those generated materials and decoded textures for the scene.
+Semantic normal and metallic-roughness images are also carried through the GLB
+contract. The receiver assigns normal maps directly to `_BumpMap` (including
+normal scale) and converts glTF metallic=B/roughness=G into Unity's
+metallic-gloss map (metallic=R/smoothness=A). Sampler wrap/filter values are
+validated and applied to generated textures. The receiver owns those generated
+materials and decoded textures for the scene.
 `NyaForgeSkinnedClothingManaged` on the generated object records that ownership
 boundary so later update/delete operations can clean only NyaForge assets.
-Normal, metallic-roughness, occlusion, and emissive image slots remain outside
-this first receiver profile and are reported by the authoring import contract.
+Occlusion and emissive image slots remain outside this first receiver profile
+and are reported by the authoring import contract. Runtime visual acceptance
+still requires a real Unity scene and the target shader; Core roundtrip and
+Bridge compilation do not prove VRChat appearance equivalence.
 
 This is a receiver-side Unity scene operation. It does not claim VRChat SDK or
 VRChat runtime acceptance, PhysBones conversion, automatic body fitting,
