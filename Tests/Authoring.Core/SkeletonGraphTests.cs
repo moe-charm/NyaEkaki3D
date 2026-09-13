@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
@@ -93,6 +94,51 @@ internal static partial class Program
             True(moved.ContentHash != skeleton.ContentHash); Expect("SKIN_SKELETON_CHANGED", () => binding.ValidateFor(mesh, moved)); Expect("POSE_SKELETON_CHANGED", () => pose.ValidateFor(moved));
             Equal(moved.ContentHash, SkinBindingEditing.Rebind(binding, mesh, moved).SkeletonHash); Equal(moved.ContentHash, PoseEditing.Rebind(pose, moved).SkeletonHash);
             Expect("BONE_NOT_FOUND", () => SkeletonEditing.MoveBone(skeleton, GraphId(), new Vec3(), new Vec3()));
+        });
+
+        Test("explicit BoneId map rebinds skin, pose and graph without name or slot inference", () =>
+        {
+            string sourceRoot = GraphId(), sourceChild = GraphId();
+            string targetRoot = GraphId(), targetChild = GraphId();
+            var source = new SkeletonDefinition(new[] {
+                new BoneDefinition(sourceRoot, "SourceRoot", "", new Vec3(), new Vec3(0, .1f, 0)),
+                new BoneDefinition(sourceChild, "SourceChild", sourceRoot, new Vec3(0, .1f, 0), new Vec3(.1f, .1f, 0)) });
+            var target = new SkeletonDefinition(new[] {
+                new BoneDefinition(targetRoot, "AvatarRoot", "", new Vec3(), new Vec3(0, .1f, 0)),
+                new BoneDefinition(targetChild, "AvatarChild", targetRoot, new Vec3(0, .1f, 0), new Vec3(.1f, .1f, 0)),
+                new BoneDefinition(GraphId(), "Extra", "", new Vec3(.5f, 0, 0), new Vec3(.5f, .1f, 0)) });
+            var mesh = PrimitiveGeometry.Plane(.2f, .1f);
+            var binding = SkinBinding.Create(mesh, source, Enumerable.Range(0, mesh.VertexCount).Select(i =>
+                new SkinBinding.VertexWeightInput(i, i < 2 ? sourceRoot : sourceChild, 1f)));
+            var pose = PoseSet.Create(source, new[] { new BonePose(sourceRoot, PoseTransform.Identity), new BonePose(sourceChild, PoseTransform.RotationZ(20, new Vec3(.1f, .1f, 0))) });
+            var map = new Dictionary<string, string> { [sourceRoot] = targetRoot, [sourceChild] = targetChild };
+            var reboundBinding = SkeletonRebindAdapter.RebindBinding(binding, mesh, source, target, map);
+            Equal(target.ContentHash, reboundBinding.SkeletonHash);
+            Equal(targetRoot, reboundBinding.Weights[0][0].BoneId); Equal(targetChild, reboundBinding.Weights[2][0].BoneId);
+            var reboundPose = SkeletonRebindAdapter.RebindPose(pose, source, target, map);
+            Equal(target.ContentHash, reboundPose.SkeletonHash); Equal(3, reboundPose.Poses.Count);
+            Equal(pose.Poses.Single(item => item.BoneId == sourceChild).Transform.XAxis.X, reboundPose.ByBoneId[targetChild].Transform.XAxis.X);
+
+            string skeletonId = GraphId(), bindingId = GraphId(), poseId = GraphId(), sourceId = GraphId(), deformId = GraphId(), outputId = GraphId();
+            var graph = new AuthoringGraph(GraphId(), new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, source), GraphNode.SkinBindNode(bindingId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                new[] { new GraphEdge(sourceId, "mesh", bindingId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindingId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindingId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
+            var reboundGraph = GraphSkeletonRebindAdapter.Rebind(graph, mesh, skeletonId, bindingId, poseId, target, map);
+            var evaluation = GraphEvaluator.Evaluate(reboundGraph);
+            True(evaluation.IsComplete && evaluation.Output != null);
+            Equal(target.ContentHash, reboundGraph.Nodes[skeletonId].Skeleton.ContentHash);
+        });
+
+        Test("skeleton rebind rejects incomplete, ambiguous, hierarchy or rest-frame maps", () =>
+        {
+            string sourceRoot = GraphId(), sourceChild = GraphId(), targetRoot = GraphId(), targetChild = GraphId();
+            var source = new SkeletonDefinition(new[] { new BoneDefinition(sourceRoot, "Root", "", new Vec3(), new Vec3(0, .1f, 0)), new BoneDefinition(sourceChild, "Child", sourceRoot, new Vec3(0, .1f, 0), new Vec3(.1f, .1f, 0)) });
+            var target = new SkeletonDefinition(new[] { new BoneDefinition(targetRoot, "TargetRoot", "", new Vec3(), new Vec3(0, .1f, 0)), new BoneDefinition(targetChild, "TargetChild", targetRoot, new Vec3(0, .1f, 0), new Vec3(.1f, .1f, 0)) });
+            var mesh = PrimitiveGeometry.Plane(.2f, .1f); var binding = SkinBinding.Create(mesh, source, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, sourceRoot, 1f))); var pose = PoseSet.Create(source, source.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.Identity)));
+            Expect("SKELETON_REBIND_INCOMPLETE", () => SkeletonRebindAdapter.RebindBinding(binding, mesh, source, target, new Dictionary<string, string> { [sourceRoot] = targetRoot }));
+            Expect("SKELETON_REBIND_AMBIGUOUS", () => SkeletonRebindAdapter.RebindPose(pose, source, target, new Dictionary<string, string> { [sourceRoot] = targetRoot, [sourceChild] = targetRoot }));
+            Expect("SKELETON_REBIND_HIERARCHY", () => SkeletonRebindAdapter.RebindPose(pose, source, target, new Dictionary<string, string> { [sourceRoot] = targetChild, [sourceChild] = targetRoot }));
+            var moved = new SkeletonDefinition(new[] { new BoneDefinition(targetRoot, "TargetRoot", "", new Vec3(), new Vec3(0, .1f, 0)), new BoneDefinition(targetChild, "TargetChild", targetRoot, new Vec3(0, .101f, 0), new Vec3(.1f, .1f, 0)) });
+            Expect("SKELETON_REBIND_REST", () => SkeletonRebindAdapter.RebindBinding(binding, mesh, source, moved, new Dictionary<string, string> { [sourceRoot] = targetRoot, [sourceChild] = targetChild }));
         });
     }
 }

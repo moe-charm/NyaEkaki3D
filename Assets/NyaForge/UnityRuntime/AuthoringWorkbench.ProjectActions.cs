@@ -306,7 +306,7 @@ namespace NyaForge.UnityRuntime
                 springs = new VrmSpringExport(colliderValues, colliderGroups, springValues);
             }
             var authors = (vrmAuthors?.value ?? "").Split(new[] { ',', '、', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(value => value.Trim()).Where(value => value.Length > 0).ToArray();
-            var metadata = new VrmExportMetadata(vrmName?.value, authors, vrmLicenseUrl?.value, humanoid, expressions: expressions, springs: springs);
+            var metadata = new VrmExportMetadata(vrmName?.value, authors, vrmLicenseUrl?.value, humanoid, expressions: expressions, springs: springs, usesAuthoredNodeTokens: true);
             var directory = Path.Combine(Path.GetFullPath(projectPath.value), "exports", "vrm1-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
             var result = VrmExportService.ExportVrm1(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, metadata, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms());
             SetStatus("VRM 1.0（humanoid）を書き出しました: " + result.Path + " · report: " + result.ReportPath);

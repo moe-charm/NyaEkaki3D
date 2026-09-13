@@ -105,7 +105,7 @@ namespace NyaForge.UnityRuntime
                     if(PreviewNodeId!="" && appearance?.Polygon!=null)
                     {
                         candidate.EditPolygon=appearance.Polygon;
-                        candidate.Points=NyaForge.Authoring.Topology.PolygonEditPoints.VertexIds(appearance.Polygon).Select(id=>ToUnity(transform.ToAvatarPoint(appearance.Polygon.Vertices[id].Position))).ToArray();
+                        candidate.Points=NyaForge.Authoring.Topology.PolygonEditPoints.VertexIds(appearance.Polygon).Select(id=>ToPreviewPoint(appearance.Polygon.Vertices[id].Position, transform, attachmentPose)).ToArray();
                         candidate.WorldPoints = candidate.Points.Select(point => candidate.Root.transform.TransformPoint(point)).ToArray();
                         candidate.PointMarkers=new EditPointProjection(candidate.Root.transform,candidate.Points,point,selectedPoint,selected);
                     }
@@ -130,10 +130,10 @@ namespace NyaForge.UnityRuntime
                 candidate.FaceHighlight = new FaceHighlightProjection(meshObject.transform, candidate.Mesh, selectedFace);
                 if (final != null) candidate.FinalResult = new FinalResultProjection(candidate.Root.transform, final, finalSurface, attachmentPose);
                 candidate.RenderWorldPoints = evaluated.Positions.Select(p =>
-                    candidate.Root.transform.TransformPoint(ToUnity(transform.ToAvatarPoint(p)))).ToArray();
-                candidate.Points = evaluated.Positions.Select(p => ToUnity(transform.ToAvatarPoint(p))).ToArray();
+                    candidate.Root.transform.TransformPoint(ToPreviewPoint(p, transform, attachmentPose))).ToArray();
+                candidate.Points = evaluated.Positions.Select(p => ToPreviewPoint(p, transform, attachmentPose)).ToArray();
                 if(PreviewNodeId!="" && appearance?.Polygon!=null)
-                    candidate.Points=NyaForge.Authoring.Topology.PolygonEditPoints.VertexIds(appearance.Polygon).Select(id=>ToUnity(transform.ToAvatarPoint(appearance.Polygon.Vertices[id].Position))).ToArray();
+                    candidate.Points=NyaForge.Authoring.Topology.PolygonEditPoints.VertexIds(appearance.Polygon).Select(id=>ToPreviewPoint(appearance.Polygon.Vertices[id].Position, transform, attachmentPose)).ToArray();
                 candidate.WorldPoints = candidate.Points.Select(point => candidate.Root.transform.TransformPoint(point)).ToArray();
                 candidate.PointMarkers=new EditPointProjection(candidate.Root.transform,candidate.Points,point,selectedPoint,selected);
                 return candidate;
@@ -181,6 +181,15 @@ namespace NyaForge.UnityRuntime
         }
 
         public static Vector3 ToUnity(Vec3 value) => new Vector3(value.X, value.Y, value.Z);
+        static Vector3 ToPreviewPoint(Vec3 value, RestTransform transform, PoseTransform? attachmentPose)
+        {
+            // The mesh child owns scale and, for unattached objects, translation.
+            // An attached object deliberately clears that child translation so
+            // the rigid attachment root is the single placement authority.
+            return attachmentPose.HasValue
+                ? ToUnity(value) * transform.Scale
+                : ToUnity(transform.ToAvatarPoint(value));
+        }
         static bool Finite(Vector3 v) => !float.IsNaN(v.x) && !float.IsInfinity(v.x) && !float.IsNaN(v.y) && !float.IsInfinity(v.y) && !float.IsNaN(v.z) && !float.IsInfinity(v.z);
 
         static bool AttachmentPoseEquals(PoseTransform? left, PoseTransform? right)

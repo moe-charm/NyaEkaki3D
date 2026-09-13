@@ -121,6 +121,7 @@ namespace NyaForge.Authoring
         public string Version { get; }
         public IReadOnlyList<string> Authors { get; }
         public string LicenseUrl { get; }
+        public bool UsesAuthoredNodeTokens { get; }
         /// <summary>VRM human bone name to the node index in the exported glTF.</summary>
         public IReadOnlyDictionary<string, int> HumanoidNodes { get; }
         public IReadOnlyList<VrmExpressionExport> Expressions { get; }
@@ -134,7 +135,7 @@ namespace NyaForge.Authoring
         };
 
         public VrmExportMetadata(string name, IEnumerable<string> authors, string licenseUrl,
-            IReadOnlyDictionary<string, int> humanoidNodes, string version = "1.0", IEnumerable<VrmExpressionExport> expressions = null, VrmSpringExport springs = null)
+            IReadOnlyDictionary<string, int> humanoidNodes, string version = "1.0", IEnumerable<VrmExpressionExport> expressions = null, VrmSpringExport springs = null, bool usesAuthoredNodeTokens = false)
         {
             Checks.Require(!string.IsNullOrWhiteSpace(name) && name.Length <= 256, "VRM_METADATA_REQUIRED", "VRM name is required.");
             Checks.Require(!string.IsNullOrWhiteSpace(version) && version.Length <= 64, "VRM_METADATA_REQUIRED", "VRM version is required.");
@@ -153,7 +154,7 @@ namespace NyaForge.Authoring
             var expressionValues = (expressions ?? Array.Empty<VrmExpressionExport>()).ToArray(); var expressionNames = new HashSet<string>(StringComparer.Ordinal);
             foreach (var expression in expressionValues) Checks.Require(expression != null && expressionNames.Add(expression.Name), "VRM_EXPRESSION_INVALID", "VRM expression name repeats.");
             Checks.Require(expressionValues.Length <= 256, "VRM_EXPRESSION_INVALID", "VRM expression count exceeds capacity.");
-            Name = name; Version = version; Authors = Array.AsReadOnly(authorValues); LicenseUrl = licenseUrl; HumanoidNodes = new System.Collections.ObjectModel.ReadOnlyDictionary<string, int>(mapping); Expressions = Array.AsReadOnly(expressionValues); Springs = springs;
+            Name = name; Version = version; Authors = Array.AsReadOnly(authorValues); LicenseUrl = licenseUrl; UsesAuthoredNodeTokens = usesAuthoredNodeTokens; HumanoidNodes = new System.Collections.ObjectModel.ReadOnlyDictionary<string, int>(mapping); Expressions = Array.AsReadOnly(expressionValues); Springs = springs;
         }
     }
 
@@ -197,7 +198,9 @@ namespace NyaForge.Authoring
             try
             {
                 var glb = GlbExportService.ExportSkinnedWithTransforms(workspace, instance, document, revision, sourceDirectory, instanceWorldTransforms, inverseBindMatrices, jointLocalTransforms);
-                byte[] vrmBytes = Package( File.ReadAllBytes(glb.Path), metadata);
+                if (metadata.UsesAuthoredNodeTokens)
+                    metadata = ResolveAuthoredNodeTokens(metadata, glb.NodeMap, workspace.Document.Objects[0].ObjectId);
+                byte[] vrmBytes = Package(File.ReadAllBytes(glb.Path), metadata);
                 Checks.Require(vrmBytes.Length <= AuthoringLimits.MaxGlbExportBytes, "BUDGET_EXCEEDED", "VRM output exceeds the 128 MiB budget.");
                 Directory.CreateDirectory(staging);
                 string path = System.IO.Path.Combine(staging, FileName); File.WriteAllBytes(path, vrmBytes);
@@ -213,7 +216,7 @@ namespace NyaForge.Authoring
                     ["stateHash"] = workspace.Document.StateHash,
                     ["vrmHash"] = Checks.Hash(vrmBytes),
                     ["objectCount"] = 1,
-                    ["metadata"] = new JObject { ["name"] = metadata.Name, ["version"] = metadata.Version, ["authors"] = new JArray(metadata.Authors), ["licenseUrl"] = metadata.LicenseUrl, ["humanoidBoneCount"] = metadata.HumanoidNodes.Count, ["expressionCount"] = metadata.Expressions.Count, ["springBone"] = metadata.Springs != null },
+                    ["metadata"] = new JObject { ["name"] = metadata.Name, ["version"] = metadata.Version, ["authors"] = new JArray(metadata.Authors), ["licenseUrl"] = "other", ["otherLicenseUrl"] = metadata.LicenseUrl, ["humanoidBoneCount"] = metadata.HumanoidNodes.Count, ["expressionCount"] = metadata.Expressions.Count, ["springBone"] = metadata.Springs != null },
                     ["limitations"] = new JArray("VRM 1.0 humanoid/meta, resolved morphTargetBinds and optional VRMC_springBone 1.0 are emitted", "material binds, texture transforms, lookAt, firstPerson and animation are not emitted by this profile", "rest pose only", "graph and native metadata are not embedded")
                 };
                 File.WriteAllText(reportPath, report.ToString(Newtonsoft.Json.Formatting.Indented) + "\n", new UTF8Encoding(false));
@@ -230,6 +233,29 @@ namespace NyaForge.Authoring
             {
                 if (Directory.Exists(sourceDirectory)) Directory.Delete(sourceDirectory, true);
             }
+        }
+
+        static VrmExportMetadata ResolveAuthoredNodeTokens(VrmExportMetadata source, GlbExportNodeMap map, string objectId)
+        {
+            Checks.Require(map != null && map.MeshNodes.ContainsKey(objectId) && map.SkeletonNodes.ContainsKey(objectId), "VRM_NODE_MAP_REQUIRED", "GLB export did not return authored node mapping.");
+            var skeleton = map.SkeletonNodes[objectId];
+            int Resolve(int token)
+            {
+                Checks.Require(token >= 0, "VRM_NODE_MAP_REQUIRED", "Authored node token is invalid.");
+                if (token == 0) return map.MeshNodes[objectId];
+                Checks.Require(token - 1 < skeleton.Count, "VRM_NODE_MAP_REQUIRED", "Authored skeleton node token is outside the exported skeleton.");
+                return skeleton[token - 1];
+            }
+            var humanoid = source.HumanoidNodes.ToDictionary(pair => pair.Key, pair => Resolve(pair.Value), StringComparer.Ordinal);
+            var expressions = source.Expressions.Select(expression => new VrmExpressionExport(expression.Name, expression.Preset, expression.IsCustom, expression.Binds.Select(bind => new VrmMorphBind(Resolve(bind.Node), bind.Index, bind.Weight))));
+            VrmSpringExport springs = null;
+            if (source.Springs != null)
+            {
+                var colliders = source.Springs.Colliders.Select(c => new VrmSpringColliderExport(Resolve(c.Node), c.Kind, c.Offset, c.Radius, c.Tail));
+                var springGroups = source.Springs.Springs.Select(s => new VrmSpringExport.SpringExportGroup(s.Name, s.Joints.Select(j => new VrmSpringJointExport(Resolve(j.Node), j.HitRadius, j.Stiffness, j.GravityPower, j.GravityDirection, j.DragForce)), s.ColliderGroupIndices, s.Center.HasValue ? Resolve(s.Center.Value) : (int?)null));
+                springs = new VrmSpringExport(colliders, source.Springs.ColliderGroups, springGroups);
+            }
+            return new VrmExportMetadata(source.Name, source.Authors, source.LicenseUrl, humanoid, source.Version, expressions, springs, false);
         }
 
         /// <summary>Packages an already validated GLB, retaining its BIN chunk byte-for-byte.</summary>
@@ -266,7 +292,7 @@ namespace NyaForge.Authoring
                 ["specVersion"] = "1.0",
                 ["meta"] = new JObject
                 {
-                    ["name"] = metadata.Name, ["version"] = metadata.Version, ["authors"] = new JArray(metadata.Authors), ["licenseUrl"] = metadata.LicenseUrl,
+                    ["name"] = metadata.Name, ["version"] = metadata.Version, ["authors"] = new JArray(metadata.Authors), ["licenseUrl"] = "other", ["otherLicenseUrl"] = metadata.LicenseUrl,
                     ["avatarPermission"] = "onlyAuthor", ["commercialUsage"] = "personalNonProfit", ["creditNotation"] = "required", ["modification"] = "prohibited"
                 },
                 ["humanoid"] = new JObject { ["humanBones"] = new JObject(metadata.HumanoidNodes.OrderBy(pair => pair.Key, StringComparer.Ordinal).Select(pair => new JProperty(pair.Key, new JObject { ["node"] = pair.Value }))) }

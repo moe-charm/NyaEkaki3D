@@ -20,7 +20,7 @@ namespace NyaForge.UnityRuntime
                 .Select(node => node.Pose.ContentHash).OrderBy(hash => hash, StringComparer.Ordinal).FirstOrDefault() ?? "";
             var bindingNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);
             var currentBinding = bindingNode != null && evaluation.SkinBindingOutputs.TryGetValue(bindingNode.NodeId, out var bindingValue) ? bindingValue.Binding : bindingNode?.Binding;
-            string bindingKey = currentBinding == null ? "" : string.Join(";", currentBinding.Weights.OrderBy(pair => pair.Key).Select(pair => pair.Key + "=" + string.Join(",", pair.Value.Select(weight => weight.BoneId + ":" + weight.Weight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)))));
+            string bindingKey = currentBinding?.ContentHash ?? "";
             string key = graph.GraphId + ":" + (evaluation.Output?.SnapshotHash ?? "") + ":" + poseHash + ":" + importedRigSession.SourceHash + ":" + bindingKey;
             if (key == sourceSkinDisplayKey) return sourceSkinDisplayValue;
             sourceSkinDisplayKey = key; sourceSkinDisplayValue = null;

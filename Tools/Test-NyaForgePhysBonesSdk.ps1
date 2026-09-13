@@ -105,7 +105,14 @@ if ($RunUnityProbe) {
     $probeArgs = @('-batchmode', '-nographics', '-quit', '-projectPath', $project,
         '-executeMethod', 'NyaForge.UnityBridge.Editor.PhysBonesSdkIntegrationVerification.Run',
         '--nyaforge-report', $probeReport, '-logFile', $probeLog)
-    $probeProcess = Start-Process -FilePath $unityExe -ArgumentList $probeArgs -WindowStyle Hidden -PassThru
+    # Start-Process receives one command-line string on Windows. Quote every
+    # value so Unity project/report/log paths such as `VRChat Projects` remain
+    # a single argument instead of being split at spaces.
+    $quotedProbeArgs = ($probeArgs | ForEach-Object {
+        $value = [string]$_
+        '"' + (($value -replace '(\\*)"', '$1$1\"') -replace '(\\+)$', '$1$1') + '"'
+    }) -join ' '
+    $probeProcess = Start-Process -FilePath $unityExe -ArgumentList $quotedProbeArgs -WindowStyle Hidden -PassThru
     if (-not $probeProcess.WaitForExit($TimeoutSeconds * 1000)) {
         $probeProcess.Kill()
         throw "Unity SDK probe timed out. See $probeLog"

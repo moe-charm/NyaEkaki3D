@@ -26,6 +26,47 @@ namespace NyaForge.UnityRuntime
             importedVrmSpringSession = graphId != null && importedVrmSpringSessions.TryGetValue(graphId, out var spring) ? spring : null;
         }
 
+        void RefreshImportedVrmSessionsFromWorkspace()
+        {
+            importedRigSessions.Clear(); importedVrmSessions.Clear(); importedVrmSpringSessions.Clear();
+            if (workspace == null) { importedRigSession = null; importedVrmSession = null; importedVrmSpringSession = null; return; }
+            var graphIds = new HashSet<string>(workspace.Document.Objects.Where(item => item.Graph != null).Select(item => item.Graph.GraphId), StringComparer.Ordinal);
+            var rigBytes = workspace.Attachments.Read(ProjectAttachments.RigSessions) ?? workspace.Attachments.Read(ProjectAttachments.Rig);
+            if (rigBytes != null)
+            {
+                var decoded = workspace.Attachments.Read(ProjectAttachments.RigSessions) != null
+                    ? ImportedRigSessionsCodec.Read(rigBytes)
+                    : LegacyRigTable(rigBytes);
+                foreach (var item in decoded) if (graphIds.Contains(item.Key)) importedRigSessions[item.Key] = item.Value;
+            }
+            DecodeExpressionSessions(graphIds);
+            DecodeSpringSessions(graphIds);
+            string graphId = workspace.Document.ActiveObject?.Graph?.GraphId;
+            importedRigSession = graphId != null && importedRigSessions.TryGetValue(graphId, out var rig) ? rig : null;
+            importedVrmSession = graphId != null && importedVrmSessions.TryGetValue(graphId, out var expression) ? expression : null;
+            importedVrmSpringSession = graphId != null && importedVrmSpringSessions.TryGetValue(graphId, out var spring) ? spring : null;
+        }
+
+        static Dictionary<string, ImportedRigSession> LegacyRigTable(byte[] bytes)
+        {
+            var session = ImportedRigSessionCodec.Read(bytes);
+            return new Dictionary<string, ImportedRigSession>(StringComparer.Ordinal) { [session.GraphId] = session };
+        }
+
+        void DecodeExpressionSessions(HashSet<string> graphIds)
+        {
+            var bytes = workspace.Attachments.Read(ProjectAttachments.Expressions); if (bytes == null) return;
+            if (VrmExpressionSessionsCodec.IsTable(bytes)) foreach (var item in VrmExpressionSessionsCodec.Read(bytes)) if (graphIds.Contains(item.Key)) importedVrmSessions[item.Key] = item.Value;
+            else if (graphIds.Count == 1) { var id = graphIds.First(); importedVrmSessions[id] = VrmExpressionSessionCodec.Read(bytes); }
+        }
+
+        void DecodeSpringSessions(HashSet<string> graphIds)
+        {
+            var bytes = workspace.Attachments.Read(ProjectAttachments.Springs); if (bytes == null) return;
+            if (VrmSpringSessionsCodec.IsTable(bytes)) foreach (var item in VrmSpringSessionsCodec.Read(bytes)) if (graphIds.Contains(item.Key)) importedVrmSpringSessions[item.Key] = item.Value;
+            else if (graphIds.Count == 1) { var id = graphIds.First(); importedVrmSpringSessions[id] = VrmSpringSessionCodec.Read(bytes); }
+        }
+
         static string LegacyVrmSessionGraphId(AuthoringWorkspace value, ImportedRigSession rig)
         {
             if (rig != null) return rig.GraphId;

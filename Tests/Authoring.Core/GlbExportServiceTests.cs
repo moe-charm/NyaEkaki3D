@@ -84,6 +84,10 @@ internal static partial class Program
             var workspace = AuthoringWorkspace.CreateEmpty(); Ok(Execute(workspace, AuthoringOperation.AddGraph(graph)));
             string directory = Path.Combine(Root, "glb-skinned-" + Guid.NewGuid().ToString("N"));
             var result = GlbExportService.ExportSkinned(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory);
+            var exportedObjectId = workspace.Document.ActiveObject.ObjectId;
+            var exportedNodes = (JArray)JObject.Parse(ReadJsonChunk(File.ReadAllBytes(result.Path)))["nodes"]!;
+            Equal(result.NodeMap.MeshNodes[exportedObjectId], exportedNodes.OfType<JObject>().Select((node, index) => new { node, index }).Single(item => item.node["mesh"] != null).index);
+            Equal(result.NodeMap.BoneNodes[exportedObjectId].Count, 1);
             var imported = GlbSkinImporter.Read(File.ReadAllBytes(result.Path));
             Equal(mesh.VertexCount, imported.Mesh.VertexCount); Equal(1, imported.Skeleton.Bones.Count); Equal(mesh.VertexCount, imported.Binding.Weights.Count); Equal(2, imported.Materials.Count);
             string transformedDirectory = Path.Combine(Root, "glb-skinned-instance-" + Guid.NewGuid().ToString("N"));
@@ -352,6 +356,8 @@ internal static partial class Program
             var root = JObject.Parse(ReadJsonChunk(vrm));
             Equal("1.0", (string)root["extensions"]!["VRMC_vrm"]!["specVersion"]!);
             Equal("Nya test avatar", (string)root["extensions"]!["VRMC_vrm"]!["meta"]!["name"]!);
+            Equal("other", (string)root["extensions"]!["VRMC_vrm"]!["meta"]!["licenseUrl"]!);
+            Equal("https://example.com/license", (string)root["extensions"]!["VRMC_vrm"]!["meta"]!["otherLicenseUrl"]!);
             True(((JArray)root["extensionsUsed"]!).Values<string>().Contains("VRMC_vrm"));
             var imported = GlbImporter.Read(vrm);
             Equal(mesh.VertexCount, imported.Mesh.VertexCount);

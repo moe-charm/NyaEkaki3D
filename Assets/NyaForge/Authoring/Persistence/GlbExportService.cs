@@ -19,8 +19,25 @@ namespace NyaForge.Authoring
         public string ReportPath { get; }
         public GlbExportProfile Profile { get; }
         public int ObjectCount { get; }
-        internal GlbExportResult(string path, string reportPath, GlbExportProfile profile, int objectCount)
-        { Path = path; ReportPath = reportPath; Profile = profile; ObjectCount = objectCount; }
+        public GlbExportNodeMap NodeMap { get; }
+        internal GlbExportResult(string path, string reportPath, GlbExportProfile profile, int objectCount, GlbExportNodeMap nodeMap)
+        { Path = path; ReportPath = reportPath; Profile = profile; ObjectCount = objectCount; NodeMap = nodeMap; }
+    }
+
+    /// <summary>Actual glTF node indices emitted for each authored graph object.</summary>
+    public sealed class GlbExportNodeMap
+    {
+        public IReadOnlyDictionary<string, int> MeshNodes { get; }
+        public IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>> BoneNodes { get; }
+        public IReadOnlyDictionary<string, IReadOnlyList<int>> SkeletonNodes { get; }
+        internal GlbExportNodeMap(IDictionary<string, int> meshes,
+            IDictionary<string, IReadOnlyDictionary<string, int>> bones,
+            IDictionary<string, IReadOnlyList<int>> skeletons)
+        {
+            MeshNodes = new System.Collections.ObjectModel.ReadOnlyDictionary<string, int>(meshes);
+            BoneNodes = new System.Collections.ObjectModel.ReadOnlyDictionary<string, IReadOnlyDictionary<string, int>>(bones);
+            SkeletonNodes = new System.Collections.ObjectModel.ReadOnlyDictionary<string, IReadOnlyList<int>>(skeletons);
+        }
     }
 
     /// <summary>Writes standard glTF 2.0 GLB geometry without changing the native project.</summary>
@@ -47,7 +64,7 @@ namespace NyaForge.Authoring
                 }).ToArray();
                 var paths = Write(directory, objects, (SkinnedObject[])null, GlbExportProfile.StaticGeometry,
                     workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash);
-                return new GlbExportResult(paths.GlbPath, paths.ReportPath, GlbExportProfile.StaticGeometry, objects.Length);
+                return new GlbExportResult(paths.GlbPath, paths.ReportPath, GlbExportProfile.StaticGeometry, objects.Length, paths.NodeMap);
             }
         }
 
@@ -87,7 +104,7 @@ namespace NyaForge.Authoring
                 ValidateSharedSkeleton(skinned);
                 var paths = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, profile,
                     workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash);
-                return new GlbExportResult(paths.GlbPath, paths.ReportPath, profile, skinned.Length);
+                return new GlbExportResult(paths.GlbPath, paths.ReportPath, profile, skinned.Length, paths.NodeMap);
             }
         }
 
@@ -128,7 +145,7 @@ namespace NyaForge.Authoring
                 ValidateSharedSkeleton(skinned);
                 var paths = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, GlbExportProfile.SkinnedGeometryExtended,
                     workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash);
-                return new GlbExportResult(paths.GlbPath, paths.ReportPath, GlbExportProfile.SkinnedGeometryExtended, skinned.Length);
+                return new GlbExportResult(paths.GlbPath, paths.ReportPath, GlbExportProfile.SkinnedGeometryExtended, skinned.Length, paths.NodeMap);
             }
         }
 
@@ -187,6 +204,8 @@ namespace NyaForge.Authoring
             public PoseSet Pose;
             public IReadOnlyList<SourceAffine> InverseBindMatrices;
             public IReadOnlyList<SourceAffine> JointLocalTransforms;
+            public IReadOnlyDictionary<string, SourceAffine> InverseBindByBone;
+            public IReadOnlyDictionary<string, SourceAffine> JointLocalByBone;
         }
 
         static MeshObject BuildStaticObject(AuthoringObject item, GraphMeshValue meshOverride = null)
@@ -256,14 +275,23 @@ namespace NyaForge.Authoring
                 Mesh = new MeshObject { Mesh = authoredOutput, Transform = evaluation.Output.Transform, Morphs = morphs, MorphWeights = weights, Name = item.ObjectId, Affine = instanceWorldTransform,
                     Material = evaluation.Output.Material, BaseColor = evaluation.Output.BaseColor, SlotMaterials = evaluation.Output.SlotMaterials },
                 Skeleton = skeleton, Binding = binding, Pose = pose
-                , InverseBindMatrices = inverseBindMatrices, JointLocalTransforms = jointLocalTransforms
+                , InverseBindMatrices = inverseBindMatrices, JointLocalTransforms = jointLocalTransforms,
+                InverseBindByBone = MatrixMap(skeleton, inverseBindMatrices, "GLB_SKIN_BIND"),
+                JointLocalByBone = MatrixMap(skeleton, jointLocalTransforms, "GLB_SKIN_SKELETON")
             };
+        }
+
+        static IReadOnlyDictionary<string, SourceAffine> MatrixMap(SkeletonDefinition skeleton, IReadOnlyList<SourceAffine> values, string code)
+        {
+            if (values == null) return null;
+            Checks.Require(values.Count == skeleton.Bones.Count, code, "Retained skeleton matrices must cover every exported joint.");
+            return skeleton.Bones.Select((bone, index) => new { bone.BoneId, Value = values[index] }).ToDictionary(x => x.BoneId, x => x.Value, StringComparer.Ordinal);
         }
 
         static PoseSet DefaultPose(SkeletonDefinition skeleton)
         { return PoseSet.Create(skeleton, skeleton.Bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head)))); }
 
-        static (string GlbPath, string ReportPath) Write(string directory, MeshObject[] objects, SkinnedObject[] skinned, GlbExportProfile profile,
+        static (string GlbPath, string ReportPath, GlbExportNodeMap NodeMap) Write(string directory, MeshObject[] objects, SkinnedObject[] skinned, GlbExportProfile profile,
             string documentId, long documentRevision, string stateHash)
         {
             Checks.Require(objects != null && objects.Length > 0, "NO_EXPORTABLE_OBJECT", "No mesh objects were provided.");
@@ -273,7 +301,7 @@ namespace NyaForge.Authoring
             try
             {
                 Directory.CreateDirectory(staging);
-                byte[] bytes = GlbWriter.BuildMany(objects, skinned, profile);
+                var built = GlbWriter.BuildMany(objects, skinned, profile); byte[] bytes = built.Bytes;
                 Checks.Require(bytes.Length <= AuthoringLimits.MaxGlbExportBytes, "BUDGET_EXCEEDED", "GLB output exceeds the 128 MiB budget.");
                 string path = Path.Combine(staging, FileName); File.WriteAllBytes(path, bytes);
                 string reportPath = Path.Combine(staging, ReportFileName);
@@ -304,7 +332,7 @@ namespace NyaForge.Authoring
                 };
                 File.WriteAllText(reportPath, report.ToString(Newtonsoft.Json.Formatting.Indented) + "\n", new System.Text.UTF8Encoding(false));
                 string parent = Path.GetDirectoryName(directory); if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent); Directory.Move(staging, directory);
-                return (Path.Combine(directory, FileName), Path.Combine(directory, ReportFileName));
+                return (Path.Combine(directory, FileName), Path.Combine(directory, ReportFileName), built.NodeMap);
             }
             catch
             {
@@ -378,19 +406,30 @@ namespace NyaForge.Authoring
         }
 
         public static byte[] Build(GlbExportService.MeshObject[] objects, GlbExportService.SkinnedObject skinned, GlbExportProfile profile)
-            => BuildMany(objects, skinned == null ? null : new[] { skinned }, profile);
+            => BuildMany(objects, skinned == null ? null : new[] { skinned }, profile).Bytes;
 
-        public static byte[] BuildMany(GlbExportService.MeshObject[] objects, GlbExportService.SkinnedObject[] skinnedObjects, GlbExportProfile profile)
+        public sealed class BuildResult
+        {
+            public byte[] Bytes { get; }
+            public GlbExportNodeMap NodeMap { get; }
+            internal BuildResult(byte[] bytes, GlbExportNodeMap nodeMap) { Bytes = bytes; NodeMap = nodeMap; }
+        }
+
+        public static BuildResult BuildMany(GlbExportService.MeshObject[] objects, GlbExportService.SkinnedObject[] skinnedObjects, GlbExportProfile profile)
         {
             var binary = new BinaryBuffer(); var views = new JArray(); var accessors = new JArray(); var meshes = new JArray(); var nodes = new JArray(); var skins = new JArray(); var sceneNodes = new JArray();
             var materials = new JArray(); var images = new JArray(); var textures = new JArray();
             var materialRegistry = new MaterialRegistry(binary, views, materials, images, textures);
+            var meshNodeMap = new Dictionary<string, int>(StringComparer.Ordinal);
+            var boneNodeMap = new Dictionary<string, IReadOnlyDictionary<string, int>>(StringComparer.Ordinal);
+            var skeletonNodeMap = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
             if (IsSkinned(profile))
             {
                 Checks.Require(skinnedObjects != null && skinnedObjects.Length == objects.Length, "GLB_SKIN_OBJECT_COUNT", "Each skinned mesh must have a matching binding.");
                 Checks.Require(skinnedObjects.Length > 0, "NO_EXPORTABLE_OBJECT", "No skinned graph objects were provided.");
             }
             var skinIndices = new Dictionary<string, int>(StringComparer.Ordinal);
+            var skinBoneMaps = new Dictionary<string, IReadOnlyDictionary<string, int>>(StringComparer.Ordinal);
             for (int i = 0; i < objects.Length; i++)
             {
                 var item = objects[i]; var meshObject = item; var mesh = item.Mesh; var primitiveTemplates = new JArray();
@@ -409,8 +448,17 @@ namespace NyaForge.Authoring
                     string skinKey = SkinIdentity(currentSkinned);
                     if (!skinIndices.TryGetValue(skinKey, out skinIndex))
                     {
-                        skinIndex = AddSkeleton(binary, views, accessors, nodes, skins, sceneNodes, currentSkinned);
+                        var skeleton = AddSkeleton(binary, views, accessors, nodes, skins, sceneNodes, currentSkinned);
+                        skinIndex = skeleton.SkinIndex;
+                        boneNodeMap[meshObject.Name] = skeleton.BoneNodes; skinBoneMaps[skinKey] = skeleton.BoneNodes;
+                        skeletonNodeMap[meshObject.Name] = currentSkinned.Skeleton.Bones.Select(bone => skeleton.BoneNodes[bone.BoneId]).ToArray();
                         skinIndices.Add(skinKey, skinIndex);
+                    }
+                    else if (!boneNodeMap.ContainsKey(meshObject.Name))
+                    {
+                        // Shared skins retain the same actual node map.
+                        var source = skinBoneMaps[skinKey];
+                        boneNodeMap[meshObject.Name] = source; skeletonNodeMap[meshObject.Name] = currentSkinned.Skeleton.Bones.Select(bone => source[bone.BoneId]).ToArray();
                     }
                 }
                 var morphTargets = new JArray();
@@ -488,7 +536,7 @@ namespace NyaForge.Authoring
                     if (item.Affine != null) node["matrix"] = new JArray(item.Affine.ToColumnMajor());
                 }
                 else ApplyTransform(node, item.Transform);
-                nodes.Add(node); sceneNodes.Add(meshNode);
+                nodes.Add(node); sceneNodes.Add(meshNode); meshNodeMap[meshObject.Name] = meshNode;
             }
             var root = new JObject { ["asset"] = new JObject { ["version"] = "2.0", ["generator"] = "NyaForge" }, ["scene"] = 0, ["scenes"] = new JArray(new JObject { ["nodes"] = sceneNodes }), ["nodes"] = nodes, ["meshes"] = meshes, ["buffers"] = new JArray(new JObject { ["byteLength"] = binary.ToArray().Length }), ["bufferViews"] = views, ["accessors"] = accessors };
             if (skins.Count > 0) root["skins"] = skins;
@@ -497,7 +545,8 @@ namespace NyaForge.Authoring
             byte[] json = PadJson(System.Text.Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), 0x20); byte[] bin = binary.ToArray();
             using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream))
             {
-                writer.Write(0x46546c67); writer.Write(2); writer.Write(checked(12 + 8 + json.Length + 8 + bin.Length)); writer.Write(json.Length); writer.Write(JsonChunk); writer.Write(json); writer.Write(bin.Length); writer.Write(BinChunk); writer.Write(bin); return stream.ToArray();
+                writer.Write(0x46546c67); writer.Write(2); writer.Write(checked(12 + 8 + json.Length + 8 + bin.Length)); writer.Write(json.Length); writer.Write(JsonChunk); writer.Write(json); writer.Write(bin.Length); writer.Write(BinChunk); writer.Write(bin);
+                return new BuildResult(stream.ToArray(), new GlbExportNodeMap(meshNodeMap, boneNodeMap, skeletonNodeMap));
             }
         }
 
@@ -550,18 +599,22 @@ namespace NyaForge.Authoring
             if (transform.Translation.X != 0f || transform.Translation.Y != 0f || transform.Translation.Z != 0f) node["translation"] = new JArray(transform.Translation.X, transform.Translation.Y, transform.Translation.Z);
         }
 
-        static int AddSkeleton(BinaryBuffer binary, JArray views, JArray accessors, JArray nodes, JArray skins, JArray sceneNodes, GlbExportService.SkinnedObject skinned)
+        sealed class SkeletonBuild { public int SkinIndex; public IReadOnlyDictionary<string, int> BoneNodes; }
+        static SkeletonBuild AddSkeleton(BinaryBuffer binary, JArray views, JArray accessors, JArray nodes, JArray skins, JArray sceneNodes, GlbExportService.SkinnedObject skinned)
         {
+            var inverseByBone = skinned.InverseBindByBone ?? MatrixMapFallback(skinned.Skeleton, skinned.InverseBindMatrices);
+            var jointByBone = skinned.JointLocalByBone ?? MatrixMapFallback(skinned.Skeleton, skinned.JointLocalTransforms);
             Checks.Require(skinned.JointLocalTransforms == null || skinned.JointLocalTransforms.Count == skinned.Skeleton.Bones.Count,
                 "GLB_SKIN_SKELETON", "Retained joint local transforms must cover every exported joint.");
-            var jointNodes = new int[skinned.Skeleton.Bones.Count]; var byId = new Dictionary<string, int>(StringComparer.Ordinal);
-            for (int i = 0; i < skinned.Skeleton.Bones.Count; i++) { jointNodes[i] = nodes.Count; byId.Add(skinned.Skeleton.Bones[i].BoneId, jointNodes[i]); nodes.Add(new JObject { ["name"] = skinned.Skeleton.Bones[i].Name }); }
+            var orderedBones = skinned.Skeleton.Bones.OrderBy(bone => bone.BoneId, StringComparer.Ordinal).ToArray();
+            var jointNodes = new int[orderedBones.Length]; var byId = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (int i = 0; i < orderedBones.Length; i++) { jointNodes[i] = nodes.Count; byId.Add(orderedBones[i].BoneId, jointNodes[i]); nodes.Add(new JObject { ["name"] = orderedBones[i].Name }); }
             var roots = new List<int>();
-            for (int i = 0; i < skinned.Skeleton.Bones.Count; i++)
+            for (int i = 0; i < orderedBones.Length; i++)
             {
-                var bone = skinned.Skeleton.Bones[i]; var node = (JObject)nodes[jointNodes[i]]; var parent = bone.ParentBoneId == "" ? (BoneDefinition)null : skinned.Skeleton.ById[bone.ParentBoneId];
-                if (skinned.JointLocalTransforms != null)
-                    node["matrix"] = new JArray(skinned.JointLocalTransforms[i].ToColumnMajor());
+                var bone = orderedBones[i]; var node = (JObject)nodes[jointNodes[i]]; var parent = bone.ParentBoneId == "" ? (BoneDefinition)null : skinned.Skeleton.ById[bone.ParentBoneId];
+                if (jointByBone != null)
+                    node["matrix"] = new JArray(jointByBone[bone.BoneId].ToColumnMajor());
                 else
                 {
                     var origin = parent == null ? bone.Head : bone.Head - parent.Head; node["translation"] = new JArray(origin.X, origin.Y, origin.Z);
@@ -596,36 +649,48 @@ namespace NyaForge.Authoring
                 "GLB_SKIN_BIND", "Retained inverse-bind matrices must cover every exported joint.");
             int ibmOffset = binary.Write(writer =>
             {
-                for (int index = 0; index < skinned.Skeleton.Bones.Count; index++)
+                for (int index = 0; index < orderedBones.Length; index++)
                 {
-                    var values = skinned.InverseBindMatrices == null
-                        ? DefaultInverseBind(skinned.Skeleton.Bones[index]).ToColumnMajor()
-                        : skinned.InverseBindMatrices[index].ToColumnMajor();
+                    var bone = orderedBones[index];
+                    var values = inverseByBone == null
+                        ? DefaultInverseBind(bone).ToColumnMajor()
+                        : inverseByBone[bone.BoneId].ToColumnMajor();
                     foreach (double value in values) writer.Write((float)value);
                 }
             });
-            int ibmView = AddView(views, ibmOffset, skinned.Skeleton.Bones.Count * 64, ArrayBuffer); int ibmAccessor = AddAccessor(accessors, ibmView, 5126, skinned.Skeleton.Bones.Count, "MAT4", false, null, null);
-            var skin = new JObject { ["joints"] = new JArray(jointNodes), ["inverseBindMatrices"] = ibmAccessor, ["skeleton"] = skeletonRoot }; skins.Add(skin); return skins.Count - 1;
+            int ibmView = AddView(views, ibmOffset, orderedBones.Length * 64, ArrayBuffer); int ibmAccessor = AddAccessor(accessors, ibmView, 5126, orderedBones.Length, "MAT4", false, null, null);
+            var skin = new JObject { ["joints"] = new JArray(jointNodes), ["inverseBindMatrices"] = ibmAccessor, ["skeleton"] = skeletonRoot }; skins.Add(skin); return new SkeletonBuild { SkinIndex = skins.Count - 1, BoneNodes = byId };
         }
 
         static JArray Append(JToken existing, int value) { var array = existing as JArray ?? new JArray(); array.Add(value); return array; }
         static string SkinIdentity(GlbExportService.SkinnedObject skinned)
         {
+            var inverseByBone = skinned.InverseBindByBone ?? MatrixMapFallback(skinned.Skeleton, skinned.InverseBindMatrices);
+            var jointByBone = skinned.JointLocalByBone ?? MatrixMapFallback(skinned.Skeleton, skinned.JointLocalTransforms);
             using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream))
             {
                 writer.Write(skinned.Skeleton.ContentHash);
-                if (skinned.InverseBindMatrices == null) writer.Write(0);
+                foreach (var bone in skinned.Skeleton.Bones.OrderBy(bone => bone.BoneId, StringComparer.Ordinal)) writer.Write(bone.BoneId);
+                if (inverseByBone == null) writer.Write(0);
                 else
                 {
-                    writer.Write(skinned.InverseBindMatrices.Count);
-                    foreach (var matrix in skinned.InverseBindMatrices)
+                    writer.Write(skinned.Skeleton.Bones.Count);
+                    foreach (var bone in skinned.Skeleton.Bones.OrderBy(bone => bone.BoneId, StringComparer.Ordinal))
                     {
-                        Checks.Require(matrix != null, "GLB_SKIN_BIND", "Retained inverse-bind matrix is missing.");
+                        var matrix = inverseByBone[bone.BoneId]; Checks.Require(matrix != null, "GLB_SKIN_BIND", "Retained inverse-bind matrix is missing.");
                         foreach (double value in matrix.ToColumnMajor()) writer.Write(value);
                     }
                 }
+                if (jointByBone == null) writer.Write(0);
+                else foreach (var bone in skinned.Skeleton.Bones.OrderBy(bone => bone.BoneId, StringComparer.Ordinal)) foreach (double value in jointByBone[bone.BoneId].ToColumnMajor()) writer.Write(value);
                 return Checks.Hash(stream.ToArray());
             }
+        }
+        static IReadOnlyDictionary<string, SourceAffine> MatrixMapFallback(SkeletonDefinition skeleton, IReadOnlyList<SourceAffine> values)
+        {
+            if (values == null) return null;
+            Checks.Require(values.Count == skeleton.Bones.Count, "GLB_SKIN_BIND", "Retained skeleton matrices must cover every exported joint.");
+            return skeleton.Bones.Select((bone, index) => new { bone.BoneId, Value = values[index] }).ToDictionary(x => x.BoneId, x => x.Value, StringComparer.Ordinal);
         }
         static SourceAffine DefaultInverseBind(BoneDefinition bone)
             => SourceAffine.FromTrs(new Vec3(-bone.Head.X, -bone.Head.Y, -bone.Head.Z), new Vec4(0, 0, 0, 1), new Vec3(1, 1, 1));
@@ -635,7 +700,7 @@ namespace NyaForge.Authoring
         static int[] AddJointSets(BinaryBuffer binary, JArray views, JArray accessors, IReadOnlyList<int> vertices, SkinBinding binding, SkeletonDefinition skeleton, bool extended)
         {
             int setCount = extended ? (binding.Weights.Values.Max(values => values.Count) + 3) / 4 : 1;
-            var byId = skeleton.Bones.Select((bone, index) => new { bone.BoneId, index }).ToDictionary(x => x.BoneId, x => x.index, StringComparer.Ordinal);
+            var byId = skeleton.Bones.OrderBy(bone => bone.BoneId, StringComparer.Ordinal).Select((bone, index) => new { bone.BoneId, index }).ToDictionary(x => x.BoneId, x => x.index, StringComparer.Ordinal);
             var result = new int[setCount];
             for (int set = 0; set < setCount; set++)
             {

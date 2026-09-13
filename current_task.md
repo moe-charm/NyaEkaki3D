@@ -1898,3 +1898,12 @@ Coreは **477 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 
 完全なmesh／morph shared-resource dedup、異なるsource skeletonの結合、実マウス／DPI差、実VRChat内の見た目・PhysBones挙動、完全VRM意味情報は継続課題とする。
 
+# 2026-09-13 feedback implementation: VRM node mapping, canonical multi-skin order, legacy migration
+
+最新レビュー（基準 `c4a2748`）のP1 3件を現行コードへ反映した。`GlbExportService`が出力した実node indexを `GlbExportResult.NodeMap` として返し、`VrmExportService`はWorkbenchの authored node token（0=mesh、1+=skeleton order）を実nodeへ解決してからVRMをパッケージする。GLB writerはBoneId順を共通のcanonical orderとしてJOINTS、joint local matrix、inverse-bind、shared skin identityを同じ順序で扱うため、skinごとの配列順が異なっても出力先の骨参照が一致する。旧single-sessionの expression／Springを持つ作品へGLBを追加した場合も、graph-keyed tableへ移行して保存する。
+
+P2のうち、`SkinBinding.ContentHash`を追加してsource-skin表示cacheの大規模文字列化を廃止し、Undo/Redo後はworkspace attachmentからrig／expression／Spring cacheをgraph存在範囲へ再同期するようにした。装着小物の描画・面選択は、attachment時の子translationを共通の配置規則へ揃えた。PhysBones SDK probeのUnity／report／log／project path引数は空白を含むWindows pathでも1引数として渡す。
+
+Core回帰は **479 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ed7711fa737a47f08e9273344f79148e`）。GLB node mapの実indexとVRM `licenseUrl=other`／`otherLicenseUrl`を追加検証した。Unity **6000.4.3f1**で `Builds/FeedbackFix2/NyaForge.exe`を再ビルドし、800x600 Authoring suite **PASS**（`Artifacts/Authoring-20260913-184138-af3460e8fe7d4089a66e76a55e9d4981/report.json`、画面 `authoring.png`）。
+
+実Unity SDK／実VRChat内の見た目・挙動、実マウス／DPI差、複数source skeletonの自動結合、完全VRM意味情報（texture transforms・animation等）は引き続き別受入境界とする。private素材はpublic repositoryへ追加していない。

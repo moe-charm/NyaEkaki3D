@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using NyaForge.Authoring.Graph;
 
@@ -20,6 +21,7 @@ namespace NyaForge.Authoring.Rig
         public const int MaxInfluencesPerVertex = 32;
         public string MeshTopologyHash { get; }
         public string SkeletonHash { get; }
+        public string ContentHash { get; }
         public IReadOnlyDictionary<int, IReadOnlyList<VertexWeight>> Weights { get; }
 
         private SkinBinding(string meshTopologyHash, string skeletonHash, IDictionary<int, IReadOnlyList<VertexWeight>> weights)
@@ -27,6 +29,16 @@ namespace NyaForge.Authoring.Rig
             Checks.HashText(meshTopologyHash); Checks.HashText(skeletonHash);
             MeshTopologyHash = meshTopologyHash; SkeletonHash = skeletonHash;
             Weights = new ReadOnlyDictionary<int, IReadOnlyList<VertexWeight>>(new Dictionary<int, IReadOnlyList<VertexWeight>>(weights));
+            using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write("skin-binding.v1"); writer.Write(MeshTopologyHash); writer.Write(SkeletonHash); writer.Write(Weights.Count);
+                foreach (var pair in Weights.OrderBy(item => item.Key))
+                {
+                    writer.Write(pair.Key); writer.Write(pair.Value.Count);
+                    foreach (var weight in pair.Value) { writer.Write(weight.BoneId); writer.Write(weight.Weight); }
+                }
+                ContentHash = Checks.Hash(stream.ToArray());
+            }
         }
 
         public static SkinBinding Create(MeshData mesh, SkeletonDefinition skeleton, IEnumerable<VertexWeightInput> raw)

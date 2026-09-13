@@ -55,9 +55,9 @@ namespace NyaForge.UnityRuntime
             if (candidate.Rig != null) nextRigSessions[graph.GraphId] = candidate.Rig;
             if (candidate.Expressions != null) nextExpressionSessions[graph.GraphId] = candidate.Expressions;
             if (candidate.Springs != null) nextSpringSessions[graph.GraphId] = candidate.Springs;
-            if (candidate.Rig != null) owned[ProjectAttachments.RigSessions] = ImportedRigSessionsCodec.Write(nextRigSessions);
-            if (candidate.Expressions != null) owned[ProjectAttachments.Expressions] = VrmExpressionSessionsCodec.Write(nextExpressionSessions);
-            if (candidate.Springs != null) owned[ProjectAttachments.Springs] = VrmSpringSessionsCodec.Write(nextSpringSessions);
+            if (nextRigSessions.Count > 0) owned[ProjectAttachments.RigSessions] = ImportedRigSessionsCodec.Write(nextRigSessions);
+            if (nextExpressionSessions.Count > 0) owned[ProjectAttachments.Expressions] = VrmExpressionSessionsCodec.Write(nextExpressionSessions);
+            if (nextSpringSessions.Count > 0) owned[ProjectAttachments.Springs] = VrmSpringSessionsCodec.Write(nextSpringSessions);
             var finalAttachments = new ProjectAttachments(owned);
             var result = new AuthoringCommandService(workspace).Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph)), projection);
             if (!result.Success) throw new InvalidOperationException(result.Code + ": " + result.Message);

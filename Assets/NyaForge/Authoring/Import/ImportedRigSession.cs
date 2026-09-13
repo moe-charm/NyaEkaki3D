@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Collections.ObjectModel;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Rig;
@@ -63,6 +64,24 @@ namespace NyaForge.Authoring.Import
             return new ImportedRigSession(SourceHash, SkeletonHash, GraphId, SkeletonNodeId,
                 new Dictionary<int, string>(NodeToBone), new Dictionary<string, int>(HumanoidNodes),
                 SourceNodeOrigins == null ? null : new Dictionary<int, Vec3>(SourceNodeOrigins), Hierarchy, sourceSkin, sourceSkinBinding, MeshInstanceTransform);
+        }
+
+        /// <summary>
+        /// Rebinds the authored skeleton identity while retaining the source
+        /// node/skin slots.  The explicit map is also applied to NodeToBone so
+        /// source-palette projection continues to resolve the new graph bones.
+        /// </summary>
+        public ImportedRigSession RebindSkeleton(SkeletonDefinition source,
+            SkeletonDefinition target, IReadOnlyDictionary<string, string> sourceToTarget)
+        {
+            Checks.Require(source != null && target != null, "INVALID_SKELETON", "Source and target skeletons are required.");
+            Checks.Require(SkeletonHash == source.ContentHash, "IMPORT_SKELETON_CHANGED", "Imported rig does not belong to the supplied source skeleton.");
+            var map = SkeletonRebindAdapter.ValidateMap(source, target, sourceToTarget);
+            var nodes = NodeToBone.ToDictionary(pair => pair.Key, pair => map[pair.Value]);
+            return new ImportedRigSession(SourceHash, target.ContentHash, GraphId, SkeletonNodeId,
+                nodes, new Dictionary<string, int>(HumanoidNodes),
+                SourceNodeOrigins == null ? null : new Dictionary<int, Vec3>(SourceNodeOrigins),
+                Hierarchy, SourceSkin, SourceSkinBinding, MeshInstanceTransform);
         }
 
         public static ImportedRigSession Create(ImportedSkinnedMeshSource source, VrmMetadata metadata, string graphId, string skeletonNodeId)
