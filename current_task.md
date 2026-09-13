@@ -1,3 +1,7 @@
+# 2026-09-13 final export-report real-model recheck
+
+最新のWindows Player `Builds/ExportReportV3/NyaForge.exe` で、private一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`、public repositoryへ追加しない）を読み取り専用で再検証した。800x600 Authoring suiteは **PASS、82 checks**（`Artifacts/Authoring-20260913-114549-e48c45f2dcf24379a057688838b8510b/report.json`）。実モデルの候補選択、EditMesh頂点編集、native Save/Open、標準skinned GLB出力、出力GLB再取込、材質画像の既存予算処理に加え、skin-bound衣装導線も通過した。GLB出力フォルダには`export-report.json`が生成され、document ID・revision・state hash・profile・対象件数・保持しないVRM/graph metadataを確認した。同成果物のUnity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-115021-716-c4dcd03ad3f14941a1c67e8671f82bd1/bridge-report.json`）。これは実モデルの自動smokeと出力記録の証拠で、実マウス/DPI差、実VRChat内の見た目・挙動、標準VRM出力、自動fit・貫通修正は引き続き未検証境界とする。
+
 # 2026-09-13 GLB export snapshot report (final verification)
 
 標準GLB出力の同じフォルダへ `export-report.json` を原子的に同梱するようにした。レポートはversion、profile、単位・座標、document ID、document revision、state hash、対象ごとの頂点数・三角形数・submesh数・材質slot数、標準GLBで保持しないgraph／VRM metadataを記録する。GUIのステータスと外部MCPの成功レスポンスにもreportPathを返すため、GLB単体を別スナップショットの成果物と取り違えにくい。GLB本体とレポートは同一stagingから移動し、出力失敗時に中途半端な公開物を残さない。
