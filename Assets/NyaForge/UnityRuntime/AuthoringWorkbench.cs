@@ -28,6 +28,7 @@ namespace NyaForge.UnityRuntime
         GameObject stage;
         OwnedMeshProjection projection;
         MultiObjectProjection objectProjection;
+        AvatarSurfaceSelectionProjection avatarSurfaceSelection;
         AuthoringWorkspace workspace;
         AuthoringCommandService commands;
         string savedDirectory;
@@ -63,6 +64,7 @@ namespace NyaForge.UnityRuntime
                 camera.depth = 10;
                 projection = new OwnedMeshProjection(stage.transform);
                 objectProjection = new MultiObjectProjection(stage.transform);
+                avatarSurfaceSelection = new AvatarSurfaceSelectionProjection(stage.transform);
                 ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null);
             }
             active = true;
@@ -310,6 +312,7 @@ namespace NyaForge.UnityRuntime
             RefreshGraphEditing();
             RefreshObjectSelection();
             objectProjection?.Refresh(workspace.Document, ResolveAttachmentPoseForObject);
+            RefreshAvatarSurfaceSelection();
             RefreshAttachmentControls();
             RefreshSourceSkinDisplayProjection();
             RefreshAttachmentProjection();
@@ -409,6 +412,7 @@ namespace NyaForge.UnityRuntime
             CancelSurfaceStroke();
             projection?.Dispose();
             objectProjection?.Dispose();
+            avatarSurfaceSelection?.Dispose();
             boundaryHighlight?.Dispose();
             bridgeHighlight?.Dispose();
             faceCreateOutline?.Dispose();edgeCutLine?.Dispose();cutPathLine?.Dispose();cutHoverEdge?.Dispose();

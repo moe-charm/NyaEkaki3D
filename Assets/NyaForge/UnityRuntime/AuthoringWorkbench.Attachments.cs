@@ -359,6 +359,26 @@ namespace NyaForge.UnityRuntime
             });
         }
 
+        void RefreshAvatarSurfaceSelection()
+        {
+            if (avatarSurfaceSelection == null) return;
+            try
+            {
+                var node = ActiveAttachmentNode();
+                string targetId = string.IsNullOrEmpty(attachmentTargetChoice) ? node?.AttachmentTargetObjectId : attachmentTargetChoice;
+                if (string.IsNullOrEmpty(targetId) && IsGraph)
+                    targetId = workspace.Document.ActiveObject.Graph.Nodes.Values.FirstOrDefault(item => item.TypeId == BuiltinNodes.PoseSource)?.PoseSourceObjectId;
+                var target = FindObject(targetId);
+                var value = target?.EvaluateGraph()?.Output;
+                var selected = SurfaceTriangleSelection();
+                avatarSurfaceSelection.Refresh(value?.Mesh, value?.Transform ?? new RestTransform(1, new Vec3()), selected);
+            }
+            catch (Exception)
+            {
+                avatarSurfaceSelection.Refresh(null, new RestTransform(1, new Vec3()), null);
+            }
+        }
+
         bool SurfaceTrianglePickingActive => accessorySurfacePickMode != null && accessorySurfacePickMode.value && accessorySurfacePickMode.enabledSelf;
 
         void PickAvatarSurfaceTriangle(Vector2 panelPosition, bool add)
@@ -395,6 +415,7 @@ namespace NyaForge.UnityRuntime
                 if (!add) selectedAvatarSurfaceTriangles.Clear();
                 if (hit >= 0 && (!add || !selectedAvatarSurfaceTriangles.Remove(hit))) selectedAvatarSurfaceTriangles.Add(hit);
                 accessorySurfaceTriangleIds.SetValueWithoutNotify(string.Join(",", selectedAvatarSurfaceTriangles.OrderBy(id => id)));
+                RefreshAvatarSurfaceSelection();
                 SetStatus(selectedAvatarSurfaceTriangles.Count == 0 ? "avatar面の選択を解除しました。" :
                     "avatar面領域を更新しました（" + selectedAvatarSurfaceTriangles.Count.ToString(CultureInfo.InvariantCulture) + "面）。fit／weightへ共通適用されます。");
             });
