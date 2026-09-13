@@ -96,6 +96,7 @@ namespace NyaForge.UnityRuntime
                 string boneBindingHash = bound.Binding.ContentHash;
                 attachmentTargetChoice = avatarObjectId;
                 RefreshAttachmentControls();
+                accessorySurfaceTriangleIds.SetValueWithoutNotify("0");
                 TransferAccessorySurfaceWeights();
                 boundGraph = workspace.Document.ActiveObject.Graph;
                 bound = boundGraph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.SkinBind);
@@ -104,6 +105,8 @@ namespace NyaForge.UnityRuntime
                 Check(bound.Binding.Weights.Values.All(values => values.Count >= 1 && values.Count <= 4 &&
                     Math.Abs(values.Sum(value => value.Weight) - 1f) < 1e-5f),
                     "Accessory avatar-surface weights were not normalized within the four-influence limit");
+                Check(status.text.Contains("1面領域"),
+                    "Accessory surface weight initialization did not report the selected avatar triangle region");
                 string beforeFit = workspace.Evaluate().ContentHash;
                 accessoryFitOffsetMm.SetValueWithoutNotify(2);
                 accessoryFitMaxDistanceMm.SetValueWithoutNotify(50);
@@ -114,6 +117,8 @@ namespace NyaForge.UnityRuntime
                     "Accessory avatar-surface fit did not update the edited clothing geometry");
                 Check(status.text.Contains("移動") && status.text.Contains("最大投影距離") && status.text.Contains("最大移動量"),
                     "Accessory surface fit status did not expose measured quality metrics");
+                Check(status.text.Contains("1面領域"),
+                    "Accessory surface fit did not report the selected avatar triangle region");
                 string failedFitState = workspace.Document.StateHash;
                 long failedFitRevision = workspace.Document.DocumentRevision;
                 accessoryFitMaxDistanceMm.SetValueWithoutNotify(1);
@@ -121,6 +126,7 @@ namespace NyaForge.UnityRuntime
                 Check(workspace.Document.StateHash == failedFitState && workspace.Document.DocumentRevision == failedFitRevision,
                     "Out-of-range avatar-surface fit changed the clothing document");
                 accessoryFitMaxDistanceMm.SetValueWithoutNotify(50);
+                accessorySurfaceTriangleIds.SetValueWithoutNotify("");
 
                 // Exercise the same explicit pose-copy action exposed by the
                 // Workbench. Move the source avatar, copy its evaluated pose

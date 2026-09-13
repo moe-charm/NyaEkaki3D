@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Geometry;
@@ -19,6 +20,7 @@ namespace NyaForge.UnityRuntime
         DropdownField attachmentBone;
         FloatField attachmentOffsetX, attachmentOffsetY, attachmentOffsetZ;
         FloatField accessoryFitOffsetMm, accessoryFitMaxDistanceMm;
+        TextField accessorySurfaceTriangleIds;
         Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPolygonMaterialize, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessoryPoseCopy;
         readonly List<string> attachmentTargetIds = new List<string>();
         readonly List<string> attachmentBoneIds = new List<string>();
@@ -56,10 +58,13 @@ namespace NyaForge.UnityRuntime
             accessorySurfaceWeight = Button("衣装の自動weight初期化（avatar表面）", TransferAccessorySurfaceWeights, "object-skin-surface-weight");
             accessoryFitOffsetMm = Number(attachmentPanel, "avatar表面からのfit offset (mm)", 2, "object-surface-fit-offset-mm");
             accessoryFitMaxDistanceMm = Number(attachmentPanel, "surface fit最大距離 (mm)", 50, "object-surface-fit-max-distance-mm");
+            accessorySurfaceTriangleIds = new TextField("avatar面ID（カンマ区切り・空欄=全て）") { name = "object-surface-triangle-ids" };
+            accessorySurfaceTriangleIds.tooltip = "avatarのrest meshを三角形の通し番号で限定します。面IDはsubmesh順に0から数え、空欄なら全三角形を対象にします。fitとweightで同じ領域を使います。";
+            attachmentPanel.Add(accessorySurfaceTriangleIds);
             accessorySurfaceFit = Button("衣装をavatar表面へfit", FitAccessoryToAvatarSurface, "object-surface-fit");
             accessoryPoseCopy = Button("avatarの現在poseを衣装へコピー", CopyAvatarPose, "object-skin-pose-copy");
             attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryPolygonMaterialize); attachmentPanel.Add(accessoryAutoWeight); attachmentPanel.Add(accessorySurfaceWeight); attachmentPanel.Add(accessorySurfaceFit); attachmentPanel.Add(accessoryPoseCopy);
-            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。Polygon造形をskin衣装へ派生すると、元のPolygon graphを残したまま編集結果をMeshSourceへ確定し、新しい衣装objectを作成します。自動weight初期化（骨近傍）はrest骨segmentへの距離から最大4本を選ぶ簡易初期値です。avatar表面が評価できる場合は、表面上の最近三角形から既存avatar weightを補間するavatar表面方式を推奨します。どちらも必ず動作確認・Rig panelで手修正してください。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。自動fitや貫通判定は別機能です。");
+            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。Polygon造形をskin衣装へ派生すると、元のPolygon graphを残したまま編集結果をMeshSourceへ確定し、新しい衣装objectを作成します。自動weight初期化（骨近傍）はrest骨segmentへの距離から最大4本を選ぶ簡易初期値です。avatar表面が評価できる場合は、表面上の最近三角形から既存avatar weightを補間するavatar表面方式を推奨します。avatar面IDを指定するとfitとweightの対象面を同じ領域へ限定できます。空欄は全三角形です。どちらも必ず動作確認・Rig panelで手修正してください。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。自動fitや貫通判定は別機能です。");
             help.style.whiteSpace = WhiteSpace.Normal; attachmentPanel.Add(help);
             parent.Add(attachmentPanel);
         }
@@ -323,6 +328,21 @@ namespace NyaForge.UnityRuntime
             catch (AuthoringException) { return false; }
         }
 
+        IEnumerable<int> SurfaceTriangleSelection()
+        {
+            string text = accessorySurfaceTriangleIds == null ? "" : accessorySurfaceTriangleIds.value;
+            if (string.IsNullOrWhiteSpace(text)) return null;
+            var selected = new SortedSet<int>();
+            foreach (string token in text.Split(new[] { ',', ';', ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (!int.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out int triangle) || triangle < 0)
+                    throw new InvalidOperationException("avatar面IDは0以上の整数をカンマ区切りで指定してください。");
+                selected.Add(triangle);
+            }
+            if (selected.Count == 0) throw new InvalidOperationException("avatar面IDを1つ以上指定してください。");
+            return selected.ToArray();
+        }
+
         void FitAccessoryToAvatarSurface()
         {
             Try(() =>
@@ -348,8 +368,9 @@ namespace NyaForge.UnityRuntime
                     throw new InvalidOperationException("衣装EditMeshの入力・評価結果を取得できません。");
                 float offset = accessoryFitOffsetMm.value / 1000f;
                 float maxDistance = accessoryFitMaxDistanceMm.value / 1000f;
+                var surfaceTriangles = SurfaceTriangleSelection();
                 var fit = MeshSurfaceFit.Project(editValue.Mesh, editValue.Transform,
-                    avatarMeshValue.Mesh, avatarMeshValue.Transform, offset, maxDistance);
+                    avatarMeshValue.Mesh, avatarMeshValue.Transform, offset, maxDistance, surfaceTriangles);
                 var fitted = fit.Positions;
                 var offsets = new Dictionary<int, Vec3>();
                 for (int vertex = 0; vertex < fitted.Length; vertex++)
@@ -362,7 +383,8 @@ namespace NyaForge.UnityRuntime
                 var changed = graph.ReplaceNode(GraphNode.Edit(edit.NodeId, true, offsets, editInput.SnapshotHash, editInput.DomainId));
                 Execute(AuthoringOperation.ReplaceGraph(changed));
                 attachmentTargetChoice = target.ObjectId;
-                SetStatus("衣装をavatar rest表面へfitしました（" + fit.MovedVertexCount + "/" + fitted.Length + "頂点移動、最大投影距離 " +
+                string region = surfaceTriangles == null ? "全三角形" : surfaceTriangles.Count().ToString(CultureInfo.InvariantCulture) + "面領域";
+                SetStatus("衣装をavatar rest表面へfitしました（" + region + "、" + fit.MovedVertexCount + "/" + fitted.Length + "頂点移動、最大投影距離 " +
                     (fit.MaxProjectionDistance * 1000f).ToString("0.###") + " mm、最大移動量 " +
                     (fit.MaxDisplacement * 1000f).ToString("0.###") + " mm、offset " +
                     accessoryFitOffsetMm.value.ToString("0.###") + " mm）。Rig／poseで交差を確認してください。");
@@ -394,12 +416,14 @@ namespace NyaForge.UnityRuntime
                 if (!evaluation.MeshOutputs.TryGetValue(edit.NodeId, out var editValue) || editValue?.Mesh == null)
                     throw new InvalidOperationException("衣装EditMeshの評価結果を取得できません。");
                 float maxDistance = accessoryFitMaxDistanceMm.value / 1000f;
+                var surfaceTriangles = SurfaceTriangleSelection();
                 var transferred = SkinWeightTransfer.BySurfaceProjection(editValue.Mesh, editValue.Transform,
                     avatarMeshValue.Mesh, avatarMeshValue.Transform, avatarBindingValue.Binding, skeleton, 4,
-                    maxDistance, null);
+                    maxDistance, surfaceTriangles);
                 Execute(AuthoringOperation.UpdateNode(GraphNode.SkinBindNode(bind.NodeId, transferred)));
                 attachmentTargetChoice = target.ObjectId;
-                SetStatus("avatar表面の最近三角形から衣装weightを補間しました（最大距離 " +
+                string region = surfaceTriangles == null ? "全三角形" : surfaceTriangles.Count().ToString(CultureInfo.InvariantCulture) + "面領域";
+                SetStatus("avatar表面の最近三角形から衣装weightを補間しました（" + region + "、最大距離 " +
                     accessoryFitMaxDistanceMm.value.ToString("0.###") + " mm）。Rig panelで必ず動作確認・手修正してください。自動fitや貫通判定は別機能です。");
             });
         }

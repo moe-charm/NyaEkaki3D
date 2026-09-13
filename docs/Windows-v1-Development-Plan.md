@@ -53,7 +53,7 @@ NF-V1のIDは持込提案との対応用に維持。状態は実装済み・合�
 | NF-V1-02A | G1初回の独立reader・SDK・クライアント受入 | 01、03A（衣装ケース） | E01〜E05の現行対応分、E06のbase color/alpha、E08のlocal段階を確認。独立readerで骨/形状を比較。E07更新・未実装map・他者視点は後続へ明示的に分ける |
 | NF-V1-04 | Polygon造形確定command | 03の座標/出自契約 | 元graphを残し派生MeshSource/EditMesh graphを一括生成。UV seam/corner→render vertex対応、material/paint、元object/graph/revisionとhash、transformを保持。Undo一回、失敗無変更。新規skinへ進める |
 | NF-V1-05 | topology確定・属性依存 | 04 | skin/morph前に造形確定。既存skin/morphの未対応topology変更を事前拒否。再造形は新派生へ明示転送し旧派生を保持 |
-| NF-V1-06 | 範囲を指定するfit/weight | 03の座標/対象契約 | 衣装の選択頂点、元body面領域、距離を共通候補として使う。範囲外は無変更、未選択頂点・weightを保持。薄い表裏・袖/胴体・遠方の負例。候補/未対応点/移動量を確認して確定 |
+| NF-V1-06 | 範囲を指定するfit/weight | 03の座標/対象契約 | 衣装の選択頂点、元body面領域、距離を共通候補として使う。Workbenchのavatar面ID入力をfit／weightへ接続済み。範囲外は無変更、未選択頂点・weightを保持。薄い表裏・袖/胴体・遠方の負例。候補/未対応点/移動量を確認して確定 |
 | NF-V1-07 | 衣装検査GUIと参照保護 | 05、06 | rest編集/pose確認、bodyと衣装の表示、参照ロック、既存weight修正、固定pose群をGUIへ接続。新ブラシは一周で必要性が判明したものに限定 |
 | NF-V1-08 | 自作衣装1点の全工程 | 03A、07。外部判定は02A | `PolygonPrimitives.Cuff`で低ポリ手首カフのprimitive→造形→UV/paint→確定→weight→保存再開→Unity→VRChatを手順だけで再現。Player自動経路は確認済み、実アバター・実VRChat・販売品質は未受入 |
 | NF-V1-09 | 材質semantic slot設計 | 03 | 既存材質を拡張し、用途・色空間・channel・UV・sampler・adapter版を定義。Unity shader固有名はadapter。全面IR置換なし |

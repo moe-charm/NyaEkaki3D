@@ -6,6 +6,8 @@
 
 この変更を含むWindows Playerを`Builds/WindowsV1Uv1/NyaForge.exe`へ別出力し、Authoring suiteを **83 checks PASS**した。Unity **6000.4.3f1**、GPU NVIDIA GeForce RTX 4090。証拠は`Artifacts/Authoring-20260914-022032-05bcf10ef0bb4ea08953cc45436bf119/report.json` と `authoring.png`。Player受入は通常GLBのUV1停止契約を含む自動経路の確認であり、実マウス・実RadDollV3全周fit・VRChat内表示とは別である。
 
+Workbenchの衣装表面処理へ`avatar面ID（カンマ区切り・空欄=全て）`を追加した。指定したrest meshの三角形領域を`MeshSurfaceFit.Project`と`SkinWeightTransfer.BySurfaceProjection`へ同じ入力で渡し、範囲外ID・不正文字列・距離超過は文書を変更せず診断する。自動Authoring suiteで面ID `0`を指定したfit／surface weight、ステータスの領域表示、失敗時無変更を確認した。`Builds/WindowsSurfaceRegion/NyaForge.exe`（Unity **6000.4.3f1**）と **83 checks PASS**の証拠は`Artifacts/Authoring-20260914-022441-128a2e31fec14decbb120c3d3eb2de76/report.json` と `authoring.png`。面領域指定は受入経路へ接続したが、実マウスでの面選択、実RadDollV3全周fit・貫通・見た目、VRChat内表示は未受入である。
+
 レビューで挙がった `9855d43` 系のP1/P2を現行mainへ再照合した。対象は衣装受け取りの座標、割当保存、UV1、疎なmaterial slot、MR係数、カフ面向き、sampler共有、削除済み衣装の割当読込である。
 
 次の項目は現行実装と回帰で確認済みで、同じ修正を重ねて行わない。
@@ -61,7 +63,7 @@ VCCキャッシュの`com.vrchat.base`／`com.vrchat.avatars` **3.7.6**を公開
 |---|---|---|---|
 | 1 | NF-V1-01 / 03 | manifest・実SDK／実RadDollV3 chain probe済み / 外部受入BLOCKED | private受け取りprojectでSDK 3.7.6の実`VRCPhysBone`解決・生成・stable root/BoneId設定、RadDollV3のSkirt直下chain設定まで確認済み。次は実アバターsceneの全対象chain明示割当とBuild & Testを行い、未実施の実VRChatはBLOCKEDとして残す |
 | 2 | NF-V1-03A | 実装・合成Bridge受入済み / 実FBX初回・再適用・native/scene roundtrip smoke済み | private RadDollV3 FBXへカフpackageを`lower_arm.L`へ明示適用し、136頂点・rootBone・ownership marker、同一package再適用時の重複なし、graph/package/sceneの保存再読込を確認。次は実EditorWindow経路での割当保存、実sceneへのfit・weight、見た目確認 |
-| 3 | NF-V1-04 / 05 / 06 / 07 | Core/Player実装済み・手動未受入 | Polygon派生→UV/paint→確定→範囲限定fit/weight→pose確認を実マウスで通し、参照body保護・Undo・Save/Openを確認 |
+| 3 | NF-V1-04 / 05 / 06 / 07 | Core/Player実装済み・面領域入力接続済み・手動未受入 | Polygon派生→UV/paint→面領域を指定した範囲限定fit/weight→pose確認を実マウスで通し、参照body保護・Undo・Save/Openを確認 |
 | 4 | NF-V1-08 | カフ試作経路実装・Player受入済み / 実アバター未受入 | 低ポリ手首カフを頂点編集し、実RadDollV3へfit・weight・Unity適用・VRChat確認。自動テンプレート通過を販売品質と扱わない |
 | 5 | NF-V1-09 / 10 | Core実装済み・Unity/VRChat未受入 | semantic normal／metallic-roughnessのpackage適用を実sceneで確認し、Standard shaderの外観・tangent・samplerを記録。occlusion/emissiveと専用paintは後続範囲 |
 | 後続 | NF-V1-11〜16 / 02A / 02B | 未完了 | 複数衣装・Unity再適用→長時間/手動/別環境→VRChat/private upload/RC。詳細依存は採用修正版参照 |
