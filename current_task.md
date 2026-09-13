@@ -24,6 +24,17 @@
 
 これは実モデルの取込から受け渡しまでの回帰であり、実RadDollV3へ新規衣装を全周fitして貫通・見た目を人間が受入した記録ではない。VRChat Build & Test／実機表示、100/150/200%の実マウス・IME・Explorer操作も手動受入として残す。
 
+## 2026-09-14 NF-V1-09G: 1600px実ウィンドウのDPI二重倍率を解消
+
+V19の`1600x1000`起動で、DPI補正後のworkbenchが描画倍率を二重に受け、右controlsが再び画面外へ出る条件を確認した。制作workbenchの実幅・実高を`dpiScale²`で予約するよう修正し、PanelSettingsの描画倍率と物理クライアント領域を一致させた。注入式UIプローブは従来の1:1座標のまま維持する。
+
+- コード: `3dfbccf`（`fix: reserve authoring layout for scaled player surface`）
+- Player: `Builds/ReleaseCandidateV23/NyaForge.exe`
+- 自動Authoring suite: **PASS**（`Artifacts/Authoring-20260914-073108-75b0e150f75e42d380823ee9c6141808/report.json`、`1600x1000`）
+- 実ウィンドウ: **右controls全体とスクロールバーを表示**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-manual-v23-1600.png`）
+
+これは実ウィンドウの表示領域に対する確認であり、100/150/200%の実マウス操作、日本語IME、Explorer選択、実RadDollV3全周fit・貫通・見た目、VRChat Build & Test／実機表示の受入ではない。
+
 ## 2026-09-14: 手動受入表をReleaseCandidateV10へ同期
 
 手動チェック表の対象を古い`ReleaseCandidateV2`から、原画像sourceの未編集時再出力まで含む現行`ReleaseCandidateV10`（コード`43cb551`）へ更新した。衣装一周の項目へ、base-colorの原画像サイズ・作業画像サイズ・MIME・hashのinspection確認と、Paint編集後にpreviewへフォールバックするGLB確認を追加した。環境マニフェストもCore 505件とV10 Player／Bridge証跡へ同期した。これは手動操作を実施した記録ではなく、次の実操作で使う候補・確認条件の同期である。
