@@ -206,6 +206,7 @@ namespace NyaForge.Authoring.Inspection
             int? triangles, int? vertices, int? materials, int? textures, int? maxTexture, SkinSummary skin, JArray warnings)
         {
             var metrics = new JObject();
+            metrics["objects"] = workspace.Document.Objects.Count;
             if (triangles.HasValue) metrics["triangles"] = triangles.Value;
             if (vertices.HasValue) metrics["renderVertices"] = vertices.Value;
             if (materials.HasValue) metrics["materials"] = materials.Value;

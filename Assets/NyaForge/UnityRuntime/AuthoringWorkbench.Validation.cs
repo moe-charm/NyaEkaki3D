@@ -48,7 +48,7 @@ namespace NyaForge.UnityRuntime
             var metrics = result["metrics"] as JObject;
             if (metrics != null)
             {
-                string[] names = { "triangles", "renderVertices", "materials", "textures", "maxTextureDimension", "bones", "maxInfluences" };
+                string[] names = { "objects", "triangles", "renderVertices", "materials", "textures", "maxTextureDimension", "bones", "maxInfluences" };
                 foreach (var name in names)
                     if (metrics[name] != null) lines.Add(name + ": " + (string)metrics[name]);
             }

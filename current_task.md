@@ -1619,3 +1619,8 @@ Coreは **471 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 「出力チェック」の結果表示を、判定だけの横並び文字列から、実測metrics・各check・警告を一行ずつ表示する形式へ変更した。複数objectの集計値（triangles、renderVertices、materials、textures、bones等）が保存前に読み取りやすくなり、unknown時の理由も同じ欄へ表示する。ドキュメントや制作データは変更しない。
 
 Unity 6000.4.3f1のWindows Player `Builds/ValidationUiV1/NyaForge.exe` をビルドし、1280x800 Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-134900-bff15d3d95da44119750676e20bff74a/report.json`、画面 `authoring.png`）。同じ成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-134937-440-25ae2cadbe9042eb8525367e45f91011/bridge-report.json`）。Coreは変更なしで直近 **471 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ffdc185b64364eaca06099e90ddc39fb`）。画像は自動Playerの初期制作画面で、実マウス・DPI個体差の受入とは分けて扱う。
+# 2026-09-13 validation object count
+
+出力チェックの`metrics`へ制作対象object数を追加し、GUIの縦型結果表示でも先頭に表示するようにした。複数objectを合算した判定であることを画面上でも確認できる。Coreの検証は **471 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ba80481a8387490f8bec0b941183a9dd`）。
+
+Unity 6000.4.3f1のWindows Player `Builds/ValidationUiV2/NyaForge.exe` をビルドし、1280x800 Authoring suiteは **PASS**（`Artifacts/Authoring-20260913-135121-c60399d2161043dc8320f267b52fc99e/report.json`、画面 `authoring.png`）。同じ成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-135154-187-26dfd082c99b4bd3a373c6250f6d83d9/bridge-report.json`）。

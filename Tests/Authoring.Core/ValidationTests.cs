@@ -29,6 +29,7 @@ internal static partial class Program
             var request = AuthoringValidationRequest.Read(new JObject { ["documentId"] = workspace.Document.DocumentId, ["expectedRevision"] = workspace.Document.DocumentRevision, ["profile"] = "pc" });
             var result = AuthoringValidationReader.Read(workspace, workspace.InstanceId, request);
             Equal("pass", (string)result["status"]);
+            Equal(2, (int)result["metrics"]["objects"]);
             Equal(8, (int)result["metrics"]["triangles"]);
             Equal(16, (int)result["metrics"]["renderVertices"]);
         });
