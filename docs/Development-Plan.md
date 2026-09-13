@@ -1,6 +1,6 @@
 # NyaForge v2 開発計画
 
-更新: 2026-09-12。C0-R／C1-A、C1-Bの形状・UV編集、C1-CのPaint graphに加え、小物形状のGUI一周、layer/mask/PNG取り込み、3D paintと初期Surface往復まで検証記録あり。3D描画の準備をGUIから非同期化し、準備後の描画とviewport更新をPlayerで検証。最新の実装・証拠・再開手順と残件はcurrent_taskへ集約する。以下の終了条件は段階ごとの開発契約であり、C1全体の完了を意味しない。
+更新: 2026-09-13。C0-R／C1-A、C1-Bの形状・UV編集、C1-CのPaint graphに加え、小物形状のGUI一周、layer/mask/PNG取り込み、3D paintと初期Surface往復まで検証記録あり。GLB／VRM出力はreadback validation・source diagnostics・snapshot pinを備え、VRM node-mapはhumanoid・表情・SpringBoneの参照回帰まで確認した。3D描画の準備をGUIから非同期化し、準備後の描画とviewport更新をPlayerで検証。最新の実装・証拠・再開手順と残件はcurrent_taskへ集約する。以下の終了条件は段階ごとの開発契約であり、C1全体の完了を意味しない。
 製品目標と技術契約は [設計v2](NyaForge-Authoring-Design2.md) が正本。この文書はローカル実装への適用順を定める。初期対応OSはWindows。macOS対応は今回の工程へ加えない。
 
 ## 2026-09-13 現行mainの到達点

@@ -244,8 +244,9 @@ namespace NyaForge.UnityRuntime
             {
                 if (!session.NodeToBone.TryGetValue(pair.Value, out var boneId) || !boneIndices.TryGetValue(boneId, out var boneIndex))
                     throw new InvalidOperationException("VRM humanoid mappingを出力skeletonへ対応できません: " + pair.Key);
-                // GlbWriter emits the single mesh node first, followed by the
-                // authored skeleton nodes in SkeletonDefinition order.
+                // Keep a stable authored token here. VrmExportService resolves
+                // it through GlbExportNodeMap, so this remains correct even
+                // when the writer places joint nodes before mesh nodes.
                 humanoid[pair.Key] = 1 + boneIndex;
             }
             var expressions = new List<VrmExpressionExport>();

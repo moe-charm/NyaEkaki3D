@@ -1,3 +1,8 @@
+# 2026-09-13 c4a2748 feedback regression hardening
+
+提示レビューのP1（VRMの実node参照、複数skinの骨順差、旧形式VRMへ通常GLBを追加した移行）を現行mainへ再確認し、既存の実装に加えて、VRM 1 exportのnode-map回帰を表情morph bindとSpringBone jointまで拡張した。humanoid・表情・揺れが同じ実出力nodeへ解決され、骨名やmesh nodeを取り違えないことを検証する。`ProjectActions`のstable authored tokenコメントも、実writer順序に依存しない説明へ修正した。
+
+Coreは **486 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-d2e169120fe6481bad86022b3870ec83`）。Unity／VRChat実機の外観・挙動は未確認で、完全VRM意味情報の保持も引き続き初期profileの範囲外。
 # 2026-09-13 MCP GLB export snapshot response
 
 `forge_export_glb`の成功レスポンスを、出力report由来のdocument ID・revision・state hashへ変更し、`sourceDiagnosticCount`と`validation.glbSceneInventory`も返すようにした。出力後のworkspaceを読み直して別snapshotを返す経路を避け、AI側がその場でreport検証結果を確認できる。Unity **6000.4.3f1** Player `Builds/McpSnapshotV1/NyaForge.exe`の`-GlbExportMcp` Authoring suiteは **PASS / 82 checks**（`Artifacts/Authoring-20260913-203615-26ca37caffd847b1bae6286ef590f186/report.json`）。

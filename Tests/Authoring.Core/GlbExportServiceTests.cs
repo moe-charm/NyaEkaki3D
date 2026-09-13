@@ -493,16 +493,24 @@ internal static partial class Program
                 new Vec3(index * .01f, 0, 0), new Vec3(index * .01f, .05f, 0))).ToArray();
             var skeleton = new SkeletonDefinition(bones);
             var mesh = AuthoringFixtures.Panel(1);
+            var morphTarget = MorphTarget.Create(mesh, GraphId(), "Happy", new[] { new MorphDelta(0, new Vec3(.01f, 0, 0)) });
+            var morphs = MorphSet.Create(mesh, new[] { morphTarget });
             string sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), outputId = GraphId();
+            string morphId = GraphId();
             var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount)
                 .Select(i => new SkinBinding.VertexWeightInput(i, bones[0].BoneId, 1f)));
             var pose = PoseSet.Create(skeleton, bones.Select(bone => new BonePose(bone.BoneId, PoseTransform.FromTranslation(bone.Head))));
             var graph = new AuthoringGraph(GraphId(),
-                new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.MorphSetNode(morphId, morphs), GraphNode.Output(outputId) },
                 new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
             var workspace = AuthoringWorkspace.CreateEmpty(); Ok(Execute(workspace, AuthoringOperation.AddGraph(graph)));
             var authoredTokens = names.Select((name, index) => new { name, index }).ToDictionary(item => item.name, item => item.index + 1, StringComparer.Ordinal);
-            var metadata = new VrmExportMetadata("Node mapped avatar", new[] { "NyaForge" }, "https://example.com/license", authoredTokens, usesAuthoredNodeTokens: true);
+            var spring = new VrmSpringExport(Array.Empty<VrmSpringColliderExport>(), Array.Empty<VrmSpringColliderGroupExport>(), new[]
+            {
+                new VrmSpringExport.SpringExportGroup("tail", new[] { new VrmSpringJointExport(1, .01f, 1.5f, .2f, new Vec3(0, -1, 0), .4f) }, Array.Empty<int>(), null)
+            });
+            var expressions = new[] { new VrmExpressionExport("happy", "happy", false, new[] { new VrmMorphBind(0, 0, .75f) }) };
+            var metadata = new VrmExportMetadata("Node mapped avatar", new[] { "NyaForge" }, "https://example.com/license", authoredTokens, expressions: expressions, springs: spring, usesAuthoredNodeTokens: true);
             string directory = Path.Combine(Root, "vrm-node-map-" + Guid.NewGuid().ToString("N"));
             var result = VrmExportService.ExportVrm1(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, metadata);
             var root = JObject.Parse(ReadJsonChunk(File.ReadAllBytes(result.Path)));
@@ -513,6 +521,11 @@ internal static partial class Program
                 int node = (int)humanBones[name]!["node"]!;
                 Equal(name, (string)((JObject)nodes[node])!["name"]!);
             }
+            var profile = VrmMetadataReader.Read(File.ReadAllBytes(result.Path));
+            Equal(1, profile.Expressions.Count);
+            Equal("NyaForgeObject-0", (string)((JObject)nodes[profile.Expressions[0].MorphBindings[0].OwnerIndex]!)!["name"]!);
+            Equal(1, profile.SpringBones.Count);
+            Equal(names[0], (string)((JObject)nodes[profile.SpringBones[0].Joints[0].NodeIndex]!)!["name"]!);
         });
 
         Test("skinned GLB export keeps shared skin weights correct when authored bone order differs", () =>
