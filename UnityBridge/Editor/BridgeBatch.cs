@@ -170,6 +170,9 @@ namespace NyaForge.UnityBridge.Editor
             try
             {
                 var result = SkinnedClothingReceiver.ApplyPackage(manifestPath, avatar.transform, map, "Package Fixture Clothing");
+                var managed = result.GameObject.GetComponent<NyaForgeSkinnedClothingManaged>();
+                Require(managed != null && managed.Mesh == result.Mesh && managed.Materials.Length == result.Renderer.sharedMaterials.Length,
+                    "Skinned clothing package ownership marker did not capture generated assets.");
                 string rootBoneId = null;
                 foreach (var bone in package.Skeleton.Bones)
                     if (string.IsNullOrEmpty(bone.ParentBoneId)) { rootBoneId = bone.BoneId; break; }

@@ -50,18 +50,27 @@ namespace NyaForge.UnityBridge.Editor
         {
             if (string.IsNullOrWhiteSpace(manifestPath)) throw new ArgumentException("Package manifest is required.", "manifestPath");
             var package = SkinnedClothingPackage.Read(manifestPath);
-            if (materials != null)
-                return Apply(package.Mesh, new RestTransform(1f, new Vec3()), package.Skeleton, package.Binding,
-                    avatarRoot, boneMap, string.IsNullOrWhiteSpace(objectName) ? package.ObjectId : objectName, materials);
             Material[] packageMaterials = null;
+            Result result = null;
             try
             {
-                packageMaterials = BuildPackageMaterials(package.Materials, package.Mesh.Submeshes.Count);
-                return Apply(package.Mesh, new RestTransform(1f, new Vec3()), package.Skeleton, package.Binding,
-                    avatarRoot, boneMap, string.IsNullOrWhiteSpace(objectName) ? package.ObjectId : objectName, packageMaterials);
+                packageMaterials = materials == null ? BuildPackageMaterials(package.Materials, package.Mesh.Submeshes.Count) : null;
+                result = Apply(package.Mesh, new RestTransform(1f, new Vec3()), package.Skeleton, package.Binding,
+                    avatarRoot, boneMap, string.IsNullOrWhiteSpace(objectName) ? package.ObjectId : objectName,
+                    materials ?? packageMaterials);
+                var marker = result.GameObject.AddComponent<NyaForgeSkinnedClothingManaged>();
+                marker.Bind(package.ObjectId, package.StateHash, result.Mesh, packageMaterials);
+                return result;
             }
             catch
             {
+                if (result != null)
+                {
+                    var marker = result.GameObject == null ? null : result.GameObject.GetComponent<NyaForgeSkinnedClothingManaged>();
+                    if (marker != null) marker.ReleaseOwnedAssets();
+                    else if (result.Mesh != null) Object.DestroyImmediate(result.Mesh);
+                    if (result.GameObject != null) Object.DestroyImmediate(result.GameObject);
+                }
                 if (packageMaterials != null)
                     DestroyOwnedMaterials(packageMaterials);
                 throw;

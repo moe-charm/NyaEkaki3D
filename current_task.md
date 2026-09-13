@@ -32,6 +32,10 @@ Workbenchへ「選択衣装をskin packageで出力」を追加し、参照avata
 
 この回帰はPlayer／Core／合成Bridgeの自動証拠であり、EditorWindowを実マウスで操作した受入、実RadDollV3 sceneへのBoneId割当、ownership更新のUndo、VRChat SDK／Build & Test／実機表示は外部受入として残す。
 
+## 2026-09-13 package生成物のownership markerと材質回帰
+
+packageから生成したSkinnedMeshRendererへ`NyaForgeSkinnedClothingManaged`を付け、NyaForgeが生成したmesh・材質・デコード済みbase-color textureの所有範囲を記録できるようにした。callerが渡した外部Materialは所有対象へ含めず、受け取り失敗時に生成資産を片付ける。Bridgeのpackage回帰は **PASS**（`Artifacts/BridgeReceiver-20260913-224212-476-cee92e7aae4848b6b31b67a5ff832f47/bridge-report.json`）、Unity **6000.4.3f1** Player `Builds/ClothingOwnershipV1/NyaForge.exe` buildも成功（`Logs/build-player-20260913-224227-519.log`）。更新時のUndoと明示削除UIはまだ外部受入・後続作業として残す。
+
 ## 2026-09-13 NF-V1-06 / 05 のCore接続
 
 fitと表面weight転送へ、avatar側の対象三角形を明示的に限定する入力と、転送時の最大距離検査を追加した。三角形番号は`MeshData.Submeshes`を平坦化した順で、選択範囲を別の面へ暗黙に広げない。範囲外・空選択は事前に拒否し、距離超過は`SURFACE_FIT_DISTANCE`／`WEIGHT_TRANSFER_DISTANCE`で停止する。従来の全表面APIは互換overloadとして維持した。
