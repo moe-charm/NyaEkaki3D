@@ -1802,3 +1802,9 @@ MCPのapply経路がGUIのExecuteを経由しないため、history.undo／histo
 4fcd0fd時点のレビューで挙がった保存／出力／ウェイト編集のP1を現行mainへ再照合し、再発防止のCore回帰を追加した。GLB出力はstable BoneId順のinverse-bindと親相対joint-local行列を使い、子が親より先に並ぶ骨格でも回転・非一様拡縮・平行移動を保持することを確認した。source skin表示は評価中の現在SkinBind入力をSourceSkinGraphAdapterへ渡し、ポーズ中のウェイト再割当が表示メッシュへ反映されることを確認した。GraphId付きrig／expression／Spring、表示と静的出力の不一致停止、静的小物取込の既存修正も維持する。
 
 Coreは **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-17e01774b91a44ddb4878de8d86aff1b`）。これはコード経路と合成fixtureの回帰証跡であり、実マウス／DPI差、UniVRM／VRChat SDK受取、実VRChat内の外観・挙動は引き続き別受入境界とする。
+
+# 2026-09-13 MCP状態へattachment identityを追加
+
+MCP／状態読取で形状の`stateHash`とは別に、VRM expression・Spring・rig・PhysBones・secondary-motion等の保存済みattachment全体を識別できる`attachmentsHash`を返すようにした。AI側が保存前後やUndo/Redo後のメタデータ状態を、推測ではなくハッシュで確認できる。`AuthoringStateReader`とCore状態回帰へ接続し、attachment変更後のhash更新も確認した。
+
+Coreは **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2d4b6aa55f8b4a2288d8ab472f029123`）。

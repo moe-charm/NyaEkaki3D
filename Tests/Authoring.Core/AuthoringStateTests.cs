@@ -81,6 +81,13 @@ internal static partial class Program
         {
             var w=AuthoringWorkspace.CreateFixture();var before=AuthoringStateReader.Read(w,w.InstanceId);
             Equal(1,before["objects"].Count());Equal(w.Document.StateHash,(string)before["stateHash"]);
+            Equal(w.Attachments.ContentHash,(string)before["attachmentsHash"]);
+            var metadata = new ProjectAttachments(new System.Collections.Generic.Dictionary<string, byte[]> {
+                [ProjectAttachments.Rig] = new byte[] { 1, 2, 3 }
+            });
+            w.SetAttachments(metadata);
+            var withMetadata = AuthoringStateReader.Read(w,w.InstanceId);
+            Equal(metadata.ContentHash,(string)withMetadata["attachmentsHash"]);
             Ok(Execute(w,AuthoringOperation.TranslateVertices(new[]{0,4},new Vec3(.03f,0,0))));
             var after=AuthoringStateReader.Read(w,w.InstanceId);
             True((long)after["revision"]>(long)before["revision"]);True((bool)after["canUndo"]);
