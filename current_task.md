@@ -1,5 +1,13 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09K: 9855d43衣装レビュー再照合と実RadDollV3受け入れ
+
+提示された`9855d43`基準のP1（avatar移動後の配置、衣装更新時のownership、UV1欠落）とP2（sparse material slot、MR係数、Cuff winding、sampler variant、割当読込）を現行HEAD `4c1cd3c5ed35f57b450a92d278606ad1b71d74aa`へ再照合した。後続実装と回帰で解消済みのため、本番コードの重複修正は行っていない。詳細は[レビュー再照合](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-4c1cd3c.md)へ固定した。
+
+Coreは **505 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-c2301ac2fe9d4cd99a9bf34dd6ab5f2f`）。private Unity `2022.3.22f1`の実RadDollV3プローブも **passed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealAvatar-e341c4481e0c4480bde9a31c8706573e/report.json`）。20 SkinnedMeshRenderer／279 Transformを取込し、実`VRCPhysBone`構成、Body表面fit／weight候補、衣装package適用→再適用→Scene Save/Open後のownership参照を一周した。
+
+これは実アセットを使った機械的経路とUnityシーン永続化の受入であり、実EditorWindowのマウス・IME・Explorer、衣装全周の貫通ゼロ・見た目、VRChat Build & Test／実機表示の完了を意味しない。Workbenchのfit／weightは選択面・選択頂点・最大距離を受け取るbounded overloadへ接続済みで、実マウスによる最終確認を次の手動受入に残す。
+
 ## 2026-09-14 NF-V1-09E: Windows高DPIで制作パネルを表示
 
 実ウィンドウを`1080x700`・Windows DPI 150%（`Screen.dpi=144`）で直接起動したところ、内部の`Screen=1080x700`レイアウトだけを使うと右側の制作controlsが物理描画領域の外へ切れる問題を確認した。`PanelSettings`を実DPI係数（`dpi/96`、1〜2倍）へ合わせ、制作workbenchのroot・左viewport・右controlsへ明示的なflex幅を設定した。自動の注入式UIプローブは従来の1:1 panel-space座標を維持する。
