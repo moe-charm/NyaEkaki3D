@@ -34,6 +34,86 @@ namespace NyaForge.Authoring
         }
     }
 
+    public sealed class VrmSpringColliderExport
+    {
+        public int Node { get; }
+        public string Kind { get; }
+        public Vec3 Offset { get; }
+        public float Radius { get; }
+        public Vec3? Tail { get; }
+        public VrmSpringColliderExport(int node, string kind, Vec3 offset, float radius, Vec3? tail = null)
+        {
+            Checks.Require(node >= 0, "VRM_SPRING_INVALID", "VRM SpringBone collider node is invalid.");
+            Checks.Require(kind == "sphere" || kind == "capsule", "VRM_SPRING_INVALID", "VRM SpringBone collider shape is invalid.");
+            Checks.Finite(offset); Checks.Finite(radius); Checks.Require(radius >= 0, "VRM_SPRING_INVALID", "VRM SpringBone collider radius is invalid.");
+            if (tail.HasValue) Checks.Finite(tail.Value);
+            Checks.Require(kind == "capsule" || !tail.HasValue, "VRM_SPRING_INVALID", "Sphere collider cannot have a tail.");
+            Node = node; Kind = kind; Offset = offset; Radius = radius; Tail = tail;
+        }
+    }
+
+    public sealed class VrmSpringColliderGroupExport
+    {
+        public string Name { get; }
+        public IReadOnlyList<int> ColliderIndices { get; }
+        public VrmSpringColliderGroupExport(string name, IEnumerable<int> colliderIndices)
+        {
+            Checks.Require(name != null && name.Length <= 128, "VRM_SPRING_INVALID", "VRM SpringBone collider group name is invalid.");
+            var values = (colliderIndices ?? Array.Empty<int>()).ToArray();
+            Checks.Require(values.Length > 0 && values.Length <= 1024 && values.All(value => value >= 0), "VRM_SPRING_INVALID", "VRM SpringBone collider group is invalid.");
+            Name = name; ColliderIndices = Array.AsReadOnly(values);
+        }
+    }
+
+    public sealed class VrmSpringJointExport
+    {
+        public int Node { get; }
+        public float HitRadius { get; }
+        public float Stiffness { get; }
+        public float GravityPower { get; }
+        public Vec3 GravityDirection { get; }
+        public float DragForce { get; }
+        public VrmSpringJointExport(int node, float hitRadius, float stiffness, float gravityPower, Vec3 gravityDirection, float dragForce)
+        {
+            Checks.Require(node >= 0, "VRM_SPRING_INVALID", "VRM SpringBone joint node is invalid.");
+            Checks.Finite(hitRadius); Checks.Finite(stiffness); Checks.Finite(gravityPower); Checks.Finite(gravityDirection); Checks.Finite(dragForce);
+            Checks.Require(hitRadius >= 0 && stiffness >= 0 && gravityPower >= 0 && dragForce >= 0 && dragForce <= 1, "VRM_SPRING_INVALID", "VRM SpringBone joint parameter is invalid.");
+            Node = node; HitRadius = hitRadius; Stiffness = stiffness; GravityPower = gravityPower; GravityDirection = gravityDirection; DragForce = dragForce;
+        }
+    }
+
+    public sealed class VrmSpringExport
+    {
+        public IReadOnlyList<VrmSpringColliderExport> Colliders { get; }
+        public IReadOnlyList<VrmSpringColliderGroupExport> ColliderGroups { get; }
+        public IReadOnlyList<VrmSpringExport.SpringExportGroup> Springs { get; }
+        public VrmSpringExport(IEnumerable<VrmSpringColliderExport> colliders, IEnumerable<VrmSpringColliderGroupExport> colliderGroups, IEnumerable<SpringExportGroup> springs)
+        {
+            var colliderValues = (colliders ?? Array.Empty<VrmSpringColliderExport>()).ToArray();
+            var groupValues = (colliderGroups ?? Array.Empty<VrmSpringColliderGroupExport>()).ToArray();
+            var springValues = (springs ?? Array.Empty<SpringExportGroup>()).ToArray();
+            Checks.Require(springValues.Length > 0 && springValues.Length <= 256, "VRM_SPRING_INVALID", "VRM SpringBone export requires at least one spring.");
+            Checks.Require(colliderValues.Length <= 1024 && groupValues.Length <= 256, "VRM_SPRING_INVALID", "VRM SpringBone export exceeds capacity.");
+            foreach (var group in groupValues) foreach (var index in group.ColliderIndices) Checks.Require(index < colliderValues.Length, "VRM_SPRING_INVALID", "VRM SpringBone collider index is out of range.");
+            Colliders = Array.AsReadOnly(colliderValues); ColliderGroups = Array.AsReadOnly(groupValues); Springs = Array.AsReadOnly(springValues);
+        }
+
+        public sealed class SpringExportGroup
+        {
+            public string Name { get; }
+            public IReadOnlyList<VrmSpringJointExport> Joints { get; }
+            public IReadOnlyList<int> ColliderGroupIndices { get; }
+            public int? Center { get; }
+            public SpringExportGroup(string name, IEnumerable<VrmSpringJointExport> joints, IEnumerable<int> colliderGroupIndices, int? center)
+            {
+                Checks.Require(name != null && name.Length <= 128, "VRM_SPRING_INVALID", "VRM SpringBone spring name is invalid.");
+                var jointValues = (joints ?? Array.Empty<VrmSpringJointExport>()).ToArray(); var colliderValues = (colliderGroupIndices ?? Array.Empty<int>()).ToArray();
+                Checks.Require(jointValues.Length > 0 && jointValues.Length <= 1024 && colliderValues.All(value => value >= 0), "VRM_SPRING_INVALID", "VRM SpringBone spring is invalid.");
+                Name = name; Joints = Array.AsReadOnly(jointValues); ColliderGroupIndices = Array.AsReadOnly(colliderValues); Center = center;
+            }
+        }
+    }
+
     /// <summary>Explicit metadata required to publish a VRM 1.0 humanoid package.</summary>
     public sealed class VrmExportMetadata
     {
@@ -44,6 +124,7 @@ namespace NyaForge.Authoring
         /// <summary>VRM human bone name to the node index in the exported glTF.</summary>
         public IReadOnlyDictionary<string, int> HumanoidNodes { get; }
         public IReadOnlyList<VrmExpressionExport> Expressions { get; }
+        public VrmSpringExport Springs { get; }
 
         internal static readonly string[] RequiredHumanBones =
         {
@@ -53,7 +134,7 @@ namespace NyaForge.Authoring
         };
 
         public VrmExportMetadata(string name, IEnumerable<string> authors, string licenseUrl,
-            IReadOnlyDictionary<string, int> humanoidNodes, string version = "1.0", IEnumerable<VrmExpressionExport> expressions = null)
+            IReadOnlyDictionary<string, int> humanoidNodes, string version = "1.0", IEnumerable<VrmExpressionExport> expressions = null, VrmSpringExport springs = null)
         {
             Checks.Require(!string.IsNullOrWhiteSpace(name) && name.Length <= 256, "VRM_METADATA_REQUIRED", "VRM name is required.");
             Checks.Require(!string.IsNullOrWhiteSpace(version) && version.Length <= 64, "VRM_METADATA_REQUIRED", "VRM version is required.");
@@ -72,7 +153,7 @@ namespace NyaForge.Authoring
             var expressionValues = (expressions ?? Array.Empty<VrmExpressionExport>()).ToArray(); var expressionNames = new HashSet<string>(StringComparer.Ordinal);
             foreach (var expression in expressionValues) Checks.Require(expression != null && expressionNames.Add(expression.Name), "VRM_EXPRESSION_INVALID", "VRM expression name repeats.");
             Checks.Require(expressionValues.Length <= 256, "VRM_EXPRESSION_INVALID", "VRM expression count exceeds capacity.");
-            Name = name; Version = version; Authors = Array.AsReadOnly(authorValues); LicenseUrl = licenseUrl; HumanoidNodes = new System.Collections.ObjectModel.ReadOnlyDictionary<string, int>(mapping); Expressions = Array.AsReadOnly(expressionValues);
+            Name = name; Version = version; Authors = Array.AsReadOnly(authorValues); LicenseUrl = licenseUrl; HumanoidNodes = new System.Collections.ObjectModel.ReadOnlyDictionary<string, int>(mapping); Expressions = Array.AsReadOnly(expressionValues); Springs = springs;
         }
     }
 
@@ -93,7 +174,8 @@ namespace NyaForge.Authoring
         public static VrmExportResult ExportVrm1(AuthoringWorkspace workspace, string instance, string document, long revision,
             string directory, VrmExportMetadata metadata,
             IReadOnlyDictionary<string, SourceAffine> instanceWorldTransforms = null,
-            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMatrices = null)
+            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMatrices = null,
+            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointLocalTransforms = null)
         {
             Checks.Require(metadata != null, "VRM_METADATA_REQUIRED", "VRM export metadata is required.");
             if (workspace == null) throw new ArgumentNullException(nameof(workspace));
@@ -109,7 +191,7 @@ namespace NyaForge.Authoring
             string staging = directory + ".staging-" + Guid.NewGuid().ToString("N");
             try
             {
-                var glb = GlbExportService.ExportSkinnedWithTransforms(workspace, instance, document, revision, sourceDirectory, instanceWorldTransforms, inverseBindMatrices);
+                var glb = GlbExportService.ExportSkinnedWithTransforms(workspace, instance, document, revision, sourceDirectory, instanceWorldTransforms, inverseBindMatrices, jointLocalTransforms);
                 byte[] vrmBytes = Package( File.ReadAllBytes(glb.Path), metadata);
                 Checks.Require(vrmBytes.Length <= AuthoringLimits.MaxGlbExportBytes, "BUDGET_EXCEEDED", "VRM output exceeds the 128 MiB budget.");
                 Directory.CreateDirectory(staging);
@@ -126,8 +208,8 @@ namespace NyaForge.Authoring
                     ["stateHash"] = workspace.Document.StateHash,
                     ["vrmHash"] = Checks.Hash(vrmBytes),
                     ["objectCount"] = 1,
-                    ["metadata"] = new JObject { ["name"] = metadata.Name, ["version"] = metadata.Version, ["authors"] = new JArray(metadata.Authors), ["licenseUrl"] = metadata.LicenseUrl, ["humanoidBoneCount"] = metadata.HumanoidNodes.Count, ["expressionCount"] = metadata.Expressions.Count },
-                    ["limitations"] = new JArray("VRM 1.0 humanoid/meta and resolved morphTargetBinds only", "material binds, texture transforms, lookAt, firstPerson and SpringBone are not emitted by this profile", "rest pose only", "graph and native metadata are not embedded")
+                    ["metadata"] = new JObject { ["name"] = metadata.Name, ["version"] = metadata.Version, ["authors"] = new JArray(metadata.Authors), ["licenseUrl"] = metadata.LicenseUrl, ["humanoidBoneCount"] = metadata.HumanoidNodes.Count, ["expressionCount"] = metadata.Expressions.Count, ["springBone"] = metadata.Springs != null },
+                    ["limitations"] = new JArray("VRM 1.0 humanoid/meta, resolved morphTargetBinds and optional VRMC_springBone 1.0 are emitted", "material binds, texture transforms, lookAt, firstPerson and animation are not emitted by this profile", "rest pose only", "graph and native metadata are not embedded")
                 };
                 File.WriteAllText(reportPath, report.ToString(Newtonsoft.Json.Formatting.Indented) + "\n", new UTF8Encoding(false));
                 string parent = System.IO.Path.GetDirectoryName(directory); if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent);
@@ -162,6 +244,17 @@ namespace NyaForge.Authoring
                     var node = nodes[bind.Node] as JObject; var meshToken = node?["mesh"]; Checks.Require(meshToken != null && meshToken.Type == JTokenType.Integer && meshes != null && (int)meshToken >= 0 && (int)meshToken < meshes.Count, "VRM_EXPRESSION_INVALID", "VRM expression bind node has no exported mesh.");
                     var primitives = (meshes[(int)meshToken] as JObject)?["primitives"] as JArray; Checks.Require(primitives != null && primitives.Count > 0 && primitives.OfType<JObject>().All(primitive => primitive["targets"] is JArray && bind.Index < ((JArray)primitive["targets"]).Count), "VRM_EXPRESSION_INVALID", "VRM expression morph index is outside the exported mesh targets.");
                 }
+            if (metadata.Springs != null)
+            {
+                foreach (var collider in metadata.Springs.Colliders) Checks.Require(collider.Node < nodes.Count, "VRM_SPRING_INVALID", "VRM SpringBone collider node is outside the exported node array.");
+                foreach (var group in metadata.Springs.ColliderGroups) foreach (var index in group.ColliderIndices) Checks.Require(index < metadata.Springs.Colliders.Count, "VRM_SPRING_INVALID", "VRM SpringBone collider index is outside the exported collider array.");
+                foreach (var spring in metadata.Springs.Springs)
+                {
+                    foreach (var joint in spring.Joints) Checks.Require(joint.Node < nodes.Count, "VRM_SPRING_INVALID", "VRM SpringBone joint node is outside the exported node array.");
+                    foreach (var index in spring.ColliderGroupIndices) Checks.Require(index < metadata.Springs.ColliderGroups.Count, "VRM_SPRING_INVALID", "VRM SpringBone collider group index is outside the exported array.");
+                    if (spring.Center.HasValue) Checks.Require(spring.Center.Value < nodes.Count, "VRM_SPRING_INVALID", "VRM SpringBone center node is outside the exported node array.");
+                }
+            }
 
             var extension = new JObject
             {
@@ -183,8 +276,27 @@ namespace NyaForge.Authoring
                 }
                 extension["expressions"] = new JObject { ["preset"] = preset, ["custom"] = custom };
             }
-            var extensions = source.Root["extensions"] as JObject ?? new JObject(); extensions["VRMC_vrm"] = extension; source.Root["extensions"] = extensions;
-            var used = source.Root["extensionsUsed"] as JArray ?? new JArray(); if (!used.Values<string>().Contains("VRMC_vrm", StringComparer.Ordinal)) used.Add("VRMC_vrm"); source.Root["extensionsUsed"] = used;
+            var extensions = source.Root["extensions"] as JObject ?? new JObject();
+            var used = source.Root["extensionsUsed"] as JArray ?? new JArray();
+            if (metadata.Springs != null)
+            {
+                var spring = new JObject { ["specVersion"] = "1.0" };
+                if (metadata.Springs.Colliders.Count > 0)
+                    spring["colliders"] = new JArray(metadata.Springs.Colliders.Select(collider => new JObject { ["node"] = collider.Node, ["shape"] = collider.Kind == "sphere" ? new JObject { ["sphere"] = new JObject { ["offset"] = new JArray(collider.Offset.X, collider.Offset.Y, collider.Offset.Z), ["radius"] = collider.Radius } } : new JObject { ["capsule"] = new JObject { ["offset"] = new JArray(collider.Offset.X, collider.Offset.Y, collider.Offset.Z), ["radius"] = collider.Radius, ["tail"] = new JArray(collider.Tail.Value.X, collider.Tail.Value.Y, collider.Tail.Value.Z) } } }));
+                if (metadata.Springs.ColliderGroups.Count > 0)
+                    spring["colliderGroups"] = new JArray(metadata.Springs.ColliderGroups.Select(group => new JObject { ["name"] = group.Name, ["colliders"] = new JArray(group.ColliderIndices) }));
+                spring["springs"] = new JArray(metadata.Springs.Springs.Select(value =>
+                {
+                    var item = new JObject { ["name"] = value.Name, ["joints"] = new JArray(value.Joints.Select(joint => new JObject { ["node"] = joint.Node, ["hitRadius"] = joint.HitRadius, ["stiffness"] = joint.Stiffness, ["gravityPower"] = joint.GravityPower, ["gravityDir"] = new JArray(joint.GravityDirection.X, joint.GravityDirection.Y, joint.GravityDirection.Z), ["dragForce"] = joint.DragForce })) };
+                    if (value.ColliderGroupIndices.Count > 0) item["colliderGroups"] = new JArray(value.ColliderGroupIndices);
+                    if (value.Center.HasValue) item["center"] = value.Center.Value;
+                    return item;
+                }));
+                extensions["VRMC_springBone"] = spring;
+                if (!used.Values<string>().Contains("VRMC_springBone", StringComparer.Ordinal)) used.Add("VRMC_springBone");
+            }
+            extensions["VRMC_vrm"] = extension; source.Root["extensions"] = extensions;
+            if (!used.Values<string>().Contains("VRMC_vrm", StringComparer.Ordinal)) used.Add("VRMC_vrm"); source.Root["extensionsUsed"] = used;
             return Build(source.Root, source.Bin);
         }
 

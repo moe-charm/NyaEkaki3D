@@ -56,12 +56,13 @@ namespace NyaForge.Authoring
         /// <summary>Writes skinned GLB while retaining source inverse-bind matrices per graph object.</summary>
         public static GlbExportResult ExportSkinnedWithTransforms(AuthoringWorkspace workspace, string instance, string document, long revision, string directory,
             IReadOnlyDictionary<string, SourceAffine> instanceWorldTransforms,
-            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMatrices)
+            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMatrices,
+            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointLocalTransforms = null)
             => ExportSkinnedCore(workspace, instance, document, revision, directory, GlbExportProfile.SkinnedGeometry,
                 item => instanceWorldTransforms != null && instanceWorldTransforms.TryGetValue(item.ObjectId, out var value) ? value : null, false,
-                instanceWorldTransforms, inverseBindMatrices);
+                instanceWorldTransforms, inverseBindMatrices, jointLocalTransforms);
 
-        static GlbExportResult ExportSkinnedCore(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, GlbExportProfile profile, Func<AuthoringObject, SourceAffine> transformResolver, bool singleTransformMode, IReadOnlyDictionary<string, SourceAffine> transformMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMap = null)
+        static GlbExportResult ExportSkinnedCore(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, GlbExportProfile profile, Func<AuthoringObject, SourceAffine> transformResolver, bool singleTransformMode, IReadOnlyDictionary<string, SourceAffine> transformMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointTransformMap = null)
         {
             ValidateRequest(workspace, instance, document, revision, directory);
             lock (workspace.Gate)
@@ -71,7 +72,8 @@ namespace NyaForge.Authoring
                 if (transformMap != null)
                     Checks.Require(transformMap.Keys.All(id => workspace.Document.Objects.Any(item => item.ObjectId == id)), "GLB_SKIN_INSTANCE_TRANSFORM", "A skinned instance transform references an unknown graph object.");
                 var skinned = workspace.Document.Objects.Select(item => BuildSkinnedObject(item, transformResolver == null ? null : transformResolver(item),
-                    inverseBindMap != null && inverseBindMap.TryGetValue(item.ObjectId, out var inverseBind) ? inverseBind : null, profile)).ToArray();
+                    inverseBindMap != null && inverseBindMap.TryGetValue(item.ObjectId, out var inverseBind) ? inverseBind : null,
+                    jointTransformMap != null && jointTransformMap.TryGetValue(item.ObjectId, out var joints) ? joints : null, profile)).ToArray();
                 ValidateSharedSkeleton(skinned);
                 var paths = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, profile,
                     workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash);
@@ -95,12 +97,13 @@ namespace NyaForge.Authoring
         /// <summary>Writes extended skinned GLB while retaining source inverse-bind matrices per graph object.</summary>
         public static GlbExportResult ExportSkinnedExtendedWithTransforms(AuthoringWorkspace workspace, string instance, string document, long revision, string directory,
             IReadOnlyDictionary<string, SourceAffine> instanceWorldTransforms,
-            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMatrices)
+            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMatrices,
+            IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointLocalTransforms = null)
             => ExportSkinnedExtendedCore(workspace, instance, document, revision, directory,
                 item => instanceWorldTransforms != null && instanceWorldTransforms.TryGetValue(item.ObjectId, out var value) ? value : null, false,
-                instanceWorldTransforms, inverseBindMatrices);
+                instanceWorldTransforms, inverseBindMatrices, jointLocalTransforms);
 
-        static GlbExportResult ExportSkinnedExtendedCore(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, Func<AuthoringObject, SourceAffine> transformResolver, bool singleTransformMode, IReadOnlyDictionary<string, SourceAffine> transformMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMap = null)
+        static GlbExportResult ExportSkinnedExtendedCore(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, Func<AuthoringObject, SourceAffine> transformResolver, bool singleTransformMode, IReadOnlyDictionary<string, SourceAffine> transformMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointTransformMap = null)
         {
             ValidateRequest(workspace, instance, document, revision, directory);
             lock (workspace.Gate)
@@ -110,7 +113,8 @@ namespace NyaForge.Authoring
                 if (transformMap != null)
                     Checks.Require(transformMap.Keys.All(id => workspace.Document.Objects.Any(item => item.ObjectId == id)), "GLB_SKIN_INSTANCE_TRANSFORM", "A skinned instance transform references an unknown graph object.");
                 var skinned = workspace.Document.Objects.Select(item => BuildSkinnedObject(item, transformResolver == null ? null : transformResolver(item),
-                    inverseBindMap != null && inverseBindMap.TryGetValue(item.ObjectId, out var inverseBind) ? inverseBind : null, GlbExportProfile.SkinnedGeometryExtended)).ToArray();
+                    inverseBindMap != null && inverseBindMap.TryGetValue(item.ObjectId, out var inverseBind) ? inverseBind : null,
+                    jointTransformMap != null && jointTransformMap.TryGetValue(item.ObjectId, out var joints) ? joints : null, GlbExportProfile.SkinnedGeometryExtended)).ToArray();
                 ValidateSharedSkeleton(skinned);
                 var paths = Write(directory, skinned.Select(item => item.Mesh).ToArray(), skinned, GlbExportProfile.SkinnedGeometryExtended,
                     workspace.Document.DocumentId, workspace.Document.DocumentRevision, workspace.Document.StateHash);
@@ -172,6 +176,7 @@ namespace NyaForge.Authoring
             public SkinBinding Binding;
             public PoseSet Pose;
             public IReadOnlyList<SourceAffine> InverseBindMatrices;
+            public IReadOnlyList<SourceAffine> JointLocalTransforms;
         }
 
         static MeshObject BuildStaticObject(AuthoringObject item)
@@ -183,7 +188,7 @@ namespace NyaForge.Authoring
                 Material = evaluation.Output.Material, BaseColor = evaluation.Output.BaseColor, SlotMaterials = evaluation.Output.SlotMaterials };
         }
 
-        static SkinnedObject BuildSkinnedObject(AuthoringObject item, SourceAffine instanceWorldTransform, IReadOnlyList<SourceAffine> inverseBindMatrices, GlbExportProfile profile)
+        static SkinnedObject BuildSkinnedObject(AuthoringObject item, SourceAffine instanceWorldTransform, IReadOnlyList<SourceAffine> inverseBindMatrices, IReadOnlyList<SourceAffine> jointLocalTransforms, GlbExportProfile profile)
         {
             Checks.Require(!item.IsStaticProfile, "GLB_SKIN_PROFILE", "Skinned GLB export requires a graph object.");
             var graph = item.Graph; var evaluation = item.EvaluateGraph();
@@ -239,7 +244,7 @@ namespace NyaForge.Authoring
                 Mesh = new MeshObject { Mesh = authoredOutput, Transform = evaluation.Output.Transform, Morphs = morphs, MorphWeights = weights, Name = item.ObjectId, Affine = instanceWorldTransform,
                     Material = evaluation.Output.Material, BaseColor = evaluation.Output.BaseColor, SlotMaterials = evaluation.Output.SlotMaterials },
                 Skeleton = skeleton, Binding = binding, Pose = pose
-                , InverseBindMatrices = inverseBindMatrices
+                , InverseBindMatrices = inverseBindMatrices, JointLocalTransforms = jointLocalTransforms
             };
         }
 
@@ -535,13 +540,20 @@ namespace NyaForge.Authoring
 
         static int AddSkeleton(BinaryBuffer binary, JArray views, JArray accessors, JArray nodes, JArray skins, JArray sceneNodes, GlbExportService.SkinnedObject skinned)
         {
+            Checks.Require(skinned.JointLocalTransforms == null || skinned.JointLocalTransforms.Count == skinned.Skeleton.Bones.Count,
+                "GLB_SKIN_SKELETON", "Retained joint local transforms must cover every exported joint.");
             var jointNodes = new int[skinned.Skeleton.Bones.Count]; var byId = new Dictionary<string, int>(StringComparer.Ordinal);
             for (int i = 0; i < skinned.Skeleton.Bones.Count; i++) { jointNodes[i] = nodes.Count; byId.Add(skinned.Skeleton.Bones[i].BoneId, jointNodes[i]); nodes.Add(new JObject { ["name"] = skinned.Skeleton.Bones[i].Name }); }
             var roots = new List<int>();
             for (int i = 0; i < skinned.Skeleton.Bones.Count; i++)
             {
                 var bone = skinned.Skeleton.Bones[i]; var node = (JObject)nodes[jointNodes[i]]; var parent = bone.ParentBoneId == "" ? (BoneDefinition)null : skinned.Skeleton.ById[bone.ParentBoneId];
-                var origin = parent == null ? bone.Head : bone.Head - parent.Head; node["translation"] = new JArray(origin.X, origin.Y, origin.Z);
+                if (skinned.JointLocalTransforms != null)
+                    node["matrix"] = new JArray(skinned.JointLocalTransforms[i].ToColumnMajor());
+                else
+                {
+                    var origin = parent == null ? bone.Head : bone.Head - parent.Head; node["translation"] = new JArray(origin.X, origin.Y, origin.Z);
+                }
                 if (parent == null) roots.Add(jointNodes[i]);
                 else
                 {

@@ -1644,3 +1644,16 @@ Coreは **471 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 このprofileはmeta・humanoidと、MorphSetへ解決できるmorphTargetBindsを出力する。material bind、texture transform、LookAt、FirstPerson、SpringBone、MToon、animation、任意VRM拡張は未出力で、`export-report.json`へ制限を記録する。未解決の表情targetは黙って落とさず拒否する。既存のskinned GLBのBIN／geometryを再利用し、CoreでVRM extension再読込とmesh頂点・三角形数の一致を固定した。仕様書とAuthoring READMEにもこの境界を追記した。
 
 Coreは **473 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-574e8b4ed9954863b12b364c0311e4eb`）。新規回帰はVRM1 packageの`VRMC_vrm`・meta・humanoid・morphTargetBinds再読込とGLB geometry不変、および`VrmExportService`の`model.vrm`／レポート生成を検証する。Windows Player `Builds/Vrm1HumanoidV2/NyaForge.exe`のAuthoring suiteは **PASS**（`Artifacts/Authoring-20260913-141819-d7cba444ef044b1c8daf70bd9cc13dfe/report.json`、画面`authoring.png`）。Unity **2022.3.22f1** synthetic Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-141855-421-2d8df4c7896b48e8bd7635873f296452/bridge-report.json`）。実RadDollV3でのVRM1出力、UniVRM／VRChatでの受取・外観・挙動は未検証境界とする。
+# 2026-09-13 P1: 保存・skinned出力・ウェイト表示の整合性修正
+
+古いcommit基準のレビューで再現された4件を現行mainへ再照合し、次を修正した。
+
+- 複数objectのOpen時に、active graphの`ImportedRigSession`・Expressions・Springを同じGraphIdから解決する。legacy単一sessionを別objectのmetadataへ照合しない。
+- source skinのinverse-bindをsource joint slot順のまま渡さず、出力skeletonのstable `BoneId`順へ並べ替える。対応できない骨は出力前に停止する。
+- source nodeのworld matrixから、出力skeleton親子に合わせたjoint local matrixを構成してGLBへ出力し、元の回転・拡縮・中間helperを保持する。matrixがない制作graphは従来のrest-derived translationを使う。
+- source skin表示を取込時の古いbindingで固定せず、現在の`SkinBind`評価結果をsource slotへ変換してから下流graphを再評価する。ウェイト編集後の表示と出力対象が一致する。
+- VRM 1.0出力へ、詳細形状と`gravityDir`が揃ったVRM 1.0由来sessionに限り`VRMC_springBone`（sphere/capsule、collider group、spring joint）を追加した。VRM 0.x、詳細不足、空group、未解決BoneIdは黙って変換せず拒否する。
+
+Coreは **474 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ac362427c5f54bdb8a20ef3a6200159b`）。新規回帰はVRM SpringBone packageの再読込とshape保持を確認した。Unity 6000.4.3f1のWindows Player `Builds/P1FixV4/NyaForge.exe` はコンパイル・ビルド成功。Authoring全件自動suiteは600秒設定で **PASS**（`Artifacts/Authoring-20260913-144051-aa589a686bcd48f4a8893525316f52ea/report.json`、`authoring.png`）。同成果物のUnity 2022.3.22f1 Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-144125-134-189a9721c1684d6cbc8707751a808f89/bridge-report.json`）。
+
+未完了境界は、実モデルでの今回の保存後matrix／ウェイト編集目視、実VRChat／UniVRM受入、VRM material bind・LookAt・FirstPerson・MToon・animation・任意拡張、異なるskeleton結合、自動fit・貫通修正。次回は短い専用fixtureでP1の保存→再読込→GLB再取込をPlayer検証し、長時間suiteと分けて証拠化する。

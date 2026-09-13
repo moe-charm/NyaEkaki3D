@@ -121,7 +121,7 @@ namespace NyaForge.UnityRuntime
                 Check(File.Exists(skinExport), "Skin-bound accessory native export was not published");
                 string glbDirectory = Path.Combine(skinProject, "exports", "skinned-glb");
                 var glb = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId, workspace.Document.DocumentId,
-                    workspace.Document.DocumentRevision, glbDirectory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices());
+                    workspace.Document.DocumentRevision, glbDirectory, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms());
                 Check(File.Exists(glb.Path), "Skin-bound accessory standard GLB export was not published");
                 Check(File.Exists(glb.ReportPath), "Skin-bound accessory GLB export report was not published");
                 var glbReport = JObject.Parse(File.ReadAllText(glb.ReportPath));

@@ -31,6 +31,10 @@ namespace NyaForge.Authoring.Graph
         /// <summary>Applies complete source skin data to the mesh input of the authored SkinDeform node.</summary>
         public static GraphMeshValue ApplyToEvaluation(GraphEvaluation evaluation, AuthoringGraph graph,
             ImportedRigSession session)
+            => ApplyToEvaluation(evaluation, graph, session, null);
+
+        public static GraphMeshValue ApplyToEvaluation(GraphEvaluation evaluation, AuthoringGraph graph,
+            ImportedRigSession session, SkinBinding authoredBinding)
         {
             Checks.Require(evaluation != null && graph != null && session != null, "INVALID_IMPORT", "Graph evaluation, graph and source session are required.");
             Checks.Require(session.SourceSkin != null && session.SourceSkinBinding != null,
@@ -54,7 +58,8 @@ namespace NyaForge.Authoring.Graph
                 if (pose == null) { pose = candidatePose; skeletonHash = skeleton.Skeleton.ContentHash; poseHash = pose.Pose.ContentHash; }
                 else Checks.Require(skeletonHash == skeleton.Skeleton.ContentHash && poseHash == candidatePose.Pose.ContentHash,
                     "IMPORT_GRAPH_UNSUPPORTED", "Multiple SkinDeform nodes must share one skeleton and pose for source skin display.");
-                overrides[deform.NodeId] = Apply(input, session, graph, candidatePose.Pose);
+                var sourceBinding = authoredBinding == null ? session.SourceSkinBinding : ToSourceBinding(input.Mesh, session, authoredBinding);
+                overrides[deform.NodeId] = Apply(input, session, graph, candidatePose.Pose, sourceBinding);
             }
             // Replace each authored SkinDeform output, then run the ordinary graph evaluator
             // again. Downstream EditMesh/Morph/Material nodes therefore see the source-skinned
@@ -86,6 +91,27 @@ namespace NyaForge.Authoring.Graph
                 "IMPORT_SOURCE_SKIN_MISSING", "A complete source skin session is required.");
             return Apply(input, session.SourceSkin, session.SourceSkinBinding,
                 SourceSkinPosePalette.Build(session, graph, authoredPose), appearance);
+        }
+
+        static GraphMeshValue Apply(GraphMeshValue input, ImportedRigSession session, AuthoringGraph graph, PoseSet authoredPose, SourceSkinBinding sourceBinding)
+        {
+            return Apply(input, session.SourceSkin, sourceBinding,
+                SourceSkinPosePalette.Build(session, graph, authoredPose), null);
+        }
+
+        static SourceSkinBinding ToSourceBinding(MeshData mesh, ImportedRigSession session, SkinBinding authored)
+        {
+            var slotByBone = new Dictionary<string, int>(System.StringComparer.Ordinal);
+            for (int slot = 0; slot < session.SourceSkin.Joints.Count; slot++)
+                if (session.NodeToBone.TryGetValue(session.SourceSkin.Joints[slot], out var boneId)) slotByBone[boneId] = slot;
+            var raw = new List<SourceSkinWeight>();
+            foreach (var pair in authored.Weights.OrderBy(pair => pair.Key))
+                foreach (var weight in pair.Value)
+                {
+                    Checks.Require(slotByBone.TryGetValue(weight.BoneId, out var slot), "IMPORT_SOURCE_SKIN_MISSING", "Authored skin binding references a bone without a source joint slot.");
+                    raw.Add(new SourceSkinWeight(pair.Key, slot, weight.Weight));
+                }
+            return SourceSkinBinding.Create(mesh, session.SourceSkin, raw);
         }
     }
 }

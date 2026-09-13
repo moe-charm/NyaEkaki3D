@@ -311,6 +311,25 @@ internal static partial class Program
             Equal(1, profile.Expressions.Count); Equal("happy", profile.Expressions[0].Name); Equal(1, profile.Expressions[0].MorphTargetBindCount); Near(.75f, profile.Expressions[0].MorphBindings[0].Weight);
         });
 
+        Test("VRM 1 package emits VRMC_springBone 1.0 inventory", () =>
+        {
+            var mesh = AuthoringFixtures.Panel(1);
+            var glb = GlbWriter.Build(new[] { new GlbExportService.MeshObject { Mesh = mesh, Name = "avatar" } }, null, GlbExportProfile.StaticGeometry);
+            var humanoid = VrmExportMetadata.RequiredHumanBones.ToDictionary(name => name, _ => 0, StringComparer.Ordinal);
+            var spring = new VrmSpringExport(
+                new[] { new VrmSpringColliderExport(0, "capsule", new Vec3(0, .1f, 0), .02f, new Vec3(0, .2f, 0)) },
+                new[] { new VrmSpringColliderGroupExport("body", new[] { 0 }) },
+                new[] { new VrmSpringExport.SpringExportGroup("tail", new[] { new VrmSpringJointExport(0, .01f, 1.5f, .2f, new Vec3(0, -1, 0), .4f) }, new[] { 0 }, null) });
+            var metadata = new VrmExportMetadata("Nya spring avatar", new[] { "NyaForge" }, "https://example.com/license", humanoid, springs: spring);
+            var vrm = VrmExportService.Package(glb, metadata);
+            var root = JObject.Parse(ReadJsonChunk(vrm));
+            var extension = (JObject)root["extensions"]!["VRMC_springBone"]!;
+            Equal("1.0", (string)extension["specVersion"]!); Equal(1, ((JArray)extension["colliders"]!).Count); Equal(1, ((JArray)extension["springs"]!).Count);
+            True(((JArray)root["extensionsUsed"]!).Values<string>().Contains("VRMC_springBone"));
+            var profile = VrmMetadataReader.Read(vrm);
+            Equal(1, profile.SpringBones.Count); Equal(1, profile.SpringColliderGroups.Count); Equal("capsule", profile.SpringColliderGroups[0].Shapes[0].Kind);
+        });
+
         Test("VRM 1 export writes a revision-pinned package directory", () =>
         {
             var mesh = AuthoringFixtures.Panel(1); string boneId = GraphId();

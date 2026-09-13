@@ -18,10 +18,13 @@ namespace NyaForge.UnityRuntime
                 return null;
             string poseHash = graph.Nodes.Values.Where(node => node.TypeId == BuiltinNodes.Pose && node.Pose != null)
                 .Select(node => node.Pose.ContentHash).OrderBy(hash => hash, StringComparer.Ordinal).FirstOrDefault() ?? "";
-            string key = graph.GraphId + ":" + (evaluation.Output?.SnapshotHash ?? "") + ":" + poseHash + ":" + importedRigSession.SourceHash;
+            var bindingNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);
+            var currentBinding = bindingNode != null && evaluation.SkinBindingOutputs.TryGetValue(bindingNode.NodeId, out var bindingValue) ? bindingValue.Binding : bindingNode?.Binding;
+            string bindingKey = currentBinding == null ? "" : string.Join(";", currentBinding.Weights.OrderBy(pair => pair.Key).Select(pair => pair.Key + "=" + string.Join(",", pair.Value.Select(weight => weight.BoneId + ":" + weight.Weight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)))));
+            string key = graph.GraphId + ":" + (evaluation.Output?.SnapshotHash ?? "") + ":" + poseHash + ":" + importedRigSession.SourceHash + ":" + bindingKey;
             if (key == sourceSkinDisplayKey) return sourceSkinDisplayValue;
             sourceSkinDisplayKey = key; sourceSkinDisplayValue = null;
-            try { sourceSkinDisplayValue = SourceSkinGraphAdapter.ApplyToEvaluation(evaluation, graph, importedRigSession); }
+            try { sourceSkinDisplayValue = SourceSkinGraphAdapter.ApplyToEvaluation(evaluation, graph, importedRigSession, currentBinding); }
             catch (AuthoringException) { }
             return sourceSkinDisplayValue;
         }
