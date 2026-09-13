@@ -1808,3 +1808,5 @@ Coreは **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 MCP／状態読取で形状の`stateHash`とは別に、VRM expression・Spring・rig・PhysBones・secondary-motion等の保存済みattachment全体を識別できる`attachmentsHash`を返すようにした。AI側が保存前後やUndo/Redo後のメタデータ状態を、推測ではなくハッシュで確認できる。`AuthoringStateReader`とCore状態回帰へ接続し、attachment変更後のhash更新も確認した。
 
 Coreは **476 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2d4b6aa55f8b4a2288d8ab472f029123`）。
+
+Windows Player `Builds/StateIdentityV1/NyaForge.exe` のRadDollV3全mesh Authoring回帰も **PASS**（`Artifacts/Authoring-20260913-165352-4f8f0b1535304817bacbf22f607d5e4a/report.json`）。同じ成果物をUnity **2022.3.22f1** Bridgeへ渡した受け取り検証も **PASS**（`Artifacts/BridgeReceiver-20260913-165607-326-e4802bf2ad78487193be352cfc688dab/bridge-report.json`）。
