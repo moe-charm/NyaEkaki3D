@@ -4,7 +4,7 @@ ChatGPT Proの持込Windows v1案を現行mainへ照合し、[採用修正版](d
 
 ## 2026-09-14 Downloads版Windows v1案の再確認
 
-`C:\Users\tomoaki\Downloads\NyaForge-Windows-v1-Development-Plan.md`を現行`main`（`f5df9f8`）と再照合した。**方針は妥当で、遠回りにはなっていない。** 既存の編集基盤を作り直さず、既存アバターへ衣装だけを渡す出口、造形→skinの一周、semantic texture、再適用、実受入を分ける順序は採用する。
+`C:\Users\tomoaki\Downloads\NyaForge-Windows-v1-Development-Plan.md`を検証対象コード`main`（`3d5de41`）と再照合した。**方針は妥当で、遠回りにはなっていない。** 既存の編集基盤を作り直さず、既存アバターへ衣装だけを渡す出口、造形→skinの一周、semantic texture、再適用、実受入を分ける順序は採用する。
 
 原案からの実務上の修正は採用修正版へ反映済みである。NF-V1-02を02A/02Bへ分割し、衣装package/receiver（03A）をG1へ前倒しし、実SDK・実VRChat・実マウスをCore/Player/合成Bridgeと混同しない。12週間・週20〜25時間は見積りの仮定として採用せず、最小受け渡しと一着の実測後に見直す。
 
@@ -18,11 +18,15 @@ VCCキャッシュの`com.vrchat.base`／`com.vrchat.avatars` **3.7.6**を公開
 
 同じprivate projectへ`RadDollV3.fbx`を置き、Unity AssetDatabaseで読み込んだところ、20個の`SkinnedMeshRenderer`、279 transform、renderer bone参照3420件、共通root `Hips` を検出した。証拠は`private/PhysBonesSdkProbe-20260914/avatar-import-report.json`。これは骨格の存在確認であり、衣装packageの適用やVRChat Build & Testの成功とは扱わない。
 
+## 2026-09-14 実RadDollV3 PhysBone設定probe
+
+同じprivate projectで、実際にimportされたRadDollV3の`Skirt_B_1_1.L`→`Skirt_B_1_2.L`直下chainへ、reflection adapter経由でSDK 3.7.6の`VRCPhysBone`を生成・設定した。Stable UUIDのBoneId map、root、endpoint Auto、既定parametersを事前検証後に適用し、`physBoneConfigured: true`を確認した。証拠は`private/PhysBonesSdkProbe-20260914/avatar-physbone-report.json`。これは実SDK型と実アバター階層の接続確認であり、衣装packageの適用、揺れの見た目、Build & Test、実VRChat内受入を完了扱いしない。
+
 ## 次に実装するカード
 
 | 順 | ID | 状態 | 次の具体作業・完了条件 |
 |---|---|---|---|
-| 1 | NF-V1-01 / 03 | manifest・実SDK probe済み / 実アバター外部受入BLOCKED | private受け取りprojectでSDK 3.7.6の実`VRCPhysBone`解決・生成・stable root/BoneId設定まで確認済み。次は実アバターsceneの明示割当とBuild & Testを行い、未実施の実VRChatはBLOCKEDとして残す |
+| 1 | NF-V1-01 / 03 | manifest・実SDK／実RadDollV3 chain probe済み / 外部受入BLOCKED | private受け取りprojectでSDK 3.7.6の実`VRCPhysBone`解決・生成・stable root/BoneId設定、RadDollV3のSkirt直下chain設定まで確認済み。次は実アバターsceneの全対象chain明示割当とBuild & Testを行い、未実施の実VRChatはBLOCKEDとして残す |
 | 2 | NF-V1-03A | 実装・合成Bridge受入済み / 実アバター適用未受入 | private SDK probeで実RadDollV3 FBXのUnity import（20 SkinnedMeshRenderer、279 transforms、Hips root）まで確認。次は同sceneで`skinned-clothing-v1`のBoneId明示割当→初回適用→再適用を確認 |
 | 3 | NF-V1-04 / 05 / 06 / 07 | Core/Player実装済み・手動未受入 | Polygon派生→UV/paint→確定→範囲限定fit/weight→pose確認を実マウスで通し、参照body保護・Undo・Save/Openを確認 |
 | 4 | NF-V1-08 | カフ試作経路実装・Player受入済み / 実アバター未受入 | 低ポリ手首カフを頂点編集し、実RadDollV3へfit・weight・Unity適用・VRChat確認。自動テンプレート通過を販売品質と扱わない |

@@ -1,6 +1,6 @@
 # Windows v1 検証環境マニフェスト
 
-記録日: 2026-09-14。現行main照合: `f5df9f8`。直近Core証拠の実行対象commitは同commit。これは出荷環境の保証ではなく、同じ検証を再実行するための基準である。
+記録日: 2026-09-14。検証対象コード: `main` `3d5de41`。直近Core証拠の実行対象commitは同commit。これは出荷環境の保証ではなく、同じ検証を再実行するための基準である。
 
 ## 現在固定できているもの
 
@@ -32,7 +32,8 @@
 - EditorWindowの実マウス操作、DPI 100/150/200%、日本語・空白path、別Windows環境は未受入である。
 
 - SDK probe証拠: `private/PhysBonesSdkProbe-20260914/sdk-probe-report.json`（`status: verified`）。private project・SDK DLL・private avatar素材は公開しない。
-- RadDollV3 Unity import probe: `private/PhysBonesSdkProbe-20260914/avatar-import-report.json`（20 `SkinnedMeshRenderer`、279 transforms、共通root `Hips`）。衣装package適用と実VRChat Build & Testは未受入。
+- RadDollV3 Unity import probe: `private/PhysBonesSdkProbe-20260914/avatar-import-report2.json`（20 `SkinnedMeshRenderer`、279 transforms、renderer bone参照3420件、共通root `Hips`）。
+- RadDollV3実chain PhysBone probe: `private/PhysBonesSdkProbe-20260914/avatar-physbone-report.json`（`Skirt_B_1_1.L`→`Skirt_B_1_2.L`へ実`VRCPhysBone`設定済み）。衣装package適用、実scene全chain、Build & Test、実VRChatは未受入。
 
 ## 使い方
 

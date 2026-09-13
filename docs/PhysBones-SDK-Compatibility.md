@@ -28,6 +28,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgePhysBon
 ## 証跡
 
 - 最新probe: `private/PhysBonesSdkProbe-20260914/sdk-probe-report.json`（2026-09-14、`status: verified`、Unity probe `passed`）。Unity `2022.3.22f1`でSDK 3.7.6の実`VRCPhysBone`を解決し、preflight、非対応値の事前拒否、stable root/BoneId設定、実コンポーネント生成を確認した。private projectとSDK DLLは公開しない。
+- 実アバター接続probe: `private/PhysBonesSdkProbe-20260914/avatar-physbone-report.json`（`status: passed`）。同じUnity／SDKでRadDollV3 FBXをimportし、`Skirt_B_1_1.L`→`Skirt_B_1_2.L`直下chainへreflection adapterから実`VRCPhysBone`を生成・設定した。これは型・階層・BoneId接続の確認で、揺れの見た目、衣装適用、Build & Test、実VRChat受入は含まない。
 
 - 実SDK probe: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-script-20260913-final2.json`（`status: verified`、probe reportの`status: passed`、非対応値の事前拒否と実コンポーネント生成・設定まで確認）
 - Core: 476 passed / 0 failed（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-cebf69dc5bb5449d9e10ffe45b43746b`）
