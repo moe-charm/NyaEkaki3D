@@ -82,7 +82,23 @@ namespace NyaForge.UnityRuntime
             // command line, the otherwise empty parent can resolve its content
             // width from the viewport and push the controls column off-screen.
             root.style.position = Position.Absolute;
-            root.style.left = root.style.top = root.style.right = root.style.bottom = 0;
+            root.style.left = root.style.top = 0;
+            root.style.right = root.style.bottom = 0;
+            // PanelSettings.scale enlarges both layout pixels and their
+            // rendered output. On a per-monitor-DPI window the panel's
+            // drawable surface is already smaller than Screen.width, so a
+            // full-width child would be enlarged a second time and clip the
+            // controls column. Reserve one more scale factor for the actual
+            // workbench while keeping injected panel-space probes at 1:1.
+            bool injectedUiProbe = Environment.GetCommandLineArgs().Any(a => a == "--authoring-check-output" || a == "--navigation-check");
+            if (!injectedUiProbe && Screen.dpi > 96f)
+            {
+                float dpiScale = Mathf.Clamp(Screen.dpi / 96f, 1f, 2f);
+                root.style.right = StyleKeyword.Auto;
+                root.style.bottom = StyleKeyword.Auto;
+                root.style.width = Screen.width / (dpiScale * dpiScale);
+                root.style.height = Screen.height / (dpiScale * dpiScale);
+            }
             root.style.flexGrow = 1;
             root.style.minHeight = 0;
             parent.Add(root);
