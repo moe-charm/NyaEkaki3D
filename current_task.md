@@ -1,6 +1,14 @@
-# Nya Ekaki 3D — 現在のタスク（2026-09-13 再計画）
+# Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
 ChatGPT Proの持込Windows v1案を現行mainへ照合し、[採用修正版](docs/Windows-v1-Development-Plan.md)へタスク化した。方針は採用するが、実SDK／実VRChat未受入を完了扱いにせず、実装済みの衣装受け渡しを重複開発しない。製品全体のC0〜C5と進行中goalは維持する。以降の着手順はこの欄と採用修正版を優先し、下に残る日付付き記録の「次」は当時の履歴として読む。
+
+## 2026-09-14 Downloads版Windows v1案の再確認
+
+`C:\Users\tomoaki\Downloads\NyaForge-Windows-v1-Development-Plan.md`を現行`main`（`f5df9f8`）と再照合した。**方針は妥当で、遠回りにはなっていない。** 既存の編集基盤を作り直さず、既存アバターへ衣装だけを渡す出口、造形→skinの一周、semantic texture、再適用、実受入を分ける順序は採用する。
+
+原案からの実務上の修正は採用修正版へ反映済みである。NF-V1-02を02A/02Bへ分割し、衣装package/receiver（03A）をG1へ前倒しし、実SDK・実VRChat・実マウスをCore/Player/合成Bridgeと混同しない。12週間・週20〜25時間は見積りの仮定として採用せず、最小受け渡しと一着の実測後に見直す。
+
+semantic normal/MRは現行実装で一周したため、ここから先はAO/emissive・全shader・FBX/BLEND・完全VRM・Quest/macOSを増やさず、NF-V1-01/03の受け取り環境とNF-V1-04〜08のカフ一着手動完走を優先する。実SDKが用意できない間はBLOCKEDの証拠を維持し、Core 493件PASSや合成Bridge PASSを実VRChat合格へ読み替えない。
 
 ## 次に実装するカード
 
