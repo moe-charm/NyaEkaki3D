@@ -13,6 +13,17 @@
 
 この変更で高DPI時の右パネル切れというコード上の問題は閉じた。100/150/200%の実マウス操作、空白path・日本語IME、実アバターの全周fit・貫通・見た目、VRChat Build & Test／実機は手動受入として残す。
 
+## 2026-09-14 NF-V1-09H: 狭い実ウィンドウで上部操作を折り返し
+
+1080論理px・DPI150%の実ウィンドウでは、制作画面上部の「ビューワーに戻る」「ノード表示 / 非表示」が横幅不足で縮み、ラベルが切れる状態を確認した。上部rowのラベルとボタンを縮めず、既存の折り返しを使って2段へ送るようにした。
+
+- コード: `c29ad83`（`fix: wrap authoring toolbar controls on narrow windows`）
+- Player: `Builds/ReleaseCandidateV24/NyaForge.exe`
+- 自動Authoring suite: **PASS**（`Artifacts/Authoring-20260914-073925-80038ce496114460bf12388f54f870d3/report.json`、`1080x700`）
+- 実ウィンドウ: **2つの上部操作ボタンが折り返され、文字が読めることを確認**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-manual-v24-1080.png`）
+
+狭い幅ではviewportの説明文が複数行になるため、実際の制作は1600論理px程度の広さを推奨する。実マウス・IME・Explorer、実RadDollV3全周fit、VRChatは未受入のまま残す。
+
 ## 2026-09-14 NF-V1-09F: V19実RadDollV3一周スモーク
 
 最新V19 Playerへprivate一時RadDollV3 VRMを渡し、全mesh取込、EditMesh、native Save/Open、標準skinned GLB／VRM1出力、制御fixtureのskinned clothing package生成を再実行した。生成packageをUnity **2022.3.22f1** Bridgeへ渡し、stable BoneId、bind pose、avatar-local translation／rotation／scale、材質・semantic map、ownership更新・削除Undoを含む**16 checks PASS**で確認した。private入力は公開ツリーへコピーしていない。

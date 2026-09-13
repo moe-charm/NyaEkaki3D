@@ -1,6 +1,6 @@
 # Windows v1 検証環境マニフェスト
 
-記録日: 2026-09-14。検証対象コード: `main` `3dfbccf`。直近Core証拠の実行対象commitは同commit。これは出荷環境の保証ではなく、同じ検証を再実行するための基準である。
+記録日: 2026-09-14。検証対象コード: `main` `c29ad83`。直近Core証拠の実行対象commitは同commit。これは出荷環境の保証ではなく、同じ検証を再実行するための基準である。
 
 ## 現在固定できているもの
 
@@ -21,7 +21,7 @@
 ## fixtureと証拠
 
 - Core: `dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`。検証対象mainで **505 passed / 0 failed**（最新artifact: `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2bd33d69fb4843c9960f648d30d381b4`、JPEG原画像MIME・bytes保持回帰を含む）。最新package fixtureはpublic repositoryへ置かず、一時artifactへ出力する。
-- Windows Player: `Builds/ReleaseCandidateV10/NyaForge.exe`で確認したprivate一時RadDollV3 VRMの全mesh取込→EditMesh→native Save/Open→標準skinned GLB／VRM出力、semantic texture、原画像source inspection、未編集base-color原画像再出力の証拠は従来artifactを参照する。高DPI UI回帰と実RadDollV3一周スモークは`Builds/ReleaseCandidateV23/NyaForge.exe`で追加確認した。Player reportは`Artifacts/Authoring-20260914-071904-d5dacd0d18284842a6f1ed2868f3c07d/report.json`、Unity Bridge 16 checksは`Artifacts/BridgeReceiver-20260914-072421-931-2f5e73fbea2d4c288580e5fc6d654b80/bridge-report.json`、高DPI画面証跡は`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-manual-v23-1600.png`である。
+- Windows Player: `Builds/ReleaseCandidateV10/NyaForge.exe`で確認したprivate一時RadDollV3 VRMの全mesh取込→EditMesh→native Save/Open→標準skinned GLB／VRM出力、semantic texture、原画像source inspection、未編集base-color原画像再出力の証拠は従来artifactを参照する。高DPI UI回帰は`Builds/ReleaseCandidateV24/NyaForge.exe`、実RadDollV3一周スモークは`Builds/ReleaseCandidateV23/NyaForge.exe`で追加確認した。Player reportは`Artifacts/Authoring-20260914-071904-d5dacd0d18284842a6f1ed2868f3c07d/report.json`、Unity Bridge 16 checksは`Artifacts/BridgeReceiver-20260914-072421-931-2f5e73fbea2d4c288580e5fc6d654b80/bridge-report.json`、高DPI画面証跡は`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-manual-v24-1080.png`である。
 - Unity Bridge: 上記Player reportと衣装packageを使った合成receiver回帰。`Artifacts/BridgeReceiver-20260914-063802-587-d17638bb920544bcb4192f9ef4b84e43/bridge-report.json`（PASS）。packageのBoneId、bindpose、材質、ownership、semantic map適用を含む。
 - private素材は公開リポジトリへ追加しない。入力pathやsceneはローカル証拠でのみ管理し、共有時はhashと匿名化したreportを使う。
 
