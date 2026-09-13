@@ -1,3 +1,6 @@
+# 2026-09-13 surface fit metrics real RadDollV3 recheck
+
+`Builds/FitMetricsV1/NyaForge.exe`へprivate一時RadDollV3 VRMを指定し、取込→EditMesh頂点編集→native Save/Open→標準skinned GLB出力・再取込→初期VRM 1.0 package出力・metadata再読込を再確認した。Authoring suiteは **89 checks PASS**（`Artifacts/Authoring-20260913-201357-6d1e26f92eb5478d8b0123685f9b7103/report.json`、画面 `authoring.png`）。同成果物のUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260913-201553-781-4e63a53bcd2148eba8a8db1fbcd9d30e/bridge-report.json`）。private素材はpublic repositoryへ追加していない。
 # 2026-09-13 surface fit quality metrics Player acceptance
 
 Unity **6000.4.3f1** Windows Player `Builds/FitMetricsV1/NyaForge.exe` を再ビルドし、Authoring suiteを **PASS / 82 checks**（`Artifacts/Authoring-20260913-201218-cd4cc58d2e6c43928975c3fdbe5fb11/report.json`、画面 `authoring.png`）で確認した。avatar＋static GLB衣装のsurface fit後ステータスが移動頂点数・最大投影距離・最大移動量を含むこと、距離超過時の文書不変、既存のUndo／Save/Open／GLB出力導線が継続して通ることを回帰した。ビルドログは`Logs/build-player-20260913-201154-323.log`。
