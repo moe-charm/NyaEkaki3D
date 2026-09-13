@@ -1,3 +1,9 @@
+# 2026-09-13 private RadDollV3 VRM1 export recheck
+
+private一時RadDollV3 VRMをWindows Player `Builds/LegacyMigrationV1/NyaForge.exe`へ指定し、取込→EditMesh頂点編集→native Save/Open→標準skinned GLB出力・再取込→初期VRM 1.0 package出力・metadata再読込まで確認した。suiteは **89 checks PASS**（`Artifacts/Authoring-20260913-195925-52de0f979d3742aca92e4d1f02146594/report.json`、画面 `authoring.png`）。VRM出力ではsource GLBのtopology／vertex・triangle数とskeleton cardinalityを保持し、humanoid／expression／Springのnode参照を再読込できた。Unity Bridge（2022.3.22f1）も **PASS**（`Artifacts/BridgeReceiver-20260913-200125-711-53b841c4e2874885b86fb21d28f625cb/bridge-report.json`）。
+
+これは現行 `Vrm1Humanoid` 初期profileの実モデル証拠であり、material bind、texture transform、LookAt、FirstPerson、MToon、animation、任意VRM拡張、実VRChat内の外観・挙動はprofileの制限として残る。private素材はリポジトリへ追加していない。
+
 # 2026-09-13 private RadDollV3 real-model recheck
 
 private一時フォルダに置いたRadDollV3のVRMを、Windows Player `Builds/LegacyMigrationV1/NyaForge.exe`へコマンドライン指定して、実モデルの取込→編集用メッシュ生成→頂点編集→native Save/Open→標準skinned GLB出力・再取込まで確認した。suiteは **86 checks PASS**（`Artifacts/Authoring-20260913-195054-b6babce0d79e4d9bba30bf86eac229cb/report.json`、画面 `authoring.png`）。privateモデル自体はリポジトリへ追加していない。
