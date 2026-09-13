@@ -13,6 +13,17 @@
 
 この変更で高DPI時の右パネル切れというコード上の問題は閉じた。100/150/200%の実マウス操作、空白path・日本語IME、実アバターの全周fit・貫通・見た目、VRChat Build & Test／実機は手動受入として残す。
 
+## 2026-09-14 NF-V1-09F: V19実RadDollV3一周スモーク
+
+最新V19 Playerへprivate一時RadDollV3 VRMを渡し、全mesh取込、EditMesh、native Save/Open、標準skinned GLB／VRM1出力、制御fixtureのskinned clothing package生成を再実行した。生成packageをUnity **2022.3.22f1** Bridgeへ渡し、stable BoneId、bind pose、avatar-local translation／rotation／scale、材質・semantic map、ownership更新・削除Undoを含む**16 checks PASS**で確認した。private入力は公開ツリーへコピーしていない。
+
+- Player: `Builds/ReleaseCandidateV19/NyaForge.exe`
+- Player report: `Artifacts/Authoring-20260914-071904-d5dacd0d18284842a6f1ed2868f3c07d/report.json`
+- Clothing package: `Artifacts/Authoring-20260914-071904-d5dacd0d18284842a6f1ed2868f3c07d/imported-accessory-skin-project/exports/clothing-20260913-222128-e28c83/skinned-clothing.nyaforge.json`
+- Bridge report: `Artifacts/BridgeReceiver-20260914-072421-931-2f5e73fbea2d4c288580e5fc6d654b80/bridge-report.json`
+
+これは実モデルの取込から受け渡しまでの回帰であり、実RadDollV3へ新規衣装を全周fitして貫通・見た目を人間が受入した記録ではない。VRChat Build & Test／実機表示、100/150/200%の実マウス・IME・Explorer操作も手動受入として残す。
+
 ## 2026-09-14: 手動受入表をReleaseCandidateV10へ同期
 
 手動チェック表の対象を古い`ReleaseCandidateV2`から、原画像sourceの未編集時再出力まで含む現行`ReleaseCandidateV10`（コード`43cb551`）へ更新した。衣装一周の項目へ、base-colorの原画像サイズ・作業画像サイズ・MIME・hashのinspection確認と、Paint編集後にpreviewへフォールバックするGLB確認を追加した。環境マニフェストもCore 505件とV10 Player／Bridge証跡へ同期した。これは手動操作を実施した記録ではなく、次の実操作で使う候補・確認条件の同期である。
