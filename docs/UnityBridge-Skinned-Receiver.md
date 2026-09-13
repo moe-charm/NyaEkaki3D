@@ -54,7 +54,10 @@ every package BoneId, a read-only preflight, and a saved
 `NyaForgeSkinnedClothingBinding` on the avatar root. Reapplying a newer package
 reuses the managed object only when its stable ObjectId matches; an unrelated
 managed object is refused. A failed package read or receiver validation leaves
-the previous generated object in place.
+the previous generated object in place. The same window also offers
+`管理対象の衣装を削除（Undo可）`; it clears only the generated-object
+association and records the operation in Unity Undo, while refusing objects
+outside the selected avatar root or with a different ObjectId.
 
 When the caller omits explicit `Material[]`, `ApplyPackage` creates one Unity
 Standard material per submesh from the package GLB's imported base-color

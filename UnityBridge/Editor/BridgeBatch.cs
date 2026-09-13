@@ -208,6 +208,9 @@ namespace NyaForge.UnityBridge.Editor
                     "Skinned clothing ownership identity did not round-trip.");
                 Require(binding.TryGetBone(rootId, out var resolved) && resolved == bone.transform,
                     "Skinned clothing BoneId binding lookup failed.");
+                binding.ClearGeneratedObject();
+                Require(binding.GeneratedObject == null && !binding.MatchesObject(objectId),
+                    "Skinned clothing binding did not clear the managed generated object.");
                 checks.Add("Skinned clothing ownership marker preserves package identity and explicit BoneId map.");
             }
             finally { Object.DestroyImmediate(avatar); }

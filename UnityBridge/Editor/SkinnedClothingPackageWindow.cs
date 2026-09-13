@@ -122,6 +122,10 @@ namespace NyaForge.UnityBridge.Editor
             {
                 if (GUILayout.Button(managedOnly ? "管理対象へ更新" : "衣装を作成／更新", GUILayout.Height(32))) ApplyPackage();
             }
+            using (new EditorGUI.DisabledScope(!bindingMatchesObject()))
+            {
+                if (GUILayout.Button("管理対象の衣装を削除（Undo可）")) RemovePackage();
+            }
             if (!validation.IsValid)
                 EditorGUILayout.HelpBox("割当を保存／適用できません: " + validation.Message, MessageType.Warning);
             ShowStatus();
@@ -234,6 +238,26 @@ namespace NyaForge.UnityBridge.Editor
                 if (created != null && created.GameObject != null) Undo.DestroyObjectImmediate(created.GameObject);
                 SetError("衣装を適用できませんでした: ", error);
             }
+        }
+
+        void RemovePackage()
+        {
+            try
+            {
+                if (!bindingMatchesObject())
+                    throw new InvalidOperationException("このpackageに一致する管理対象の衣装objectがありません。");
+                var previous = binding.GeneratedObject;
+                if (previous.transform.parent != avatarRoot)
+                    throw new InvalidOperationException("削除対象の管理objectがこのavatar rootにありません。");
+                Undo.SetCurrentGroupName("Remove NyaForge clothing package");
+                Undo.RecordObject(binding, "Remove NyaForge clothing binding");
+                Undo.DestroyObjectImmediate(previous);
+                binding.ClearGeneratedObject();
+                EditorUtility.SetDirty(binding);
+                status = "管理対象の衣装を削除しました。Undoで元の関連付けへ戻せます。";
+                statusType = MessageType.Info;
+            }
+            catch (Exception error) { SetError("衣装を削除できませんでした: ", error); }
         }
 
         bool bindingMatchesObject()

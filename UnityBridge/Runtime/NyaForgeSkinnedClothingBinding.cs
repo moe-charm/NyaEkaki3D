@@ -86,6 +86,17 @@ namespace NyaForge.UnityBridge
             bones = ordered.Select(pair => new NyaForgeSkinnedClothingBoneBinding(pair.Key, pair.Value)).ToArray();
         }
 
+        /// <summary>
+        /// Clears only the generated scene-object reference while retaining the
+        /// package identity and explicit BoneId mapping. The editor calls this
+        /// after recording the binding in Undo before destroying the managed
+        /// object, so an Undo can restore the previous association.
+        /// </summary>
+        public void ClearGeneratedObject()
+        {
+            generatedObject = null;
+        }
+
         public bool TryGetBone(string id, out Transform value)
         {
             value = null;

@@ -60,7 +60,11 @@ Workbenchへ「選択衣装をskin packageで出力」を追加し、参照avata
 
 ## 2026-09-13 package生成物のownership markerと材質回帰
 
-packageから生成したSkinnedMeshRendererへ`NyaForgeSkinnedClothingManaged`を付け、NyaForgeが生成したmesh・材質・デコード済みbase-color textureの所有範囲を記録できるようにした。callerが渡した外部Materialは所有対象へ含めず、受け取り失敗時に生成資産を片付ける。Bridgeのpackage回帰は **PASS**（`Artifacts/BridgeReceiver-20260913-224614-874-19b414876eb242c6bb3b2f92469a6fd6/bridge-report.json`）。同marker込みのUnity **6000.4.3f1** Player `Builds/ClothingOwnershipV1/NyaForge.exe`でprivate RadDollV3全mesh取込→頂点編集→native Save/Open→skinned GLB／VRM出力も **PASS**（`Artifacts/Authoring-20260913-224324-078ee4d8dc904e53909e5a232da12a62/report.json`）。更新時のUndoと明示削除UIはまだ外部受入・後続作業として残す。
+packageから生成したSkinnedMeshRendererへ`NyaForgeSkinnedClothingManaged`を付け、NyaForgeが生成したmesh・材質・デコード済みbase-color textureの所有範囲を記録できるようにした。callerが渡した外部Materialは所有対象へ含めず、受け取り失敗時に生成資産を片付ける。Bridgeのpackage回帰は **PASS**（`Artifacts/BridgeReceiver-20260913-224614-874-19b414876eb242c6bb3b2f92469a6fd6/bridge-report.json`）。同marker込みのUnity **6000.4.3f1** Player `Builds/ClothingOwnershipV1/NyaForge.exe`でprivate RadDollV3全mesh取込→頂点編集→native Save/Open→skinned GLB／VRM出力も **PASS**（`Artifacts/Authoring-20260913-224324-078ee4d8dc904e53909e5a232da12a62/report.json`）。
+
+## 2026-09-13 管理対象衣装の削除経路
+
+`SkinnedClothingPackageWindow`へ「管理対象の衣装を削除（Undo可）」を追加した。選択中packageと同じObjectIdを持ち、avatar root直下にある生成objectだけを対象にし、bindingの生成object参照をUndoへ記録してから削除する。別衣装・avatar外のobject・未管理objectは停止する。`NyaForgeSkinnedClothingBinding.ClearGeneratedObject`と合成Bridge回帰で、削除後に`MatchesObject`が偽になることを確認した（Unity **2022.3.22f1**、`Artifacts/BridgeReceiver-20260913-225449-604-7f145589ddb54e9d9d0ee2e53e8359af/bridge-report.json`）。EditorWindowの実マウス操作とUndoで復元する実scene確認は未受入として残す。
 
 ## 2026-09-13 NF-V1-06 / 05 のCore接続
 
