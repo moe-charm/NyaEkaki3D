@@ -37,8 +37,8 @@ namespace NyaForge.UnityRuntime
                 edges.Add(new GraphEdge(materialId, "material", assignmentId, GraphNode.MaterialSlotPort(slot)));
                 if (material?.HasEmbeddedBaseColorImage == true)
                 {
-                    PaintImage image;
-                    try { image = DecodeEmbeddedImage(material); }
+                    PaintImage image; int sourceWidth, sourceHeight;
+                    try { image = DecodeEmbeddedImage(material, out sourceWidth, out sourceHeight); }
                     catch (AuthoringException error)
                     {
                         string message = "material " + material.SourceMaterialIndex + " のbase color画像をnative Paintへ保持できないため省略しました（" + error.Code + "）。";
@@ -49,13 +49,16 @@ namespace NyaForge.UnityRuntime
                     nodes.Add(GraphNode.Paint(imageId, image.Width, image.Height, image));
                     edges.Add(new GraphEdge(meshNodeId, "mesh", imageId, "mesh"));
                     edges.Add(new GraphEdge(imageId, "image", materialId, "baseColor"));
+                    if (sourceWidth != image.Width || sourceHeight != image.Height)
+                        warnings?.Add("material " + material.SourceMaterialIndex + " のbase color画像を " + sourceWidth + "x" + sourceHeight + " から " + image.Width + "x" + image.Height + " へ縮小しました。native projectは作業画像のみを保持し、原画像bytesは保持しません。");
                 }
             }
             return assignmentId;
         }
 
-        static PaintImage DecodeEmbeddedImage(GlbMaterialSource material)
+        static PaintImage DecodeEmbeddedImage(GlbMaterialSource material, out int sourceWidth, out int sourceHeight)
         {
+            sourceWidth = sourceHeight = 0;
             byte[] bytes = material.CopyBaseColorImageBytes();
             if (bytes == null || bytes.Length == 0) throw new AuthoringException("INVALID_IMAGE", "base color画像が空です。");
             Texture2D texture = null;
@@ -65,6 +68,7 @@ namespace NyaForge.UnityRuntime
                 if (!texture.LoadImage(bytes, false)) throw new AuthoringException("INVALID_IMAGE", "base color画像を読み込めませんでした。");
                 if (texture.width < 1 || texture.height < 1)
                     throw new AuthoringException("IMAGE_DIMENSION_EXCEEDED", "base color画像の寸法が不正です（" + texture.width + "x" + texture.height + "）。");
+                sourceWidth = texture.width; sourceHeight = texture.height;
                 // Keep the native Paint budget deterministic while retaining the
                 // visual reference of common 2K/4K avatar textures. Decode only
                 // up to a bounded source size, then downsample in CPU space so

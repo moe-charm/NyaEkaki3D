@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09A: base-color縮小の明示
+
+GLB／VRM取込でbase-colorをnative Paintの1024px予算へ縮小した場合、従来は成功表示だけで原画像との解像度差が分からなかった。取込ステータスへ原画像サイズと作業画像サイズを出し、native projectが作業画像のみを保持して原画像bytesを保持しないことを明示するようにした。形式・サイズエラーで省略した場合と、正常に縮小した場合の注意表示も分けた。原画像bytesを保持して未編集時に再出力する機能は、別のNF-V1-09A拡張として残る。
+
+`Builds/ReleaseCandidateV5/NyaForge.exe`（Unity 6000.4.3f1）のAuthoring suiteは **PASS**（`Artifacts/Authoring-20260914-055656-491efb9544c44ac1a1bb194d27f77e02/report.json`）。private RadDollV3の実取込・Save/Open・GLB／VRM1・衣装package生成とUnity 2022.3.22f1 Bridge受け取りも **PASS**（Player `Artifacts/Authoring-20260914-055729-e2c198f284584c4c9450f7f3a60b68d1/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-060010-016-6f0b11002a194bcbb7c44473efc05b8d/bridge-report.json`）。これは縮小後の作業画像と出力の回帰であり、原画像bytes保存、実EditorWindowのマウス／DPI、実VRChat表示を完了扱いにはしない。
+
 ## 2026-09-14 NF-V1-09: semantic textureのUV1適用停止
 
 Windows v1のGLB出力契約はUV0のみなのに、Workbenchのsemantic texture GUIだけがUV1を受け付けて後段出力で停止する経路を閉じた。UV1を選んだ新規normal／metallic-roughness画像の適用は`UNSUPPORTED_UV_SET`で無変更のまま拒否し、UV0へ戻した場合だけ適用できる。ヘルプ、Quickstart、開発計画、Player回帰の説明も同じ契約へ同期した。

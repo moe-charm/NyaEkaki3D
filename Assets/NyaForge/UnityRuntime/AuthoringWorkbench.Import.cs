@@ -214,7 +214,7 @@ namespace NyaForge.UnityRuntime
 
         static string ImportMaterialWarningSummary(IReadOnlyList<string> warnings)
         {
-            return warnings == null || warnings.Count == 0 ? "" : " · 材質画像 " + warnings.Count + "件はサイズ/形式のため省略";
+            return warnings == null || warnings.Count == 0 ? "" : " · 材質画像の注意 " + warnings.Count + "件（詳細は取込ステータス）";
         }
 
         IEnumerator PickModel()
