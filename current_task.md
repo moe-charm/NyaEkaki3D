@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15M: クイックスタートのV15対応
+
+`docs/Authoring-Quickstart.md`へ現行候補`Builds/BoneSubsetV15/NyaForge.exe`、制作画面の`モデルを開く…`、取込後の自動Frameを追記し、詳細欄の既存`GLBモデルを取り込む`との関係を明記した。実行ファイルと手動受入表への導線を同じ候補へ揃えた。これは文書更新であり、本番コードの挙動変更はない。実EditorWindowのマウス・IME・DPI・Explorer、実アバター全周fit／貫通／見た目、VRChat Build & Test／実機表示は未受入として残す。
+
 ## 2026-09-14 NF-V1-15L: V15起動・終了反復回帰
 
 `Tools/Test-NyaForgeNavigationRepeated.ps1 -BuildName BoneSubsetV15 -Count 2`を実行し、Playerの起動、制作画面遷移、保存状態・再開・viewport確認、終了を2/2 PASSした。集約結果は`Artifacts/Navigation-Repeated-BoneSubsetV15-20260914-164524.json`。これは自動fixtureの反復回帰であり、実EditorWindowのマウス・IME・DPI・Explorer操作やVRChat内表示を完了扱いしない。
