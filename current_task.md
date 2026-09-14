@@ -2876,3 +2876,7 @@ Authoring suiteの実衣装package検査へ、現在の衣装graphから`Skeleto
 受け取りGUIのstable BoneId候補探索を`SkinnedClothingPackageWindow.FindUniqueBindingSuggestions`へ共通化し、avatar階層を1回収集して名前・階層候補を解決するようにした。候補生成の結果は従来どおり一意なものだけを保持し、曖昧・欠落は自動反映しない。Bridge batchにも同じresolverの回帰を追加し、実RadDollV3から生成した2骨packageを、階層候補が一意に全件解決できることを確認した。
 
 Unity **2022.3.22f1** Bridgeを再実行し、適用・hash／sidecar・ownership・更新／削除Undo・semantic textureに加えて、`unique hierarchy candidates`を含む **PASS**。証跡は`Artifacts/BridgeReceiver-20260914-151117-020-6bdd730b5d17449e91066b33a45a9816/bridge-report.json`。これは候補resolverの自動回帰であり、実EditorWindowのマウス操作、実アバター全周の貫通・見た目、VRChat Build & Testの合格とは分けて扱う。
+
+# 2026-09-14 候補resolver変更後のCore再確認
+
+`SkinnedClothingPackageWindow`の候補resolver共通化後にCoreを再実行し、**508 passed / 0 failed**を確認した。artifactは`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-c0eae62745d14c7faab0ce1fadd318b4`。骨・skin・材質・UV0制限・衣装package・保存再開・Undo/Redoを含む既存回帰に変化はない。Unity Bridgeの候補resolver回帰は`Artifacts/BridgeReceiver-20260914-151117-020-6bdd730b5d17449e91066b33a45a9816/bridge-report.json`でPASS済み。実EditorWindowの手動適用、実アバター全周の貫通・見た目、VRChat Build & Testは未受入である。
