@@ -91,6 +91,14 @@ internal static partial class Program
             w.SetAttachments(metadata);
             var withMetadata = AuthoringStateReader.Read(w,w.InstanceId);
             Equal(metadata.ContentHash,(string)withMetadata["attachmentsHash"]);
+            var labelBytes = ObjectLabelsCodec.Write(new System.Collections.Generic.Dictionary<string, string> {
+                [w.Document.ActiveObjectId] = "確認用ボディ"
+            });
+            w.SetAttachments(new ProjectAttachments(new System.Collections.Generic.Dictionary<string, byte[]> {
+                [ProjectAttachments.ObjectLabels] = labelBytes
+            }));
+            var withLabel = AuthoringStateReader.Read(w, w.InstanceId);
+            Equal("確認用ボディ", (string)withLabel["objects"][0]["displayName"]);
             Ok(Execute(w,AuthoringOperation.TranslateVertices(new[]{0,4},new Vec3(.03f,0,0))));
             var after=AuthoringStateReader.Read(w,w.InstanceId);
             True((long)after["revision"]>(long)before["revision"]);True((bool)after["canUndo"]);

@@ -9,15 +9,25 @@ namespace NyaForge.UnityRuntime
     public sealed partial class AuthoringWorkbench
     {
         Foldout objectSelectionPanel;
+        VisualElement objectList;
         Toggle showAllObjects;
         Toggle referenceProtectionToggle;
         Toggle deliveryAllowlistToggle;
+        TextField objectDisplayNameField;
+        Button objectDisplayNameSave;
+        Label objectDisplayNameStatus;
+        string objectListKey = "";
         readonly HashSet<string> referenceProtectedObjectIds = new HashSet<string>(StringComparer.Ordinal);
 
         void BuildObjectSelection(VisualElement parent)
         {
             objectSelectionPanel = new Foldout { text = "制作対象", value = true, name = "object-selection" };
-            objectSelectionPanel.Add(new Label("対象を切り替えると、頂点編集・材質・リグの表示先も切り替わります。"));
+            var selectionHelp = new Label("制作対象を選ぶと、中央ビューと右側の編集内容が切り替わります。●が現在の対象です。")
+            {
+                name = "object-selection-help"
+            };
+            selectionHelp.style.whiteSpace = WhiteSpace.Normal;
+            objectSelectionPanel.Add(selectionHelp);
             showAllObjects = new Toggle("他の制作対象も表示") { value = true, name = "object-show-all" };
             showAllObjects.RegisterValueChangedCallback(_ => { if (objectProjection != null) { objectProjection.Visible = showAllObjects.value; Refresh(); } });
             objectSelectionPanel.Add(showAllObjects);
@@ -29,12 +39,25 @@ namespace NyaForge.UnityRuntime
             deliveryAllowlistToggle.tooltip = "汎用multi-object／GLB納品の対象を明示します。1つでも指定すると指定したobjectだけを出力し、native projectへ保存されます。空欄では全objectが候補です。";
             deliveryAllowlistToggle.RegisterValueChangedCallback(e => Try(() => SetDeliveryAllowlist(e.newValue)));
             objectSelectionPanel.Add(deliveryAllowlistToggle);
+            var displayNameRow = Row(objectSelectionPanel);
+            objectDisplayNameField = new TextField("表示名") { name = "object-display-name" };
+            objectDisplayNameField.tooltip = "制作対象の役割名を分かりやすい名前へ変更します。空欄で自動の役割名へ戻ります。保存対象です。";
+            objectDisplayNameField.style.flexGrow = 1;
+            displayNameRow.Add(objectDisplayNameField);
+            objectDisplayNameSave = Button("表示名を保存", SaveObjectDisplayName, "object-display-name-save");
+            displayNameRow.Add(objectDisplayNameSave);
+            objectDisplayNameStatus = new Label { name = "object-display-name-status" };
+            objectDisplayNameStatus.style.whiteSpace = WhiteSpace.Normal;
+            objectSelectionPanel.Add(objectDisplayNameStatus);
+            objectList = new VisualElement { name = "object-list" };
+            objectSelectionPanel.Add(objectList);
             parent.Add(objectSelectionPanel);
         }
 
         void RefreshObjectSelection()
         {
             if (objectSelectionPanel == null) return;
+            RefreshObjectLabelsFromWorkspace();
             if (workspace?.Document?.ActiveObject?.Graph != null)
             {
                 var activeGraphId = workspace.Document.ActiveObject.Graph.GraphId;
@@ -43,34 +66,60 @@ namespace NyaForge.UnityRuntime
             }
             RefreshImportedVrmSessionsForActiveGraph();
             SelectSecondaryMotionForActiveGraph();
-            while (objectSelectionPanel.childCount > 4) objectSelectionPanel.RemoveAt(4);
             if (workspace == null || workspace.Document.IsEmpty)
             {
                 ClearFitSelectionForObjectChange("");
                 referenceProtectionToggle.SetValueWithoutNotify(false); referenceProtectionToggle.SetEnabled(false);
                 deliveryAllowlistToggle.SetValueWithoutNotify(false); deliveryAllowlistToggle.SetEnabled(false);
-                objectSelectionPanel.Add(new Label("制作対象はまだありません。"));
+                objectDisplayNameField.SetValueWithoutNotify(""); objectDisplayNameField.SetEnabled(false);
+                objectDisplayNameSave.SetEnabled(false);
+                objectDisplayNameStatus.text = "対象を追加すると、ここで名前を付けられます。";
+                if (objectListKey != "<empty>")
+                {
+                    objectList.Clear();
+                    objectList.Add(new Label("制作対象はまだありません。"));
+                    objectListKey = "<empty>";
+                }
                 return;
             }
             string activeId = workspace.Document.ActiveObjectId;
+            selectionContext.SetObject(activeId);
             ClearFitSelectionForObjectChange(activeId);
             referenceProtectionToggle.SetValueWithoutNotify(referenceProtectedObjectIds.Contains(activeId));
             referenceProtectionToggle.SetEnabled(!string.IsNullOrEmpty(activeId));
             deliveryAllowlistToggle.SetValueWithoutNotify(deliveryAllowedObjectIds.Contains(activeId));
             deliveryAllowlistToggle.SetEnabled(!string.IsNullOrEmpty(activeId) && !referenceProtectedObjectIds.Contains(activeId));
+            string customName;
+            objectLabels.TryGetValue(activeId, out customName);
+            objectDisplayNameField.SetValueWithoutNotify(customName ?? "");
+            objectDisplayNameField.SetEnabled(true);
+            objectDisplayNameSave.SetEnabled(true);
+            objectDisplayNameStatus.text = string.IsNullOrEmpty(customName)
+                ? "自動名: " + ObjectDisplayName(workspace.Document.ActiveObject) + "（空欄でこの状態）"
+                : "現在の表示名: " + customName + "（内部IDはtooltipに残ります）";
+            string nextObjectListKey = string.Join("|", workspace.Document.Objects.Select(item =>
+                item.ObjectId + ":" + ObjectDisplayName(item))) + "|active:" + activeId;
+            if (nextObjectListKey == objectListKey) return;
+
+            objectList.Clear();
             foreach (var item in workspace.Document.Objects)
             {
                 string id = item.ObjectId;
                 string kind = item.IsStaticProfile ? "static" : "graph";
+                string displayName = ObjectDisplayName(item);
                 var button = new Button(() => Execute(AuthoringOperation.SelectObject(id)))
                 {
-                    text = (id == workspace.Document.ActiveObjectId ? "● " : "　") + kind + " · " + (id.Length > 8 ? id.Substring(0, 8) : id),
+                    text = (id == workspace.Document.ActiveObjectId ? "● " : "　") + displayName + " · " + (id.Length > 8 ? id.Substring(0, 8) : id),
                     name = "object-select-" + id
                 };
-                button.tooltip = kind + " · " + id;
+                // Keep the compact label readable while ending the tooltip in
+                // the complete stable identity. Existing automation and users
+                // can still copy the exact object id from the hover text.
+                button.tooltip = ObjectDisplayDetails(item) + "\n内部種別: " + kind + "\n" + id;
                 button.SetEnabled(id != workspace.Document.ActiveObjectId);
-                objectSelectionPanel.Add(button);
+                objectList.Add(button);
             }
+            objectListKey = nextObjectListKey;
         }
 
         string fitSelectionOwnerObjectId = "";

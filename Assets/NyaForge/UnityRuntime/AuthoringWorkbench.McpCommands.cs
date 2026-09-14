@@ -15,6 +15,7 @@ namespace NyaForge.UnityRuntime
             if(request.Method=="export") return ExportMcpProject(request.Export);
             if(request.Method=="export_glb") return ExportMcpGlb(request.GlbExport);
             if(request.Method=="save_project") return SaveMcpProject(request.Save);
+            if(request.Method=="object_label") return SetObjectLabelMcp(request.ObjectLabel);
             if(request.Method=="get_state")
             {
                 var state=AuthoringReadService.Read(workspace,pipeInstance,request.Method); state["saveTarget"]=McpSaveTarget();
@@ -66,7 +67,7 @@ namespace NyaForge.UnityRuntime
                 RefreshReferenceProtectionFromWorkspace();
                 RefreshDeliveryAllowlistFromWorkspace();
             }
-            selection.RemoveWhere(i=>i<0 || i>=projection.Points.Length);projection.Select(selection);Refresh();
+            selection.RemoveWhere(i=>i<0 || i>=projection.Points.Length);selectionContext.NotifyChanged();projection.Select(selection);Refresh();
             return result;
         }
     }

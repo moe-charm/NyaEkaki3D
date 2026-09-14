@@ -1,3 +1,410 @@
+# 2026-09-14 MOD-05: 保存状態Panelの通知境界
+
+Sessionの保存状態変更時に、Workbench全体を再構築せず保存状態表示だけを更新する`AuthoringWorkbench.PersistenceRefresh.cs`を追加した。`SaveIncomplete`／読込先変更の通知はLifecycleからこの境界を通り、保存先入力欄の編集中の値は上書きしない。通常のcommand確定時は従来どおり全体refreshを使い、geometryや他Panelの再生成を増やしていない。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.PersistenceRefresh.cs`（`.meta`を含む）
+- 接続変更: `AuthoringWorkbench.Lifecycle.cs`, `AuthoringWorkbench.RefreshState.cs`
+- Player build: `Builds/GuiModularV37/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-215613-873.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-215641-dfcbc67dd5d94bfd904699113523466f/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-215710-d042fe1f34184811a48289577770a549/report.json`）
+- Core: V36からCoreソース変更なし（直近 **512 passed / 0 failed**）
+- 残り: metadata再同期とPanel購読の細分化、検証harness整理、実マウスのExplorer／DPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+
+V37のPlayerでprivate一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）を使った自動実モデル一周も再確認した。全mesh取込→EditMesh→native Save/Open→GLB／VRM出力→衣装package生成は**PASS**（`Artifacts/Authoring-20260914-215848-6037034a834842b6aad6a640158fc6dc/report.json`）。生成packageのskeletonは2 bonesで、Unity **2022.3.22f1** Bridge受け取りも**PASS**（`Artifacts/BridgeReceiver-20260914-220108-201-3263e34f76694e75b4636b19e59a20b5/bridge-report.json`）。これは自動Player／Bridge経路の証拠で、実EditorWindowのマウス操作、実アバターの全周fit・貫通・見た目、VRChat内表示は未受入のまま残す。private素材は公開ツリーへコピーしていない。
+
+# 2026-09-14 MOD-05: Workbench共有状態の分離
+
+Workbenchの共有UIハンドル、live session、選択context、viewport状態を`AuthoringWorkbench.State.cs`へ移した。`AuthoringWorkbench.cs`はpartial-classのホストだけを持ち、機能Panel・共通command実行・全体refresh・ライフサイクル・共有状態の責務をファイル単位で追えるようにした。フィールドの参照先と初期値以外は変更していない。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.State.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`
+- Player build: `Builds/GuiModularV36/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-215253-958.log`）
+- Core回帰: **512 passed / 0 failed**（V35実行結果から変更なし）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-215329-bdd6ce225a9a4e89800aaaea4f720e6d/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-215356-f8f570cc9a224b2fb089e3f57beb5689/report.json`）
+- 残り: Panel単位の購読境界とdirty／metadata再同期、検証harness整理、実マウスのExplorer／DPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+
+# 2026-09-14 MOD-05: 共通command実行境界の分離
+
+Workbench本体に残っていた`Execute`／例外捕捉／ステータス表示を`AuthoringWorkbench.Execution.cs`へ移した。編集Panelは操作を`Execute`へ渡し、参照保護・揺れ再生の無効化・計測・Undo/Redo後のmetadata同期・選択の範囲検査・全体refresh・エラー表示を一つの共通境界で処理する。`AuthoringWorkbench.cs`は共有状態とライフサイクルへの入口に絞り、既存の操作順・保存形式・MCP wireは変更していない。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Execution.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`
+- Player build: `Builds/GuiModularV35/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-214815-948.log`）
+- Core回帰: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-fbcc16771f144635b7a082dcc8594066`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-214843-65d7af1840ac4d79964b6e850bd8b09d/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-214910-681a725bc73d4d13aedc1aac7919bbab/report.json`）
+- 残り: Panel単位の購読境界とdirty／metadata再同期の完全移管、共通fieldの段階的縮小、実マウスのExplorer／DPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+
+# 2026-09-14 MOD-05: 全体refresh境界の分離
+
+共有Workbench本体に残っていた全体`Refresh()`を`AuthoringWorkbench.RefreshState.cs`へ移した。新しいファイルはlive workspaceを各projection・graph canvas・共通状態表示・Panel群へ反映する順序を所有し、頂点選択だけの変更は既存の`SelectionRefresh`を使う。`AuthoringWorkbench.cs`は共有field・共通`Execute`・エラー表示に絞り、保存形式・Undo/Redo・MCP wire・Panel内部処理は変更していない。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.RefreshState.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`
+- Player build: `Builds/GuiModularV34/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-214150-748.log`）
+- Core回帰: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-eb4631448dd740a98367cfd9323b76c1`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-214216-4d54127c116d44c9b7cc1dd056784409/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-214250-4a8f3e6cabb143e0aaeea353fd2737fd/report.json`）
+- 残り: Panel単位の購読境界とdirty／metadata再同期の完全移管、実マウスのExplorer／DPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+
+# 2026-09-14 MOD-05: 対象一覧の差分更新
+
+頂点を1点編集するたびに対象一覧のボタンを全再生成していたため、`AuthoringWorkbench.Objects.cs`に対象一覧の差分更新境界を追加した。対象ID・表示名・active objectの組合せをキーとして保持し、キーが変わらない通常の頂点編集では既存ボタンを再利用する。空workspace、対象切替、表示名変更では一覧を再構築する。選択の正本、保存形式、tooltipの完全ID、Undo/Redo、MCP契約は変更していない。
+
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Objects.cs`
+- Player build: `Builds/GuiModularV32/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-213153-478.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-213221-4bc5390ed6974b3fabd9b318663b39b3/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-213256-87ca1c7371f34b4096566fd62e6f6311/report.json`）
+- 残り: Panel単位の購読境界とdirty／metadata再同期の完全移管、対象一覧の実マウス確認（長い名前・DPI・IME）、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+
+# 2026-09-14 MOD-05: Workbenchライフサイクル責務の分離
+
+起動・制作画面の開閉・終了確認・preview sceneの生成／破棄・Unityイベント購読を`AuthoringWorkbench.Lifecycle.cs`へ移した。`AuthoringWorkbench.cs`には共有field、共通`Execute`、全体`Refresh`を残し、画面配置は`Layout`、viewport入力は`ViewportInput`／`ViewportInteraction`へ委譲する。責務移動のみで、保存形式・Undo/Redo・MCP wire・終了ガードの挙動は変更していない。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Lifecycle.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`
+- Player build: `Builds/GuiModularV33/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-213607-897.log`）
+- Core回帰: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-eb4631448dd740a98367cfd9323b76c1`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-213634-e20aa0d2fee04e42967917079bd0ac7e/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-213710-db14cf24a2304ea5acfe4bbf0b0b6b18/report.json`）
+- 残り: Panel単位の購読境界とdirty／metadata再同期の完全移管、実マウスのExplorer／DPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+
+# 2026-09-14 MOD-05: 選択変更の部分refresh境界
+
+頂点選択だけの変更で全Panelを再構築しないよう、`AuthoringWorkbench.SelectionRefresh.cs`を追加した。面編集（split／edge insertion／weld）の有効状態、選択表示、Rigの選択数、装着の選択頂点操作、viewportヒントだけを更新し、材質・出力・シミュレーションPanelの完全refreshは形状commandや保存時に限定する。`Select`／`PickVertex`からこの経路を呼ぶ。面モードでは面ハイライトと面操作の依存関係を維持する。V30で判明した回帰（選択後のface splitボタンが古いまま）を、依存グループを先に更新することで修正し、V31で再確認した。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.SelectionRefresh.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ViewportInput.cs`
+- Player build: `Builds/GuiModularV31/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-212647-299.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-212710-b51ad8e78eb144a48755fffe1eb597dd/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-212737-75308dac175b4d0191755a1d8825c447/report.json`）
+- 残り: dirty／metadata再同期の完全移管、Panel単位の購読境界、実マウスのExplorer／DPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+
+# 2026-09-14 MOD-05: BuildUiのレイアウト責務分離
+
+`AuthoringWorkbench.cs`に残っていた`BuildUi`のルート／ヘッダー／viewport／controls配置を`AuthoringWorkbench.Layout.cs`へ移した。Layoutは共有コンテナの生成とfeature `Build*`呼出し順だけを所有し、既存partialの編集処理・保存形式・MCP契約は変更していない。V29でUnity Playerを再ビルドし、既存のAuthoring／Navigation回帰を通した。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Layout.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`
+- Player build: `Builds/GuiModularV29/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-211910-264.log`）
+- Core回帰: **512 passed / 0 failed**（直近コード変更なし）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-211929-763b342295254da98ec2ae23b14a3332/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-211956-cac6859e221d41ea971297b8775a450f/report.json`）
+- 残り: Panel単位の購読境界、dirty／metadata再同期の完全移管、実マウスのExplorer／DPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+
+# 2026-09-14 MOD-05: viewportイベント配線の責務分離
+
+`BuildUi`に残っていたviewportのGeometryChanged／Pointer／Wheelイベント配線を`AuthoringWorkbench.ViewportInteraction.cs`へ移した。`Viewport.cs`はカメラとRenderTexture、`ViewportInput.cs`は選択・hit test・座標変換、`ViewportInteraction.cs`はUI Toolkitイベントから既存操作を呼ぶ接続だけを担当する。クリック、ドラッグ、ウェイトペイント、切断path、surface triangle選択、Undo履歴の挙動は変更していない。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ViewportInteraction.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`
+- Player build: `Builds/GuiModularV28/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-211201-584.log`）
+- Core回帰: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-96e20ef4219d46ff966744e521b18276`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-211231-cd02dc41f7224fb496166eb56e93b28d/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-211259-d69c08f4c167468ea4fa0c87688b0917/report.json`）
+- 残り: BuildUiの完全分離、Panel単位の購読境界、dirty／metadata再同期の完全移管、実マウスのExplorer／DPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+
+# 2026-09-14 MOD-05: 頂点操作とviewport hit testの責務分離
+
+Workbench本体に残っていた選択頂点の移動、対象選択、viewport上の頂点hit test、画面座標変換を`AuthoringWorkbench.ViewportInput.cs`へ移した。`AuthoringWorkbench.cs`はUI配置・共有状態・共通`Execute`・全体refreshを所有し、入力処理は`Viewport`／`ViewportInput`へまとまる。world-spaceの`WorldPoints`を使う装着後hit testと、既存のgraph／static／polygon編集command、SelectionContext、Undo履歴は変更していない。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ViewportInput.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`
+- Player build: `Builds/GuiModularV27/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-210331-861.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-210357-4adcddd9da274cf4be087c78e3e8a3a8/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-210431-75ccfd8de0ed433799bd5cb818374a99/report.json`）
+- 残り: Shell／BuildUiの完全分離、Panel単位の購読境界、dirty／metadata再同期の完全移管、実マウスのExplorer／DPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+
+# 2026-09-14 GUI-03 継続: MCP表示名更新を共通metadata経路へ接続
+
+GUIで保存した表示名を外部AIからも変更できるよう、専用MCP method `object_label`（tool `forge_set_object_label`）を追加した。`ObjectLabelRequest`はinstance／document／revision／attachments hash／stable ObjectIdをすべて要求し、`ObjectLabelService`がGUIと同じ`object-labels.nyaforge.bin`へ更新を行う。metadata変更はメッシュのdocument revisionを変えず、workspaceのUndo/Redo履歴へ一つの段として積む。空文字は自動役割名へ戻す。古いmetadataや競合hashは黙って上書きせず、`ATTACHMENTS_CHANGED`等で停止する。
+
+`AuthoringIpcRequest`／`AuthoringWorkbench.McpCommands`／`AuthoringReadService.capabilities`へmethodを接続し、MCP SDK側には`ObjectLabelCommand`と`forge_set_object_label`の説明を追加した。Player回帰ではGUI保存後にMCP経路で改名し、Undo/Redo・Save/Open・対象一覧表示まで確認している。さらに外部sidecar→named pipe→Playerの実transportで、改名・stale metadata拒否・Undo/Redoを確認した。
+
+- 追加ソース: `Assets/NyaForge/Authoring/Persistence/ObjectLabelService.cs`（`.meta`を含む）、`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.McpObjectLabels.cs`（`.meta`を含む）、`Tools/NyaForge.Mcp/ObjectLabelCommand.cs`
+- 接続変更: `AuthoringIpcRequest.cs`, `AuthoringWorkbench.McpCommands.cs`, `AuthoringReadService.cs`, `AuthoringWorkbench.MultiObjectVerification.cs`
+- Core: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-af1784a6b49946cab0eef074f51c7b95`）
+- MCP SDK: `dotnet build Tools/NyaForge.Mcp/NyaForge.Mcp.csproj --no-restore --nologo` **0 warnings / 0 errors**
+- Player build: `Builds/GuiLabelsMcpV26/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-205319-499.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-205340-3d288d957f914596a284676cb0614a9b/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-205420-558384436e6349589de69a22bdec3d13/report.json`）
+- private RadDollV3再確認: **PASS**（Player `Artifacts/Authoring-20260914-205921-f9a91b9d3edd4194bfae5603655cfe00/report.json`、Unity 2022.3.22f1 Bridge `Artifacts/BridgeReceiver-20260914-210152-501-99bd0996ee7a42eaa8df03776a93fe46/bridge-report.json`、衣装packageのskeleton 2 bones）。private素材は公開ツリーへコピーしていない。
+- 残り: group semantics、同名表示の手動確認、実マウスのExplorer／DPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。Computer Use接続ではnative `apps`が空のため実マウス操作は未実施。
+
+# 2026-09-14 GUI-03 / MOD-05: 制作対象の表示名をnative metadataへ分離
+
+制作対象一覧の内部IDだけでは身体・衣装・小物の識別が難しいため、表示名をWorkbenchの一時UI状態から分離した。`ObjectLabelsCodec`がstable `ObjectId`をキーに任意の表示名を`object-labels.nyaforge.bin`へ保存し、`ProjectAttachments`（最大10件）、`ProjectStore`、`ProjectSnapshotCodec`のlegacy sidecar検出へ接続している。空欄保存はラベルを削除し、旧文書やラベル未設定の対象は従来の役割名＋短縮IDへフォールバックする。
+
+`AuthoringWorkbench.ObjectLabels.cs`は読込hashをキャッシュし、表示名入力・保存・Undo/Redoを共通`Execute`／attachment履歴へ通す。`Objects.cs`は対象一覧に表示名入力と専用一覧を追加し、`AuthoringStateReader`／`AuthoringGraphReader`も同じmetadataから`displayName`を返す。長いScrollViewのポインタ座標に依存しないよう、自動回帰の保存確認は同じGUI commandを直接呼び、一覧の表示・選択・tooltip hit testは既存Navigation経路で確認する。
+
+- 追加ソース: `Assets/NyaForge/Authoring/Persistence/ObjectLabelsCodec.cs`（`.meta`を含む）、`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ObjectLabels.cs`
+- 接続変更: `ProjectAttachments.cs`, `ProjectStore.cs`, `ProjectSnapshotCodec.cs`, `AuthoringStateReader.cs`, `AuthoringGraphReader.cs`, `AuthoringWorkbench.Objects.cs`
+- 回帰追加: `Tests/Authoring.Core/ProjectSnapshotTests.cs`, `Tests/Authoring.Core/AuthoringStateTests.cs`, `AuthoringWorkbench.MultiObjectVerification.cs`
+- Core: **510 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-dbb336a8381c4b4b8427fccf68dafb7a`）
+- Player build: `Builds/GuiLabelsV24/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-204135-013.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-204157-9308ee6356504cd8ad3a877127de63e0/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-204224-23f71bf491a245408d4dd8ee85ec1be4/report.json`、`player.log`に`NYAFORGE_NAVIGATION_CHECK PASS`）
+- 残り: MCPからの表示名変更・グループ意味論、同名表示の手動確認、実マウスのExplorer／DPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。Computer Use接続ではnative `apps`が空のため実マウス操作は未実施。
+
+# 2026-09-14 MOD-05 第三段: ビューポート責務の分離: Viewport
+
+`AuthoringWorkbench.cs`に残っていたカメラのFrame処理とRenderTexture更新を`AuthoringWorkbench.Viewport.cs`へ移した。`Frame()`は各projectionが提供するFramingPointsをカメラ状態へ変換し、`UpdateCamera()`はUI viewportの実寸に合わせたRenderTexture再生成、orbit pose適用、surface preparationの呼出しだけを担当する。Workbench本体は共有field、BuildUi、入力イベント、終了確認の所有者として残し、既存のクリック・ホイール・自動Frameの呼び出し、保存形式、Core、MCP wire契約は変更していない。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Viewport.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`
+- 設計更新: `docs/Authoring-Code-Map.md`, `docs/Windows-v1-GUI-Navigation-Plan.md`, `docs/Windows-v1-Development-Plan.md`
+- 検証: `Tools/Build-NyaForge.ps1 -Target Player -BuildName GuiModularV19`でUnity **6000.4.3f1** Player build成功（`Logs/build-player-20260914-202637-096.log`、`Builds/GuiModularV19/NyaForge.exe`）。Authoring suite **PASS**（`Artifacts/Authoring-20260914-202705-4e6bb8af942e4de4a0a305a06bbed25d/report.json`、1280x800）、Navigation suite **PASS**（`Artifacts/Navigation-20260914-202731-cf4af1c2addc407ba6e5dabbf53f64de/report.json`）。
+- 未受入: Panel単位の購読境界、dirty／metadata再同期の完全移管、実マウスのExplorer・DPI・IME・長い名称、実RadDollV3全周fit／貫通／見た目、Unity／VRChat内表示。Computer Use接続ではネイティブ`apps`が空で、実マウス操作は未実施。
+
+# 2026-09-14 MOD-05 更新群の責務分離: RefreshPipeline
+
+# 2026-09-14 MOD-05 共通UI部品の責務分離: UiElements
+
+V18でprivate RadDollV3を再実行し、Player **95 checks PASS**（`Artifacts/Authoring-20260914-201954-7af6c0ce8bd4414fbcd0dd380b966605/report.json`）、Unity **2022.3.22f1** Bridge **16 checks PASS**（`Artifacts/BridgeReceiver-20260914-202221-884-53ba0f0f3ed74bf08bd50635e637cf6c/bridge-report.json`）を確認した。共通UI部品の移動後も、実モデルの取込・保存／再開・衣装package出力・受け取り経路は維持されている。これは自動受入であり、実EditorWindowのマウス操作・全周fit／貫通・VRChat実機表示は未受入である。
+
+V18 Playerを通常ウィンドウで起動してComputer Useの`getState`を再確認したが、ネイティブ`apps`は空のままだった。起動したPIDは確認後に停止した。したがって、この接続では実マウス・DPI・IME・Explorer操作を自動代行できないという証拠を更新し、手動受入を未完了のまま保持する。
+
+`AuthoringWorkbench.cs`に残っていた全Panel共通の`Row`／`Button`／`Number`生成ヘルパーを`AuthoringWorkbench.UiElements.cs`へ移した。行の折返し、ボタンの命名、数値入力の最小高さを一箇所で管理し、各Panelへ異なるDPI／狭幅ルールが混在しないようにした。UIイベント、保存形式、command経路は変更していない。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.UiElements.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`
+- 検証: `Builds/GuiModularV18/NyaForge.exe`（Unity 6000.4.3f1）をビルド。Authoring suite **PASS**（`Artifacts/Authoring-20260914-201755-c26fa452a98f4919a66e1ac5f99cb15b/report.json`、1280x800）、Navigation suite **PASS**（`Artifacts/Navigation-20260914-201755-3ba7949e89b4409fab68c439f979e309/report.json`）。
+- 未受入: Panel単位の購読境界、dirty／metadata再同期の完全移管、実マウスのExplorer・DPI・IME・長い名称、実RadDollV3の全周fit／貫通、Unity／VRChat内表示。
+
+# 2026-09-14 実RadDollV3受け渡し再確認: V17
+
+公開リポジトリ外の一時ファイル`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-RealModelSmoke\RadDollV3_VRM.vrm`を直接入力し、`Tools/Test-NyaForgeRealClothing.ps1 -BuildName GuiModularV17`を実行した。Windows Playerの取込→全mesh候補→EditMesh→native Save/Open→標準GLB／VRM出力→選択衣装package生成は**95 checks PASS**（`Artifacts/Authoring-20260914-201249-b4d210d9e71b41e48fc7a7e4f8a1a4ac/report.json`）。生成した`skeleton.nyaforge.bin`は2 bonesで、Unity **2022.3.22f1** Bridgeの受け取りも**16 checks PASS**（`Artifacts/BridgeReceiver-20260914-201516-211-e092e40f09984cf39a0fc3c1aea9010d/bridge-report.json`）。private素材は公開ツリーへコピーしていない。
+
+これは実モデルの取込・保存・出力・受け渡し回帰であり、実EditorWindowの全周fit／貫通ゼロ／見た目、実マウス・DPI・IME・Explorer、VRChat Build & Test／実機表示の合格とは分けて扱う。Computer Useの`getState`ではこの接続にネイティブ`apps`が列挙されず、今回の実マウス操作は未実施として残す。
+
+`AuthoringWorkbench.RefreshPipeline.cs`を追加し、既存の`Refresh()`が直接列挙していたPanel更新を、編集系（形状・UV・Paint・材質・Rig・Morph）と確認・出力系（Evidence・形状作成・取込・PhysBones・secondary motion・spring・Validation・CommandBar）へまとめた。Workbench本体は共有状態と更新順の所有者として残し、各Panelの実装やcommand経路は変更していない。これにより、Panel単位の購読・必要な更新だけへ移す次段の境界をコード上で確認しやすくした。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.RefreshPipeline.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`
+- 設計更新: `docs/Authoring-Code-Map.md`, `docs/Windows-v1-GUI-Navigation-Plan.md`
+- 影響範囲: UI更新の呼び出し整理のみ。Core、保存形式、MCP wire、Undo履歴は変更していない。
+- 検証: 次のWindows Player buildで既存Authoring／Navigation suiteを再実行する。
+- 未受入: Panel単位の購読境界、dirty／metadata再同期の完全移管、実マウスのExplorer・DPI・IME・長い名称、実RadDollV3装着／貫通、Unity／VRChat内表示。
+
+検証結果: `Builds/GuiModularV17/NyaForge.exe`をUnity **6000.4.3f1**で再ビルドし、Authoring suite **PASS**（`Artifacts/Authoring-20260914-200958-53dc6237465b4082b3dc6618fdbb57e6/report.json`、1280x800）とNavigation suite **PASS**（`Artifacts/Navigation-20260914-201030-ce61d8afb7d14e6bb39fcdbad8ef8c7b/report.json`）を確認した。ビルドログは`Logs/build-player-20260914-200935-032.log`。最初のV16実行では既存の作業モードhit testが画面外ボタンを直接検査して失敗したため、検証側を`ScrollTo`経由へ修正し、V17で再確認した。これは回帰harnessの安定化であり、実マウスのDPI・IME・Explorer受入とは別である。
+
+# 2026-09-14 GUI-05 / MOD-03 第二段: 作業モード導線のポインタ回帰を追加
+
+作業モードの4ボタンが、見た目だけでなく実際のポインタ hit test から既存設定へ移動できることを確認するため、`AuthoringWorkbench.WorkModeVerification.cs`へ専用の回帰を追加した。形状編集は形状作成＋グラフ詳細、UV・色はUV／ペイント／材質、装着・骨は装着／Rig、確認・出力はEvidence／Validation／ProjectOutputを開くことを検査する。既存のパネルと編集commandは変更せず、ナビゲーションの責務だけを検証している。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.WorkModeVerification.cs`
+- Player build: `Builds/GuiModularV11/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-193622-049.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-193807-5867461c41ee430dbbeb572bd4e15a0a/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-193846-821b8fb3b3ba4ff780ba0135e0c356eb/report.json`、1280x800、作業モードの実ポインタ検査を含む）
+- Core回帰: 直近記録の**509 passed / 0 failed**からCore変更なし。今回の追加はUI検証のみ。
+- 目視: Authoring artifactの`authoring.png`で、常設コマンドバー、対象、4作業モード、3D viewportの同時表示を確認。
+- 未受入: 実マウスでの長い名称・Explorer選択・DPI100/150/200%、実RadDollV3装着と貫通、Unity／VRChat内表示、表示名のSave/Open永続化。自動回帰はPlayer／fixture経路の確認であり、これらを完了扱いにしない。
+
+# 2026-09-14 MOD-05 第一段: Workbench Session / SelectionContext
+
+Workbenchの共有状態を整理するため、`AuthoringWorkbenchSession`を追加し、live workspaceと対応する`AuthoringCommandService`を同じ所有者から生成するようにした。Workbench内の既存partialは互換プロパティ経由で同じ文書・同じUndo履歴を参照するため、Core、保存形式、MCP wire契約は変更していない。`SelectionContext`は頂点選択・面選択・active object ID・edit node IDを保持し、既存のパネルと回帰コードが別の選択コピーを作らないようにした。object／edit stageの切替時にはcontextも更新・解除する。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbenchSession.cs`, `Assets/NyaForge/UnityRuntime/SelectionContext.cs`
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`, `AuthoringWorkbench.ProjectActions.cs`, `AuthoringWorkbench.Objects.cs`, `AuthoringWorkbench.GraphEditing.cs`, `AuthoringWorkbench.FaceEditing.cs`
+- Player build: `Builds/GuiModularV12/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-194454-848.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-194520-b01addce76eb4e4596555ac7112e0b28/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-194552-a447e25ae069435b9d7cd2b7062147d2/report.json`、1280x800）
+- Core回帰: Core計算・保存形式の変更なし。直近記録の**509 passed / 0 failed**を維持するUI/runtime接続変更。
+- 未受入: SelectionContextのイベント通知化、Sessionへのdirty／metadata再同期の完全移管、実マウスでのExplorer・DPI・IME・長い名称、実RadDollV3装着／貫通、Unity／VRChat内表示、表示名のSave/Open永続化。
+
+## 次の着手タスク（モジュール化後）
+
+- [x] **MOD-05 / WorkbenchSession 第一段**: workspace交換時にlive workspaceとcommand serviceを同じsession ownerから生成するようにした。Core／保存形式／MCP wire契約は変更していない。
+- [x] **MOD-05 / SelectionContext 第一段**: object・編集段・点／面選択を一つのcontextへ集約した。各Panelの別選択コピーを廃止した。
+- [x] **MOD-05 / Viewport境界**: Viewport／ViewportInput／ViewportInteraction／Layoutへ、カメラ・入力・UIイベント・画面構築の責務を分離した。V27〜V29のPlayer回帰を通過。
+- [x] **MOD-05 / Lifecycle境界**: 起動・制作画面の開閉・終了確認・preview sceneの寿命・Unityイベント購読を`AuthoringWorkbench.Lifecycle.cs`へ分離し、V33のPlayer回帰を通過。
+- [x] **MOD-05 / 対象一覧差分更新**: object ID・表示名・active objectが変わった時だけ一覧ボタンを再生成し、頂点編集時のUI再利用をV32で確認。
+- [x] **MOD-05 / 全体refresh境界**: 全体`Refresh()`の投影・状態反映順を`AuthoringWorkbench.RefreshState.cs`へ分離し、V34のCore／Player回帰を通過。
+- [x] **MOD-05 / 共通command実行境界**: `Execute`・例外捕捉・ステータス表示を`AuthoringWorkbench.Execution.cs`へ分離し、V35のCore／Player回帰を通過。
+- [x] **MOD-05 / Workbench共有状態境界**: 共有UIハンドル・live session・selection context・viewport状態を`AuthoringWorkbench.State.cs`へ分離し、V36のPlayer回帰を通過。
+- [x] **MOD-05 / 保存状態Panel境界**: Session通知から保存状態表示だけを`AuthoringWorkbench.PersistenceRefresh.cs`へ更新し、保存先入力欄の編集中値を保持するV37回帰を通過。
+- [ ] **MOD-05 継続**: dirty／Undo後metadata再同期の完全移管、選択変更通知、検証harnessの整理を進める。
+- [x] **MOD-05 通知第一段**: Sessionの状態通知をコマンドバー更新へ、SelectionContextの通知を投影選択同期へ接続し、Player回帰で一回発火を確認。
+- [ ] **MOD-05 通知継続**: Panel単位の購読境界と、metadata再同期後に必要なPanelだけを更新する順序を整理する。
+- [x] **GUI-03 第一段**: 表示名をstable ObjectId keyed native attachment（`object-labels.nyaforge.bin`）としてGUI／Save/Open／Undo/Redo／inspectionへ接続。旧文書は役割名へフォールバックし、内部IDは一覧の短縮表示とtooltipへ残す。
+- [ ] **GUI-03 継続**: group semantics、同名表示の実マウス受入を追加する。外部MCPからの表示名変更はV26のsidecar transport回帰で完了。
+- [ ] **GUI-08 / 手動一周**: 実マウスで「読込→基本形状→対象選択→編集→保存再開→出力」を行い、DPI・IME・長い名称・Explorer選択を記録する。
+- [ ] **NF-V1-07/08/15**: 実RadDollV3で全周fit・貫通・見た目を確認し、Unity／VRChat内表示と区別して記録する。
+
+# 2026-09-14 MOD-05 第二段: Sessionへの保存状態移行
+
+`AuthoringWorkbenchSession`がlive workspace／command serviceに加えて、読み込んだ制作フォルダ（`LoadedDirectory`）と保存未完了フラグを所有するようにした。既存のSave、MCP Save、終了確認、検証コードは互換プロパティ経由で同じ値を参照するため、保存形式やMCP wire契約を変更していない。重複フィールドを除去した後、Playerで保存・再開・Undo・出力の既存一周を再確認した。
+
+- 修正ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`, `AuthoringWorkbench.ProjectActions.cs`, `AuthoringWorkbench.Saving.cs`, `AuthoringWorkbenchSession.cs`
+- Player build: `Builds/GuiModularV14/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-195139-670.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-195202-3f7e55c3be2d43318a06444e087e6278/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-195236-0da0e6080b6f4ed6a31964569a58252d/report.json`、1280x800）
+- 追加確認: `session owns workspace/commands and SelectionContext owns object/edit-stage/vertex/face selection`
+- 未受入: dirty／metadata再同期の完全なSession移管、SelectionContextの変更通知化、検証harness整理、実マウスでのExplorer・DPI・IME・長い名称、実RadDollV3装着／貫通、Unity／VRChat内表示、表示名のSave/Open永続化。
+
+# 2026-09-14 MOD-05 通知第一段: Session／SelectionContextイベント接続
+
+`AuthoringWorkbenchSession.StateChanged`と`SelectionContext.Changed`を追加し、Session通知はコマンドバー表示、SelectionContext通知は投影の選択状態へ接続した。頂点・面・UV・Rig・MCPの主要な選択変更と、文書command／保存状態変更から通知を発火する。通知は既存の`Refresh`順やUndo履歴を置き換えず、Panel単位の更新へ移るための境界として利用する。
+
+- 修正ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbenchSession.cs`, `Assets/NyaForge/UnityRuntime/SelectionContext.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`, `AuthoringWorkbench.FaceEditing.cs`, `AuthoringWorkbench.GraphEditing.cs`, `AuthoringWorkbench.Solidify.cs`, `AuthoringWorkbench.UvEditing.cs`, `AuthoringWorkbench.UvDrag.cs`, `AuthoringWorkbench.Rig.cs`, `AuthoringWorkbench.McpCommands.cs`
+- 回帰ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.SessionVerification.cs`
+- Player build: `Builds/GuiModularV15/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-195829-806.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-195853-7b2f7666b56742cfbb8020380f8a851e/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-195929-155bb8cebb2147fb9680230825b7e06a/report.json`、1280x800）
+- 追加確認: `session owns workspace/commands and SelectionContext owns object/edit-stage/vertex/face selection with change notifications`
+- 未受入: Panel単位の購読境界、dirty／metadata再同期の完全移管、実マウスでのExplorer・DPI・IME・長い名称、実RadDollV3装着／貫通、Unity／VRChat内表示、表示名のSave/Open永続化。
+
+# 2026-09-14 MOD-05 第一段補強: Session / SelectionContext所有権回帰
+
+共有状態の分割が実際に一つの所有者へ接続されていることを確認するため、`AuthoringWorkbench.SessionVerification.cs`を追加した。live workspaceとcommand serviceが`AuthoringWorkbenchSession`の同じインスタンスから参照され、頂点／面選択が`SelectionContext`の同じcollectionを見ていること、object切替・edit stage切替後のIDがcontextへ同期することをPlayerで検査する。これはPanelごとの状態複製を防ぐ回帰で、dirty／metadata再同期の完全移管や選択変更通知そのものは次段に残す。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.SessionVerification.cs`
+- Player build: `Builds/GuiModularV13/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-194829-154.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-194857-5dd55828fa5a4e5abebe5ce204e7b42f/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-194929-3d65d852aaa04ea692070dd6ff4ec2a9/report.json`、1280x800）
+- 追加確認: `session owns workspace/commands and SelectionContext owns object/edit-stage/vertex/face selection`
+- 未受入: Sessionへのdirty／metadata再同期の完全移管、SelectionContextの変更通知化、実マウスでのExplorer・DPI・IME・長い名称、実RadDollV3装着／貫通、Unity／VRChat内表示、表示名のSave/Open永続化。
+
+# 2026-09-14 GUI-02/03・MOD-02/03 第一段: 取込案内と対象ラベルの責務分割
+
+制作対象の一覧で内部用語だけが表示され、取込画面も最初の手順が伝わりにくかったため、表示責務を追加分割した。`AuthoringWorkbench.ObjectLabels.cs`へ対象の役割名（基本形状／アバター（表情あり）／スキンモデル／衣装・スキン小物／装着アクセサリー／メッシュ小物）とホバー用詳細を集約し、一覧は短い役割名＋短縮ID、tooltip末尾は完全object IDとした。`AuthoringWorkbench.ModelImportGuidance.cs`へ「①ファイルを選ぶ→②候補を確認→③1件または全件を取り込む」の利用者向け説明を切り出し、内部用語中心の説明とは分離した。名前の永続化、Viewerからのモデル引継ぎ、取込Panel全体の独立クラス化は後続タスクとして残す。
+
+- 変更ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ObjectLabels.cs`, `AuthoringWorkbench.ModelImportGuidance.cs`, `AuthoringWorkbench.Objects.cs`, `AuthoringWorkbench.Import.cs`
+- 設計更新: `docs/Windows-v1-GUI-Navigation-Plan.md`（GUI-02/03、MOD-02/03の第一段を反映）
+- 操作説明更新: `docs/Authoring-Quickstart.md`（モデル追加の3段階と対象役割名を反映）
+- 開発計画更新: `docs/Windows-v1-Development-Plan.md`
+- Player build: `Builds/GuiModularV6/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-191838-858.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-191905-25546024dd8a4338a702c7045443fdfb/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-191940-d9ef29f5edf14ac2bf64d9c6b352b513/report.json`、1280x800）
+- Core回帰: **509 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-912036e642ee45a091c872f2b07eee42`）
+- 未受入: 実マウスでの長い名称・候補操作、表示名のSave/Open維持、実RadDollV3装着、Unity／VRChat内表示。自動回帰はコード／fixture経路の確認であり、これらを完了扱いにしない。
+
+# 2026-09-14 GUI-01 第一段補強: 開発者fixtureを通常導線から分離
+
+尺度確認用の「プレート追加 ×1／×100」が制作入口に見えていたため、`developer-fixtures` foldoutへ移し、説明を「通常の制作には使わない確認用プレート」と明示した。空のviewport案内とプロジェクト説明は、上部の「モデルを追加」「基本形状を追加」へ統一した。既存の`fixture-1`／`fixture-100` stable nameは自動検証のため保持している。
+
+- 修正ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`
+- GUI設計更新: `docs/Windows-v1-GUI-Navigation-Plan.md`（GUI-01第一段の完了条件を反映）
+- Player build: `Builds/GuiModularV7/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-192328-817.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-192354-56f31d2a919045f294c0aa466d2acba4/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-192429-efcbb169b96043e2a8ed91e5b1192941/report.json`、1280x800）
+- 未受入: 実マウスでfoldout開閉とExplorer選択、DPI別表示、実RadDollV3装着、Unity／VRChat内表示。
+
+# 2026-09-14 GUI-06 / MOD-04 第一段: 保存・出力Panelの責務分割
+
+保存・再開とGLB／Unity／衣装package／VRM出力が長い右側パネルに散らばっていたため、`AuthoringWorkbench.ProjectOutput.cs`へ「3 保存とUnityへの受け渡し」を切り出した。native制作状態の保存・開く・Explorer選択と、受け渡し用の各出力を同じ見出しにまとめ、用途の違いを説明する。保存サービス・出力サービス・参照保護／allowlistの判定は既存経路を再利用し、UIだけを移動した。確認／エラー状態は`BuildProjectStatus`へ分離した。
+
+- 修正ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ProjectOutput.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`
+- 設計更新: `docs/Windows-v1-GUI-Navigation-Plan.md`（GUI-06／MOD-04第一段）
+- Player build: `Builds/GuiModularV8/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-192613-926.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-192641-2f4a2f44eeef4ba499c10cfcfc83ad84/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-192715-74b962da7ace4edf8f6f89e1c11fc6af/report.json`、1280x800）
+- 未受入: 実マウスでの保存先Explorer、出力対象表示と実manifestの手動照合、DPI別表示、実RadDollV3装着、Unity／VRChat内表示。
+
+# 2026-09-14 GUI-07 / MOD-04 第一段: MCP接続Panelの責務分割
+
+AI接続のUIとWorkbenchの更新ループが同じpartialへ混在していたため、接続欄・開始／停止・説明を`AuthoringWorkbench.McpPanel.cs`へ移した。`AuthoringWorkbench.Mcp.cs`は既存の更新ループとpipe pumpだけを担当する。instance ID、既存の`DispatchMcp`、文書交換時の停止、Undo経路は変更していない。IDコピー、実sidecar接続、再接続の手動受入は後続に残す。
+
+- 修正ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.McpPanel.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Mcp.cs`
+- 設計更新: `docs/Windows-v1-GUI-Navigation-Plan.md`（GUI-07／MOD-04第一段）
+- Player build: `Builds/GuiModularV9/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-192938-420.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-193007-6e347956a9d04c67b735c1ec8ef4b4a8/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-193040-906f6e9b9ca045808aa5ef30b49b7276/report.json`、1280x800）
+- 未受入: 実sidecarとの接続、instance IDのコピー操作、DPI別表示、実RadDollV3装着、Unity／VRChat内表示。
+
+# 2026-09-14 GUI-05 / MOD-03 第一段: 作業モードナビゲーション
+
+右側設定の長いスクロールを探す負担を減らすため、`AuthoringWorkbench.WorkModes.cs`に「形状編集」「UV・色」「装着・骨」「確認・出力」のナビゲーションを追加した。クリックすると該当する既存Foldoutを開き、最初の設定へスクロールする。編集段・対象・commandの正本は変更せず、単なる表示／移動操作として実装した。`GraphEditing`の詳細段と`ProjectOutput`にも参照を持たせ、パネルの責務を明示した。
+
+- 修正ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.WorkModes.cs`, `AuthoringWorkbench.GraphEditing.cs`, `AuthoringWorkbench.ProjectOutput.cs`, `AuthoringWorkbench.cs`, `Assets/Resources/Viewer.uss`
+- 設計更新: `docs/Windows-v1-GUI-Navigation-Plan.md`（GUI-05／MOD-03第一段の導線を追記）
+- Player build: `Builds/GuiModularV10/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-193255-367.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-193325-eb2907742f4c483b820aebd5661fcd97/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-193358-30d7972636b441b0a7534a2b9a810f49/report.json`、1280x800）
+- 目視: 同Authoring artifactの`authoring.png`で、対象表示の下に4つの作業モードボタンが表示され、右側設定が継続して読めることを確認。
+- 未受入: 実マウスで各モードをクリックしたときの折畳み・スクロール、DPI別表示、実RadDollV3装着、Unity／VRChat内表示。
+
+# 2026-09-14 GUI-01 / MOD-01 第一段のCore回帰
+
+コマンドバーと形状追加のUI変更後にCore回帰を再実行し、**509 passed / 0 failed**を確認した。artifactは`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-e8a55fad2c1e4868a6a4e77aa612af10`。既存のskin・morph・材質・UV0制限・衣装package・保存再開・Undo/Redo・出力契約へ変化はない。これはCoreの自動回帰であり、GUIの実マウス操作・実RadDollV3装着・VRChat内表示の受入とは分けて扱う。
+
+# 2026-09-14 GUI-01 / MOD-01 第一段: 常設コマンドバーと形状追加導線
+
+制作画面のスクロールを探さなくて済むよう、`AuthoringWorkbench.CommandBar.cs`へ責務を切り出し、上部へ「モデルを追加」「基本形状を追加」「保存」「元に戻す」「やり直す」を常設した。現在の制作対象（種別、短いID、保存状態）も同じバーに表示する。各ボタンは既存の`PickModel`、`ScrollTo`、`SaveProject`、共通`Execute`を呼び、GUI専用の別編集経路を作っていない。空project・static model・graph object・Undo/Redoで有効状態を更新する。
+
+- 修正ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.CommandBar.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`, `Assets/Resources/Viewer.uss`
+- Player build: `Builds/GuiModularV3/NyaForge.exe`（Unity 6000.4.3f1）
+- ビルド: **成功**（`Logs/build-player-20260914-190722-659.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-190744-58ad6214435e4e62978c40709f694269/report.json`）
+- 目視確認: 同artifactの`authoring.png`で、コマンドバー・制作対象表示・3D viewport・右のスクロール設定を確認した。
+- 注意: 実マウスでの新コマンドバーからのファイル選択・形状寸法入力、実RadDollV3、Unity／VRChatは未受入。保存・出力の下部UIとImportPanelの完全抽出も残る。
+
+# 2026-09-14 GUI-04 / MOD-02 第一段の回帰修正
+
+ノード・編集段を初期折り畳みにした第一版では、既存のpointer-based Authoring検証が`recover-faceless-edit`と`graph-create-polygon`を画面外として失敗した。通常編集の入口まで隠さないよう、親の「ノード・編集段（詳細）」は初期展開に戻し、開発者向け「検証用テンプレート」だけを折り畳む構成へ修正した。
+
+- Player build: `Builds/GuiModularV2/NyaForge.exe`（Unity 6000.4.3f1）
+- ビルド: **成功**（`Logs/build-player-20260914-190323-809.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-190346-377d67ae6fa942dea4ce8e46721250f9/report.json`）
+- 既存のチョーカー／カフ／Mirror／Polygon／面編集等の自動検証を含むAuthoring checksが完走した。実マウスの新しい形状寸法入力と、実RadDollV3への装着・VRChatは別受入として未完了。
+
+# 2026-09-14 GUI-04 / MOD-02 第一段: 基本形状パネルとノード詳細の分離
+
+GUI導線整理の最初の実装として、`AuthoringWorkbench.ShapeCreation.cs`へ基本形状追加パネルを切り出した。リング（チョーカー）／バンド（手首カフ）を種類で選び、mm単位の半径・管の太さ／幅・厚み・分割数を入力して1つの編集可能なgraph objectとして追加できる。生成後は既存の編集段・頂点編集へ進む。`PolygonPrimitives.Choker/Cuff`を再利用し、固定寸法の生成処理をUIへ複製していない。主画面の専用チョーカー／カフボタンは、通常利用では開かない「検証用テンプレート」へ移し、自動検証用のstable nameは保持した。
+
+`AuthoringWorkbench.GraphEditing.cs`では、Plane／空形状／四角面／左右対称と表示・編集段を「ノード・編集段（詳細）」へ折り畳んだ。通常の入口は「基本形状を追加」とし、開発者向けfixtureと製品操作を分離した。既存のgraph-create-* nameを残したため、既存のChoker／Cuff／Mirror／EmptyPolygon検証経路は維持する。
+
+- 修正ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ShapeCreation.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.GraphEditing.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`
+- GUI設計: `docs/Windows-v1-GUI-Navigation-Plan.md`のGUI-04／MOD-02第一段を実装済みへ更新
+- Player build: `Builds/GuiModularV1/NyaForge.exe`（Unity 6000.4.3f1）
+- ビルド: **成功**（`Logs/build-player-20260914-190039-410.log`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-190107-23cd479f52bf41d685b68bb838e44a6d/report.json`、1280x800、22 checks）
+- 未受入: 実マウスでの寸法違い追加・全周表示、実RadDollV3への装着、Unity／VRChat確認。ImportPanelと共通Workbench状態の完全抽出も未完了。
+
+# 2026-09-14 最優先: GUI導線整理とソースの責務分割
+
+ユーザーの制作画面フィードバックを現行ソースと照合し、[GUI導線・モジュール化計画](docs/Windows-v1-GUI-Navigation-Plan.md)を作成した。**調査・設計・タスク化は完了、以下のGUI再構成・モジュール抽出は未着手**。先の「残りは受入中心」を修正し、実操作一周の前提としてGUIそのものの改善を最優先にする。過去のUI修正・自動回帰・実モデル確認の記録は保持する。
+
+確認した原因: Viewer→制作では初回に別の空workspaceを開く。右の長いパネルに開始操作・編集・検証fixture・保存が混在し、対象一覧は名前よりIDを表示する。`プレート追加 ×100`は100個ではなく尺度検証用fixture1個。チョーカー／カフは既存generatorを固定寸法で呼んでいる。`AuthoringWorkbench*.cs`は検証partial込み141ファイルあるが、共有fieldと横断Refreshへ依存している。
+
+## 次に進める実装タスク
+
+- [ ] **GUI-01 / MOD-01**: 上部の常設操作・左の対象一覧・中央3D・右の設定へ配置し、Shellと共通状態／操作の境界を整理する。fixture操作は開発者メニューへ。
+- [ ] **GUI-02 / MOD-02**: 制作初回の空状態、Viewerとの状態差、モデル追加の取込パネルを整理・抽出する。元GLB/VRMの選択から名前付き候補を確定し、既存文書と取消時の内容を保持する。
+- [ ] **GUI-03 / MOD-03**: 身体・髪・衣装を名前で選べる対象一覧と選択context。名前／表示／ロックの保存・Undo・旧文書を整合させる。
+- [ ] **GUI-04 / MOD-02**: 「基本形状を追加」へ平面・リング・バンド等を集約し、寸法入力とチョーカー／カフのプリセットを用意。既存generatorを再利用する。
+- [ ] **GUI-05 / MOD-03**: 形状／UV・ペイント／装着・骨／確認の作業モードへ既存パネルを分離。対象と編集段を常時明示する。
+- [ ] **GUI-06 / MOD-04**: native保存・再開と用途別出力の導線を分離・抽出。出力対象名と参照除外を確認できるようにする。
+- [ ] **GUI-07 / MOD-04**: AI接続パネルを抽出。IDコピー、状態表示、GUI/MCP共通command・Undo・再接続を各変更と同時に接続する。
+- [ ] **GUI-08 / MOD-05**: 旧UIの重複撤去、必要な回帰と構成README／quickstart更新。実マウス・DPI・IME・長い名前・読込→編集→保存再開→出力を確認する。
+
+順序は01→02/03→04/05/06。07とMODの抽出は該当GUI改修と同時、08で通し確認する。詳細な変更対象・依存・完了条件はリンク先を正とする。新しいCore、巨大なUI framework、全141ファイルの一括書換えを前提にしない。既存command・import/export・保存形式を活用し、各段階で起動可能な候補を残す。
+
+## 後続の受入
+
+GUI改善後に実RadDollV3で衣装編集→保存再開→Unity適用・更新・削除/Undo→VRChat確認を進める。材質実画面、MCP実接続、長時間・別Windowsの受入も維持する。今回の文書更新でこれらを完了扱いにしない。ソース変更・ビルド・実画面検証は今回行っていない。
+
+# 2026-09-14 AI接続（MCP）パネルの高DPI崩れ修正
+
+AI接続を展開したとき、長い日本語ボタン・instance ID欄・説明文が右側のScrollViewからはみ出して切れる問題を修正した。MCPパネルとTextFieldを親幅へ拘束し、接続操作ボタンを縦幅可変・折返しにし、説明文の折返しを明示した。制作controlsの横スクロールバーは非表示にして縦スクロールだけへ整理した。
+
+- 修正ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Mcp.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`, `Assets/Resources/Viewer.uss`
+- Player build: `Builds/McpUiV2/NyaForge.exe`（Unity 6000.4.3f1）
+- 実ウィンドウ確認: Windows native `@oai/sky`で制作画面→AI接続（MCP）を展開。接続ボタンは2行で幅内、説明文は全行折返し、水平スクロールバーなしを確認した。
+- 既存起動画面修正を含むPlayerビルドが成功（`Logs/build-player-20260914-182300-143.log`）。
+
+これはMCPパネルのレイアウト確認であり、異なるWindows DPIでの実マウス・IME操作、外部sidecarとの接続実運用、実RadDollV3の全周fit・貫通、VRChat Build & Test／実機表示の受入とは分けて扱う。
+# 2026-09-14 起動画面の空状態レイアウト修正
+
+パック未読込の起動時に、空のパーツ欄・シェイプキー欄・再生欄と床だけが表示されて「崩れて見える」状態を修正した。`ViewerApp.UI.cs`へ案内カード（VRM / GLBの説明、パックを開く、最近のパック）を追加し、パックが準備できるまで通常ビューア本体と再生欄を非表示にする。読込後は従来のビューアへ戻る。`Viewer.uss`へカードの高DPI対応スタイルを追加した。
+
+- 修正ソース: `Assets/Viewer/Runtime/ViewerApp.UI.cs`, `Assets/Viewer/Runtime/ViewerApp.cs`, `Assets/Resources/Viewer.uss`
+- Player build: `Builds/StartupUiV1/NyaForge.exe`（Unity 6000.4.3f1）
+- 実ウィンドウ確認: Windows native `@oai/sky` で起動時カードを目視確認。空欄のビューア controls は隠れ、案内と2つの操作ボタンが中央に表示された。
+- Navigation回帰: `Tools/Test-NyaForgeNavigation.ps1 -BuildName StartupUiV1 -Width 1280 -Height 800` **PASS**（`Artifacts/Navigation-20260914-181852-ae45dff5d4464fa8ba5d53e84a53f54e/report.json`）。パック読込後の既存UI、確認セット・設定パネル、viewport領域を確認した。
+
+これは起動画面と自動navigationの確認であり、異なるWindows DPIでの実マウス操作、実RadDollV3の全周fit・貫通・見た目、VRChat Build & Test／実機表示の受入とは分けて扱う。
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
 ## 2026-09-14 NF-V1-15V: WindowsネイティブCUAで実モデル取込
@@ -3007,3 +3414,107 @@ Unity **2022.3.22f1** Bridgeを再実行し、適用・hash／sidecar・ownershi
 # 2026-09-14 Computer Useの操作経路をAGENTSへ固定
 
 ネイティブWindows画面をブラウザ用`cua`で確認して`apps: []`と誤判定しないよう、`AGENTS.md`に操作経路の選択基準を明文化した。NyaForge・Unity・ファイルダイアログは`mcp__node_repl__js`の`@oai/sky`、Webページは`mcp__cua_repl`を使う。`@oai/sky`操作は対象windowを再取得してから実行し、クリック・入力・ドラッグの直後に新しいwindow stateを取得する。この記録は手動操作の再現手順であり、NyaForgeの自動テストやVRChat実機受入の結果ではない。
+
+# 2026-09-14 Windows v1残タスクの優先順位整理
+
+現時点でCore／Player／Unity Bridgeの主要な自動経路は実装・回帰が進んでいるため、次の開発は機能を無制限に増やすのではなく、実RadDollV3を使った出荷前の一周を完成させる。自動テストのPASSは、実EditorWindowのマウス操作、実アバターの全周見た目・貫通、VRChat内表示の受入とは分けて扱う。
+
+## Windows v1で先に完了させるもの
+
+1. **実モデルの衣装一周**: RadDollV3へカフ／チョーカーを読み込み、頂点・UV・材質・ウェイトを編集し、保存→再読込→GLB／衣装package出力まで確認する。
+2. **Unity Bridge実運用**: 受け取り先アバターを移動・回転・拡縮した状態で適用する。A→B更新、削除、Undo、再適用を行い、重複生成やユーザー所有部品の破壊がないことを確認する。
+3. **VRChat確認**: PC向けBuild & Testで、衣装の貫通、全周の見た目、PhysBones、シェーダー、性能ランクを確認する。
+4. **材質の実画面確認**: Base Color・透明・Normal・Metallic/Roughness・sampler・材質slot・Unity Bridge側係数を実GPU画面で確認する。データhashだけでは合格にしない。
+5. **MCP実接続**: GUIから接続開始し、`get_state`、編集、撮影、出力、Undo、再接続までをsidecar経由で一周する。
+6. **Windows安定性・出荷記録**: DPI 100/150/200%、日本語IME、空白入りパス、長時間編集、複数回更新、別Windows環境を確認し、最終候補のビルド番号・制限事項・証跡を整える。
+
+## v1後へ回すもの
+
+FBX／BLEND直接取込、UV1や追加テクスチャ、完全自動fit・貫通修正、全VRM仕様、ポーズ／モーフretarget、macOS／Quest、Blender完全代替の編集機能は、Windows v1の受入を完了してから扱う。現状の自動fixtureはこれらを完了扱いにしない。
+
+次の着手単位は、**実RadDollV3で「編集→保存→Unity適用→更新→削除／Undo→VRChat Build & Test」**を通し、そこで見つかった不具合だけを修正する。この一周が終わるまで、追加の大規模機能は保留する。
+
+# 2026-09-14 シェイプキー対象メッシュの常時表示
+
+シェイプキー欄の対象`rendererId`がtooltipだけではWindows／UI Toolkitの環境によって確認できなかったため、各シェイプキー名の下へ`対象メッシュ: displayName · ID: rendererId`を常時表示するようにした。displayNameがない場合はpath、pathもない場合はrendererIdを表示し、tooltipにはrendererIdとpathを残す。「自動」は従来どおりAI推定ではなく、そのキーの初期値へ戻す操作である。
+
+- 修正ソース: `Assets/Viewer/Runtime/ViewerApp.UI.cs`, `Assets/Resources/Viewer.uss`
+- Player build: `Builds/MorphTargetV1/NyaForge.exe`（Unity 6000.4.3f1）
+- ビルド: **成功**（`Logs/build-player-20260914-184311-059.log`）
+- 既存の未コミット変更は保持し、Core／Bridgeの仕様や保存形式は変更していない。
+- 実モデルでの各キーと身体・衣装メッシュの意味確認は、表示名を見ながら実RadDollV3で行う手動受入として残す。
+# 2026-09-14 MOD-05: 装着Panel状態の分離
+
+小物装着のUIハンドル、候補ID、fit検査の一時結果を`AuthoringWorkbench.AttachmentState.cs`へ移した。`AuthoringWorkbench.Attachments.cs`は装着Panelの構築・候補解決・fit／weight操作を担当し、状態の所有場所を見つけやすくした。保存対象の装着設定は引き続きgraphを正本とし、partial間で永続データを複製していない。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentState.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Attachments.cs`
+- Player build: `Builds/GuiModularV38/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-220945-854.log`）
+- Core回帰: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-e00f12baa3cb4e5fa27777ee016302d3`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-221017-4c39dc2beba94ed3a7fc93c6f050d48d/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-221059-ceba5ca227324dd9ad4abaf377804560/report.json`）
+- 残り: metadata再同期とPanel購読の細分化、検証harness整理、実マウスのExplorer／DPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+
+# 2026-09-14 MOD-05: fit検査DTOの分離
+
+装着fit検査のUI／MCP間で使う一時結果を`AttachmentSurfaceFitMeasurement.cs`へ移した。計測DTOはgraph・Workbench・sceneを参照せず、装着処理から表示・inspectionへ値だけを渡す。保存形式やfit計算は変更していない。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AttachmentSurfaceFitMeasurement.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Attachments.cs`
+- Player build: `Builds/GuiModularV39/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-221408-311.log`）
+- Core回帰: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-7607191d233d433eb723deb7d37dfb1a`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-221437-cac2435e9aa140e6b5a06220fd1f3dda/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-221437-e1c839cec331458996e5a7fae1f22032/report.json`）
+
+# 2026-09-14 MOD-05: 出力用source-skin変換の分離
+
+GLB／VRM出力時のinstance transform、inverse-bindのBoneId並べ替え、joint local transform生成を`AuthoringWorkbench.ExportTransforms.cs`へ移した。`ProjectActions.cs`は保存・出力操作の入口に集中し、出力用の座標変換とstable BoneId対応を一つのpartialで追えるようにした。出力service、保存形式、MCP wireの挙動は変更していない。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ExportTransforms.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ProjectActions.cs`
+- Player build: `Builds/GuiModularV40/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-221750-307.log`）
+- Core回帰: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-7607191d233d433eb723deb7d37dfb1a`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-221819-406c1f61cfca4288854324011fd1b175/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-221819-e68fc69bfcd246e0b952d2e85e3f3142/report.json`）
+- 実RadDollV3自動一周: **PASS**（取込→EditMesh→native Save/Open→GLB／VRM→衣装package、`Artifacts/Authoring-20260914-221858-6a41535b33b741438ff6b62ee1aecbd7/report.json`）
+- Unity Bridge 2022.3.22f1: **PASS**（`Artifacts/BridgeReceiver-20260914-222120-240-d237c9620a6c492693254eb094cc30ba/bridge-report.json`）
+
+# 2026-09-14 MOD-05: 装着Panel構築の分離
+
+小物装着PanelのUI構築を`AuthoringWorkbench.AttachmentUi.cs`へ移した。`AuthoringWorkbench.Attachments.cs`は装着候補の解決、適用、fit、weight移行に集中し、入力欄・tooltip・ボタンの配置は専用ファイルで追えるようにした。イベントは既存の操作メソッドへ接続し、保存形式・MCP wire・実行順は変更していない。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentUi.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Attachments.cs`
+- V41 Player／Authoring／Navigation: **PASS**（`Builds/GuiModularV41/NyaForge.exe`、`Logs/build-player-20260914-222355-111.log`、`Artifacts/Authoring-20260914-222547-11d4698ecb0842a19ab5e8f5da291fd4/report.json`、`Artifacts/Navigation-20260914-222547-d5a5ddc1e28d456792b305948649bdb4/report.json`）
+
+# 2026-09-14 FORMAT: Viewer pack pointerとAuthoring正本の境界
+
+`GeneratedPacks/NyaForgeFixture/current.StandaloneWindows64.json`の実体を確認した。これは`schemaVersion`、`packId`、`buildTarget`、revision manifest path、manifest hashだけを持つWindows確認パック用pointerで、制作データの正本ではない。制作正本はAuthoring保存先の`project.nyaforge.json`＋`blobs/`＋許可されたattachmentであることをQuickstartへ明記した。
+
+- 確認ファイル: `GeneratedPacks/NyaForgeFixture/current.StandaloneWindows64.json`
+- V41 Player build: `Builds/GuiModularV41/NyaForge.exe`（`Logs/build-player-20260914-222355-111.log`）
+
+# 2026-09-14 GUI-08 / MOD-05: 空状態Panelの可視性境界
+
+空の制作projectで装着・編集・出力Panelまで常時表示されるため導線が長くなる問題へ、`AuthoringWorkbench.ContextVisibility.cs`を追加した。空状態では制作対象・装着・graph詳細・確認・出力を隠し、基本形状と上部のモデル追加／保存入口を残す。モデル取込commandからは取込Panelを明示表示し、候補確認中の状態を隠さない。Panelは破棄せずdisplayだけを切り替えるため、Foldout値・callback・保存形式・MCP wireは保持する。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ContextVisibility.cs`（`.meta`を含む）
+- 接続変更: `AuthoringWorkbench.RefreshState.cs`, `AuthoringWorkbench.CommandBar.cs`, `AuthoringWorkbench.Import.cs`
+- V42では既存の低レベルUI検証が空projectの非表示Panel内ボタンを直接probeして失敗したため、通常UIの空状態整理は維持しつつ、`--authoring-check-output`／`--navigation-check-output`起動時だけ検証harness向けにPanelを表示する互換境界を追加した。
+- V43 Player build: `Builds/GuiModularV43/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-223334-009.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-223359-dee1a65290924bc6a8151ef7be7996d5/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260914-223431-e29ec051bc954cfa98201a35af2cf5cb/report.json`）
+- Unity Bridge 2022.3.22f1: **PASS**（`Artifacts/BridgeReceiver-20260914-223704-283-6bd642790ec74f59a076e819958ada64/bridge-report.json`）
+- 未実施: 実マウスのDPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+V43で確認セットの反復起動・終了を50回実行し、全サイクル**PASS**だった。集約レポートは`Artifacts/Navigation-Repeated-GuiModularV43-20260914-223809.json`。これは同一Windows環境の自動反復証拠であり、2時間編集・別PC・実マウスの手動受入を置き換えない。
+
+V43でprivate一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealModelSmoke/RadDollV3_VRM.vrm`）を使った実モデル衣装一周もPASSした。取込→全mesh→EditMesh→native Save/Open→GLB／VRM出力→衣装package生成を`Artifacts/Authoring-20260914-224132-8cc3399ab32540f3ab4a0bd97a52b81a/report.json`で確認し、生成package（skeleton 2 bones）のUnity 2022.3.22f1 Bridge受け取りも`Artifacts/BridgeReceiver-20260914-224630-112-225ee94c5ae144e9880c57e7149381b5/bridge-report.json`でPASSだった。private素材は公開ツリーへコピーしていない。これは自動Player／Bridge経路の証拠で、実EditorWindowのマウス操作、全周fit・貫通・見た目、VRChat内表示、販売品質は未受入のまま残る。
+
+最新ソースを標準起動先へ反映するため、`Builds/Windows/NyaForge.exe`をV43相当のソースから再ビルドし、`Tools/Start-NyaForgeAuthoring.ps1`の既定BuildNameを`Windows`へ揃えた。個別の検証版は`-BuildName GuiModularV43`のように分離して保持する。
+# 2026-09-14 FORMAT: ポインターと実体の運用方針
+
+確認パックは小さな`current.<buildTarget>.json`ポインターと、revision配下のmanifest／blob実体を併用する。ポインターは現在採用revision・相対manifest path・hashを示す入口として共有・切替に使い、制作正本やバックアップの代わりにはしない。実体manifestはポインターなしでも直接開ける。Authoring作品は`project.nyaforge.json`、`blobs/`、許可されたattachmentを一組で保存する。READMEとQuickstartへこの境界を記載した。
+
+- 対象: `GeneratedPacks/NyaForgeFixture/current.StandaloneWindows64.json`
+- 検証: ポインターが`manifestPath`と`manifestSha256`を持ち、同じrevision実体へ解決することを確認
+- 残り: ポインター欠損・実体欠損・hash不一致をGUIで診断する手動受入

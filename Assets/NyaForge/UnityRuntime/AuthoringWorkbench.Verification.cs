@@ -229,6 +229,8 @@ namespace NyaForge.UnityRuntime
                 VerifySecondaryMotionRebind(checks);
                 VerifyPhysBonesTargetStatus(output, checks);
                 VerifyGraphExports(output, checks, graphExports);
+                VerifyWorkModeNavigation(checks);
+                VerifyStateOwnership(checks);
                 TopologyVerification.Verify(output, checks);
                 RigGraphVerification.Verify(output, checks);
                 PaintVerification.Verify(output, checks);

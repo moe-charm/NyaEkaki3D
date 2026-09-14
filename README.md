@@ -18,6 +18,7 @@ For a public import smoke without private avatar assets, run `Tools/New-NyaForge
 - [Authoring design v2](docs/NyaForge-Authoring-Design2.md)
 - [Implementation gaps and next development slices](docs/Development-Plan.md)
 - [Authoring quick start](docs/Authoring-Quickstart.md)
+- [Authoring code map and module boundaries](docs/Authoring-Code-Map.md)
 - [Unity Bridge installation and import](UnityBridge/README.md)
 
 ## Build

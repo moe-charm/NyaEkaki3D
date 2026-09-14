@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidatePattern('^[A-Za-z0-9_-]+$')]
-    [string]$BuildName = 'BoneSubsetV16',
+    [string]$BuildName = 'Windows',
     [switch]$Wait,
     [switch]$PrintOnly
 )

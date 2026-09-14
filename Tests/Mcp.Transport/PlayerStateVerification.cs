@@ -54,6 +54,7 @@ internal static class PlayerStateVerification
             if(state.GetProperty("instanceId").GetString()!=args[1] || state.GetProperty("documentId").GetString()!=args[2] || state.GetProperty("revision").GetInt64().ToString()!=args[3] || state.GetProperty("stateHash").GetString()!=args[4])
                 throw new Exception("MCP state differs from live Player state");
         }
+        await PlayerObjectLabelVerification.RunAsync(client,token);
         await PlayerApplyVerification.RunAsync(client,token);
         await PlayerExportVerification.RunAsync(client,token);
         await PlayerSaveVerification.RunAsync(client,token);

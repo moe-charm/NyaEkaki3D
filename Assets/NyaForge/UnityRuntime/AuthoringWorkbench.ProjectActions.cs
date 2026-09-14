@@ -47,11 +47,16 @@ namespace NyaForge.UnityRuntime
             ClearImportedVrmExpressions();
             ClearImportedVrmSpring();
             ClearImportedSecondaryMotion();
-            workspace = next; commands = new AuthoringCommandService(workspace);
+            if (session == null)
+            {
+                session = new AuthoringWorkbenchSession();
+                session.StateChanged += OnSessionStateChanged;
+            }
+            session.Replace(next, loadedPath);
+            selectionContext.SetObject(next.Document.ActiveObjectId);
+            selectionContext.SetEditNode("");
             RefreshReferenceProtectionFromWorkspace();
             RefreshDeliveryAllowlistFromWorkspace();
-            saveIncomplete = false;
-            savedDirectory = loadedPath == null ? null : Path.GetFullPath(loadedPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             projectPath.SetValueWithoutNotify(loadedPath ?? Path.Combine(Application.persistentDataPath, "Authoring", "Project-" + Guid.NewGuid().ToString("N").Substring(0, 8)));
             Select(projection.Points.Length == 0 ? Array.Empty<int>() : new[] { 0 }); Frame(); Refresh();
             SetStatus(loadedPath == null ? "新しい制作プロジェクトです。形を追加して始めてください。" : "制作状態を開きました。ここから新しい履歴を始めます。旧形式は別フォルダへ保存してください。");
@@ -377,97 +382,6 @@ namespace NyaForge.UnityRuntime
             var result = VrmExportService.ExportVrm1(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory, metadata, SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms(), item.ObjectId);
             SetStatus("VRM 1.0（humanoid）を書き出しました: " + result.Path + " · report: " + result.ReportPath);
         });
-
-        IReadOnlyDictionary<string, SourceAffine> SkinnedInstanceTransforms()
-        {
-            var result = new Dictionary<string, SourceAffine>(StringComparer.Ordinal);
-            if (workspace?.Document?.Objects == null) return result;
-            foreach (var item in workspace.Document.Objects)
-            {
-                if (item.Graph == null) continue;
-                if (importedRigSessions.TryGetValue(item.Graph.GraphId, out var session) && session?.MeshInstanceTransform != null)
-                    result[item.ObjectId] = session.MeshInstanceTransform;
-            }
-            if (importedRigSession?.MeshInstanceTransform != null && workspace.Document.ActiveObject?.Graph != null)
-                result[workspace.Document.ActiveObject.ObjectId] = importedRigSession.MeshInstanceTransform;
-            return result;
-        }
-
-        // glTF skinning uses the joint world frames and inverse-bind matrices;
-        // the selected skinned mesh node affine is metadata only and must not be
-        // emitted as a second post-skin matrix.
-        IReadOnlyDictionary<string, SourceAffine> SkinnedNodeTransformsForExport()
-            => new Dictionary<string, SourceAffine>(StringComparer.Ordinal);
-
-        IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> SkinnedInverseBindMatrices()
-        {
-            var result = new Dictionary<string, IReadOnlyList<SourceAffine>>(StringComparer.Ordinal);
-            if (workspace?.Document?.Objects == null) return result;
-            foreach (var item in workspace.Document.Objects)
-            {
-                if (item.Graph == null) continue;
-                if (importedRigSessions.TryGetValue(item.Graph.GraphId, out var session) && session?.SourceSkin?.InverseBindMatrices != null)
-                    result[item.ObjectId] = ReorderInverseBinds(item.Graph, session);
-            }
-            if (importedRigSession?.SourceSkin?.InverseBindMatrices != null && workspace.Document.ActiveObject?.Graph != null)
-                result[workspace.Document.ActiveObject.ObjectId] = ReorderInverseBinds(workspace.Document.ActiveObject.Graph, importedRigSession);
-            return result;
-        }
-
-        IReadOnlyList<SourceAffine> ReorderInverseBinds(AuthoringGraph graph, ImportedRigSession session)
-        {
-            var skeletonNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.Skeleton && node.Skeleton != null);
-            if (skeletonNode == null) throw new InvalidOperationException("出力skeletonがありません。");
-            var byBone = new Dictionary<string, SourceAffine>(StringComparer.Ordinal);
-            for (int slot = 0; slot < session.SourceSkin.Joints.Count; slot++)
-            {
-                int sourceNode = session.SourceSkin.Joints[slot];
-                if (!session.NodeToBone.TryGetValue(sourceNode, out var boneId)) continue;
-                byBone[boneId] = session.SourceSkin.InverseBindMatrices[slot];
-            }
-            var reordered = new List<SourceAffine>(skeletonNode.Skeleton.Bones.Count);
-            foreach (var bone in skeletonNode.Skeleton.Bones)
-            {
-                if (!byBone.TryGetValue(bone.BoneId, out var matrix))
-                    throw new InvalidOperationException("inverse-bind matrixをBoneIdへ対応できません: " + bone.Name);
-                reordered.Add(matrix);
-            }
-            return reordered;
-        }
-
-        IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> SkinnedJointLocalTransforms()
-        {
-            var result = new Dictionary<string, IReadOnlyList<SourceAffine>>(StringComparer.Ordinal);
-            if (workspace?.Document?.Objects == null) return result;
-            foreach (var item in workspace.Document.Objects)
-            {
-                if (item.Graph == null || !importedRigSessions.TryGetValue(item.Graph.GraphId, out var session) || session?.SourceSkin == null) continue;
-                var skeletonNode = item.Graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.Skeleton && node.Skeleton != null);
-                if (skeletonNode == null) continue;
-                var byBone = new Dictionary<string, SourceAffine>(StringComparer.Ordinal);
-                for (int slot = 0; slot < session.SourceSkin.Joints.Count; slot++)
-                    if (session.NodeToBone.TryGetValue(session.SourceSkin.Joints[slot], out var boneId)) byBone[boneId] = session.SourceSkin.Nodes.World[session.SourceSkin.Joints[slot]];
-                var values = skeletonNode.Skeleton.Bones.Select(bone => byBone.TryGetValue(bone.BoneId, out var world)
-                    ? (bone.ParentBoneId == "" ? world : byBone.TryGetValue(bone.ParentBoneId, out var parentWorld) ? parentWorld.Inverse().Compose(world) : null)
-                    : null).ToArray();
-                if (values.All(value => value != null)) result[item.ObjectId] = values;
-            }
-            if (importedRigSession?.SourceSkin != null && workspace.Document.ActiveObject?.Graph != null && !result.ContainsKey(workspace.Document.ActiveObject.ObjectId))
-            {
-                var graph = workspace.Document.ActiveObject.Graph; var skeletonNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.Skeleton && node.Skeleton != null);
-                if (skeletonNode != null)
-                {
-                    var byBone = new Dictionary<string, SourceAffine>(StringComparer.Ordinal);
-                    for (int slot = 0; slot < importedRigSession.SourceSkin.Joints.Count; slot++)
-                        if (importedRigSession.NodeToBone.TryGetValue(importedRigSession.SourceSkin.Joints[slot], out var boneId)) byBone[boneId] = importedRigSession.SourceSkin.Nodes.World[importedRigSession.SourceSkin.Joints[slot]];
-                    var values = skeletonNode.Skeleton.Bones.Select(bone => byBone.TryGetValue(bone.BoneId, out var world)
-                        ? (bone.ParentBoneId == "" ? world : byBone.TryGetValue(bone.ParentBoneId, out var parentWorld) ? parentWorld.Inverse().Compose(world) : null)
-                        : null).ToArray();
-                    if (values.All(value => value != null)) result[workspace.Document.ActiveObject.ObjectId] = values;
-                }
-            }
-            return result;
-        }
 
     }
 }

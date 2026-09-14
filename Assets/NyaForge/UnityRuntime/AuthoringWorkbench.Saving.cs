@@ -7,9 +7,6 @@ namespace NyaForge.UnityRuntime
 {
     public sealed partial class AuthoringWorkbench
     {
-        // Keep a failed save request visible even when the document was clean.
-        bool saveIncomplete;
-
         void SaveProject() { TrySaveProject(); }
 
         bool TrySaveProject()

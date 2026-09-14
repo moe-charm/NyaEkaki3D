@@ -161,7 +161,7 @@ namespace NyaForge.UnityRuntime
             if (!TryResolveRig(out bindingNode, out mesh, out skeleton)) throw new InvalidOperationException("skin-bind nodeのmeshとskeleton入力を接続してください。");
             string boneId = SelectedBoneId(); if (boneId == "") throw new InvalidOperationException("対象boneを選択してください。");
             var changed = SkinBindingEditing.SetVerticesWeight(bindingNode.Binding, mesh, skeleton, rigStrokeVertices, boneId, rigWeightField.value);
-            selection.Clear(); selection.UnionWith(rigStrokeVertices);
+            selection.Clear(); selection.UnionWith(rigStrokeVertices); selectionContext.NotifyChanged();
             Execute(AuthoringOperation.UpdateNode(GraphNode.SkinBindNode(bindingNode.NodeId, changed)));
             rigStrokeVertices.Clear();
         }

@@ -7,6 +7,7 @@ using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Simulation;
+using NyaForge.Authoring.Inspection;
 using Newtonsoft.Json.Linq;
 
 internal static partial class Program
@@ -51,7 +52,64 @@ internal static partial class Program
             var chain = new PhysBonesChain("tail", rootId, new[] { rootId }, PhysBonesEndpointMode.Auto, "", null, PhysBonesMultiChildType.Ignore, null, null, null, PhysBonesParameters.Default, PhysBonesInteraction.Default, null);
             var profile = new PhysBonesTargetProfile("vrchat.physbones", "sdk", "package", skeleton.ContentHash, "", new[] { chain });
             var bytes = PhysBonesTargetCodec.Write(profile); var w = Fresh(); w.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]> { [ProjectAttachments.PhysBones] = bytes })); string directory = Dir("snapshot-physbones"); ProjectStore.Save(directory, w, 0);
-            var opened = ProjectStore.Open(directory); var restored = opened.Attachments.Read(ProjectAttachments.PhysBones); True(bytes.SequenceEqual(restored)); Equal(profile.ContentHash, PhysBonesTargetCodec.Read(restored).ContentHash); False(opened.IsDirty); Equal(9, ProjectAttachments.MaxCount);
+            var opened = ProjectStore.Open(directory); var restored = opened.Attachments.Read(ProjectAttachments.PhysBones); True(bytes.SequenceEqual(restored)); Equal(profile.ContentHash, PhysBonesTargetCodec.Read(restored).ContentHash); False(opened.IsDirty); Equal(10, ProjectAttachments.MaxCount);
+        });
+
+        Test("object labels roundtrip through codec and schema 4 snapshot", () =>
+        {
+            string avatarId = Guid.NewGuid().ToString("D"), accessoryId = Guid.NewGuid().ToString("D");
+            var labels = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                [avatarId] = "白虎ちゃん",
+                [accessoryId] = "鈴付きチョーカー"
+            };
+            byte[] bytes = ObjectLabelsCodec.Write(labels);
+            var decoded = ObjectLabelsCodec.Read(bytes);
+            Equal(labels.Count, decoded.Count); Equal(labels[avatarId], decoded[avatarId]); Equal(labels[accessoryId], decoded[accessoryId]);
+            var w = Fresh(); w.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]> { [ProjectAttachments.ObjectLabels] = bytes }));
+            string directory = Dir("snapshot-object-labels"); ProjectStore.Save(directory, w, 0);
+            var opened = ProjectStore.Open(directory);
+            True(bytes.SequenceEqual(opened.Attachments.Read(ProjectAttachments.ObjectLabels))); False(opened.IsDirty);
+            var reopened = ObjectLabelsCodec.Read(opened.Attachments.Read(ProjectAttachments.ObjectLabels));
+            Equal("白虎ちゃん", reopened[avatarId]); Equal("鈴付きチョーカー", reopened[accessoryId]);
+        });
+
+        Test("object label service is revision and attachment pinned, undoable and clearable", () =>
+        {
+            var w = AuthoringWorkspace.CreateFixture();
+            string objectId = w.Document.ActiveObjectId;
+            var request = new ObjectLabelRequest(w.InstanceId, w.Document.DocumentId, w.Document.DocumentRevision,
+                w.Attachments.ContentHash, objectId, "白虎ボディ");
+            var changed = ObjectLabelService.Set(w, request);
+            Equal("白虎ボディ", ObjectLabelsCodec.Read(w.Attachments.Read(ProjectAttachments.ObjectLabels))[objectId]);
+            Equal(w.Document.DocumentRevision, changed.Revision); True(w.IsDirty);
+            Expect("ATTACHMENTS_CHANGED", () => ObjectLabelService.Set(w, request));
+            Ok(Execute(w, AuthoringOperation.Undo()));
+            True(w.Attachments.Read(ProjectAttachments.ObjectLabels) == null);
+            var cleared = new ObjectLabelRequest(w.InstanceId, w.Document.DocumentId, w.Document.DocumentRevision,
+                w.Attachments.ContentHash, objectId, "");
+            var restored = ObjectLabelService.Set(w, cleared);
+            True(restored.DisplayName == ""); True(w.Attachments.Read(ProjectAttachments.ObjectLabels) == null);
+        });
+
+        Test("object label MCP wire is strict and exposes the current pin", () =>
+        {
+            var w = AuthoringWorkspace.CreateFixture();
+            var envelope = new JObject
+            {
+                ["version"] = 1, ["requestId"] = Guid.NewGuid().ToString("D"),
+                ["expectedInstanceId"] = w.InstanceId, ["method"] = "object_label",
+                ["label"] = new JObject
+                {
+                    ["documentId"] = w.Document.DocumentId, ["expectedRevision"] = w.Document.DocumentRevision,
+                    ["expectedAttachmentsHash"] = w.Attachments.ContentHash,
+                    ["objectId"] = w.Document.ActiveObjectId, ["displayName"] = "AI命名チョーカー"
+                }
+            };
+            var parsed = AuthoringIpcRequest.Parse(Encoding.UTF8.GetBytes(envelope.ToString()));
+            Equal("AI命名チョーカー", parsed.ObjectLabel.DisplayName);
+            envelope["label"]["extra"] = true;
+            Expect("INVALID_OBJECT_LABEL_REQUEST", () => AuthoringIpcRequest.Parse(Encoding.UTF8.GetBytes(envelope.ToString())));
         });
 
         Test("reference protection metadata roundtrips through native Save/Open", () =>

@@ -66,9 +66,22 @@ namespace Viewer.Runtime
             files.Add(MakeButton("別名保存", () => Save(savePathField.value), "save-as"));
             BuildUpdateUi(uiRoot);
 
-            var body = new VisualElement(); body.AddToClassList("body"); uiRoot.Add(body);
-            partsPanel = new ScrollView { name = "parts" }; partsPanel.AddToClassList("sidebar"); body.Add(partsPanel);
-            viewport = new VisualElement { name = "viewport" }; viewport.style.flexGrow = 1; body.Add(viewport);
+            startupScreen = new VisualElement { name = "startup-screen" };
+            startupScreen.AddToClassList("startup-screen");
+            var startupCard = new VisualElement { name = "startup-card" };
+            startupCard.AddToClassList("startup-card");
+            var startupTitle = new Label("NyaForge"); startupTitle.name = "startup-title"; startupCard.Add(startupTitle);
+            var startupSubtitle = new Label("アバターの確認を始めましょう"); startupSubtitle.name = "startup-subtitle"; startupCard.Add(startupSubtitle);
+            var startupCopy = new Label("VRM / GLBパックを開くと、ポーズ・表示・シェイプキーを確認できます。"); startupCopy.AddToClassList("startup-copy"); startupCard.Add(startupCopy);
+            var startupActions = new VisualElement { name = "startup-actions" }; startupActions.AddToClassList("startup-actions");
+            startupActions.Add(MakeButton("パックを開く…", BrowsePack, "startup-browse-pack"));
+            startupActions.Add(MakeButton("最近のパック", () => ToggleNavigationPanel(recentPanel), "startup-show-recent"));
+            startupCard.Add(startupActions);
+            startupScreen.Add(startupCard); uiRoot.Add(startupScreen);
+
+            viewerBody = new VisualElement(); viewerBody.AddToClassList("body"); uiRoot.Add(viewerBody);
+            partsPanel = new ScrollView { name = "parts" }; partsPanel.AddToClassList("sidebar"); viewerBody.Add(partsPanel);
+            viewport = new VisualElement { name = "viewport" }; viewport.style.flexGrow = 1; viewerBody.Add(viewport);
             var views = new VisualElement { name = "view-controls" }; viewport.Add(views);
             views.RegisterCallback<PointerDownEvent>(e => e.StopPropagation());
             views.RegisterCallback<WheelEvent>(e => e.StopPropagation());
@@ -77,7 +90,7 @@ namespace Viewer.Runtime
             foreach (var pair in new[] { ("正面", "front"), ("背面", "back"), ("左", "left"), ("右", "right") })
                 views.Add(MakeButton(pair.Item1, () => CameraPreset(pair.Item2), "view-" + pair.Item2));
             var hint = new Label("ドラッグ: 回転  ·  右ドラッグ: 移動  ·  ホイール: 拡大"); hint.AddToClassList("hint"); viewport.Add(hint);
-            var right = new VisualElement(); right.AddToClassList("sidebar"); right.style.width = 320; body.Add(right);
+            var right = new VisualElement(); right.AddToClassList("sidebar"); right.style.width = 320; viewerBody.Add(right);
             right.Add(new Label("シェイプキー調整"));
             searchField = new TextField { name = "morph-search", value = "Shrink" };
             searchField.RegisterValueChangedCallback(_ => RebuildMorphs()); right.Add(searchField);
@@ -91,7 +104,7 @@ namespace Viewer.Runtime
             light.formatListItemCallback = LightLabel; light.formatSelectedValueCallback = LightLabel;
             light.RegisterValueChangedCallback(e => Edit(s => s.preview.lightPresetId = e.newValue)); right.Add(light);
 
-            var transport = new VisualElement(); transport.AddToClassList("transport"); uiRoot.Add(transport);
+            transport = new VisualElement(); transport.AddToClassList("transport"); uiRoot.Add(transport);
             clipDropdown = new DropdownField { name = "clip", label = "ポーズ" }; clipDropdown.style.width = 230; clipDropdown.style.flexShrink = 0;
             clipDropdown.RegisterValueChangedCallback(e =>
             {
@@ -112,6 +125,9 @@ namespace Viewer.Runtime
             timeSlider.RegisterValueChangedCallback(e => { if (!reflecting) Seek(e.newValue); }); transport.Add(timeSlider);
             timingLabel = new Label("0.000 s"); timingLabel.style.width = 105; transport.Add(timingLabel);
             statusLabel = new Label(Status); statusLabel.AddToClassList("status"); uiRoot.Add(statusLabel);
+            startupScreen.style.display = DisplayStyle.Flex;
+            viewerBody.style.display = DisplayStyle.None;
+            transport.style.display = DisplayStyle.None;
 
             viewport.RegisterCallback<GeometryChangedEvent>(_ => UpdateViewport());
             viewport.RegisterCallback<PointerDownEvent>(e =>
@@ -201,7 +217,13 @@ namespace Viewer.Runtime
             foreach (var b in Active.Verified.Manifest.morphBindings.Where(b => b.shapeName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0))
             {
                 var box = new VisualElement(); box.AddToClassList("morph-box");
-                var label = new Label(b.shapeName); label.tooltip = b.rendererId; box.Add(label);
+                var renderer = Active.Verified.Manifest.renderers.FirstOrDefault(r => r.rendererId == b.rendererId);
+                var rendererName = renderer == null ? b.rendererId : (!string.IsNullOrWhiteSpace(renderer.displayName) ? renderer.displayName : renderer.path);
+                var label = new Label(b.shapeName); label.tooltip = "対象メッシュ: " + b.rendererId; box.Add(label);
+                var targetLabel = new Label("対象メッシュ: " + rendererName + "  · ID: " + b.rendererId);
+                targetLabel.AddToClassList("morph-target");
+                targetLabel.tooltip = "rendererId: " + b.rendererId + (renderer == null || string.IsNullOrWhiteSpace(renderer.path) ? "" : "\nパス: " + renderer.path);
+                box.Add(targetLabel);
                 var row = new VisualElement(); row.style.flexDirection = FlexDirection.Row;
                 var current = Document.morphOverrides.FirstOrDefault(x => x.rendererId == b.rendererId && x.shapeName == b.shapeName);
                 var slider = new Slider(b.minWeight, b.maxWeight) { value = current?.weight ?? b.defaultWeight, showInputField = true };
@@ -233,6 +255,12 @@ namespace Viewer.Runtime
             ReflectNavigation();
             ReflectSetsUi();
             bool ready = !IsBusy && Active?.Avatar != null;
+            bool showWorkspace = ready && Document != null;
+            bool showStartup = !showWorkspace && !IsBusy && !reloadLoop && !updateChecking;
+            startupScreen?.SetEnabled(showStartup);
+            if (startupScreen != null) startupScreen.style.display = showStartup ? DisplayStyle.Flex : DisplayStyle.None;
+            if (viewerBody != null) viewerBody.style.display = showWorkspace ? DisplayStyle.Flex : DisplayStyle.None;
+            if (transport != null) transport.style.display = showWorkspace ? DisplayStyle.Flex : DisplayStyle.None;
             partsPanel?.SetEnabled(ready); morphPanel?.SetEnabled(ready);
             clipDropdown?.SetEnabled(ready); timeSlider?.SetEnabled(ready);
             speedSlider?.SetEnabled(ready); loopToggle?.SetEnabled(ready);

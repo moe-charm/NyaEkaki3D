@@ -12,7 +12,7 @@ namespace NyaForge.UnityRuntime
         {
             if(activeEditContext==null || selectedFaces.Count==0) return null;
             var expanded=UvIslands.Expand(DisplayedGraphValue().Polygon,selectedFaces);
-            if(!selectedFaces.SetEquals(expanded)) { selectedFaces.Clear();selectedFaces.UnionWith(expanded);Refresh(); }
+            if(!selectedFaces.SetEquals(expanded)) { selectedFaces.Clear();selectedFaces.UnionWith(expanded);selectionContext.NotifyChanged();Refresh(); }
             var context=activeEditContext;var faces=selectedFaces.OrderBy(id=>id).ToArray();
             // Capture the revision now, not at release: edits or project replacement invalidate this gesture.
             var envelope=workspace.NewCommand();

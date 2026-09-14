@@ -26,6 +26,7 @@ namespace Viewer.Runtime
         Camera previewCamera;
         Light keyLight;
         VisualElement uiRoot, partsPanel, morphPanel, viewport;
+        VisualElement viewerBody, startupScreen, transport;
         TextField pathField, savePathField, searchField;
         Label statusLabel, timingLabel;
         Slider timeSlider;

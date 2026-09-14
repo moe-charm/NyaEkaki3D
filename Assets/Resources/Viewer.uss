@@ -9,6 +9,7 @@
 .status { height: 28px; padding-left: 14px; padding-top: 4px; background-color: rgb(19, 25, 34); color: rgb(168, 189, 208); }
 .hint { color: rgb(173, 190, 207); background-color: rgba(15, 21, 30, 0.8); align-self: center; margin-top: 12px; padding-left: 10px; padding-right: 10px; padding-top: 6px; padding-bottom: 6px; }
 .morph-box { margin-top: 9px; padding-bottom: 8px; border-bottom-width: 1px; border-bottom-color: rgb(50, 59, 73); }
+.morph-target { color: rgb(159, 178, 197); font-size: 11px; white-space: normal; margin-top: 2px; margin-bottom: 3px; }
 Button { margin-left: 3px; margin-right: 3px; padding-left: 10px; padding-right: 10px; min-height: 27px; background-color: rgb(48, 61, 76); color: rgb(233, 240, 246); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px; }
 Button:hover { background-color: rgb(66, 92, 111); }
 Toggle { min-height: 27px; }
@@ -44,6 +45,12 @@ TextField { min-height: 34px; }
 .status { height: auto; min-height: 34px; padding-bottom: 5px; }
 #current-set-status { min-width: 90px; -unity-text-align: middle-left; }
 .sidebar Button { white-space: normal; height: auto; padding-top: 5px; padding-bottom: 5px; }
+.authoring-command-bar { flex-direction: row; flex-wrap: wrap; align-items: center; flex-shrink: 0; min-height: 44px; padding-left: 10px; padding-right: 10px; padding-top: 4px; padding-bottom: 4px; background-color: rgb(24, 32, 42); }
+.authoring-command-bar > Button { flex-shrink: 0; min-height: 34px; }
+.authoring-command-context { flex-grow: 1; flex-basis: 180px; min-width: 150px; color: rgb(185, 204, 220); white-space: normal; margin-right: 8px; }
+.work-mode-navigator { flex-shrink: 0; margin-top: 8px; margin-bottom: 8px; padding-top: 6px; padding-bottom: 6px; padding-left: 6px; padding-right: 6px; background-color: rgb(25, 34, 45); border-left-width: 2px; border-left-color: rgb(79, 143, 156); }
+.work-mode-navigator > Label { color: rgb(190, 208, 222); }
+.work-mode-navigator Button { flex-grow: 1; min-width: 132px; }
 
 /* Primary actions stay on one compact bar; secondary controls open on demand. */
 .navigation-panel { flex-shrink: 0; background-color: rgb(28, 35, 46); padding-left: 10px; padding-right: 10px; padding-top: 6px; padding-bottom: 6px; }
@@ -53,3 +60,23 @@ TextField { min-height: 34px; }
 #viewport { min-width: 150px; }
 .toolbar > Button { flex-shrink: 0; }
 .toolbar { padding-left: 10px; padding-right: 10px; }
+
+/* A clean first-run screen avoids presenting empty viewer controls before a
+   pack exists. The full viewer body is revealed after the pack is ready. */
+#startup-screen { flex-grow: 1; align-items: center; justify-content: center; background-color: rgb(19, 25, 34); padding-left: 24px; padding-right: 24px; padding-top: 24px; padding-bottom: 24px; }
+#startup-card { width: 560px; max-width: 100%; padding-left: 28px; padding-right: 28px; padding-top: 26px; padding-bottom: 26px; background-color: rgb(34, 43, 56); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgb(71, 91, 111); border-right-color: rgb(71, 91, 111); border-top-color: rgb(71, 91, 111); border-bottom-color: rgb(71, 91, 111); border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
+#startup-title { font-size: 30px; -unity-font-style: bold; color: rgb(122, 225, 205); -unity-text-align: middle-center; margin-bottom: 4px; }
+#startup-subtitle { font-size: 22px; color: rgb(233, 240, 246); -unity-text-align: middle-center; margin-bottom: 14px; }
+.startup-copy { color: rgb(173, 190, 207); -unity-text-align: middle-center; }
+#startup-actions { flex-direction: row; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+#startup-actions > Button { min-width: 180px; min-height: 44px; font-size: 18px; margin-left: 6px; margin-right: 6px; }
+
+/* MCP is a vertical panel. Explicitly constrain its fields and actions so a
+   long Japanese label cannot widen the controls past the scroll view at high
+   DPI. */
+.mcp-panel { width: 100%; min-width: 0; }
+.mcp-panel TextField { width: 100%; min-width: 0; }
+.mcp-panel .unity-base-field__label { white-space: normal; }
+.mcp-panel .unity-base-text-field__input { min-width: 0; width: 100%; }
+.mcp-action { width: 100%; min-width: 0; max-width: 100%; height: auto; min-height: 44px; white-space: normal; }
+.mcp-help { white-space: normal; overflow: visible; min-width: 0; }

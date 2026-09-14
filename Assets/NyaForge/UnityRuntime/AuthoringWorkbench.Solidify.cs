@@ -16,7 +16,7 @@ namespace NyaForge.UnityRuntime
             {
                 if (activeEditContext == null) throw new InvalidOperationException("PolygonEditを選択してください。");
                 Execute(AuthoringOperation.SolidifyPolygon(activeEditContext, shellThickness.value / 1000));
-                selection.Clear(); selectedFaces.Clear(); Refresh();
+                selection.Clear(); selectedFaces.Clear(); selectionContext.NotifyChanged(); Refresh();
             }), "solidify-polygon");
             parent.Add(solidifyButton);
         }

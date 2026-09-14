@@ -25,9 +25,29 @@ namespace NyaForge.UnityRuntime
                 var activeId = workspace.Document.ActiveObjectId;
                 var activeButton = root.Q<Button>("object-select-" + activeId);
                 Check(activeButton != null && activeButton.text.Length < activeId.Length && activeButton.tooltip.EndsWith(activeId, StringComparison.Ordinal), "Object selector text is not readable without losing the full identity");
+                objectDisplayNameField.SetValueWithoutNotify("白虎ボディ");
+                // This row is part of the long object foldout. Invoke the
+                // callback's operation directly here; ScrollView hit testing
+                // is covered by the dedicated work-mode and pointer suites,
+                // while this check focuses on metadata history/persistence.
+                SaveObjectDisplayName();
+                Check(ObjectDisplayName(workspace.Document.ActiveObject) == "白虎ボディ" &&
+                    root.Q<Button>("object-select-" + activeId).text.Contains("白虎ボディ"),
+                    "Object display name was not applied to the active selector");
+                var mcpLabel = SetObjectLabelMcp(new ObjectLabelRequest(workspace.InstanceId, workspace.Document.DocumentId,
+                    workspace.Document.DocumentRevision, workspace.Attachments.ContentHash, activeId, "AI経由ボディ"));
+                Check((bool)mcpLabel["success"] && ObjectDisplayName(workspace.Document.ActiveObject) == "AI経由ボディ",
+                    "MCP display-name endpoint did not update the active selector");
+                Execute(AuthoringOperation.Undo());
+                Check(ObjectDisplayName(workspace.Document.ActiveObject) == "白虎ボディ", "Object display name was not restored by Undo");
+                Execute(AuthoringOperation.Redo());
+                Check(ObjectDisplayName(workspace.Document.ActiveObject) == "AI経由ボディ", "Object display name was not restored by Redo");
                 var directory = Path.Combine(output, "multi-object-display");
                 projectPath.SetValueWithoutNotify(directory); SaveProject(); OpenProject();
                 Check(workspace.Document.Objects.Count == 2 && objectProjection.EntryCount == 1, "Multiple graph objects were not restored on Open");
+                Check(ObjectDisplayName(workspace.Document.ActiveObject) == "AI経由ボディ" &&
+                    root.Q<Button>("object-select-" + workspace.Document.ActiveObjectId).text.Contains("AI経由ボディ"),
+                    "Object display name was not restored by Save/Open");
                 showAllObjects.value = false;
                 Check(objectProjection.EntryCount == 0 && !objectProjection.FramingPoints.Any(), "Inactive object visibility toggle did not hide the backdrop");
                 showAllObjects.value = true;
@@ -96,7 +116,7 @@ namespace NyaForge.UnityRuntime
                 Check(referenceProtectedObjectIds.Contains(objectIds[0]) && referenceProtectionToggle.value, "Reference protection was not restored by Save/Open");
                 referenceProtectionToggle.value = false;
                 Check(!referenceProtectedObjectIds.Contains(objectIds[0]), "Reference protection did not unlock the active object");
-                checks.Add("multi-object GUI backdrop: two graph targets, Save/Open, isolated edits, visibility/framing and persisted reference protection");
+                checks.Add("multi-object GUI/MCP backdrop: persisted display name with GUI and MCP update, Undo/Redo and Save/Open, isolated edits, visibility/framing and persisted reference protection");
             }
             finally
             {

@@ -15,93 +15,6 @@ namespace NyaForge.UnityRuntime
 {
     public sealed partial class AuthoringWorkbench
     {
-        Foldout attachmentPanel;
-        Label attachmentStatus;
-        DropdownField attachmentTarget;
-        DropdownField attachmentBone;
-        FloatField attachmentOffsetX, attachmentOffsetY, attachmentOffsetZ;
-        FloatField accessoryFitOffsetMm, accessoryFitMaxDistanceMm;
-        TextField accessorySurfaceTriangleIds;
-        TextField accessoryClothingVertexIds;
-        Toggle accessorySurfacePickMode;
-        readonly HashSet<int> selectedAvatarSurfaceTriangles = new HashSet<int>();
-        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPolygonMaterialize, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessorySurfaceInspect, accessoryPoseCopy, accessoryUseSelectedVertices, accessoryClearSurfaceSelection;
-        readonly List<string> attachmentTargetIds = new List<string>();
-        readonly List<string> attachmentBoneIds = new List<string>();
-        string attachmentTargetChoice;
-        string attachmentChoiceOwner;
-        string surfaceFitInspectionObjectId = "";
-        string surfaceFitInspectionTargetObjectId = "";
-        string surfaceFitInspectionStateHash = "";
-        long surfaceFitInspectionRevision = -1;
-        int surfaceFitInspectionEvaluatedVertexCount;
-        int surfaceFitInspectionMovedVertexCount;
-        float surfaceFitInspectionMaxProjectionDistance;
-        float surfaceFitInspectionAverageProjectionDistance;
-        float surfaceFitInspectionMaxDisplacement;
-        float surfaceFitInspectionAverageDisplacement;
-        float surfaceFitInspectionOffset;
-        float surfaceFitInspectionMaxDistance;
-        int surfaceFitInspectionBehindSurfaceVertexCount;
-        float surfaceFitInspectionMinimumSignedDistance;
-        float surfaceFitInspectionMaximumSignedDistance;
-        int[] surfaceFitInspectionTriangleIds;
-        int[] surfaceFitInspectionVertexIds;
-        int[] surfaceFitInspectionBehindSurfaceVertexIds;
-
-        void BuildAttachments(VisualElement parent)
-        {
-            attachmentPanel = new Foldout { text = "小物をボーンへ装着", value = false, name = "object-attachment" };
-            attachmentStatus = new Label { name = "object-attachment-status" };
-            attachmentStatus.style.whiteSpace = WhiteSpace.Normal;
-            attachmentPanel.Add(attachmentStatus);
-            attachmentTarget = new DropdownField("アバター対象", new List<string> { "対象なし" }, 0) { name = "object-attachment-target" };
-            attachmentTarget.RegisterValueChangedCallback(e =>
-            {
-                // DropdownField exposes the display label, while the authored
-                // attachment contract uses the stable object ID. Keep the
-                // selected ID so a subsequent Refresh cannot mistake the
-                // label for an ID and fall back to the first avatar.
-                int index = attachmentTarget.choices.IndexOf(e.newValue);
-                attachmentTargetChoice = index >= 0 && index < attachmentTargetIds.Count ? attachmentTargetIds[index] : null;
-                RefreshAttachmentControls();
-            });
-            attachmentPanel.Add(attachmentTarget);
-            attachmentBone = new DropdownField("BoneId", new List<string> { "対象なし" }, 0) { name = "object-attachment-bone" };
-            attachmentPanel.Add(attachmentBone);
-            attachmentOffsetX = Number(attachmentPanel, "bone local X (mm)", 0, "object-attachment-offset-x");
-            attachmentOffsetY = Number(attachmentPanel, "bone local Y (mm)", 0, "object-attachment-offset-y");
-            attachmentOffsetZ = Number(attachmentPanel, "bone local Z (mm)", 0, "object-attachment-offset-z");
-            attachmentApply = Button("この小物を装着", ApplyAttachment, "object-attachment-apply");
-            attachmentRemove = Button("装着を解除", RemoveAttachment, "object-attachment-remove");
-            accessorySkinBind = Button("衣装をavatar骨格へskin-bind（Root初期化）", BindAccessoryToAvatar, "object-skin-bind");
-            accessoryPolygonMaterialize = Button("Polygon造形をskin衣装へ派生", MaterializePolygonAccessory, "object-polygon-materialize");
-            accessoryAutoWeight = Button("衣装の自動weight初期化（骨近傍）", TransferAccessoryWeights, "object-skin-auto-weight");
-            accessorySurfaceWeight = Button("衣装の自動weight初期化（avatar表面）", TransferAccessorySurfaceWeights, "object-skin-surface-weight");
-            accessoryFitOffsetMm = Number(attachmentPanel, "avatar表面からのfit offset (mm)", 2, "object-surface-fit-offset-mm");
-            accessoryFitMaxDistanceMm = Number(attachmentPanel, "surface fit最大距離 (mm)", 50, "object-surface-fit-max-distance-mm");
-            accessorySurfaceTriangleIds = new TextField("avatar面ID（カンマ区切り・空欄=全て）") { name = "object-surface-triangle-ids" };
-            accessorySurfaceTriangleIds.tooltip = "avatarのrest meshを三角形の通し番号で限定します。面IDはsubmesh順に0から数え、空欄なら全三角形を対象にします。fitとweightで同じ領域を使います。";
-            attachmentPanel.Add(accessorySurfaceTriangleIds);
-            accessorySurfacePickMode = new Toggle("クリックでavatar面を選択（Shiftで追加）") { name = "object-surface-pick-mode" };
-            accessorySurfacePickMode.tooltip = "有効にするとビューポートのavatar面をクリックして領域を作ります。衣装頂点のクリック選択は一時停止します。";
-            attachmentPanel.Add(accessorySurfacePickMode);
-            accessoryClearSurfaceSelection = Button("avatar面領域を解除（全三角形）", ClearSurfaceTriangleSelection, "object-surface-clear-selection");
-            attachmentPanel.Add(accessoryClearSurfaceSelection);
-            accessoryClothingVertexIds = new TextField("衣装頂点ID（カンマ区切り・空欄=全て）") { name = "object-surface-clothing-vertex-ids" };
-            accessoryClothingVertexIds.tooltip = "衣装EditMeshの頂点IDを限定します。空欄なら全頂点を対象にし、指定時は未選択頂点の位置・weightを保持します。";
-            attachmentPanel.Add(accessoryClothingVertexIds);
-            accessoryUseSelectedVertices = Button("現在の衣装頂点選択を適用対象にする", UseSelectedClothingVertices, "object-surface-use-selected-vertices");
-            attachmentPanel.Add(accessoryUseSelectedVertices);
-            accessorySurfaceFit = Button("衣装をavatar表面へfit", FitAccessoryToAvatarSurface, "object-surface-fit");
-            accessorySurfaceInspect = Button("fit状態を測定（変更なし）", InspectAccessorySurfaceFit, "object-surface-inspect");
-            accessoryPoseCopy = Button("avatarの現在poseを衣装へコピー", CopyAvatarPose, "object-skin-pose-copy");
-            attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryPolygonMaterialize); attachmentPanel.Add(accessoryAutoWeight); attachmentPanel.Add(accessorySurfaceWeight); attachmentPanel.Add(accessorySurfaceFit); attachmentPanel.Add(accessorySurfaceInspect); attachmentPanel.Add(accessoryPoseCopy);
-            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。Polygon造形をskin衣装へ派生すると、元のPolygon graphを残したまま編集結果をMeshSourceへ確定し、新しい衣装objectを作成します。自動weight初期化（骨近傍）はrest骨segmentへの距離から最大4本を選ぶ簡易初期値です。avatar表面が評価できる場合は、表面上の最近三角形から既存avatar weightを補間するavatar表面方式を推奨します。avatar面IDを指定するとfitとweightの対象面を同じ領域へ限定できます。衣装頂点IDを指定すると未選択頂点の位置・weightを保持できます。空欄は全てを対象にします。どちらも必ず動作確認・Rig panelで手修正してください。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。fit状態の測定では最近面の法線に対する裏側候補も表示しますが、交差や貫通ゼロを保証する検査ではありません。");
-            help.style.whiteSpace = WhiteSpace.Normal; attachmentPanel.Add(help);
-            parent.Add(attachmentPanel);
-        }
-
         GraphNode ActiveAttachmentNode()
         {
             if (!IsGraph) return null;
@@ -494,20 +407,7 @@ namespace NyaForge.UnityRuntime
         IEnumerable<int> ClothingVertexSelection() => ParseIndexSelection(
             accessoryClothingVertexIds == null ? "" : accessoryClothingVertexIds.value, "衣装頂点ID");
 
-        sealed class SurfaceFitMeasurement
-        {
-            public MeshSurfaceFitResult Result;
-            public MeshSurfaceClearanceResult Clearance;
-            public string TargetObjectId;
-            public string Region;
-            public string Vertices;
-            public int[] TriangleIds;
-            public int[] VertexIds;
-            public float Offset;
-            public float MaxDistance;
-        }
-
-        SurfaceFitMeasurement MeasureAccessorySurfaceFit()
+        AttachmentSurfaceFitMeasurement MeasureAccessorySurfaceFit()
         {
             if (!IsGraph) throw new InvalidOperationException("衣装のgraph objectを選択してください。");
             int targetIndex = attachmentTarget.index;
@@ -553,7 +453,7 @@ namespace NyaForge.UnityRuntime
             surfaceFitInspectionTriangleIds = surfaceTriangles;
             surfaceFitInspectionVertexIds = clothingVertices;
             surfaceFitInspectionBehindSurfaceVertexIds = clearance.BehindSurfaceVertexIndices.ToArray();
-            return new SurfaceFitMeasurement { Result = fit, Clearance = clearance, TargetObjectId = target.ObjectId, Region = region, Vertices = vertices,
+            return new AttachmentSurfaceFitMeasurement { Result = fit, Clearance = clearance, TargetObjectId = target.ObjectId, Region = region, Vertices = vertices,
                 TriangleIds = surfaceTriangles, VertexIds = clothingVertices, Offset = offset, MaxDistance = maxDistance };
         }
 

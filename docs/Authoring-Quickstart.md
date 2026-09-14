@@ -2,9 +2,9 @@
 
 これは現在動く制作プレビューの操作説明です。空projectから形状を作り、graph・polygon・paint・Rigの編集を試して、Unityへ渡すところまで確認できます。製品全体の目標は [設計v2](NyaForge-Authoring-Design2.md)、次の実装範囲は [開発計画](Development-Plan.md) を参照してください。
 
-現行のWindows確認候補は `Builds/BoneSubsetV16/NyaForge.exe` です。制作画面の「1 制作プロジェクト」にある **モデルを開く…** を押すと、GLB／VRMの取込欄を開きながらWindows Explorerのファイル選択を直接起動できます。全身Frameは取込後に自動で行われます。
+現行のWindows確認候補は `Builds/Windows/NyaForge.exe` です。制作画面の「1 制作プロジェクト」にある **モデルを開く…** を押すと、GLB／VRMの取込欄を開きながらWindows Explorerのファイル選択を直接起動できます。全身Frameは取込後に自動で行われます。
 
-最新の候補をAuthoringモードで起動するには、リポジトリ直下で次を実行します（現在の既定はV16です）。
+最新の候補をAuthoringモードで起動するには、リポジトリ直下で次を実行します（既定は`Builds/Windows`です）。
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Start-NyaForgeAuthoring.ps1
@@ -13,14 +13,18 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Start-NyaForgeAuthor
 ## キャラ・衣装をビューワーで開く
 
 1. 上部の **パックを開く…** を押すと、Windowsのファイル選択画面が開きます。エクスプローラーと同じようにフォルダを移動でき、アドレス欄にフォルダパスを貼り付けることもできます。
-2. パック入口の **current.StandaloneWindows64.json** を選びます。個別のパックmanifestや保存済みの **.viewer.json** も選べます。
+2. パック入口の **current.StandaloneWindows64.json** を選びます。これは`packId`・`buildTarget`・revision manifestの場所・hashだけを持つWindows確認パック用のポインタです。Nya Ekaki 3Dの制作正本ではありません。個別のパックmanifestや保存済みの **.viewer.json** も選べます。
+
+制作データの正本は、制作画面の保存で作られるフォルダです。`project.nyaforge.json`がmanifest、`blobs/`が内容本体、許可された`.nyaforge.*` attachmentがrig・表情・揺れ・表示名などの補助情報を持ちます。
+
+ポインターと実体は併用します。`current.StandaloneWindows64.json`のような小さなポインターは、現在採用するrevisionとmanifestの相対パス・hashを示す入口です。確認環境の切替や共有では便利ですが、ポインターだけをバックアップしたり制作正本として編集したりしません。実体はrevision配下の`manifest.json`と関連blobです。ポインターを失っても実体manifestを直接開けますし、実体を失ったポインターは復元できません。制作作品では、`project.nyaforge.json`＋`blobs/`＋許可されたattachmentを一組で保存します。
 3. 次回は上部の **最近** から選んで **開く**。履歴は読み込み成功時だけ最大8件保存します。
 
 通常のパックは初期表示で開き、確認セットを選んだ場合は保存した表示状態を復元します。未保存変更があれば切替前に確認します。選択のキャンセルや読み込み失敗では現在のモデル・確認セットを保持します。
 
 **確認セット** に保存・復元、**設定** に起動設定・更新・詳細パス・再生速度をまとめています。同じ上部ボタンをもう一度押すと閉じます。視点ボタンはモデル表示の上、ポーズと再生は下にあります。詳細のパス欄ではパックのフォルダ自体も指定できます。
 
-ビューワーでは生成済みのパックと確認セットを開けます。制作画面の **モデルを開く…**（詳細欄の **GLBモデルを取り込む** からも可）を押すと、Windowsのファイル選択からGLB/VRMを選び、候補のmesh・skin・node instanceを確認して制作対象へ追加できます。static meshとskin付きmeshのどちらもEditMesh段から頂点編集を始められます。別graph objectとして取り込んだ小物はstable BoneIdへ装着でき、同じパネルの **衣装をavatar骨格へskin-bind（Root初期化）** で選択avatarの骨格をコピーし、全頂点をRootへ初期化できます。avatarにrest meshとskin bindingがある場合は **自動weight初期化（avatar表面）** を使うと最近三角形上の既存avatar weightを補間できます。avatar表面を使えない場合は **自動weight初期化（骨近傍）** がrest骨segment距離から最大4本を作るフォールバックです。いずれも初期値なので、Rig panelのweight混合・weight paintとpose確認で袖や裾などを必ず調整します。FBX・BLEND・Unity prefabの直接取り込みは未実装です。
+ビューワーでは生成済みのパックと確認セットを開けます。制作画面の **モデルを追加**（詳細欄の **GLB / VRMモデルを取り込む** からも可）を押すと、Windowsのファイル選択からGLB/VRMを選び、①候補確認、②1件または全件の取込、の順に進めます。左の制作対象一覧は「基本形状」「スキンモデル」「衣装／スキン小物」などの役割名で表示され、ホバーすると完全なobject IDを確認できます。ビューアーに表示中のモデルは自動で制作対象へ引き継がれないため、元のGLB/VRMを選んで追加してください。static meshとskin付きmeshのどちらもEditMesh段から頂点編集を始められます。別graph objectとして取り込んだ小物はstable BoneIdへ装着でき、同じパネルの **衣装をavatar骨格へskin-bind（Root初期化）** で選択avatarの骨格をコピーし、全頂点をRootへ初期化できます。avatarにrest meshとskin bindingがある場合は **自動weight初期化（avatar表面）** を使うと最近三角形上の既存avatar weightを補間できます。avatar表面を使えない場合は **自動weight初期化（骨近傍）** がrest骨segment距離から最大4本を作るフォールバックです。いずれも初期値なので、Rig panelのweight混合・weight paintとpose確認で袖や裾などを必ず調整します。FBX・BLEND・Unity prefabの直接取り込みは未実装です。
 
 bodyを基準に衣装を調整するときは、制作対象パネルでavatar objectを選び **選択中を参照として保護（編集不可）** をオンにします。保護したobjectは表示・選択・保存できますが、頂点・材質・リグ・graphの変更と汎用納品出力を停止します。衣装objectを選び **選択中を納品対象に含める** をオンにすると、指定したobjectだけがGLB／multi-object納品へ入ります。allowlistはnative projectの `delivery-allowlist.nyaforge.bin` へ保存され、開き直しても復元されます。保護IDは `reference-protection.nyaforge.bin` へ保存されます。編集する場合は同じ保護トグルをオフにしてください。これは誤編集・誤出力防止の境界であり、実EditorWindowの手動操作とVRChat内の見た目確認は別の受入です。
 
@@ -57,8 +61,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeRealClo
 最新の開発ビルドの場所は [current_task.md](../current_task.md) を参照してください。下記の標準配置と異なるBuilds内の名前で保存している場合があります。
 
 1. `Builds/Windows/NyaForge.exe` を起動して **制作へ** を選びます。`--authoring true` でも直接開けます。
-2. 制作画面は**空のプロジェクト**から始まります。**プレート追加 ×1** または **プレート追加 ×100** を選びます。両方とも見た目の寸法は同じです。追加もUndoの対象で、取り消すと空に戻ります。別の形を始める場合は **新しい空プロジェクト** を使います。
-3. 既存のgraph projectへ小物の土台を足す場合は、**チョーカー形状を追加** を押します。空projectでも使え、追加した対象は通常のPolygonEditとして編集できます。
+2. 制作画面は**空のプロジェクト**から始まります。通常は **基本形状を追加** で種類を選び、mm単位の寸法と分割数を指定して1つ追加します。リング（チョーカー）とバンド（手首カフ）は、アバターへ自動装着する完成品ではなく、頂点編集へ進むための土台です。追加はUndoの対象です。
+3. Plane／空形状／四角面／左右対称や編集段を確認する場合は、**ノード・編集段（詳細）** を開きます。fixture ×1/×100と検証用チョーカー／カフは開発者向けテンプレートで、自動検証との互換入口です。通常の衣装制作では基本形状パネルを使います。
 4. 点をクリックして選び、Shiftクリックで選択を追加します。重なった点は **頂点ID → IDで選択** で指定できます。
 5. X/Y/Zの移動量をmmで入力し、**選択頂点を移動** を押します。初期値X=10は横へ1cmです。
 6. **編集レイヤーを表示** を切り替えると基準形状と比較できます。**元に戻す／やり直す** は制作変更だけを対象にします。
@@ -143,7 +147,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeUnityBr
 描画実装の参照: [Unity PanelSettings.targetTexture](https://docs.unity.cn/6000.1/Documentation/ScriptReference/UIElements.PanelSettings-targetTexture.html)、[Camera.targetTexture](https://docs.unity3d.com/ja/current/ScriptReference/Camera-targetTexture.html)。
 # EditMeshの処理段を編集する（C1-A途中版）
 
-`Builds/Windows-C1A-EditStage/NyaForge.exe`の制作画面で新しい空プロジェクトを作り、右の「Planeグラフから始める」を押す。Plane→EditMesh→Outputが追加され、EditMeshが選択される。
+`Builds/Windows-C1A-EditStage/NyaForge.exe`の制作画面で新しい空プロジェクトを作り、右の「ノード・編集段（詳細）」を開いて「Planeグラフから始める」を押す。Plane→EditMesh→Outputが追加され、EditMeshが選択される。通常の形状制作は「基本形状を追加」から始める。
 
 「表示・編集段」でEditMeshを選んだ状態では、その処理段の結果を表示する。点を選択し、mm値を入力して「選択頂点を移動」を押す。元に戻す・やり直す、制作フォルダへの保存・再読込を利用できる。読込後は編集するEditMeshを選び直す。
 
@@ -239,7 +243,7 @@ PNGはRGBA8・sRGB・straight alphaで、上下方向を標準PNGに合わせる
 
 ## 小物をavatarのボーンへ装着する
 
-先にGLB/VRM avatarを取り込み、次に「チョーカー形状を追加」などで小物を別のgraph objectとして作る。小物を対象にした状態で「小物をボーンへ装着」を開き、アバター対象と表示されたBoneIdを選び、必要ならbone localのX/Y/Z offset (mm)を入力して「この小物を装着」を押す。名前ではなくstable BoneIdとskeleton hashで対応を確認するので、別の骨へ推測で接続されない。
+先にGLB/VRM avatarを取り込み、次に「基本形状を追加」でリングまたはバンドを追加して小物を別のgraph objectとして作る。小物を対象にした状態で「小物をボーンへ装着」を開き、アバター対象と表示されたBoneIdを選び、必要ならbone localのX/Y/Z offset (mm)を入力して「この小物を装着」を押す。名前ではなくstable BoneIdとskeleton hashで対応を確認するので、別の骨へ推測で接続されない。
 
 装着後も小物の頂点編集、Undo、保存・再読込、pose変更時のプレビュー追従が同じ制作履歴で使える。装着情報を含む作品で「Unity用に書き出す」を押すと、通常の独立multi-object Bakeではなく、avatarと小物・graph・attachmentを含むnative project packageへ出力する。標準GLBはgeometry交換用でattachment metadataを表現しないため、位置と対応を保ったまま再開する場合はnative packageを保持する。
 

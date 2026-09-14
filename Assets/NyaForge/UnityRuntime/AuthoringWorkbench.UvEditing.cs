@@ -30,7 +30,7 @@ namespace NyaForge.UnityRuntime
                 if (!faceMode.value)
                 {
                     faceMode.SetValueWithoutNotify(true);
-                    selection.Clear(); selectedFaces.Clear();
+                    selection.Clear(); selectedFaces.Clear(); selectionContext.NotifyChanged();
                 }
                 if (!add) selectedFaces.Clear();
                 if (face.HasValue)
@@ -38,6 +38,7 @@ namespace NyaForge.UnityRuntime
                     var island = UvIslands.Expand(DisplayedGraphValue().Polygon, new[] { face.Value });
                     if (add && island.All(selectedFaces.Contains)) selectedFaces.ExceptWith(island);
                     else selectedFaces.UnionWith(island);
+                    selectionContext.NotifyChanged();
                 }
                 Refresh();
             });

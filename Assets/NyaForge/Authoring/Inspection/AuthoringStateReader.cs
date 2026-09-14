@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 namespace NyaForge.Authoring.Inspection
@@ -14,6 +15,7 @@ namespace NyaForge.Authoring.Inspection
                 Checks.Require(expectedInstanceId==workspace.InstanceId,"STALE_INSTANCE","Select the current authoring instance before reading state.");
                 Checks.Require(!workspace.Executing,"REENTRANT_STATE","Cannot read state during a command transaction.");
                 var doc=workspace.Document;var preview=workspace.Preview;
+                var labels = ReadObjectLabels(workspace);
                 return new JObject
                 {
                     ["instanceId"]=workspace.InstanceId,["documentId"]=doc.DocumentId,
@@ -23,10 +25,16 @@ namespace NyaForge.Authoring.Inspection
                     ["evaluation"]=new JObject { ["complete"]=preview.IsComplete,["stale"]=preview.IsStale },
                     ["objects"]=new JArray(doc.Objects.Select(o=>new JObject
                     {
-                        ["objectId"]=o.ObjectId,["graphId"]=o.Graph.GraphId,["nodeCount"]=o.Graph.Nodes.Count
+                        ["objectId"]=o.ObjectId,["displayName"]=labels.TryGetValue(o.ObjectId, out var displayName) ? displayName : JValue.CreateNull(),["graphId"]=o.Graph.GraphId,["nodeCount"]=o.Graph.Nodes.Count
                     }))
                 };
             }
+        }
+
+        internal static IReadOnlyDictionary<string, string> ReadObjectLabels(AuthoringWorkspace workspace)
+        {
+            var bytes = workspace.Attachments.Read(ProjectAttachments.ObjectLabels);
+            return bytes == null ? new Dictionary<string, string>(StringComparer.Ordinal) : ObjectLabelsCodec.Read(bytes);
         }
     }
 }

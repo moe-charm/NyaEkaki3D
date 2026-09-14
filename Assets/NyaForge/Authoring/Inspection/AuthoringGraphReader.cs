@@ -13,6 +13,7 @@ namespace NyaForge.Authoring.Inspection
             lock(workspace.Gate)
             {
                 var state=AuthoringStateReader.Read(workspace,instance);var doc=workspace.Document;
+                var objectLabels = AuthoringStateReader.ReadObjectLabels(workspace);
                 var importDiagnostics = ReadImportDiagnostics(workspace);
                 var result=new JObject { ["instanceId"]=instance,["documentId"]=doc.DocumentId,["revision"]=doc.DocumentRevision,["stateHash"]=doc.StateHash,["attachmentsHash"]=workspace.Attachments.ContentHash,["activeObjectId"]=doc.ActiveObjectId,["objects"]=new JArray(),["graph"]=JValue.CreateNull() };
                 if(doc.IsEmpty) return result;
@@ -22,6 +23,7 @@ namespace NyaForge.Authoring.Inspection
                     return new JObject
                     {
                         ["objectId"] = item.ObjectId,
+                        ["displayName"] = objectLabels.TryGetValue(item.ObjectId, out var displayName) ? displayName : JValue.CreateNull(),
                         ["graphId"] = item.Graph.GraphId,
                         ["active"] = item.ObjectId == doc.ActiveObjectId,
                         ["nodeCount"] = item.Graph.Nodes.Count,

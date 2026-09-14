@@ -10,7 +10,6 @@ namespace NyaForge.UnityRuntime
 {
     public sealed partial class AuthoringWorkbench
     {
-        readonly HashSet<ulong> selectedFaces = new HashSet<ulong>();
         Toggle faceMode;
         Label faceLabel;
         FloatField extrusionDepth;
@@ -22,6 +21,7 @@ namespace NyaForge.UnityRuntime
             {
                 selectedFaces.Clear();
                 if (all) foreach (var face in DisplayedGraphValue().Polygon.Faces) selectedFaces.Add(face.Id);
+                selectionContext.NotifyChanged();
                 Refresh();
             }
             else Select(all ? Enumerable.Range(0, projection.Points.Length) : Enumerable.Empty<int>());
@@ -29,7 +29,7 @@ namespace NyaForge.UnityRuntime
         void BuildFaceEditing(VisualElement parent)
         {
             faceMode = new Toggle("面をクリックして選択") { name = "face-selection-mode" }; parent.Add(faceMode);
-            faceMode.RegisterValueChangedCallback(_ => { selection.Clear(); selectedFaces.Clear(); Refresh(); });
+            faceMode.RegisterValueChangedCallback(_ => { selection.Clear(); selectedFaces.Clear(); selectionContext.NotifyChanged(); Refresh(); });
             faceLabel = new Label { name = "selected-faces" }; parent.Add(faceLabel);
             extrusionDepth = Number(parent, "面の押出し (mm)", 20, "extrusion-depth");
             extrusionDepth.tooltip = "最初に並ぶ選択面の法線方向。負数で逆方向へ押し出します。";
@@ -76,13 +76,13 @@ namespace NyaForge.UnityRuntime
             var reference = polygon.Faces.First(f => f.Id == selectedFaces.Min());
             var delta = PolygonExtrusion.FaceNormal(polygon, reference) * (extrusionDepth.value / 1000);
             Execute(AuthoringOperation.ExtrudePolygonFaces(activeEditContext, selectedFaces.OrderBy(id => id).ToArray(), delta));
-            selection.Clear(); Refresh();
+            selection.Clear(); selectionContext.NotifyChanged(); Refresh();
         });
         void DeleteSelectedFaces() => Try(() =>
         {
             if(activeEditContext==null || selectedFaces.Count==0) throw new InvalidOperationException("PolygonEditの面を選択してください。");
             Execute(AuthoringOperation.DeletePolygonFaces(activeEditContext,selectedFaces.OrderBy(id=>id).ToArray()));
-            selection.Clear();selectedFaces.Clear();Refresh();
+            selection.Clear();selectedFaces.Clear();selectionContext.NotifyChanged();Refresh();
         });
         void PickFace(Vector2 panelPosition, bool add)
         {
@@ -119,6 +119,7 @@ namespace NyaForge.UnityRuntime
                 }
             if (!add) selectedFaces.Clear();
             if (hit.HasValue && (!add || !selectedFaces.Remove(hit.Value))) selectedFaces.Add(hit.Value);
+            selectionContext.NotifyChanged();
             Refresh();
         }
     }
