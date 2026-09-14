@@ -104,14 +104,14 @@ namespace NyaForge.UnityRuntime
             int? staticSourceNodeIndex = instanceIndex >= 0 ? inventory.Instances[instanceIndex].NodeIndex : (int?)null;
             var build = BuildStaticImport(bytes, vrm, meshIndex, sourceDirectory, instanceWorld, inventory.Instances.FirstOrDefault(item => item.MeshIndex == meshIndex)?.Name, staticSourceNodeIndex, document, imageCache, encodedImageCache);
             CommitImportedGraph(build.Graph, build.Candidate);
-            Refresh(); SetStatus("GLBを取り込みました。mesh " + meshIndex + " · " + build.DisplayName);
+            Refresh(); Frame(); SetStatus("GLBを取り込みました。mesh " + meshIndex + " · " + build.DisplayName);
         }
 
         void ImportSkinnedModel(byte[] bytes, VrmMetadata vrm, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null, string sourceDirectory = null, int? sourceNodeIndex = null, GlbDocument parsedDocument = null, IDictionary<int, ImportedBaseColorImage> imageCache = null, GlbImportImageCache encodedImageCache = null)
         {
             var build = BuildSkinnedImport(bytes, vrm, meshIndex, skinIndex, instanceWorldTransform, sourceDirectory, null, sourceNodeIndex, parsedDocument, imageCache, encodedImageCache);
             CommitImportedGraph(build.Graph, build.Candidate);
-            Refresh(); SetStatus("GLB skinを取り込みました。mesh " + meshIndex + " · skin " + skinIndex + " · " + build.DisplayName);
+            Refresh(); Frame(); SetStatus("GLB skinを取り込みました。mesh " + meshIndex + " · skin " + skinIndex + " · " + build.DisplayName);
         }
 
         ImportedGraphBuild BuildStaticImport(byte[] bytes, VrmMetadata vrm, int meshIndex, string sourceDirectory,
@@ -232,7 +232,7 @@ namespace NyaForge.UnityRuntime
             if (builds.Count == 0) throw new InvalidOperationException("取り込めるmesh instanceがありません。");
             if (workspace.Document.Objects.Count + builds.Count > 64) throw new InvalidOperationException("全mesh instanceを追加するとobject上限64件を超えます。候補を選んで分割して取り込んでください。");
             CommitImportedGraphs(builds);
-            Refresh(); SetStatus("GLB / VRMの全mesh instanceを取り込みました。" + builds.Count + " objects · source " + inventory.SourceHash.Substring(0, 12));
+            Refresh(); Frame(); SetStatus("GLB / VRMの全mesh instanceを取り込みました。" + builds.Count + " objects · source " + inventory.SourceHash.Substring(0, 12));
         }
 
         static string ImportDiagnosticSummary(IReadOnlyList<GlbImportDiagnostic> diagnostics)

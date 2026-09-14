@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15H: モデル取込後の自動Frame
+
+GLB／VRM取込後に更新済みprojectionのboundsで`Frame()`を実行するよう、単一mesh・skin・全mesh instanceの3経路を揃えた。従来は空projectのカメラ原点／距離が残り、実モデルのスクリーンショットで上半身が見切れる場合があった。`Builds/BoneSubsetV13/NyaForge.exe`のRadDollV3 `-ImportOnly` probeは**PASS**（`Artifacts/Authoring-20260914-163203-98d80848e51940ca9d9170d1c62e2715/report.json`）。生成画像 `import-only.png`で全身mesh・選択点・右側controls・status footerが同時に確認できる。これは自動captureによる表示証跡で、実EditorWindowのマウス・IME・DPI受入やVRChat内の見た目確認を完了扱いしない。
+
 ## 2026-09-14 NF-V1-15G: V12実衣装一周回帰
 
 `Builds/BoneSubsetV12/NyaForge.exe`でprivate RadDollV3 VRMを全mesh取込し、native Save/Open、GLB／VRM1出力、衣装skin package生成、Unity **2022.3.22f1** Bridge受け取りまで再実行した。Player **PASS**（`Artifacts/Authoring-20260914-162657-a70cc1bb101f4a5fa8e96daab0da2a74/report.json`）、Bridge **PASS**（`Artifacts/BridgeReceiver-20260914-162928-637-f529cc4f3f884898bcdf51c5d6fca329/bridge-report.json`）。packageは`Artifacts/Authoring-20260914-162657-a70cc1bb101f4a5fa8e96daab0da2a74/imported-accessory-skin-project/exports/clothing-20260914-072905-0e6443/skinned-clothing.nyaforge.json`に生成された。これは自動Player／Bridge回帰であり、実EditorWindowのマウス・IME・DPI、実アバター全周fit・貫通・見た目、VRChat Build & Test／実機表示は未受入として残す。
