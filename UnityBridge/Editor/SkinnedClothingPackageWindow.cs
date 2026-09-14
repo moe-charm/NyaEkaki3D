@@ -238,19 +238,8 @@ namespace NyaForge.UnityBridge.Editor
                 return;
             }
 
-            var transforms = avatarRoot.GetComponentsInChildren<Transform>(true);
-            var byName = transforms
-                .GroupBy(transform => transform.name, StringComparer.Ordinal)
-                .ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
-            foreach (var bone in package.Skeleton.Bones)
-            {
-                Transform[] candidates = FindPathCandidates(avatarRoot, bone);
-                if (candidates.Length == 0)
-                    byName.TryGetValue(bone.Name, out candidates);
-                if (candidates == null || candidates.Length == 0) continue;
-                if (candidates.Length == 1) suggestedBindings[bone.BoneId] = candidates[0];
-                else suggestionAmbiguous++;
-            }
+            foreach (var pair in FindUniqueBindingSuggestions(avatarRoot, package.Skeleton, out suggestionAmbiguous))
+                suggestedBindings[pair.Key] = pair.Value;
             suggestionsReady = true;
             status = "一意に確認できる候補だけを生成しました。反映前に一覧を確認してください。";
             statusType = MessageType.Info;
@@ -265,17 +254,41 @@ namespace NyaForge.UnityBridge.Editor
             statusType = MessageType.Info;
         }
 
-        Transform[] FindPathCandidates(Transform root, BoneDefinition bone)
+        /// <summary>
+        /// Resolves only unambiguous avatar transforms for a package skeleton.
+        /// The complete transform inventory is built once per request so a
+        /// large avatar does not require a hierarchy walk for every package
+        /// bone.  No assignment is mutated by this helper.
+        /// </summary>
+        internal static IReadOnlyDictionary<string, Transform> FindUniqueBindingSuggestions(
+            Transform root, SkeletonDefinition skeleton, out int ambiguous)
         {
-            string expectedPath = BonePath(package.Skeleton, bone.BoneId);
-            if (string.IsNullOrEmpty(expectedPath)) return Array.Empty<Transform>();
-            return root.GetComponentsInChildren<Transform>(true)
-                .Where(transform =>
-                {
-                    string actualPath = PathFromRoot(root, transform);
-                    return actualPath == expectedPath || actualPath.EndsWith("/" + expectedPath, StringComparison.Ordinal);
-                })
+            if (root == null) throw new ArgumentNullException("root");
+            if (skeleton == null) throw new ArgumentNullException("skeleton");
+            ambiguous = 0;
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            var byName = transforms
+                .GroupBy(transform => transform.name, StringComparer.Ordinal)
+                .ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
+            var paths = transforms
+                .Select(transform => new KeyValuePair<Transform, string>(transform, PathFromRoot(root, transform)))
+                .Where(pair => !string.IsNullOrEmpty(pair.Value))
                 .ToArray();
+            var result = new Dictionary<string, Transform>(StringComparer.Ordinal);
+            foreach (var bone in skeleton.Bones)
+            {
+                string expectedPath = BonePath(skeleton, bone.BoneId);
+                var candidates = string.IsNullOrEmpty(expectedPath)
+                    ? Array.Empty<Transform>()
+                    : paths.Where(pair => pair.Value == expectedPath || pair.Value.EndsWith("/" + expectedPath, StringComparison.Ordinal))
+                        .Select(pair => pair.Key).ToArray();
+                if (candidates.Length == 0)
+                    byName.TryGetValue(bone.Name, out candidates);
+                if (candidates == null || candidates.Length == 0) continue;
+                if (candidates.Length == 1) result[bone.BoneId] = candidates[0];
+                else ambiguous++;
+            }
+            return result;
         }
 
         static string BonePath(SkeletonDefinition skeleton, string boneId)

@@ -191,6 +191,10 @@ namespace NyaForge.UnityBridge.Editor
             }
             try
             {
+                int ambiguous;
+                var suggestions = SkinnedClothingPackageWindow.FindUniqueBindingSuggestions(avatar.transform, package.Skeleton, out ambiguous);
+                Require(ambiguous == 0 && suggestions.Count == package.Skeleton.Bones.Count,
+                    "Stable BoneId candidate generation did not resolve the complete package skeleton uniquely.");
                 var result = SkinnedClothingReceiver.ApplyPackage(manifestPath, avatar.transform, map, "Package Fixture Clothing");
                 var managed = result.GameObject.GetComponent<NyaForgeSkinnedClothingManaged>();
                 Require(managed != null && managed.Mesh == result.Mesh && managed.Materials.Length == result.Renderer.sharedMaterials.Length,
@@ -208,7 +212,7 @@ namespace NyaForge.UnityBridge.Editor
                         (material.mainTexture != null || material.GetTexture("_MainTex") != null || material.GetTexture("_BaseMap") != null)),
                         "Skinned clothing package embedded base-color texture was not assigned (materials=" + result.Renderer.sharedMaterials.Length + ").");
                 }
-                checks.Add("Skinned clothing package hashes, sidecars and ApplyPackage scene creation passed.");
+                checks.Add("Skinned clothing package hashes, sidecars, unique hierarchy candidates and ApplyPackage scene creation passed.");
             }
             finally { Object.DestroyImmediate(avatar); }
         }

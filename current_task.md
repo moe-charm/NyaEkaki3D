@@ -2870,3 +2870,9 @@ Authoring suiteの実衣装package検査へ、現在の衣装graphから`Skeleto
 `Builds/BoneSubsetV3/NyaForge.exe`（commit `17ae697`）をWindows v1の現行candidateとして固定した。Coreは **508 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-e57c356acde5482787b244e40832be3c`）。privateの実RadDollV3 VRMでPlayer **93 checks PASS**、衣装packageのskeleton sidecarは **2 bones**（ウェイト参照＋祖先）となり、package側skeleton／binding hashの一致検査もPlayer内でPASSした。証跡は `Artifacts/Authoring-20260914-150145-eb5a4a651a244b0b9eee01b6106f4918/report.json`、Unity **2022.3.22f1** Bridgeは `Artifacts/BridgeReceiver-20260914-150422-168-20bf09b7f9aa48b2aa7d96cb52c872a0/bridge-report.json`。
 
 `docs/Windows-v1-Development-Plan.md` と `docs/Windows-v1-Manual-Acceptance.md` のcandidate・証跡をこのV3へ同期した。次に実際に行うことは、Unity EditorWindowでV3 packageを読込み、候補生成→一覧確認→候補反映→残りがあれば手動確定→保存→診断→適用を一周すること。その後、avatarの移動／回転／scale、衣装A→B更新、削除Undo、normal／MR／UV0の見た目、VRChat Build & Testを確認する。自動Player／Bridge PASSはこの手動受入の代替にはしない。
+
+# 2026-09-14 骨候補探索の共通化とBridge回帰
+
+受け取りGUIのstable BoneId候補探索を`SkinnedClothingPackageWindow.FindUniqueBindingSuggestions`へ共通化し、avatar階層を1回収集して名前・階層候補を解決するようにした。候補生成の結果は従来どおり一意なものだけを保持し、曖昧・欠落は自動反映しない。Bridge batchにも同じresolverの回帰を追加し、実RadDollV3から生成した2骨packageを、階層候補が一意に全件解決できることを確認した。
+
+Unity **2022.3.22f1** Bridgeを再実行し、適用・hash／sidecar・ownership・更新／削除Undo・semantic textureに加えて、`unique hierarchy candidates`を含む **PASS**。証跡は`Artifacts/BridgeReceiver-20260914-151117-020-6bdd730b5d17449e91066b33a45a9816/bridge-report.json`。これは候補resolverの自動回帰であり、実EditorWindowのマウス操作、実アバター全周の貫通・見た目、VRChat Build & Testの合格とは分けて扱う。
