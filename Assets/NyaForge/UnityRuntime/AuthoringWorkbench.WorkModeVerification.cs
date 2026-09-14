@@ -19,11 +19,20 @@ namespace NyaForge.UnityRuntime
             ClickWorkModeButton(buttons[0]);
             Check(shapeCreationPanel.value && graphDetailsPanel.value, "Shape mode did not open its panels");
             ClickWorkModeButton(buttons[1]);
-            Check(uvPanel.value && paintPanel.value && materialPanel.value, "Surface mode did not open its panels");
+            Check(uvPanel.value && paintPanel.value && materialPanel.value && !shapeCreationPanel.value && !graphDetailsPanel.value,
+                "Surface mode did not open its panels or close the previous editing domain");
             ClickWorkModeButton(buttons[2]);
-            Check(attachmentPanel.value && rigPanel.value, "Rig mode did not open its panels");
+            Check(attachmentPanel.value && rigPanel.value && !uvPanel.value && !paintPanel.value && !materialPanel.value,
+                "Rig mode did not open its panels or close the previous editing domain");
             ClickWorkModeButton(buttons[3]);
-            Check(evidencePanel.value && validationPanel.value && projectOutputPanel.value, "Output mode did not open its panels");
+            Check(evidencePanel.value && validationPanel.value && projectOutputPanel.value && !attachmentPanel.value && !rigPanel.value,
+                "Output mode did not open its panels or close the previous editing domain");
+            // The remaining automated checks intentionally probe low-level
+            // controls directly. Restore the expanded harness presentation
+            // after verifying the user-facing collapse behavior.
+            if (IsAutomatedUiVerification)
+                foreach (var panel in new[] { shapeCreationPanel, graphDetailsPanel, uvPanel, paintPanel, materialPanel, attachmentPanel, rigPanel, evidencePanel, validationPanel, projectOutputPanel })
+                    if (panel != null) panel.value = true;
             checks.Add("work-mode navigation: shape, UV/color, rig/attachment and review/output buttons open the existing panels through pointer hit testing");
         }
 

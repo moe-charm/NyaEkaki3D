@@ -1,6 +1,6 @@
 # Nya Ekaki 3D — Windows v1 GUI導線整理
 
-更新: 2026-09-15。状態: **GUI-01〜07の第一段、GUI-03表示名metadata第一段とMCP更新経路、MOD-01〜04の第一段、MOD-05のSession／SelectionContext第一段、Lifecycle・Layout・RefreshState・Execution・PersistenceRefresh・RefreshPipeline・UiElements・Viewport・ViewportInput・ViewportInteraction・SelectionRefresh・対象一覧差分更新の共通責務分離を実装。GUI-05の作業モードポインタ回帰、GUI-04の寸法入力保持回帰、GUI-06の制作正本／納品対象表示回帰、fit対象サマリー表示を追加。最終分割・実操作受入は未完了**。
+更新: 2026-09-15。状態: **GUI-01〜07の第一段、GUI-03表示名metadata第一段とMCP更新経路、MOD-01〜04の第一段、MOD-05のSession／SelectionContext第一段、Lifecycle・Layout・RefreshState・Execution・PersistenceRefresh・RefreshPipeline・UiElements・Viewport・ViewportInput・ViewportInteraction・SelectionRefresh・対象一覧差分更新の共通責務分離を実装。GUI-05の作業モードポインタ回帰、GUI-04の寸法入力保持回帰、GUI-06の制作正本／納品対象表示回帰、fit対象サマリー表示、作業モード切替時のPanel自動折りたたみを追加。最終分割・実操作受入は未完了**。
 
 ユーザー提供の制作パネル画像と現行作業ツリーを照合した。今回の範囲は導線設計であり、実マウス操作・新ビルドの受入結果ではない。[設計v2 §13](NyaForge-Authoring-Design2.md#13-人間用ワークスペースとノード画面)の「中央3D、左object一覧、右parameter、下部node」をWindows v1の既存機能へ具体化する。新しい編集エンジンや全面的な保存形式変更を先行させない。
 
@@ -106,6 +106,7 @@ GUI-04とMOD-02の第一段（基本形状パネル、寸法入力、生成処�
 | GUI-06 | 01、03 | 保存と用途別出力の集約。`ProjectActions`、参照保護／allowlist | **第一段実装済み**: native保存／開く、Explorer選択、GLB・Unity・衣装package・VRM出力を`ProjectOutput`へ集約し、保存と納品の違いを説明する。制作正本のフルパスと、汎用出力の対象数・参照保護衝突・allowlist不整合を表示する。実出力との手動照合、参照bodyの誤同梱確認は残る |
 | GUI-07 | 01〜06と並行して接続 | AI接続専用パネル、IDコピー、MCP対象名・状態・結果の表示 | **第一段実装済み**: MCP接続欄を`McpPanel`へ分離し、短い接続手順と折りたたみ詳細、既存のinstance ID・開始／停止・Undo経路を維持する。IDコピー、再接続、実sidecarとの手動確認は残る |
 | GUI-09 | GUI-05、06 | fit／weight対象と測定状態の常時表示 | **第一段実装済み**: 装着Panelに衣装頂点・avatar面の対象範囲、全体数、skin-bind状態、fit測定済み／再測定要否を表示する。指定変更時の再測定状態を自動判定し、詳細はtooltipへ残す。実アバターの全周fit・貫通・見た目受入は残る |
+| GUI-10 | GUI-05 | 作業モードごとの表示整理 | **第一段実装済み**: 形状／UV・色／装着・骨／確認・出力の切替時、選択した領域だけを開き、前の長いPanelを閉じる。保存・編集状態とPanelの利用可能性は変更しない。狭幅・DPI・実マウスでの最終表示確認はGUI-08へ残る |
 | GUI-08 | 02〜07 | 狭幅・DPI、旧文書、実操作一周、quickstart更新 | 実マウスで「読込→形状追加→対象選択→編集→保存再開→出力」。クリックと描画の一致、DPI100/150/200%、IME、長い名称を記録。未実施条件は未受入のまま残す |
 
 着手順は01→02/03→04/05/06、07は各変更と同時に接続、最後に08。GUI-01だけを巨大なUIフレームワーク開発にしない。まず既存UI Toolkitとcommandを移動・整理する。

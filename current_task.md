@@ -3971,3 +3971,13 @@ Unity **2022.3.22f1** の隔離 `PhysBonesSdkProbe-20260914` で、現行の実R
 - Unity 6000.4.3f1 隔離Windows Player `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-FitSummaryV4-src\Builds\FitSummaryV4\NyaForge.exe`: build成功
 - Authoring自動検証: **PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-FitSummaryV4-src\Artifacts\Authoring-20260915-071855-1bcf655624a94fb59aec4b59d5717d06\report.json`）
 - 境界: 対象範囲の可視化と測定のstale判定を確認したもので、実マウスのDPI／IME、実RadDollV3の全周fit・貫通・材質見た目、avatar移動・回転・scale、Unity実SDK、VRChat Build & Test／実機表示は未受入のまま。
+
+# 2026-09-15 GUI-10: 作業モード切替時のPanel整理
+
+作業モードのボタンを押しても、前のモードの長いFoldoutが開いたまま残り、右側の操作欄が混雑していた。`AuthoringWorkbench.WorkModes.FocusWorkMode`で形状／UV・色／装着・骨／確認・出力を同じ編集領域として扱い、選択した領域だけを開き、他を閉じるようにした。保存形式・Document・Undo・編集commandは変更していない。自動検証は低レベルボタンを後続で直接使うため、work-mode検証後に従来の展開状態を復元する。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.WorkModes.cs`
+- 回帰: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.WorkModeVerification.cs`（各モードの対象Panelが開き、前モードが閉じることを確認）
+- Unity 6000.4.3f1 隔離Windows Player `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-WorkModeV3-src\Builds\WorkModeV3\NyaForge.exe`: build成功
+- Authoring自動検証: **PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-WorkModeV3-src\Artifacts\Authoring-20260915-072706-64d4ec1fd75f40d7860ebdc4f21d844a\report.json`）
+- 境界: 自動UI回帰の確認であり、実ウィンドウの狭幅／DPI／IME／実マウス、実RadDollV3の全周fit・貫通・材質見た目、Unity実SDK、VRChat Build & Test／実機表示は未受入のまま。

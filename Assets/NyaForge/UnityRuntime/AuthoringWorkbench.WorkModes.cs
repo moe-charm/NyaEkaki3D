@@ -23,6 +23,23 @@ namespace NyaForge.UnityRuntime
 
         void FocusWorkMode(string name, params Foldout[] panels)
         {
+            // Keep one editing domain open at a time. The panels remain
+            // available in the same order, but switching modes no longer
+            // leaves every long section expanded in the controls column.
+            var allPanels = new[]
+            {
+                shapeCreationPanel, graphDetailsPanel, uvPanel, paintPanel,
+                materialPanel, attachmentPanel, rigPanel, evidencePanel,
+                validationPanel, projectOutputPanel
+            };
+            foreach (var candidate in allPanels)
+            {
+                if (candidate == null) continue;
+                bool keepOpen = false;
+                foreach (var panel in panels ?? new Foldout[0])
+                    if (ReferenceEquals(candidate, panel)) { keepOpen = true; break; }
+                if (!keepOpen) candidate.value = false;
+            }
             Foldout target = null;
             foreach (var panel in panels ?? new Foldout[0])
             {
