@@ -3599,3 +3599,9 @@ Computer UseのWindows用`@oai/sky`で`Builds/FinalCandidateV1/NyaForge.exe`を�
 - Navigation回帰: **PASS**（`Artifacts/Navigation-20260915-000338-fe0d939135f84eb696b695aff57ff506/report.json`）。標準Viewer起動、pack読込、確認セット導線、pointer→manifest表示を確認した。
 - 実ウィンドウ目視: `@oai/sky`でV2を起動し、候補確認後の3欄を確認。ラベルは全幅で読め、選択値は2行へ折り返せた。V3でのpopup最終目視はファイルpicker座標が安定せず完走できなかったため、V4では短いindex／名前／m-s表記と横スクロール抑制を自動回帰で確認した。実モデルはprivateの合成smoke VRMを使ったため、全身の見た目・fit・貫通受入とは扱わない。
 - 残り: DPI 150/200%、日本語IME、長い実パス、実RadDollV3全周fit・貫通・材質、Unity／VRChat実機は手動受入表へ残る。
+
+# 2026-09-15 NF-V1-実モデル一周: GUI-11後の再確認
+
+GUI-11の最新V4 Playerでprivateの`RadDollV3_VRM.vrm`を再実行し、実モデルの取込→全mesh候補→編集→native Save/Open→GLB／VRM出力→衣装package生成を**PASS**で確認した。Player reportは`Artifacts/Authoring-20260915-000854-8a1e3e5b8aa041c382b52d32839d1303/report.json`、生成した衣装skeleton sidecarは2 bones。生成packageをUnity **2022.3.22f1**の隔離Bridgeへ渡し、manifest／GLB／skeleton／binding hash、stable BoneId、SkinnedMeshRenderer生成、semantic材質変換を含む受け取りも**PASS**（`Artifacts/BridgeReceiver-20260915-001401-193-671cf5d1fd4c4e099cbe42a9b6aa6b9d/bridge-report.json`）。
+
+これはprivate実モデルの自動Player／Bridge経路の証拠であり、実EditorWindowのマウスによる全周fit・貫通・材質見た目、移動／回転／scale済みavatar、VRChat Build & Test／クライアント表示の合格へは読み替えない。private素材とSDKは公開ツリーへ追加していない。
