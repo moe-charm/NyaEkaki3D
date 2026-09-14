@@ -3536,3 +3536,14 @@ private `PhysBonesSdkProbe-20260914` を Unity **2022.3.22f1** で再実行し�
 Viewerのポインター検証で、SHA-256の16進表記を大文字・小文字のどちらでも受け付けるようにした。`PackStore.Verify`の実体hash比較と`VerifyUpdatePointer`の形式検査を同じcase-insensitive契約へ揃え、別ツールが大文字で書いた`manifestSha256`でも、パス・実体・pack／revision一致が通れば開けるようにした。ポインターのroot脱出や実体欠損を緩めた変更ではない。
 
 Coreは **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b632a3e57fec4c28968a1d4c69d9e1b3`）。`Builds/Windows/NyaForge.exe`もUnity **6000.4.3f1**で再ビルド成功（`Logs/build-player-20260914-230023-236.log`）。`Tools/Test-NyaForgePackPointer.ps1`は公開fixtureの通常表記と、一時コピーで`manifestSha256`を大文字化したポインターの両方で`status: passed`を確認した。大文字化fixtureは`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PointerCase-bb79689a0ce04236bf3185c7954411a3`に作成した一時検証用で、公開ツリーへ追加していない。
+
+# 2026-09-14 MOD-06: 基本形状preset catalogの分離
+
+チョーカー／手首カフの表示名、既定寸法、説明、生成callbackを`AuthoringWorkbench.ShapePresetCatalog.cs`へ分離した。`ShapeCreation.cs`はpreset一覧からDropdownと入力欄を組み立て、選択presetへ生成を委譲する。index値の条件分岐をUI本体から除き、形状追加時にパネルへ個別のハードコードを増やさない構造にした。既存の検証用template IDと`PolygonPrimitives`の生成処理は維持している。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ShapePresetCatalog.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ShapeCreation.cs`
+- コードマップ: `docs/Authoring-Code-Map.md`の基本形状責務を更新
+- Player build: `Builds/ShapeCatalogV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-230415-390.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-230444-491be0a412804e78b3c87e15cc904153/report.json`）。チョーカー／カフの既存生成、頂点編集、Save/Open、Bake、作業モード導線を確認した。
+- 実EditorWindowのマウスによる形状選択・実RadDollV3への適用・全周見た目／貫通・VRChat内表示は未受入のまま残る。

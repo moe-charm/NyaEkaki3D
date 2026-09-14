@@ -9,7 +9,7 @@
 | 上部の常設操作 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.CommandBar.cs` | モデル追加、基本形状追加、保存、Undo/Redo、現在対象と未保存表示 |
 | 作業モードの移動 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.WorkModes.cs` | 形状／UV・色／装着・骨／確認・出力のFoldoutを開き、該当位置へスクロール |
 | 作業モードの回帰 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.WorkModeVerification.cs` | ポインタhit testで4モードの遷移を検査。編集処理は持たない |
-| 基本形状の追加 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ShapeCreation.cs` | 寸法入力と追加要求。リング／バンドの生成は`PolygonPrimitives`へ委譲 |
+| 基本形状の追加 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ShapeCreation.cs`, `AuthoringWorkbench.ShapePresetCatalog.cs` | 寸法入力と追加要求。表示名・既定寸法・説明・生成callbackはpreset catalogで管理し、リング／バンドの生成は`PolygonPrimitives`へ委譲 |
 | 対象一覧と役割名 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Objects.cs`, `AuthoringWorkbench.ObjectLabels.cs` | 選択、表示／参照保護、短縮表示、tooltipの完全IDと役割説明。stable ObjectId keyed表示名のGUI入力・保存・Undo/Redoもここで扱う |
 | 小物装着の一時状態 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentState.cs` | 装着PanelのUIハンドル、候補ID、fit検査結果などの一時状態。保存される装着設定はgraph側を正本とし、ここへ永続データを追加しない |
 | 小物装着Panelの構築 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentUi.cs` | 装着Panelの入力欄、ボタン、tooltip、help文とイベント接続。装着計算や保存処理は持たない |

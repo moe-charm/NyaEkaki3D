@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine.UIElements;
 
 namespace NyaForge.UnityRuntime
@@ -20,11 +19,13 @@ namespace NyaForge.UnityRuntime
         {
             shapeCreationPanel = new Foldout { text = "基本形状を追加", value = true, name = "shape-creation" };
             shapeCreationPanel.Add(new Label("寸法を指定して、編集可能な形状を1つ追加します。追加後は形状編集へ進みます。"));
-            shapePresetChoice = new DropdownField("種類", new List<string> { "リング（チョーカー）", "バンド（手首カフ）" }, 0)
+            var choices = new System.Collections.Generic.List<string>();
+            foreach (var preset in ShapePresets) choices.Add(preset.DisplayName);
+            shapePresetChoice = new DropdownField("種類", choices, 0)
             {
                 name = "shape-preset"
             };
-            shapePresetChoice.tooltip = "チョーカーとカフは基本形状です。アバターへ自動装着する機能ではありません。";
+            shapePresetChoice.tooltip = "基本形状を選びます。アバターへ自動装着する機能ではありません。";
             shapePresetChoice.RegisterValueChangedCallback(_ => RefreshShapeCreationPanel());
             shapeCreationPanel.Add(shapePresetChoice);
 
@@ -57,28 +58,23 @@ namespace NyaForge.UnityRuntime
         void RefreshShapeCreationPanel()
         {
             if (shapePresetChoice == null) return;
-            bool cuff = shapePresetChoice.index == 1;
-            shapeSecondarySize.label = cuff ? "幅 (mm)" : "管の太さ (mm)";
-            shapeThickness.style.display = cuff ? DisplayStyle.Flex : DisplayStyle.None;
-            shapeSegments.SetValueWithoutNotify(cuff ? 32 : 24);
-            shapeCreationHelp.text = cuff
-                ? "バンド: 内半径 + 幅 + 厚み。手首周りへ合わせる位置・装着・ウェイトは追加後に調整します。"
-                : "リング: 半径 + 管の太さ。首周りへ合わせる位置・装着・ウェイトは追加後に調整します。";
+            var preset = SelectedShapePreset();
+            shapePrimarySize.SetValueWithoutNotify(preset.PrimaryDefault);
+            shapeSecondarySize.SetValueWithoutNotify(preset.SecondaryDefault);
+            shapeThickness.SetValueWithoutNotify(preset.ThicknessDefault);
+            shapeSecondarySize.label = preset.SecondaryLabel;
+            shapeThickness.style.display = preset.HasThickness ? DisplayStyle.Flex : DisplayStyle.None;
+            shapeSegments.SetValueWithoutNotify(preset.SegmentDefault);
+            shapeCreationHelp.text = preset.HelpText;
             bool available = workspace != null && (workspace.Document.IsEmpty || IsGraph);
             shapeCreateButton?.SetEnabled(available);
         }
 
         void CreateConfiguredShape()
         {
-            if (shapePresetChoice.index == 1)
-            {
-                CreateCuffGraph(shapePrimarySize.value / 1000f, shapeSecondarySize.value / 1000f,
-                    shapeThickness.value / 1000f, shapeSegments.value);
-            }
-            else
-            {
-                CreateChokerGraph(shapePrimarySize.value / 1000f, shapeSecondarySize.value / 1000f, shapeSegments.value);
-            }
+            var preset = SelectedShapePreset();
+            preset.Create(this, shapePrimarySize.value / 1000f, shapeSecondarySize.value / 1000f,
+                shapeThickness.value / 1000f, shapeSegments.value);
         }
     }
 }
