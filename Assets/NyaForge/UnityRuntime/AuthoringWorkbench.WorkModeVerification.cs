@@ -25,13 +25,13 @@ namespace NyaForge.UnityRuntime
             Check(attachmentPanel.value && rigPanel.value && !uvPanel.value && !paintPanel.value && !materialPanel.value,
                 "Rig mode did not open its panels or close the previous editing domain");
             ClickWorkModeButton(buttons[3]);
-            Check(evidencePanel.value && validationPanel.value && projectOutputPanel.value && !attachmentPanel.value && !rigPanel.value,
+            Check(morphPanel.value && evidencePanel.value && validationPanel.value && projectOutputPanel.value && !attachmentPanel.value && !rigPanel.value,
                 "Output mode did not open its panels or close the previous editing domain");
             // The remaining automated checks intentionally probe low-level
             // controls directly. Restore the expanded harness presentation
             // after verifying the user-facing collapse behavior.
             if (IsAutomatedUiVerification)
-                foreach (var panel in new[] { shapeCreationPanel, graphDetailsPanel, uvPanel, paintPanel, materialPanel, attachmentPanel, rigPanel, evidencePanel, validationPanel, projectOutputPanel })
+                foreach (var panel in new[] { shapeCreationPanel, graphDetailsPanel, uvPanel, paintPanel, materialPanel, attachmentPanel, rigPanel, evidencePanel, validationPanel, projectOutputPanel, morphPanel })
                     if (panel != null) panel.value = true;
             checks.Add("work-mode navigation: shape, UV/color, rig/attachment and review/output buttons open the existing panels through pointer hit testing");
         }

@@ -26,7 +26,10 @@ namespace NyaForge.UnityRuntime
         {
             morphPanel = new Foldout { text = "5  Morph / 表情差分", value = false, name = "morph-panel" };
             morphStatus = new Label { name = "morph-status" }; morphStatus.style.whiteSpace = WhiteSpace.Normal; morphPanel.Add(morphStatus);
-            morphTargetChoice = new DropdownField("対象target", new List<string> { "なし" }, 0) { name = "morph-target-choice" }; morphPanel.Add(morphTargetChoice);
+            morphTargetChoice = new DropdownField("対象target", new List<string> { "なし" }, 0) { name = "morph-target-choice" };
+            morphTargetChoice.tooltip = "Morph targetを選びます。選択後にマウスを載せると完全なtarget IDを確認できます。";
+            morphTargetChoice.RegisterValueChangedCallback(_ => RefreshMorphTargetTooltip());
+            morphPanel.Add(morphTargetChoice);
             morphWeight = new FloatField("weight (0〜1)") { value = 0, name = "morph-weight" }; morphWeight.style.minHeight = 36; morphPanel.Add(morphWeight);
             applyMorphWeight = Button("Morph weightを適用", SetSelectedMorphWeight, "morph-set-weight"); morphPanel.Add(applyMorphWeight);
             vrmExpressionChoice = new DropdownField("VRM表情", new List<string> { "なし" }, 0) { name = "vrm-expression-choice" }; morphPanel.Add(vrmExpressionChoice);
@@ -42,7 +45,7 @@ namespace NyaForge.UnityRuntime
             if (workspace == null || workspace.Document.IsEmpty)
             {
                 morphStatus.text = "Morphサンプルまたはmorph nodeを追加すると表情差分を編集できます。";
-                morphTargetChoice.choices = new List<string> { "なし" }; morphTargetChoice.SetValueWithoutNotify("なし"); applyMorphWeight.SetEnabled(false); morphWeight.SetEnabled(false); ResetVrmExpressionUi(); return;
+                morphTargetChoice.choices = new List<string> { "なし" }; morphTargetChoice.SetValueWithoutNotify("なし"); morphTargetChoice.tooltip = "Morph targetを選びます。Morph nodeがあると完全なtarget IDを表示します。"; applyMorphWeight.SetEnabled(false); morphWeight.SetEnabled(false); ResetVrmExpressionUi(); return;
             }
             var graph = workspace.Document.ActiveObject.Graph;
             var morphNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.MorphSet && node.Morphs != null);
@@ -50,13 +53,14 @@ namespace NyaForge.UnityRuntime
             if (morphNode == null || deformNode == null)
             {
                 morphStatus.text = "Morph nodeがありません。ノード表示の「Morphサンプル」から始められます。";
-                morphTargetChoice.choices = new List<string> { "なし" }; morphTargetChoice.SetValueWithoutNotify("なし"); applyMorphWeight.SetEnabled(false); morphWeight.SetEnabled(false); ResetVrmExpressionUi(); return;
+                morphTargetChoice.choices = new List<string> { "なし" }; morphTargetChoice.SetValueWithoutNotify("なし"); morphTargetChoice.tooltip = "Morph targetを選びます。Morph nodeがあると完全なtarget IDを表示します。"; applyMorphWeight.SetEnabled(false); morphWeight.SetEnabled(false); ResetVrmExpressionUi(); return;
             }
             morphTargetIds.AddRange(morphNode.Morphs.Targets.Select(target => target.TargetId));
             var labels = morphNode.Morphs.Targets.Select(target => target.Name + " · " + target.TargetId.Substring(0, 8)).ToList();
             int selected = morphTargetIds.IndexOf(SelectedMorphTargetId(deformNode)); if (selected < 0) selected = 0;
             morphTargetChoice.choices = labels; morphTargetChoice.SetValueWithoutNotify(labels[selected]);
             string targetId = morphTargetIds[selected];
+            morphTargetChoice.tooltip = MorphTargetTooltip(morphNode.Morphs.Targets[selected].Name, targetId);
             morphWeight.SetValueWithoutNotify(deformNode.MorphWeights.TryGetValue(targetId, out var value) ? value : 0);
             bool fresh = true;
             try
@@ -80,6 +84,27 @@ namespace NyaForge.UnityRuntime
             int index = morphTargetChoice == null ? -1 : morphTargetChoice.index;
             if (index >= 0 && index < morphTargetIds.Count) return morphTargetIds[index];
             return deformNode.MorphWeights.Keys.OrderBy(id => id, StringComparer.Ordinal).FirstOrDefault() ?? "";
+        }
+
+        static string MorphTargetTooltip(string name, string targetId)
+        {
+            return "Morph target: " + (string.IsNullOrWhiteSpace(name) ? "(名称なし)" : name) + "\n完全なtarget ID: " + targetId +
+                "\nこのIDで現在のMorph差分とweightを対応付けます。";
+        }
+
+        void RefreshMorphTargetTooltip()
+        {
+            int index = morphTargetChoice == null ? -1 : morphTargetChoice.index;
+            if (index < 0 || index >= morphTargetIds.Count)
+            {
+                if (morphTargetChoice != null)
+                    morphTargetChoice.tooltip = "Morph targetを選びます。Morph nodeがあると完全なtarget IDを表示します。";
+                return;
+            }
+            string name = morphTargetChoice.value;
+            int separator = name.IndexOf(" · ", StringComparison.Ordinal);
+            if (separator >= 0) name = name.Substring(0, separator);
+            morphTargetChoice.tooltip = MorphTargetTooltip(name, morphTargetIds[index]);
         }
 
         void SetSelectedMorphWeight()

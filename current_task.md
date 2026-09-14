@@ -3981,3 +3981,13 @@ Unity **2022.3.22f1** の隔離 `PhysBonesSdkProbe-20260914` で、現行の実R
 - Unity 6000.4.3f1 隔離Windows Player `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-WorkModeV3-src\Builds\WorkModeV3\NyaForge.exe`: build成功
 - Authoring自動検証: **PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-WorkModeV3-src\Artifacts\Authoring-20260915-072706-64d4ec1fd75f40d7860ebdc4f21d844a\report.json`）
 - 境界: 自動UI回帰の確認であり、実ウィンドウの狭幅／DPI／IME／実マウス、実RadDollV3の全周fit・貫通・材質見た目、Unity実SDK、VRChat Build & Test／実機表示は未受入のまま。
+
+# 2026-09-15 GUI-11: Morph target完全IDと作業モード導線
+
+シェイプキー調整の一覧は名前と短縮IDだけだったため、同名targetや複数アバターを扱うと、どの差分を編集しているか画面上で照合しづらかった。Morph targetのDropdownへ選択中targetの完全IDをtooltip表示し、Morph nodeがない状態では古いIDを残さず案内へ戻すようにした。確認・出力の作業モードからMorph／表情差分Panelを開けるようにし、モード切替時の自動折りたたみ対象にも含めた。編集値、保存形式、VRM mapping、Undo経路は変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Morph.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.WorkModes.cs`
+- 回帰拡張: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.WorkModeVerification.cs`（確認・出力モードでMorph Panelも開き、装着・骨Panelが閉じることを確認）
+- 検証: 隔離Windows Player `NyaForge-MorphTooltipV1`をbuild。通常Authoring回帰は実行中（完了後のreportを追記する）。
+- 境界: tooltipの実マウス表示、長いtarget名・高DPI、実RadDollV3の表情見た目、Unity／VRChat実機は手動受入として残る。

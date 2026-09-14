@@ -8,6 +8,7 @@
 |---|---|---|
 | 上部の常設操作 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.CommandBar.cs` | モデル追加、基本形状追加、保存、Undo/Redo、現在対象と未保存表示 |
 | 作業モードの移動 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.WorkModes.cs` | 形状／UV・色／装着・骨／確認・出力のFoldoutを開き、他の編集領域を折りたたんで該当位置へスクロール |
+| Morph／表情差分の識別 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Morph.cs` | target名と短縮IDを一覧表示し、選択中targetの完全IDをtooltipへ表示。Morph weight／VRM表情の編集要求は既存commandへ渡す |
 | 作業モードの回帰 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.WorkModeVerification.cs` | ポインタhit testで4モードの遷移を検査。編集処理は持たない |
 | 基本形状の追加 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ShapeCreation.cs`, `AuthoringWorkbench.ShapePresetCatalog.cs` | 寸法入力と追加要求。表示名・既定寸法・説明・生成callbackはpreset catalogで管理し、リング／バンドの生成は`PolygonPrimitives`へ委譲 |
 | 対象一覧と役割名 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Objects.cs`, `AuthoringWorkbench.ObjectLabels.cs` | 選択、表示／参照保護、短縮表示、tooltipの完全IDと役割説明。stable ObjectId keyed表示名のGUI入力・保存・Undo/Redoもここで扱う |
