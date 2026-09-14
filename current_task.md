@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09Y: V32実RadDollV3衣装受け取り一周
+
+privateの実RadDollV3 VRMを`Builds/PerformanceV32/NyaForge.exe`へ渡し、候補選択・全mesh instance取込・EditMesh頂点編集・native Save/Open・標準skinned GLB／VRM1出力・衣装package生成を完了した。Player reportは**PASS**（`Artifacts/Authoring-20260914-093718-1b9d2bfe1e5342c6a06903bac1a19a5e/report.json`）。生成した衣装packageをUnity **2022.3.22f1** Bridgeへ渡し、BoneId map、avatar rootのtranslation／rotation／scale、StateHash更新、削除Undo、複数package所有、semantic normal／MRを含む受け取りを**PASS**（`Artifacts/BridgeReceiver-20260914-094245-655-c52b91eeb00f41db81d0c4b31a63f72b/bridge-report.json`）。
+
+これは実ファイルを使った機械的な一周とBridge受け取りの証拠で、実EditorWindowのマウス／IME／Explorer操作、実アバター全周fitの貫通ゼロ・見た目、VRChat SDKのBuild & Test／実機表示を完了したことにはしない。全mesh取込時の一時メモリは約3.6GBだったため、軽量性の評価は通常1候補編集と分けて扱う。
+
 ## 2026-09-14 NF-V1-09X: 9855d43衣装・材質フィードバックの実装反映
 
 MCP batchの参照保護、generic single-object出力の保護漏れ、sparse material slot、Unity Bridge MR係数、Paint originalのnode identity、allowlist 1対象、高DPI bounds、fit対象のobject境界を実装した。詳細と未受入境界は[実装反映確認](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-current.md)へ固定した。
