@@ -4050,3 +4050,14 @@ source-skin表示と投影のキャッシュ判定は、従来の複数hashを�
 - Unity Bridge: **16 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\BridgeReceiver-20260915-083546-672-e5646219b9824c50b34f358c08d8f1cb\bridge-report.json`）
 - Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-9ed55fff469b483b86c15bd8f5a6192d`）
 - 境界: 自動経路の評価共有確認であり、実EditorWindowのGC/native memory計測、実マウスのDPI／IME、実RadDollV3全周fit・貫通・材質見た目、avatar移動／回転／scale、VRChat Build & Test／実機表示は未完了。
+
+# 2026-09-15 GUI-12: 狭幅・高DPIでの操作ボタン折返し
+
+日本語の長いボタン名がUI Toolkitの固有最小幅に引っ張られ、狭いcontrols欄やDPI拡大時に右端で切れる経路を共通UI部品で修正した。`Row`へ幅制限を追加し、共通`Button`へ最小幅0・縮小・通常折返し・自動高さを設定した。MCP接続Panelと説明欄も親幅へ追従するようにした。MCPのinstance ID自体は長いため、入力欄の省略表示とtooltipで全文を確認する既存契約を維持している。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.UiElements.cs`, `AuthoringWorkbench.McpPanel.cs`
+- commit: `11449cf` (`fix: keep authoring controls readable on narrow windows`)
+- 隔離Player: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Builds\ResponsiveUiV1\NyaForge.exe`（Unity 6000.4.3f1）build成功
+- Authoring: **PASS / 88 checks**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-084045-5d2b408cbf0b405999242aa3f498af38\report.json`、capture `authoring.png`）
+- Navigation: **PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Navigation-20260915-084124-f24633668f974a79bf6cedd06fe9edfc\report.json`）
+- 境界: 自動captureでcontrolsの折返しと既存導線を確認した。実EditorWindowのDPI 100/150/200%、IME、Explorer、実マウスでの最終目視は未受入のまま。実RadDollV3全周fit・貫通・材質見た目、Unity／VRChat実機も未受入。
