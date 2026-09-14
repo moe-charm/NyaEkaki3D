@@ -2,6 +2,8 @@
 
 この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/BoneSubsetV16/NyaForge.exe`（検証時点のcommitは`current_task.md` NF-V1-15P／NF-V1-15Sへ記録）。自動navigation／Save As・保存状態・再開・viewport確認は既存の反復回帰へ記録している。最新の実RadDollV3取込probeは `Artifacts/Authoring-20260914-165134-a0c1b46b609043d4a29373c9c2342aeb/report.json`、V16起動・再開反復は `Artifacts/Navigation-Repeated-BoneSubsetV16-20260914-170330.json`、衣装一周はPlayer `Artifacts/Authoring-20260914-165304-a4fdb279b679471d99fcba5733339b17/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-165530-393-cb754fbf3e254af482bb0fecda21ca22/bridge-report.json`。再実行入口は `Tools\\Test-NyaForgeAuthoring.ps1 -BuildName BoneSubsetV16 -ImportOnly -ImportModel <private VRM>` または `Tools\\Test-NyaForgeRealClothing.ps1 -ModelPath <private VRM> -BuildName BoneSubsetV16`。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
 
+現行candidateの補足: 標準起動先は `Builds/Windows/NyaForge.exe`。直近の実RadDollV3一周・Bridge・標準Navigationの証跡は`current_task.md`のV43記録を正本とし、上記V16参照は過去の受入履歴として扱う。再実行時は`-BuildName Windows`を使う。
+
 ## 1. 実EditorWindow（Windows）
 
 - [ ] Windows DPI 100%で起動し、右側controlsのラベル・ボタン・statusが読める
