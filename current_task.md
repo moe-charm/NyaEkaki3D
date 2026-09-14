@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15G: V12実衣装一周回帰
+
+`Builds/BoneSubsetV12/NyaForge.exe`でprivate RadDollV3 VRMを全mesh取込し、native Save/Open、GLB／VRM1出力、衣装skin package生成、Unity **2022.3.22f1** Bridge受け取りまで再実行した。Player **PASS**（`Artifacts/Authoring-20260914-162657-a70cc1bb101f4a5fa8e96daab0da2a74/report.json`）、Bridge **PASS**（`Artifacts/BridgeReceiver-20260914-162928-637-f529cc4f3f884898bcdf51c5d6fca329/bridge-report.json`）。packageは`Artifacts/Authoring-20260914-162657-a70cc1bb101f4a5fa8e96daab0da2a74/imported-accessory-skin-project/exports/clothing-20260914-072905-0e6443/skinned-clothing.nyaforge.json`に生成された。これは自動Player／Bridge回帰であり、実EditorWindowのマウス・IME・DPI、実アバター全周fit・貫通・見た目、VRChat Build & Test／実機表示は未受入として残す。
+
 ## 2026-09-14 NF-V1-15F: VRMコンテナ再構築の一時コピー削減
 
 `VrmExportService`のGLB/VRMコンテナ組み立てを、`MemoryStream`→`ToArray()`ではなく最終サイズのbyte配列へ直接書く方式へ変更した。ヘッダー、JSON padding、BIN bytesは従来と同じで、VRM metadata・readback契約は変更しない。Coreは**509 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-fda9b85f4189406d89dbf25ead091d9e`）。`Builds/BoneSubsetV12/NyaForge.exe`の実RadDollV3 `-VrmExportOnly` probeは**PASS**（`Artifacts/Authoring-20260914-162319-65cb57e8d0c44013bdb354af1b3ccb54/report.json`）。出力専用の外部2秒サンプリングは約40.5秒、working set peak **2,492.0MB**、private bytes peak **3,205.3MB**（`C:/Users/tomoaki/AppData/Local/Temp/nyaforge-vrm-output-memory-d268cab5b5dd4c98b0e79510f8198560.log`）。前回3,145.5MBとの差はOS／GPU状態を含む単一サンプルでは判定できないため、メモリ改善は未確定として扱う。機能回帰は通ったので、次はVRM1経路をさらに推測で変えず、実EditorWindowの手動保存・再開とVRChat Build & Testを受入する。
