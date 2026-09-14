@@ -4061,3 +4061,15 @@ source-skin表示と投影のキャッシュ判定は、従来の複数hashを�
 - Authoring: **PASS / 88 checks**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-084045-5d2b408cbf0b405999242aa3f498af38\report.json`、capture `authoring.png`）
 - Navigation: **PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Navigation-20260915-084124-f24633668f974a79bf6cedd06fe9edfc\report.json`）
 - 境界: 自動captureでcontrolsの折返しと既存導線を確認した。実EditorWindowのDPI 100/150/200%、IME、Explorer、実マウスでの最終目視は未受入のまま。実RadDollV3全周fit・貫通・材質見た目、Unity／VRChat実機も未受入。
+
+# 2026-09-15 GUI-13: 装着先の表示名・役割・完全ID照合
+
+装着Panelのavatar候補が短い内部IDだけで表示され、複数の制作対象を見分けにくかった。候補を保存済み表示名・`avatar graph`／`static`役割・短縮IDの組合せへ変更し、選択中avatarは完全ObjectIdをtooltipへ表示するようにした。Bone候補も選択中の名前とstable BoneIdをtooltipで照合でき、装着状態欄は解決できるBone名を優先して表示する。graph、保存形式、Undo、packageの内容は変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Attachments.cs`
+- 回帰: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentVerification.cs`へ表示名・完全ID tooltipの確認を追加
+- source commit: `9f7b71e` (`ux: identify attachment targets by display name`)
+- 隔離Player: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Builds\AttachmentLabelsV2\NyaForge.exe`（Unity 6000.4.3f1）build成功
+- Authoring: **PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-085136-93d1c9e9c9fe418cbfc37caa42ce698f\report.json`）
+- 実RadDollV3一周: **97 checks PASS**、Unity 2022.3.22f1 Bridge **16 checks PASS**（同じ表示名修正を含むAttachmentLabelsV1、`Artifacts/Authoring-20260915-084652-61a929c05aa04d7aae373f9ff15d7d19/report.json`、`Artifacts/BridgeReceiver-20260915-085015-177-f0109053579640008a77878d40088da6/bridge-report.json`）
+- 境界: 自動回帰とprivate実モデルのpackage受け取りまで。実EditorWindowでの候補選択・tooltip目視、DPI／IME／Explorer、全周fit・貫通・材質見た目、VRChat実機は未受入。
