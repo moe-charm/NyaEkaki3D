@@ -2749,3 +2749,11 @@ Windows用Computer Useで、`Builds/PerformanceV39/NyaForge.exe`を実際に起�
 `GeometryChangedEvent`が、viewport幅が通常のときに評価結果を無視してempty hintを常時表示していた。これを、狭いviewportでは非表示、通常幅では現在の`DisplayedGraphValue().Mesh`が未解決のときだけ表示する条件へ修正した。これにより、実GUIでEditMeshへ切り替えた後の頂点移動・Undo/Redoでも、正常なgraphを「評価未完了」と誤表示しない。
 
 Unity **6000.4.3f1**で `Builds/UiHintFixV1/NyaForge.exe` を再ビルドし、800x600 Authoring suite **PASS**（`Artifacts/Authoring-20260914-122339-7eac5517b3cd47bfb423b6a1cbf287a7/report.json`）。実RadDollV3の保存・再開後のCore評価は前項のとおり全10 graphがcompleteであり、修正後Playerの実RadDollV3再取込→EditMesh→頂点編集→Undo/Redoの手動再確認を次の受入に残す。
+
+# 2026-09-14 UiHintFixV1 実RadDollV3再開後の頂点編集
+
+修正版 `Builds/UiHintFixV1/NyaForge.exe` をWindows native Computer Useで起動し、一時制作フォルダ `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ManualAcceptance-20260914` を開いた。実RadDollV3の10 objectsを再表示し、graph選択を `EditMesh · 8c443c13` へ切り替えた状態で、メトリクス **2307頂点 / 2609△** と編集対象を確認した。このとき正常な評価結果へ「グラフの評価が未完了です」が誤表示されないことを確認した。
+
+頂点ID 0をID指定で選択し、X座標欄の編集を確定して「選択頂点を移動」を実行した。ステータスは「編集を反映しました。元に戻す・やり直すで確認できます。」となり、未保存変更表示が出た。続けて「元に戻す」「やり直す」を各1回実行し、操作後も同じEditMesh表示と編集履歴UIを維持した。最後に「保存」を実行し、Player.logの `保存しました: C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ManualAcceptance-20260914` と `project.nyaforge.json` の更新を確認した。
+
+これは実モデルを対象にしたWindowsマウス経路の再開後編集・Undo/Redo・保存確認であり、UiHintFixV1のAuthoring suite **PASS**（`Artifacts/Authoring-20260914-122339-7eac5517b3cd47bfb423b6a1cbf287a7/report.json`）を補完する。頂点座標の数値差分を外部比較したものではなく、実アバターの全周fit、衣装の貫通、VRChat内の表示・PhysBones挙動、異なるDPIでの操作は引き続き別受入境界とする。
