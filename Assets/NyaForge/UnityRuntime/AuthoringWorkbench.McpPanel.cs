@@ -13,12 +13,18 @@ namespace NyaForge.UnityRuntime
         {
             var panel = new Foldout { text = "AI接続（MCP）", value = false, name = "mcp-panel" };
             panel.AddToClassList("mcp-panel");
-            mcpInstanceField = new TextField("接続先instance ID") { isReadOnly = true, name = "mcp-instance-id" };
+            var guide = new Label("手順：接続開始 → 表示されたinstance IDをsidecarへ指定")
+            {
+                name = "mcp-guide"
+            };
+            guide.AddToClassList("mcp-guide");
+            panel.Add(guide);
+            mcpInstanceField = new TextField("instance ID（sidecar用）") { isReadOnly = true, name = "mcp-instance-id" };
             mcpInstanceField.style.flexDirection = FlexDirection.Column;
             mcpInstanceField.style.width = Length.Percent(100);
             mcpInstanceField.style.minWidth = 0;
             panel.Add(mcpInstanceField);
-            var start = Button("この制作プロジェクトへの接続を開始", () => Try(() =>
+            var start = Button("この制作へ接続", () => Try(() =>
             {
                 authoringPipe?.Dispose();
                 pipeInstance = workspace.InstanceId;
@@ -30,13 +36,16 @@ namespace NyaForge.UnityRuntime
             var stop = Button("接続を停止", StopMcp, "mcp-stop");
             stop.AddToClassList("mcp-action");
             panel.Add(stop);
+            var details = new Foldout { text = "接続の使い方（詳細）", value = false, name = "mcp-details" };
+            details.AddToClassList("mcp-details");
             var help = new Label("状態・グラフ取得と一部の編集に対応。AIの編集はUndoで戻せます。文書を開き直すと接続を停止します。表示したIDをsidecarの --instance に指定してください。")
             {
                 name = "mcp-help"
             };
             help.AddToClassList("mcp-help");
             help.style.whiteSpace = WhiteSpace.Normal;
-            panel.Add(help);
+            details.Add(help);
+            panel.Add(details);
             parent.Add(panel);
         }
 

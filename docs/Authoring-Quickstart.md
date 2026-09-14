@@ -70,6 +70,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeRealClo
 
 ドラッグは回転、右ドラッグは移動、ホイールは拡大です。右側はスクロールでき、下に保存・書き出しがあります。試作用プレートにはUV/法線境界を確認するため同じ位置の独立頂点があり、一方だけ動かしてももう一方は移動しません。点マーカーは最大2,048点ずつまとめて表示し、マウス選択は全編集点を対象にできます。ID指定も全頂点を対象にできます。
 
+## AI連携（MCP）
+
+右側の **AI接続（MCP）** を開き、表示された **この制作へ接続** を押します。表示された `instance ID（sidecar用）` を、別プロセスで起動するNyaForge MCP sidecarの `--instance` にそのまま指定してください。接続中もGUIとMCPは同じrevision検査・参照保護・Undo経路を使うため、別の制作フォルダを共有するのではなく、開いている制作プロジェクトへ接続します。接続状態や対応範囲は **接続の使い方（詳細）** を展開すると確認できます。制作文書を開き直すと安全のため接続は停止します。
+
 ## Rigサンプルとweight / pose
 
 Rigを試すときは、空の制作projectでgraph上部の **＋ Rigサンプル** を押します。Plane、Root/Childのskeleton、skin binding、pose、skin-deformが一度に追加されます。

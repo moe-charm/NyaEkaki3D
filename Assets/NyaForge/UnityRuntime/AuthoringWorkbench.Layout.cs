@@ -89,7 +89,7 @@ namespace NyaForge.UnityRuntime
             left.style.flexGrow = 1;
             left.style.flexBasis = 0;
             left.style.flexShrink = 1;
-            left.style.minWidth = 150;
+            left.style.minWidth = 120;
             left.style.minHeight = 0;
             body.Add(left);
             view = new VisualElement { name = "authoring-viewport" };
@@ -120,7 +120,8 @@ namespace NyaForge.UnityRuntime
             side.style.width = 356;
             side.style.flexBasis = 356;
             side.style.flexGrow = 0;
-            side.style.flexShrink = 0;
+            side.style.flexShrink = 1;
+            side.style.minWidth = 260;
             side.style.paddingLeft = 14;
             side.style.paddingRight = 14;
             side.style.paddingTop = 10;

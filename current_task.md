@@ -3744,3 +3744,15 @@ GUI-16で整理した装着手順PanelのPlayer生成物と、同じAuthoring ar
 - 実EditorWindowではsynthetic packageの操作到達性まで確認済み。実RadDollV3衣装の適用見た目・fit・貫通、移動／回転／scale済みavatar、更新／削除Undo、VRChat Build & Testは未受入。
 
 現行HEADは`9f89414`（GUI-16）で、今回の変更は証跡ドキュメントのみ。次は実Unity EditorWindowで実アバターへ衣装を適用し、座標変換・fit・weight・全周見た目を確認する。VRM意味情報の完全保持、Quest／macOS、FBX／BLEND parserはv1手動受入後の範囲に残す。
+
+# 2026-09-15 GUI-17: AI接続Panelの狭幅レイアウトと導線整理
+
+AI接続（MCP）Panelの長い説明が常時表示されると、狭いWindowsウィンドウやDPI拡大時に右端が切れ、接続開始の手順も埋もれていた。`AuthoringWorkbench.McpPanel.cs`へ短い手順案内（接続開始→instance IDをsidecarへ指定）を追加し、長い説明を既定で閉じた「接続の使い方（詳細）」Foldoutへ移した。開始操作は`この制作へ接続`へ短縮し、instance ID欄もsidecar用途を明示した。`AuthoringWorkbench.Layout.cs`ではcontrols側を最小幅260pxまで縮小可能にし、viewport側の最小幅を120pxへ調整した。`Viewer.uss`にはMCP Foldout内容の幅制約を追加し、横スクロールへ逃げないようにした。
+
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.McpPanel.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Layout.cs`, `Assets/Resources/Viewer.uss`
+- 回帰補強: `AuthoringWorkbench.Verification.cs`で短い案内・詳細Foldoutの存在と既定折りたたみを確認
+- Player build: `Builds/McpPanelV1/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260915-030618-300.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-030639-db3f07ec15ab48f995d996e2900b454d/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260915-030737-4b8a8bd01a074b71a18c2cdd9fcfc6fa/report.json`）
+- Core: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b4af5ea13eca4b0aa72bed2666bf9d67`）
+- 手動境界: 通常サイズでのコード／Player回帰は確認したが、実ウィンドウの幅441px相当、DPI 150/200%、日本語IME、実sidecar接続の目視は未受入。実RadDollV3のfit・貫通・材質、Unity更新／削除Undo、VRChat内表示も未受入。

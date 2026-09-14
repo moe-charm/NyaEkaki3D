@@ -87,6 +87,9 @@ namespace NyaForge.UnityRuntime
                 Check(failure==null,"Player MCP listener: "+failure);
                 checks.Add("Player named pipe state request: background transport, main-thread snapshot, document/instance correlation");
                 Check(workspace.Document.IsEmpty && projection.DisplayMesh == null && projection.Points.Length == 0, "Startup should be an empty project");
+                Check(root.Q<Foldout>("mcp-panel") != null && root.Q<Label>("mcp-guide") != null &&
+                    root.Q<Foldout>("mcp-details") != null && !root.Q<Foldout>("mcp-details").value,
+                    "MCP panel did not expose a compact guide and collapsed detailed help");
                 Check(root.Q<Button>("authoring-project-browse") != null, "Project Explorer picker control was not built");
                 checks.Add("native project Explorer picker is available and accepts project.nyaforge.json");
                 string emptyPath = Path.Combine(output, "empty");
