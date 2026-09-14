@@ -4073,3 +4073,11 @@ source-skin表示と投影のキャッシュ判定は、従来の複数hashを�
 - Authoring: **PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-085136-93d1c9e9c9fe418cbfc37caa42ce698f\report.json`）
 - 実RadDollV3一周: **97 checks PASS**、Unity 2022.3.22f1 Bridge **16 checks PASS**（同じ表示名修正を含むAttachmentLabelsV1、`Artifacts/Authoring-20260915-084652-61a929c05aa04d7aae373f9ff15d7d19/report.json`、`Artifacts/BridgeReceiver-20260915-085015-177-f0109053579640008a77878d40088da6/bridge-report.json`）
 - 境界: 自動回帰とprivate実モデルのpackage受け取りまで。実EditorWindowでの候補選択・tooltip目視、DPI／IME／Explorer、全周fit・貫通・材質見た目、VRChat実機は未受入。
+
+# 2026-09-15 MANUAL-01: Windowsネイティブ制作画面の初期表示
+
+AGENTS.mdの手順どおり`@oai/sky`で、隔離ビルド `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Builds\AttachmentLabelsV2\NyaForge.exe` の実ウィンドウを一意に取得し、Viewerから`制作へ`をクリックした。1069×698のWindowsウィンドウで、空プロジェクト案内、MCP見出し、`新しい空プロジェクト`／`モデルを開く…`／`保存済み制作を開く…`の長い日本語ボタンが右controls欄内に収まり、横方向へ切れずに表示されることを目視確認した。ステータスも画面下部に表示された。
+
+- 手動確認: **部分PASS**（初期空状態の表示・導線・折返し）
+- 未確認: 実Explorer選択、実モデル取込、装着先候補の表示名／tooltip、DPI 150/200%、IME、長時間編集、実RadDollV3の全周fit・貫通・材質見た目、Unity／VRChat実機
+- Computer Use: `@oai/sky`で実施。ブラウザ用CUAの`apps: []`判定は使用していない。
