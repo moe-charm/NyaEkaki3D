@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15U: Computer Use運用メモの固定
+
+リポジトリ直下に`AGENTS.md`を追加し、Windowsネイティブ操作ではブラウザ用`cua`ではなく`@oai/sky`を初期化して`list_apps`／`list_windows`から対象windowを選ぶ手順を固定した。操作後のstate再取得、ターミナル操作との分離、V16起動入口、public/private境界、Core回帰コマンドも記録した。以後、`apps: []`だけでネイティブ操作不可と判断せず、Windows用経路を先に確認する。
+
 ## 2026-09-14 NF-V1-15R: 現行HEAD Core回帰
 
 現行HEAD `f0994a9`で`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`を再実行し、**509 passed / 0 failed**を確認した。artifactは`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ef359b1c35f74f23b4e08fd5cea3bf74`。これはCore経路の回帰証拠であり、実EditorWindowのマウス・IME・DPI・Explorer、実アバター全周fit／貫通／見た目、VRChat Build & Test／実機表示の受入とは分けて扱う。
