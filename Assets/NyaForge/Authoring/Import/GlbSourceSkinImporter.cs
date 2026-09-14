@@ -44,6 +44,11 @@ namespace NyaForge.Authoring.Import
             return Read(GlbDocumentReader.Read(bytes), meshIndex, skinIndex, sourceDirectory);
         }
 
+        internal static GlbSourceSkinImportResult ReadFromDocument(GlbDocument document, int meshIndex, int skinIndex, string sourceDirectory)
+        {
+            return Read(document, meshIndex, skinIndex, sourceDirectory);
+        }
+
         static GlbSourceSkinImportResult Read(GlbDocument document, int meshIndex, int skinIndex, string sourceDirectory = null)
         {
             var root = document.Root; var meshes = Array(root, "meshes");

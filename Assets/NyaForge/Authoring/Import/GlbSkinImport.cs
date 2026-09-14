@@ -86,6 +86,11 @@ namespace NyaForge.Authoring.Import
             return Parse(GlbDocumentReader.Read(bytes), meshIndex, skinIndex, instanceWorldTransform, sourceDirectory);
         }
 
+        internal static ImportedSkinnedMeshSource ReadFromDocument(GlbDocument document, int meshIndex, int skinIndex, string sourceDirectory, SourceAffine instanceWorldTransform = null)
+        {
+            return Parse(document, meshIndex, skinIndex, instanceWorldTransform, sourceDirectory);
+        }
+
         static ImportedSkinnedMeshSource Parse(GlbDocument document, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null, string sourceDirectory = null)
         {
             var root = document.Root;

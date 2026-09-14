@@ -70,7 +70,8 @@ namespace NyaForge.UnityRuntime
             string fullPath = Path.GetFullPath(path); string sourceDirectory = Path.GetDirectoryName(fullPath);
             var bytes = ReadModelFile(fullPath);
             VrmMetadata vrm = VrmMetadataReader.ContainsVrm(bytes) ? VrmMetadataReader.Read(bytes) : null;
-            var inventory = GlbSceneInventoryReader.Read(bytes);
+            var document = GlbDocumentReader.Read(bytes);
+            var inventory = GlbSceneInventoryReader.Read(document);
             int instanceIndex = SelectedModelInstanceIndex;
             if (instanceIndex >= 0 && instanceIndex >= inventory.Instances.Count) throw new InvalidOperationException("node instance index が範囲外です。候補を確認してください。");
             int meshIndex = instanceIndex >= 0 ? inventory.Instances[instanceIndex].MeshIndex : SelectedModelMeshIndex;
@@ -95,26 +96,28 @@ namespace NyaForge.UnityRuntime
                 }
                 var skinnedInstanceWorld = instanceIndex >= 0 ? inventory.Instances[instanceIndex].WorldTransform : null;
                 int? sourceNodeIndex = instanceIndex >= 0 ? inventory.Instances[instanceIndex].NodeIndex : (int?)null;
-                ImportSkinnedModel(bytes, vrm, meshIndex, skinIndex, skinnedInstanceWorld, sourceDirectory, sourceNodeIndex); return;
+                ImportSkinnedModel(bytes, vrm, meshIndex, skinIndex, skinnedInstanceWorld, sourceDirectory, sourceNodeIndex, document); return;
             }
             var instanceWorld = instanceIndex >= 0 ? inventory.Instances[instanceIndex].WorldTransform : null;
             int? staticSourceNodeIndex = instanceIndex >= 0 ? inventory.Instances[instanceIndex].NodeIndex : (int?)null;
-            var build = BuildStaticImport(bytes, vrm, meshIndex, sourceDirectory, instanceWorld, inventory.Instances.FirstOrDefault(item => item.MeshIndex == meshIndex)?.Name, staticSourceNodeIndex);
+            var build = BuildStaticImport(bytes, vrm, meshIndex, sourceDirectory, instanceWorld, inventory.Instances.FirstOrDefault(item => item.MeshIndex == meshIndex)?.Name, staticSourceNodeIndex, document);
             CommitImportedGraph(build.Graph, build.Candidate);
             Refresh(); SetStatus("GLBを取り込みました。mesh " + meshIndex + " · " + build.DisplayName);
         }
 
-        void ImportSkinnedModel(byte[] bytes, VrmMetadata vrm, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null, string sourceDirectory = null, int? sourceNodeIndex = null)
+        void ImportSkinnedModel(byte[] bytes, VrmMetadata vrm, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null, string sourceDirectory = null, int? sourceNodeIndex = null, GlbDocument parsedDocument = null)
         {
-            var build = BuildSkinnedImport(bytes, vrm, meshIndex, skinIndex, instanceWorldTransform, sourceDirectory, null, sourceNodeIndex);
+            var build = BuildSkinnedImport(bytes, vrm, meshIndex, skinIndex, instanceWorldTransform, sourceDirectory, null, sourceNodeIndex, parsedDocument);
             CommitImportedGraph(build.Graph, build.Candidate);
             Refresh(); SetStatus("GLB skinを取り込みました。mesh " + meshIndex + " · skin " + skinIndex + " · " + build.DisplayName);
         }
 
         ImportedGraphBuild BuildStaticImport(byte[] bytes, VrmMetadata vrm, int meshIndex, string sourceDirectory,
-            SourceAffine instanceWorldTransform, string sourceName, int? sourceNodeIndex = null)
+            SourceAffine instanceWorldTransform, string sourceName, int? sourceNodeIndex = null, GlbDocument parsedDocument = null)
         {
-            var imported = GlbImporter.ReadFromDirectory(bytes, meshIndex, sourceDirectory, instanceWorldTransform);
+            var imported = parsedDocument == null
+                ? GlbImporter.ReadFromDirectory(bytes, meshIndex, sourceDirectory, instanceWorldTransform)
+                : GlbImporter.ReadDocument(parsedDocument, meshIndex, instanceWorldTransform, sourceDirectory);
             string sourceId = Guid.NewGuid().ToString("D"), editId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
             var nodes = new List<GraphNode> { GraphNode.Source(sourceId, imported.Mesh, new RestTransform(1, new Vec3())) };
             var edges = new List<GraphEdge>(); string finalNode = sourceId;
@@ -143,9 +146,11 @@ namespace NyaForge.UnityRuntime
         }
 
         ImportedGraphBuild BuildSkinnedImport(byte[] bytes, VrmMetadata vrm, int meshIndex, int skinIndex,
-            SourceAffine instanceWorldTransform, string sourceDirectory, string sourceName, int? sourceNodeIndex = null)
+            SourceAffine instanceWorldTransform, string sourceDirectory, string sourceName, int? sourceNodeIndex = null, GlbDocument parsedDocument = null)
         {
-            var imported = GlbSkinImporter.ReadFromDirectory(bytes, meshIndex, skinIndex, sourceDirectory, instanceWorldTransform);
+            var imported = parsedDocument == null
+                ? GlbSkinImporter.ReadFromDirectory(bytes, meshIndex, skinIndex, sourceDirectory, instanceWorldTransform)
+                : GlbSkinImporter.ReadFromDocument(parsedDocument, meshIndex, skinIndex, sourceDirectory, instanceWorldTransform);
             string sourceId = Guid.NewGuid().ToString("D"), editId = Guid.NewGuid().ToString("D"), skeletonId = Guid.NewGuid().ToString("D"), bindId = Guid.NewGuid().ToString("D"), poseId = Guid.NewGuid().ToString("D"), deformId = Guid.NewGuid().ToString("D"), outputId = Guid.NewGuid().ToString("D");
             var nodes = new List<GraphNode> { GraphNode.Source(sourceId, imported.Mesh, new RestTransform(1, new Vec3())), GraphNode.Edit(editId), GraphNode.SkeletonNode(skeletonId, imported.Skeleton), GraphNode.SkinBindNode(bindId, imported.Binding), GraphNode.PoseNode(poseId, PoseSet.Create(imported.Skeleton, imported.Skeleton.Bones.Select(b => new BonePose(b.BoneId, PoseTransform.FromTranslation(b.Head))))), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) };
             var edges = new List<GraphEdge>(); string finalNode = sourceId;
@@ -161,7 +166,9 @@ namespace NyaForge.UnityRuntime
             finalNode = AppendImportedMaterials(nodes, edges, deformId, imported.Mesh.Submeshes.Count, imported.Materials, materialWarnings);
             edges.Add(new GraphEdge(finalNode, "mesh", outputId, "mesh"));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
-            var sourceCandidate = GlbSourceSkinImporter.ReadFromDirectory(bytes, meshIndex, skinIndex, sourceDirectory);
+            var sourceCandidate = parsedDocument == null
+                ? GlbSourceSkinImporter.ReadFromDirectory(bytes, meshIndex, skinIndex, sourceDirectory)
+                : GlbSourceSkinImporter.ReadFromDocument(parsedDocument, meshIndex, skinIndex, sourceDirectory);
             var rigSession = ImportedRigSession.Create(imported, vrm, graph.GraphId, skeletonId).WithSourceSkin(sourceCandidate.Skin, sourceCandidate.Binding);
             var diagnostics = new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, imported.SkinIndex, imported.Diagnostics, sourceNodeIndex);
             var candidate = new ImportMetadataCandidate(rigSession, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm, diagnostics);
@@ -178,15 +185,16 @@ namespace NyaForge.UnityRuntime
             if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("GLBファイルを選択してください。");
             string fullPath = Path.GetFullPath(path); string sourceDirectory = Path.GetDirectoryName(fullPath); var bytes = ReadModelFile(fullPath);
             VrmMetadata vrm = VrmMetadataReader.ContainsVrm(bytes) ? VrmMetadataReader.Read(bytes) : null;
-            var inventory = GlbSceneInventoryReader.Read(bytes);
+            var document = GlbDocumentReader.Read(bytes);
+            var inventory = GlbSceneInventoryReader.Read(document);
             var builds = new List<ImportedGraphBuild>();
             if (inventory.Instances.Count > 0)
             {
                 foreach (var instance in inventory.Instances)
                 {
                     if (instance.SkinIndex.HasValue)
-                        builds.Add(BuildSkinnedImport(bytes, vrm, instance.MeshIndex, instance.SkinIndex.Value, instance.WorldTransform, sourceDirectory, instance.Name, instance.NodeIndex));
-                    else builds.Add(BuildStaticImport(bytes, vrm, instance.MeshIndex, sourceDirectory, instance.WorldTransform, instance.Name, instance.NodeIndex));
+                        builds.Add(BuildSkinnedImport(bytes, vrm, instance.MeshIndex, instance.SkinIndex.Value, instance.WorldTransform, sourceDirectory, instance.Name, instance.NodeIndex, document));
+                    else builds.Add(BuildStaticImport(bytes, vrm, instance.MeshIndex, sourceDirectory, instance.WorldTransform, instance.Name, instance.NodeIndex, document));
                 }
             }
             else
@@ -196,8 +204,8 @@ namespace NyaForge.UnityRuntime
                     var linked = inventory.Instances.Where(item => item.MeshIndex == meshIndex && item.SkinIndex.HasValue).Select(item => item.SkinIndex.Value).Distinct().ToArray();
                     if (linked.Length > 1) throw new InvalidOperationException("mesh resourceへ複数skinが対応するため、node instanceを選んでください。");
                     builds.Add(linked.Length == 1
-                        ? BuildSkinnedImport(bytes, vrm, meshIndex, linked[0], null, sourceDirectory, inventory.Meshes[meshIndex].Name)
-                        : BuildStaticImport(bytes, vrm, meshIndex, sourceDirectory, null, inventory.Meshes[meshIndex].Name));
+                        ? BuildSkinnedImport(bytes, vrm, meshIndex, linked[0], null, sourceDirectory, inventory.Meshes[meshIndex].Name, null, document)
+                        : BuildStaticImport(bytes, vrm, meshIndex, sourceDirectory, null, inventory.Meshes[meshIndex].Name, null, document));
                 }
             }
             if (builds.Count == 0) throw new InvalidOperationException("取り込めるmesh instanceがありません。");

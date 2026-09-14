@@ -110,7 +110,12 @@ namespace NyaForge.Authoring.Import
     {
         public static GlbSceneInventory Read(byte[] bytes)
         {
-            var document = GlbDocumentReader.Read(bytes);
+            return Read(GlbDocumentReader.Read(bytes));
+        }
+
+        internal static GlbSceneInventory Read(GlbDocument document)
+        {
+            Checks.Require(document != null, "INVALID_IMPORT", "GLB document is required.");
             var root = document.Root;
             var meshTokens = Array(root, "meshes");
             Checks.Require(meshTokens.Count > 0 && meshTokens.Count <= GlbSceneInventory.MaxMeshes,
