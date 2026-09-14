@@ -1,5 +1,10 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15K: V15実衣装・Bridge一周回帰
+
+`Builds/BoneSubsetV15/NyaForge.exe`でprivate RadDollV3 VRMを全mesh取込し、native Save/Open、GLB／VRM1出力、衣装skin package生成、Unity **2022.3.22f1** Bridge受け取りまで再実行した。Player **PASS**（`Artifacts/Authoring-20260914-163956-a954ad2ebd584429a1312af59fa90445/report.json`）、Bridge **PASS**（`Artifacts/BridgeReceiver-20260914-164225-353-2bea67b245064ca0aae2b871ec4bb30c/bridge-report.json`）。衣装packageは同Player artifact内の`imported-accessory-skin-project/exports/clothing-20260914-074202-53164a/skinned-clothing.nyaforge.json`に生成され、skeleton sidecarは2 bonesだった。これは自動Player／Bridge回帰であり、実EditorWindowのマウス・IME・DPI・Explorer、実アバター全周fit／貫通／見た目、VRChat Build & Test／実機表示は未受入として残す。
+
+## 2026-09-14 NF-V1-15J: 現行クイック導線Playerの再ビルド確認
 ## 2026-09-14 NF-V1-15J: 現行クイック導線Playerの再ビルド確認
 
 `Tools/Build-NyaForge.ps1 -Target Player -BuildName BoneSubsetV15`で、モデル取込クイックボタンを含むWindows Playerを現行ソースから再ビルドした。Unity **6000.4.3f1**のビルドは**成功**（`Logs/build-player-20260914-163746-093.log`、`Builds/BoneSubsetV15/NyaForge.exe`）。private RadDollV3 VRMを使う`-ImportOnly` probeも**PASS**（`Artifacts/Authoring-20260914-163807-cca6bdd0131b4d989a6c671661eb2fbb/report.json`）。生成画像で全身表示、自動Frame、`モデルを開く…`、右側controls、status footerを再確認した。Coreは**509 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-5604fed038db491b99f5afabd283f163`）。実EditorWindowの手動マウス・IME・DPI・Explorer受入、実アバターの全周fit／貫通／見た目、VRChat Build & Test／実機表示は未受入として残す。
