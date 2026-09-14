@@ -3822,3 +3822,14 @@ package側のstable binding名（`Child`／`Root`）は実avatarのstable identi
 - avatar root: `RaddollV3 (Transform)`
 - 手動割当: `Child → Neck`、`Root → Hips`
 - 境界: 合成3頂点packageのUI到達性・明示割当のみ。実RadDollV3衣装の全周fit／貫通／pose変形、更新／削除Undo、VRChat Build & Testは未受入。
+
+# 2026-09-15 UNITY-MANUAL-03: 衣装packageの適用・更新・削除導線
+
+Unity **2022.3.22f1** の隔離 `PhysBonesSdkProbe-20260914` で、`UNITY-MANUAL-02` と同じ現行衣装manifestを `NyaForge Clothing` windowへ読み込み、明示割当（`Child → Neck`、`Root → Hips`）を保持した状態で操作を一周した。
+
+- `事前診断（書き込みなし）` → `事前診断OK (sceneへの書き込みなし)`
+- `衣装を作成／更新` → `衣装を適用しました。`
+- 同じpackageで再度 `衣装を作成／更新`（更新経路）
+- `管理対象の衣装を削除（Undo可）` → `管理対象衣装を削除しました。Undoで元の関連付けへ戻せます。`
+
+EditorWindowのボタン導線・scene書き込み前診断・適用／更新／削除の状態遷移は実操作で確認できた。入力は合成3頂点・2骨packageのため、実RadDollV3衣装の全周fit、貫通、pose変形、材質の見た目、avatar移動／回転／scale後の配置合格には使わない。Undoで復元する最終確認と、実衣装packageでの同じ一周は次の手動受入に残す。
