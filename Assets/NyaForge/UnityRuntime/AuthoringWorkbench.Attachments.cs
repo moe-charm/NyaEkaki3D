@@ -110,6 +110,7 @@ namespace NyaForge.UnityRuntime
             if (!IsGraph)
             {
                 attachmentStatus.text = "装着: graph objectを選択してください。";
+                RefreshAccessoryFitSummary();
                 attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryPolygonMaterialize.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessorySurfaceInspect.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); accessoryUseSelectedVertices.SetEnabled(false); accessorySurfacePickMode.SetEnabled(false); accessoryClearSurfaceSelection.SetEnabled(false); return;
             }
             var targets = workspace.Document.Objects.Where(item => item.ObjectId != workspace.Document.ActiveObjectId && item.Graph != null).ToArray();
@@ -168,6 +169,78 @@ namespace NyaForge.UnityRuntime
             if (node == null) attachmentStatus.text = "装着: 未設定。対象avatarとBoneIdを選んでください。";
             else if (diagnosticFor(node, target) != "") attachmentStatus.text = "装着: " + diagnosticFor(node, target);
             else attachmentStatus.text = "装着: " + node.AttachmentBoneId.Substring(0, 8) + "へ固定 · 保存対象";
+            RefreshAccessoryFitSummary();
+        }
+
+        void RefreshAccessoryFitSummary()
+        {
+            if (accessoryFitSummary == null) return;
+            if (workspace == null || workspace.Document.IsEmpty || !IsGraph)
+            {
+                accessoryFitSummary.text = "fit対象: 衣装graphを選択してください。";
+                accessoryFitSummary.tooltip = accessoryFitSummary.text;
+                return;
+            }
+
+            var graph = workspace.Document.ActiveObject.Graph;
+            var edit = graph?.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.EditMesh);
+            int clothingCount = 0;
+            try
+            {
+                if (edit != null && workspace.Preview.Evaluation.MeshOutputs.TryGetValue(edit.NodeId, out var editValue) && editValue?.Mesh != null)
+                    clothingCount = editValue.Mesh.VertexCount;
+            }
+            catch (Exception) { }
+
+            string clothingScope = "全頂点";
+            try
+            {
+                var selected = ClothingVertexSelection()?.ToArray();
+                if (selected != null) clothingScope = "指定 " + selected.Length.ToString(CultureInfo.InvariantCulture) + "頂点";
+            }
+            catch (Exception error) { clothingScope = "頂点ID入力エラー（" + error.Message + "）"; }
+
+            string targetId = null;
+            if (attachmentTarget != null && attachmentTarget.index >= 0 && attachmentTarget.index < attachmentTargetIds.Count)
+                targetId = attachmentTargetIds[attachmentTarget.index];
+            var attachment = ActiveAttachmentNode();
+            if (string.IsNullOrEmpty(targetId)) targetId = attachment?.AttachmentTargetObjectId;
+            var target = FindObject(targetId);
+            int avatarTriangleCount = 0;
+            bool surfaceReady = false;
+            try
+            {
+                if (target?.Graph != null)
+                {
+                    var evaluation = target.EvaluateGraph();
+                    var bind = target.Graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);
+                    if (bind != null && evaluation.MeshInputs.TryGetValue(bind.NodeId, out var meshValue) && meshValue?.Mesh != null)
+                    {
+                        avatarTriangleCount = meshValue.Mesh.TriangleCount;
+                        surfaceReady = evaluation.SkinBindingOutputs.TryGetValue(bind.NodeId, out var binding) && binding?.Binding != null;
+                    }
+                }
+            }
+            catch (Exception) { }
+
+            string avatarScope = "全三角形";
+            try
+            {
+                var selected = SurfaceTriangleSelection()?.ToArray();
+                if (selected != null) avatarScope = "指定 " + selected.Length.ToString(CultureInfo.InvariantCulture) + "面";
+            }
+            catch (Exception error) { avatarScope = "面ID入力エラー（" + error.Message + "）"; }
+
+            bool hasSkinBind = graph?.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null) == true;
+            var state = SurfaceFitInspectionState();
+            bool measured = state["available"]?.Value<bool>() == true;
+            string measurement = measured ? "計測済み" : (string.IsNullOrEmpty(surfaceFitInspectionStateHash) ? "計測未実施" : "再計測が必要（対象・範囲・形状が変更）");
+            string targetText = target == null ? "avatar未選択" : "avatar " + target.ObjectId.Substring(0, Math.Min(8, target.ObjectId.Length));
+            string bindText = hasSkinBind ? "skin-bind済み" : "skin-bind前";
+            accessoryFitSummary.text = "fit対象: 衣装 " + clothingScope + "（全 " + clothingCount.ToString(CultureInfo.InvariantCulture) + "頂点） · " +
+                targetText + " " + avatarScope + "（全 " + avatarTriangleCount.ToString(CultureInfo.InvariantCulture) + "面） · " + bindText + " · " + measurement;
+            if (!surfaceReady && target != null) accessoryFitSummary.text += " · avatar表面rest mesh／weightを確認";
+            accessoryFitSummary.tooltip = accessoryFitSummary.text;
         }
 
         static SkeletonDefinition TryResolveSkeleton(ImportedRigSession session, AuthoringGraph graph)
@@ -313,6 +386,7 @@ namespace NyaForge.UnityRuntime
                 if (indices.Any(index => index < 0 || index >= value.Mesh.VertexCount))
                     throw new InvalidOperationException("現在の選択にEditMeshの頂点範囲外が含まれています。EditMeshを表示して選択してください。");
                 accessoryClothingVertexIds.SetValueWithoutNotify(string.Join(",", indices));
+                RefreshAccessoryFitSummary();
                 SetStatus("現在の衣装頂点選択をfit／weight対象へ設定しました（" + indices.Length.ToString(CultureInfo.InvariantCulture) + "頂点）。");
             });
         }
@@ -342,6 +416,7 @@ namespace NyaForge.UnityRuntime
             selectedAvatarSurfaceTriangles.Clear();
             accessorySurfaceTriangleIds.SetValueWithoutNotify("");
             RefreshAvatarSurfaceSelection();
+            RefreshAccessoryFitSummary();
             SetStatus("avatar面領域を解除しました。fit／weightは全三角形を対象にします。");
         }
 
@@ -382,6 +457,7 @@ namespace NyaForge.UnityRuntime
                 if (hit >= 0 && (!add || !selectedAvatarSurfaceTriangles.Remove(hit))) selectedAvatarSurfaceTriangles.Add(hit);
                 accessorySurfaceTriangleIds.SetValueWithoutNotify(string.Join(",", selectedAvatarSurfaceTriangles.OrderBy(id => id)));
                 RefreshAvatarSurfaceSelection();
+                RefreshAccessoryFitSummary();
                 SetStatus(selectedAvatarSurfaceTriangles.Count == 0 ? "avatar面の選択を解除しました。" :
                     "avatar面領域を更新しました（" + selectedAvatarSurfaceTriangles.Count.ToString(CultureInfo.InvariantCulture) + "面）。fit／weightへ共通適用されます。");
             });
@@ -453,6 +529,7 @@ namespace NyaForge.UnityRuntime
             surfaceFitInspectionTriangleIds = surfaceTriangles;
             surfaceFitInspectionVertexIds = clothingVertices;
             surfaceFitInspectionBehindSurfaceVertexIds = clearance.BehindSurfaceVertexIndices.ToArray();
+            RefreshAccessoryFitSummary();
             return new AttachmentSurfaceFitMeasurement { Result = fit, Clearance = clearance, TargetObjectId = target.ObjectId, Region = region, Vertices = vertices,
                 TriangleIds = surfaceTriangles, VertexIds = clothingVertices, Offset = offset, MaxDistance = maxDistance };
         }
@@ -479,12 +556,32 @@ namespace NyaForge.UnityRuntime
             return state;
         }
 
+        bool SurfaceFitInspectionInputsMatchMeasurement()
+        {
+            try
+            {
+                if (attachmentTarget == null || attachmentTarget.index < 0 || attachmentTarget.index >= attachmentTargetIds.Count)
+                    return false;
+                string currentTarget = attachmentTargetIds[attachmentTarget.index];
+                if (currentTarget != surfaceFitInspectionTargetObjectId) return false;
+                var currentTriangles = SurfaceTriangleSelection()?.ToArray();
+                var currentVertices = ClothingVertexSelection()?.ToArray();
+                if (!(surfaceFitInspectionTriangleIds ?? Array.Empty<int>()).SequenceEqual(currentTriangles ?? Array.Empty<int>())) return false;
+                if (!(surfaceFitInspectionVertexIds ?? Array.Empty<int>()).SequenceEqual(currentVertices ?? Array.Empty<int>())) return false;
+                return accessoryFitOffsetMm != null && accessoryFitMaxDistanceMm != null &&
+                    Math.Abs(accessoryFitOffsetMm.value / 1000f - surfaceFitInspectionOffset) < 1e-6f &&
+                    Math.Abs(accessoryFitMaxDistanceMm.value / 1000f - surfaceFitInspectionMaxDistance) < 1e-6f;
+            }
+            catch (Exception) { return false; }
+        }
+
         internal JObject SurfaceFitInspectionState()
         {
             bool available = workspace != null && !workspace.Document.IsEmpty &&
                 workspace.Document.ActiveObjectId == surfaceFitInspectionObjectId &&
                 workspace.Document.DocumentRevision == surfaceFitInspectionRevision &&
-                workspace.Document.StateHash == surfaceFitInspectionStateHash;
+                workspace.Document.StateHash == surfaceFitInspectionStateHash &&
+                SurfaceFitInspectionInputsMatchMeasurement();
             var result = new JObject { ["available"] = available };
             if (!available)
             {

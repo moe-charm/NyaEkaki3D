@@ -3957,3 +3957,17 @@ Unity **2022.3.22f1** の隔離 `PhysBonesSdkProbe-20260914` で、現行の実R
 - Unity 6000.4.3f1 隔離Windows Player `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ManifestPathV1-src\Builds\ManifestPathV2\NyaForge.exe`：build成功
 - Authoring自動検証: **87 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ManifestPathV1-src\Artifacts\Authoring-20260915-065717-5a9a6f3a006148a1850fa9e28dab5d45\report.json`）。正本パス表示追加後もruntime pointer、保存／再開／出力導線を含む一周が合格。
 - 境界: フルパス表示と自動UI回帰の確認であり、実マウスのDPI別文字サイズ、実RadDollV3の外観、Unity実SDK、VRChat実機受入は完了扱いにしない。
+
+# 2026-09-15 GUI-09: fit／weight対象サマリー
+
+装着Panelのfit／weight欄だけでは、現在どの衣装頂点・avatar面へ処理をかけるのか、測定結果がまだ有効かを判断しにくかった。`object-surface-fit-summary`を追加し、衣装の指定範囲と全頂点数、avatarの指定面領域と全三角形数、skin-bind状態、fit測定済み／再測定要否を常時表示する。ID入力やviewport面選択で範囲を変えた場合、対象・範囲・offset・最大距離が前回測定と一致しない限り測定を有効扱いしない。長い内容は1行表示とtooltipで確認できる。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentState.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentUi.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Attachments.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.SelectionRefresh.cs`
+- 回帰: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentVerification.cs`, `AuthoringWorkbench.ImportedAccessoryVerification.cs`（summaryの構築、衣装2頂点／avatar1面の指定、計測済み表示）
+- Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-602af81e20cc478b91572077039e8017`）
+- Unity 6000.4.3f1 隔離Windows Player `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-FitSummaryV4-src\Builds\FitSummaryV4\NyaForge.exe`: build成功
+- Authoring自動検証: **PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-FitSummaryV4-src\Artifacts\Authoring-20260915-071855-1bcf655624a94fb59aec4b59d5717d06\report.json`）
+- 境界: 対象範囲の可視化と測定のstale判定を確認したもので、実マウスのDPI／IME、実RadDollV3の全周fit・貫通・材質見た目、avatar移動・回転・scale、Unity実SDK、VRChat Build & Test／実機表示は未受入のまま。

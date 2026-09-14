@@ -47,11 +47,18 @@ namespace NyaForge.UnityRuntime
             accessoryAutoWeight = Button("衣装の自動weight初期化（骨近傍）", TransferAccessoryWeights, "object-skin-auto-weight");
             accessorySurfaceWeight = Button("衣装の自動weight初期化（avatar表面）", TransferAccessorySurfaceWeights, "object-skin-surface-weight");
             attachmentPanel.Add(new Label("3  fit・weightを調整"));
+            accessoryFitSummary = new Label { name = "object-surface-fit-summary" };
+            // Keep the compact controls column from growing when object IDs
+            // or scope details are long; the tooltip exposes the full text.
+            accessoryFitSummary.style.whiteSpace = WhiteSpace.NoWrap;
+            accessoryFitSummary.tooltip = "現在のfit／weight対象、選択範囲、測定結果の有効性を表示します。面や頂点の指定を変えたら再測定してください。";
+            attachmentPanel.Add(accessoryFitSummary);
             accessoryFitOffsetMm = Number(attachmentPanel, "avatar表面からのfit offset (mm)", 2, "object-surface-fit-offset-mm");
             accessoryFitMaxDistanceMm = Number(attachmentPanel, "surface fit最大距離 (mm)", 50, "object-surface-fit-max-distance-mm");
             accessorySurfaceTriangleIds = new TextField("avatar面ID（カンマ区切り・空欄=全て）") { name = "object-surface-triangle-ids" };
             accessorySurfaceTriangleIds.tooltip = "avatarのrest meshを三角形の通し番号で限定します。面IDはsubmesh順に0から数え、空欄なら全三角形を対象にします。fitとweightで同じ領域を使います。";
             attachmentPanel.Add(accessorySurfaceTriangleIds);
+            accessorySurfaceTriangleIds.RegisterValueChangedCallback(_ => RefreshAccessoryFitSummary());
             accessorySurfacePickMode = new Toggle("クリックでavatar面を選択（Shiftで追加）") { name = "object-surface-pick-mode" };
             accessorySurfacePickMode.tooltip = "有効にするとビューポートのavatar面をクリックして領域を作ります。衣装頂点のクリック選択は一時停止します。";
             attachmentPanel.Add(accessorySurfacePickMode);
@@ -60,6 +67,7 @@ namespace NyaForge.UnityRuntime
             accessoryClothingVertexIds = new TextField("衣装頂点ID（カンマ区切り・空欄=全て）") { name = "object-surface-clothing-vertex-ids" };
             accessoryClothingVertexIds.tooltip = "衣装EditMeshの頂点IDを限定します。空欄なら全頂点を対象にし、指定時は未選択頂点の位置・weightを保持します。";
             attachmentPanel.Add(accessoryClothingVertexIds);
+            accessoryClothingVertexIds.RegisterValueChangedCallback(_ => RefreshAccessoryFitSummary());
             accessoryUseSelectedVertices = Button("現在の衣装頂点選択を適用対象にする", UseSelectedClothingVertices, "object-surface-use-selected-vertices");
             attachmentPanel.Add(accessoryUseSelectedVertices);
             accessorySurfaceFit = Button("衣装をavatar表面へfit", FitAccessoryToAvatarSurface, "object-surface-fit");

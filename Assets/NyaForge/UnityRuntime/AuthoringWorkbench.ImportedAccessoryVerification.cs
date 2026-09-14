@@ -7,6 +7,7 @@ using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Rig;
 using Newtonsoft.Json.Linq;
+using UnityEngine.UIElements;
 
 namespace NyaForge.UnityRuntime
 {
@@ -109,10 +110,14 @@ namespace NyaForge.UnityRuntime
                     OwnedMeshProjection.ToUnity(avatarSurfaceValue.Transform.ToAvatarPoint(avatarSurfaceCenter)));
                 PickAvatarSurfaceTriangle(VertexPanelPoint(avatarSurfaceWorldCenter), false);
                 Check(accessorySurfaceTriangleIds.value == "0", "Viewport avatar face picking did not select triangle 0");
+                Check(root.Q<Label>("object-surface-fit-summary").text.Contains("指定 1面"),
+                    "Fit target summary did not expose the selected avatar face scope");
                 accessorySurfacePickMode.SetValueWithoutNotify(false);
                 Select(new[] { 0, 1 });
                 UseSelectedClothingVertices();
                 Check(accessoryClothingVertexIds.value == "0,1", "Selected clothing vertices were not copied into the surface tool");
+                Check(root.Q<Label>("object-surface-fit-summary").text.Contains("指定 2頂点"),
+                    "Fit target summary did not expose the selected clothing vertex scope");
                 string beforeFitInspection = workspace.Document.StateHash;
                 long beforeFitInspectionRevision = workspace.Document.DocumentRevision;
                 InspectAccessorySurfaceFit();
@@ -127,6 +132,8 @@ namespace NyaForge.UnityRuntime
                     ((Newtonsoft.Json.Linq.JArray)fitInspection["behindSurfaceVertexIds"]).Count <= 64,
                     "Surface fit inspection state did not retain its pinned identity, selection and clearance sample");
                 Check(status.text.Contains("裏側候補"), "Surface fit inspection did not report the conservative back-side candidate count");
+                Check(root.Q<Label>("object-surface-fit-summary").text.Contains("計測済み"),
+                    "Fit target summary did not expose the completed measurement");
                 TransferAccessorySurfaceWeights();
                 boundGraph = workspace.Document.ActiveObject.Graph;
                 bound = boundGraph.Nodes.Values.Single(node => node.TypeId == BuiltinNodes.SkinBind);

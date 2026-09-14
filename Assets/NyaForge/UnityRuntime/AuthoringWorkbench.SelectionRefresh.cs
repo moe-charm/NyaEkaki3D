@@ -35,6 +35,7 @@ namespace NyaForge.UnityRuntime
                     : null;
                 accessoryUseSelectedVertices.SetEnabled(editNode != null && workspace.Preview.IsComplete && selection.Count > 0);
             }
+            RefreshAccessoryFitSummary();
             RefreshViewportHint();
         }
     }

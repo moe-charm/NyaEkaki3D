@@ -13,6 +13,7 @@
 | 対象一覧と役割名 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Objects.cs`, `AuthoringWorkbench.ObjectLabels.cs` | 選択、表示／参照保護、短縮表示、tooltipの完全IDと役割説明。stable ObjectId keyed表示名のGUI入力・保存・Undo/Redoもここで扱う |
 | 小物装着の一時状態 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentState.cs` | 装着PanelのUIハンドル、候補ID、fit検査結果などの一時状態。保存される装着設定はgraph側を正本とし、ここへ永続データを追加しない |
 | 小物装着Panelの構築 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentUi.cs` | 装着Panelの入力欄、ボタン、tooltip、help文とイベント接続。装着計算や保存処理は持たない |
+| fit／weight対象サマリー | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Attachments.cs`, `AuthoringWorkbench.AttachmentState.cs`, `AuthoringWorkbench.SelectionRefresh.cs` | 現在の衣装頂点・avatar面の対象範囲、全体数、skin-bind状態、fit測定の有効性を表示。測定結果やgraphの保存正本は持たず、入力変更時に再測定要否を再計算する |
 | fit検査の受け渡し型 | `Assets/NyaForge/UnityRuntime/AttachmentSurfaceFitMeasurement.cs` | fit／clearanceの計測結果をUIとMCPへ渡す一時DTO。WorkbenchやDocumentへの参照を持たない |
 | GLB/VRMの取込案内 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Import.cs`, `AuthoringWorkbench.ModelImportGuidance.cs` | 利用者向けの手順説明と既存取込commandの接続。解析処理はImport serviceへ委譲 |
 | 保存と受け渡し | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ProjectOutput.cs` | native保存／開く、Explorer選択、GLB・Unity・衣装package・VRMの操作配置 |

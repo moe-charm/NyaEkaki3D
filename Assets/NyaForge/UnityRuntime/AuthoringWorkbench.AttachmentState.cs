@@ -12,6 +12,7 @@ namespace NyaForge.UnityRuntime
         // source of truth for saved attachment data.
         Foldout attachmentPanel;
         Label attachmentStatus;
+        Label accessoryFitSummary;
         DropdownField attachmentTarget;
         DropdownField attachmentBone;
         FloatField attachmentOffsetX, attachmentOffsetY, attachmentOffsetZ;
