@@ -4,7 +4,7 @@
 
 GLBのmorph取込で、各頂点を一度`MorphDelta`オブジェクトへ展開してから辞書へ変換していた経路を、疎な`Dictionary<int, Vec3>`へ直接構築する内部経路へ変更した。公開API、保存形式、表情の頂点値・順序・hash契約は維持する。Coreは**509 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a2c480428d624c4e8812c217bfdabe0d`）。`Builds/BoneSubsetV7/NyaForge.exe`でRadDollV3実衣装一周とUnity **2022.3.22f1** Bridge受け取りもPASS（Player `Artifacts/Authoring-20260914-155811-a5784b1b066d4d14958dba0b50d843ba/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-160042-912-f7f11707dd1f4b529a62bc3500e36b83/bridge-report.json`）。
 
-同じ`ImportOnly`条件の外部2秒サンプリングは約18.3秒、working set peak **1,081.3MB**、private bytes peak **1,527.8MB**（`C:/Users/tomoaki/AppData/Local/Temp/nyaforge-import-only-memory-9d8c56f67f244d7d84581d5f95061421.log`）で、前回の約1,140.9MB／1,587.4MBから約60MB減少した。OS・GPU・サンプリング間隔を含む観測であり、最終的な軽量性合格とは扱わない。通常編集の手動受入、出力段階の一時データ、全mesh一括、別Windows環境、VRChat Build & Test／実機表示は継続課題とする。
+同じ`ImportOnly`条件の外部2秒サンプリングは約18.3秒、working set peak **1,081.3MB**、private bytes peak **1,527.8MB**（`C:/Users/tomoaki/AppData/Local/Temp/nyaforge-import-only-memory-9d8c56f67f244d7d84581d5f95061421.log`）で、前回の約1,140.9MB／1,587.4MBから約60MB減少した。一方、V7の通常一周（VRM1確認なし）は約83秒、working set peak **2,220.9MB**、private bytes peak **2,747.2MB**（`C:/Users/tomoaki/AppData/Local/Temp/nyaforge-no-vrm-memory-edb73637abbd4b90ad834d67fc5e1507.log`）で、OS状態と検証順序の揺れもあり、通常一周全体の改善量はまだ確定していない。OS・GPU・サンプリング間隔を含む観測であり、最終的な軽量性合格とは扱わない。通常編集の手動受入、出力段階の一時データ、全mesh一括、別Windows環境、VRChat Build & Test／実機表示は継続課題とする。
 
 ## 2026-09-14 NF-V1-15A: 通常候補と全meshの軽量性を分離
 
