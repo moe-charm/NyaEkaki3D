@@ -2779,3 +2779,9 @@ Coreは **507 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 実RadDollV3＋手首カフでは、旧Playerで元Polygonの装着、skin派生、骨近傍weight初期化、native Save/Open、Unity用native exportまで確認済み。旧Playerでのskin package出力は今回の修正前検査により停止したため、新Playerで派生衣装だけを選択したskin package出力と、`clothing.glb`／skeleton・binding sidecarの存在確認を次の手動受入に残す。全身surface fitは手首カフ用途では距離超過で停止する仕様で、ボーン装着の位置合わせを優先する。
 
 追試として同じCore suiteを再実行し、**507 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ad2cc5d370a54feca797fdafbea6fdef`）を確認した。
+
+# 2026-09-14 新Playerで実衣装skin package出力を確認
+
+修正版 `Builds/ClothingPackageV3/NyaForge.exe`をWindows native Computer Useで起動し、実RadDollV3＋手首カフのnative作品 `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ManualAcceptance-Cuff3-20260914\project.nyaforge.json`をExplorerから開いた。派生衣装graph `73e5a236`を選択した状態で「選択衣装をskin packageで出力」を実行し、ステータスに成功表示が出た。
+
+出力先 `exports\clothing-20260914-042448-0333be`には `skinned-clothing.nyaforge.json`、`clothing.glb`、`skeleton.nyaforge.bin`、`binding.nyaforge.bin` が生成された。元のBoneId装着Polygonを同じ作品に残したまま、選択したskin衣装だけをpackage化できることを実モデルで確認した。次の受入はこのpackageをUnity Bridgeへ適用し、移動済みavatar・更新・材質・UVを一周することにする。
