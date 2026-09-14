@@ -70,6 +70,8 @@ namespace Viewer.Runtime
             yield return CaptureNavigation(output, "sets", failures);
             ToggleNavigationPanel(settingsPanel); yield return null;
             Check(setsPanel.resolvedStyle.display == DisplayStyle.None && settingsPanel.resolvedStyle.display == DisplayStyle.Flex, "only one utility panel shown");
+            var sourceInfo = settingsPanel.Q<Label>("pack-source-info");
+            Check(sourceInfo != null && sourceInfo.text.Contains("入口:") && sourceInfo.text.Contains("実体:") && sourceInfo.text.Contains("revision:"), "settings shows pointer-to-manifest source mapping");
             yield return CaptureNavigation(output, "settings", failures);
             CloseNavigationPanels();
             File.WriteAllText(Path.Combine(output, "report.json"), JsonConvert.SerializeObject(new { passed = failures.Count == 0, failures, checks, width = Screen.width, height = Screen.height }, Formatting.Indented));

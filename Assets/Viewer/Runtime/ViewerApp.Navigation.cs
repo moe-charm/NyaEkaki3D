@@ -10,6 +10,7 @@ namespace Viewer.Runtime
     {
         VisualElement recentPanel, setsPanel, settingsPanel;
         Label activePackLabel;
+        Label packSourceInfo;
         bool filePickerOpen;
 
         VisualElement MakeNavigationPanel(string name)
@@ -73,6 +74,25 @@ namespace Viewer.Runtime
                 activePackLabel.text = Active?.Verified.Manifest.displayName ?? "パックを開いて始める";
                 activePackLabel.tooltip = Active?.Verified.Path ?? "パックを開くからJSONファイルを選んでください";
             }
+            RefreshPackSourceInfo();
+        }
+
+        void RefreshPackSourceInfo()
+        {
+            if (packSourceInfo == null) return;
+            if (Active?.Verified == null)
+            {
+                packSourceInfo.text = "実体manifest: 未読込";
+                packSourceInfo.tooltip = "ポインター、保存済みセッション、またはmanifestを開くと実体が表示されます。";
+                return;
+            }
+            string opened = pathField?.value ?? "";
+            string fileName = Path.GetFileName(opened);
+            string entryKind = fileName.StartsWith("current.", StringComparison.OrdinalIgnoreCase) ? "ポインター" :
+                fileName.EndsWith(".viewer.json", StringComparison.OrdinalIgnoreCase) ? "確認セット" : "実体manifest";
+            string manifest = Active.Verified.Path;
+            packSourceInfo.text = "入口: " + entryKind + "\n実体: " + Path.GetFileName(manifest) + "\nrevision: " + Active.Verified.Manifest.revision;
+            packSourceInfo.tooltip = "入口: " + opened + "\n実体manifest: " + manifest;
         }
     }
 }

@@ -57,6 +57,10 @@ namespace Viewer.Runtime
             maintenance.Add(MakeButton("更新を確認", CheckUpdate, "check-update"));
             maintenance.Add(MakeButton("再読込", () => { if (Active != null) RequestReload(Active.Verified.Path); }, "reload"));
             var advanced = new Foldout { text = "詳細：パスを指定する", value = false, name = "advanced-files" }; settingsPanel.Add(advanced);
+            packSourceInfo = new Label { name = "pack-source-info" };
+            packSourceInfo.style.whiteSpace = WhiteSpace.Normal;
+            packSourceInfo.AddToClassList("hint");
+            advanced.Add(packSourceInfo);
             var files = new VisualElement(); files.AddToClassList("file-row"); advanced.Add(files);
             pathField = new TextField { name = "open-path", value = System.IO.Path.Combine(LibraryPath, "current.StandaloneWindows64.json") };
             pathField.style.flexGrow = 1; files.Add(pathField);

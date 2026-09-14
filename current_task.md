@@ -3562,3 +3562,9 @@ Coreは **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 Navigation検証の実引数は`--navigation-check-output`なのに、Viewer／Authoring双方のPanelSettings DPI判定が旧`--navigation-check`だけを見ていた。判定を実際の出力引数へ揃え、Navigationのpointer座標もAuthoringと同じ1:1 probe契約で扱うようにした。通常Windows起動時のDPI補正は変更していない。
 
 `Builds/DpiProbeV2/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260914-230955-386.log`）を再ビルドし、Navigation **PASS**（`Artifacts/Navigation-20260914-231017-60c00d9bd01b47fcb7be83615487e2d3/report.json`）、Authoring **PASS**（`Artifacts/Authoring-20260914-231021-53d734ecdcd24241a6eacdbcdebf2d9b/report.json`）を確認した。
+
+# 2026-09-14 GUI-10: ポインターから実体manifestへの表示
+
+Viewerの設定パネルへ`pack-source-info`を追加し、現在の入口がポインター・確認セット・実体manifestのどれか、実際に読み込んだmanifestのファイル名・revision・完全pathを表示するようにした。保存済みセットを開いた場合も、入口と実体を分けて表示する。ポインターの検証・hash・読み込み処理は既存経路を再利用し、保存形式は変更していない。Navigation回帰へ入口→実体表示の確認を追加した。
+
+`Builds/SourceInfoV1/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260914-231206-990.log`）でNavigation **PASS**（`Artifacts/Navigation-20260914-231227-80feff88b9cb400dbb3adb1998e38b3f/report.json`）を確認し、`settings shows pointer-to-manifest source mapping`が通過した。Authoringも **PASS**（`Artifacts/Authoring-20260914-231231-e269782106c04638b8933d118c3425be/report.json`）。実マウスでの表示確認とDPI／IME／長いpathの手動受入は残る。
