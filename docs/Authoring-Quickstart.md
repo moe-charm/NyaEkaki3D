@@ -15,6 +15,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Start-NyaForgeAuthor
 1. 上部の **パックを開く…** を押すと、Windowsのファイル選択画面が開きます。エクスプローラーと同じようにフォルダを移動でき、アドレス欄にフォルダパスを貼り付けることもできます。
 2. パック入口の **current.StandaloneWindows64.json** を選びます。これは`packId`・`buildTarget`・revision manifestの場所・hashだけを持つWindows確認パック用のポインタです。Nya Ekaki 3Dの制作正本ではありません。個別のパックmanifestや保存済みの **.viewer.json** も選べます。
 
+Viewerで`project.nyaforge.json`を選んだ場合は、内部形式のエラーではなく`NATIVE_PROJECT_REQUIRES_AUTHORING`として制作画面へ戻る案内を表示します。制作正本はViewerパックではないため、上部の **制作へ** から制作プロジェクトを開いてください。
+
 制作データの正本は、制作画面の保存で作られるフォルダです。`project.nyaforge.json`がmanifest、`blobs/`が内容本体、許可された`.nyaforge.*` attachmentがrig・表情・揺れ・表示名などの補助情報を持ちます。
 
 ポインターと実体は併用します。`current.StandaloneWindows64.json`のような小さなポインターは、現在採用するrevisionとmanifestの相対パス・hashを示す入口です。確認環境の切替や共有では便利ですが、ポインターだけをバックアップしたり制作正本として編集したりしません。実体はrevision配下の`manifest.json`と関連blobです。ポインターを失っても実体manifestを直接開けますし、実体を失ったポインターは復元できません。制作作品では、`project.nyaforge.json`＋`blobs/`＋許可されたattachmentを一組で保存します。

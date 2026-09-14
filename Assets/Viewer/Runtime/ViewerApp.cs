@@ -262,6 +262,16 @@ namespace Viewer.Runtime
                     string manifest = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path), session.pack.manifestPath));
                     RequestReload(manifest, session, session.pack.manifestSha256, path, loadedHash);
                 }
+                else if (string.Equals(Path.GetFileName(path), "project.nyaforge.json", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Native authoring projects use a schema-4 envelope whose
+                    // root is intentionally different from a viewer pack
+                    // manifest.  Give users a useful route instead of leaking
+                    // the generic JSON unknown-field error from PackStore.
+                    throw new ContractException(
+                        "NATIVE_PROJECT_REQUIRES_AUTHORING",
+                        "これは制作データです。「制作へ」を押してから、制作プロジェクトを開いてください。確認用パックはcurrent.*またはpack manifestを選びます。");
+                }
                 else RequestReload(path, usePackDefaults: usePackDefaults, openedPath: path);
                 pathField?.SetValueWithoutNotify(path);
             }

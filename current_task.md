@@ -3895,3 +3895,12 @@ VRM1出力は入力側の保持できない意味情報を`sourceDiagnostics`へ
 - 未確認: Unity Player再ビルド、実EditorWindowでのチェック操作、実VRM／VRChat外観。これらは自動Core回帰の合格へ読み替えない。
 
 追試: Unity 6000.4.3f1 Player `VrmSemanticGateV1`を隔離コピーで再ビルドし、通常Authoringを **PASS**（`Artifacts/Authoring-20260915-060411-15f3d71d7eac4de0a7ceb03c1b4508de/report.json`）。private RadDollV3 VRMを入力した実衣装probeも **90 checks PASS**（`Artifacts/Authoring-20260915-060447-b0ce865e46e14666a4c7ec6d3c7472b6/report.json`）、生成packageは同report配下の`real-clothing-project/exports/clothing-20260914-210659-e6f717/skinned-clothing.nyaforge.json`。今回の実衣装probeは合成accessory fixtureを含むため、実EditorWindow操作、全周fit／貫通／材質見た目、Unity実SDK適用、VRChat Build & Test／実機表示は未確認のまま。
+
+# 2026-09-15 VIEWER-OPEN-01: 制作正本を誤選択した場合の導線
+
+Viewerの「パックを開く…」でnative制作正本 project.nyaforge.json を選ぶと、従来はroot projectのunknown-fieldをそのまま表示していた。ViewerApp.OpenPathでファイル名を判定し、NATIVE_PROJECT_REQUIRES_AUTHORING と「制作へ」への案内を表示するようにした。確認パックの current.StandaloneWindows64.json は引き続き通常どおり読み込める。
+
+- Unity 6000.4.3f1 Player NativeProjectHintV1を隔離ビルド。
+- current.StandaloneWindows64.jsonをWindowsファイル選択から開き、RadDollV3衣装確認を表示できることを確認。
+- 同じダイアログから project.nyaforge.json を選び、現在のモデルを保持したままコードと案内文が表示されることを確認。
+- 確認範囲はViewer導線とエラー表示。制作画面でのnative project再開、実EditorWindowの衣装作成、VRChat受入は別カード。
