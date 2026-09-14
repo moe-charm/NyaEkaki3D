@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using NyaForge.Authoring;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -44,6 +45,32 @@ namespace NyaForge.UnityRuntime
             // height and fail whenever the button was below the fold.
             controls.ScrollTo(button);
             PointerProbe.Click(button);
+        }
+
+        void VerifyMorphTargetIdentity(List<string> checks)
+        {
+            var previousWorkspace = workspace;
+            string previousPath = projectPath == null ? null : projectPath.value;
+            try
+            {
+                ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null);
+                graphCanvas.AddMorphSampleForVerification();
+                Refresh();
+                Check(morphTargetIds.Count == 1 && morphTargetChoice != null,
+                    "Morph sample did not publish its target to the authoring panel");
+                string targetId = morphTargetIds[0];
+                Check(morphTargetChoice.tooltip.Contains(targetId, StringComparison.Ordinal),
+                    "Morph target tooltip did not expose the complete target ID");
+                string before = workspace.Document.StateHash;
+                morphTargetChoice.value = morphTargetChoice.choices[0];
+                Check(morphTargetChoice.tooltip.Contains(targetId, StringComparison.Ordinal) && workspace.Document.StateHash == before,
+                    "Selecting a Morph target changed the document or lost its complete ID tooltip");
+                checks.Add("Morph target selection exposes the complete stable ID in a tooltip without changing the document");
+            }
+            finally
+            {
+                ReplaceWorkspace(previousWorkspace, previousPath);
+            }
         }
     }
 }
