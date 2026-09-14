@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10M: 50回反復起動・終了回帰
+
+`PerformanceV39`のWindows Playerを新規プロセスで50回起動し、標準fixtureのnavigation／Save As・保存状態・再開・viewport確認を各回で実行した。**50/50 PASS**。集約結果は`Artifacts/Navigation-Repeated-PerformanceV39-50.json`。再現用の`Tools/Test-NyaForgeNavigationRepeated.ps1`を追加し、`-Count 2`の自己検証もPASSした（`Artifacts/Navigation-Repeated-PerformanceV39-smoke.json`）。
+
+これは自動fixtureの反復起動・終了回帰であり、2時間編集、IME／高DPIの実マウス操作、別Windows環境、全周fit／貫通、VRChat実機受入を満たすものではない。
+
 ## 2026-09-14 NF-V1-10L: V39反復起動・終了回帰
 
 `PerformanceV39`のWindows Playerを新規プロセスで10回起動し、標準fixtureのnavigation／Save As・保存状態・再開・viewport確認を各回で実行した。**10/10 PASS**。集約結果は`Artifacts/Navigation-Repeated-PerformanceV39.json`、個別reportは同フォルダ内の`Navigation-20260914-105951-38aec7edbaa54724ab74f40754ddaaae`以降へ保存した。
