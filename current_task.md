@@ -3997,8 +3997,8 @@ source-skin表示のキャッシュ判定は、従来の複数hashを毎回連�
 
 - 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.SourceSkinDisplay.cs`
 - Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-9575e1a826b84cb3a6edb8e0fc7397b9`）
-- Unity 6000.4.3f1 隔離Player `NyaForge-MorphTargetContextV1`へ反映してbuild成功。通常Authoring **88 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-080040-a6c06217d1ff44c3b8258a2862315543\report.json`）。明示ループ版も同Playerでbuild成功し、通常Authoring **88 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-080440-8b10674a8b944889a5d84d2f3c9fefc7\report.json`）。
-- commit/push: `b9b30b7 perf: avoid source skin cache key allocations` と `8b89fe6 perf: reduce source skin cache scan allocations` を`origin/main`へpush済み。
+- Unity 6000.4.3f1 隔離Player `NyaForge-MorphTargetContextV1`へ反映してbuild成功。通常Authoring **88 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-080040-a6c06217d1ff44c3b8258a2862315543\report.json`）。明示ループ版も同Playerでbuild成功し、通常Authoring **88 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-080440-8b10674a8b944889a5d84d2f3c9fefc7\report.json`）。空hashを含むpose候補の比較も従来の順序意味を維持するよう補正し、`SourceSkinCacheV3`でbuild・通常Authoring **88 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-081056-991fc05457e14be3946227681bfbf3c7\report.json`）。
+- commit/push: `b9b30b7 perf: avoid source skin cache key allocations` と `8b89fe6 perf: reduce source skin cache scan allocations` と `f395ffe fix: preserve empty pose hash cache identity` を`origin/main`へpush済み。
 - 境界: Unity実EditorWindowのGC／native memory計測、実RadDollV3の全周fit・貫通・材質見た目、VRChat実機受入は未完了。今回の変更はキー生成の割当削減であり、軽量性合格を単独で宣言しない。
 # 2026-09-15 PERF-04: 軽量化後の起動・終了反復
 
