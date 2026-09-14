@@ -1,6 +1,6 @@
 # Nya Ekaki 3D Windows v1 手動受入チェック
 
-この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/BoneSubsetV3/NyaForge.exe`（コード `a77840b`）。Authoring suiteの自動navigation／Save As・保存状態・再開・viewport確認は50回反復し、`Artifacts/Navigation-Repeated-PerformanceV39-official-50.json`へ記録した。実RadDollV3一周はBoneSubsetV3のprivate候補で確認した。証跡は`Artifacts/Authoring-20260914-151706-7104cbc828634b7b908141762f6a7604/report.json`、`Artifacts/BridgeReceiver-20260914-151939-562-a960367cb1c14d8a82878419d6aa0dda/bridge-report.json`。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
+この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/BoneSubsetV3/NyaForge.exe`（コード `a77840b`）。Authoring suiteの自動navigation／Save As・保存状態・再開・viewport確認は50回反復し、`Artifacts/Navigation-Repeated-PerformanceV39-official-50.json`へ記録した。実RadDollV3一周はBoneSubsetV3のprivate候補で確認した。証跡は`Artifacts/Authoring-20260914-152725-f668eee74c7f41a08712e014c37c2619/report.json`、`Artifacts/BridgeReceiver-20260914-153001-201-d4c23163fb89454a8c9ad0bcfaf411a9/bridge-report.json`。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
 
 ## 1. 実EditorWindow（Windows）
 
@@ -54,6 +54,7 @@
 - 未受入・再現条件:
 
 「fit状態を測定」の裏側候補値は最近面のwindingによる保守的なサンプルであり、三角形交差・閉じた体積の内外判定・貫通ゼロを証明しない。画像の可愛さや販売品質も、数値検査とは別に人間またはAIの確認結果として記録する。
+
 
 
 

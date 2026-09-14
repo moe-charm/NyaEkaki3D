@@ -2890,3 +2890,7 @@ Unity **2022.3.22f1** Bridgeを再実行し、適用・hash／sidecar・ownershi
 # 2026-09-14 画像payload共有後の実メモリ再計測
 
 `Builds/BoneSubsetV4/NyaForge.exe`でprivate RadDollV3 VRMの全mesh取込＋Save/Open／GLB／VRM1／衣装package suiteを外部サンプリングした。Playerは`Artifacts/Authoring-20260914-152215-d7a276d57e324107b92aed4695ce22e8/report.json`でPASSしたが、working set peak **3,667MB**、private bytes peak **4,492.3MB**（30 samples）だった。前回の観測値と条件・OS状態が完全一致しないため共有キャッシュの削減量は断定せず、全mesh一括取込の軽量性は未達として扱う。通常の1候補編集を全mesh経路から分離すること、取込中のgraph／Unity評価キャッシュを段階化することを次の性能課題にする。public repositoryへprivate素材は追加していない。
+
+# 2026-09-14 全mesh取込の二重読込除去
+
+全mesh command-line検証で、inventory確認後に同じVRMを`ImportAllModelInstances`が再読込・再parseしていた経路を修正した。既に読み込んだbytesと`GlbDocument`を再利用する内部overloadを追加し、通常GUIの単一読込契約も維持した。`Builds/BoneSubsetV5/NyaForge.exe`のビルドは成功し、private実RadDollV3 VRMのPlayer **93 checks PASS**、衣装skeleton **2 bones**、Unity **2022.3.22f1** Bridge **PASS**を確認した。証跡はPlayer `Artifacts/Authoring-20260914-152725-f668eee74c7f41a08712e014c37c2619/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-153001-201-d4c23163fb89454a8c9ad0bcfaf411a9/bridge-report.json`。二重読込を除いた同一条件のheap比較は未実施のため、軽量性の数値合格とは扱わない。

@@ -189,9 +189,22 @@ namespace NyaForge.UnityRuntime
         {
             if (workspace == null || (!workspace.Document.IsEmpty && workspace.Document.ActiveObject.IsStaticProfile)) throw new InvalidOperationException("GLB取り込みは空またはgraph projectで実行してください。");
             if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("GLBファイルを選択してください。");
-            string fullPath = Path.GetFullPath(path); string sourceDirectory = Path.GetDirectoryName(fullPath); var bytes = ReadModelFile(fullPath);
+            ImportAllModelInstances(path, null, null);
+        }
+
+        /// <summary>
+        /// Imports all instances from an already decoded document when the
+        /// caller has just inspected the same file. This avoids a second file
+        /// read, GLB parse and model-sized buffer during command-line checks;
+        /// the normal GUI path still uses the single-argument entry point.
+        /// </summary>
+        void ImportAllModelInstances(string path, byte[] suppliedBytes, GlbDocument suppliedDocument)
+        {
+            if (workspace == null || (!workspace.Document.IsEmpty && workspace.Document.ActiveObject.IsStaticProfile)) throw new InvalidOperationException("GLB取り込みは空またはgraph projectで実行してください。");
+            if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("GLBファイルを選択してください。");
+            string fullPath = Path.GetFullPath(path); string sourceDirectory = Path.GetDirectoryName(fullPath); var bytes = suppliedBytes ?? ReadModelFile(fullPath);
             VrmMetadata vrm = VrmMetadataReader.ContainsVrm(bytes) ? VrmMetadataReader.Read(bytes) : null;
-            var document = GlbDocumentReader.Read(bytes);
+            var document = suppliedDocument ?? GlbDocumentReader.Read(bytes);
             var inventory = GlbSceneInventoryReader.Read(document);
             var imageCache = new Dictionary<int, ImportedBaseColorImage>();
             var encodedImageCache = new GlbImportImageCache();

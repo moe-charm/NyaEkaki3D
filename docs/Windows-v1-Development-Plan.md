@@ -1,6 +1,6 @@
 # Nya Ekaki 3D Windows v1 実行計画
 
-更新: 2026-09-14。検証対象コード: `main`（コード候補 `a77840b`、PerformanceV39／BoneSubsetV3まで確認済み）。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership marker・複数package管理・semantic texture preview・納品対象allowlist・base-color原画像sourceのnative保持・検査公開・未編集時の原画像出力まで実装が進んでいる。`f010146`フィードバックの現行HEAD再照合（[現行再照合](reviews/2026-09-14-Feedback-f010146-Recheck-5f90cb9.md)）とPerformanceV37〜V39の実RadDollV3再計測、V39の50回反復起動回帰は[current_task](../current_task.md)へ記録した。source-skin取込では既存display meshの再利用とJSON scene clone削減を実装し、V39で回帰した。直近Core artifactは `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-c0eae62745d14c7faab0ce1fadd318b4`、実衣装Player reportは `Artifacts/Authoring-20260914-151706-7104cbc828634b7b908141762f6a7604/report.json`、Unity Bridge reportは `Artifacts/BridgeReceiver-20260914-151939-562-a960367cb1c14d8a82878419d6aa0dda/bridge-report.json`。
+更新: 2026-09-14。検証対象コード: `main`（コード候補 `a77840b`、PerformanceV39／BoneSubsetV3まで確認済み）。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership marker・複数package管理・semantic texture preview・納品対象allowlist・base-color原画像sourceのnative保持・検査公開・未編集時の原画像出力まで実装が進んでいる。`f010146`フィードバックの現行HEAD再照合（[現行再照合](reviews/2026-09-14-Feedback-f010146-Recheck-5f90cb9.md)）とPerformanceV37〜V39の実RadDollV3再計測、V39の50回反復起動回帰は[current_task](../current_task.md)へ記録した。source-skin取込では既存display meshの再利用とJSON scene clone削減を実装し、V39で回帰した。直近Core artifactは `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-c0eae62745d14c7faab0ce1fadd318b4`、実衣装Player reportは `Artifacts/Authoring-20260914-151706-7104cbc828634b7b908141762f6a7604/report.json`、Unity Bridge reportは `Artifacts/BridgeReceiver-20260914-153001-201-d4c23163fb89454a8c9ad0bcfaf411a9/bridge-report.json`。
 
 本書は持込「NyaForge Windows v1 開発計画」をコード照合して修正した実行計画。受入済み報告ではない。製品全体の目標・C0〜C5の要件は[設計v2](NyaForge-Authoring-Design2.md)を維持し、本書はWindows衣装制作v1へ至る着手順を定める。v1だけの合格を製品全体や進行中goalの完了へ読み替えない。直近の状態は[current_task](../current_task.md)。現行main（`a77840b`）ではCore 509 passed / 0 failed、`Builds/BoneSubsetV3/NyaForge.exe`のAuthoring／実RadDollV3衣装package／Unity 2022.3.22f1 Bridge受け取り、private RadDollV3全mesh import／Save/Open／GLB・VRM1 smoke、実SDKのRadDollV3 Skirt chain PhysBone設定probe、実FBXへのskinned-clothing package初回・再適用・native roundtrip smoke、実body meshを使ったsurface fit／weight transfer接続probe、semantic textureを含む合成Unity Bridgeの衣装package回帰、明示納品対象allowlistのGUI／MCP／GLB subsetとSave/Open回帰まで確認済みで、通常GLBのTEXCOORD_1は`UNSUPPORTED_UV_SET`で明示停止する。semantic textureのGUIもUV1新規適用を拒否し、UV0へ戻してから保存・出力する契約を持つ。base-colorを1024pxへ縮小した場合は原画像サイズと作業画像サイズを表示し、PNG/JPEGの原画像bytesを`image.original-source`としてnative graphへ別保持する。未編集時は原画像bytesをGLBへ再利用し、Paint編集後やsource不在時はbounded previewへ戻す。原画像sourceを持たない既存projectから復元を装わない。範囲限定fitの平均値は選択頂点数を分母にし、`EvaluatedVertexCount`として検査記録へ出す。実マウス・実EditorWindow・全周fit／貫通・見た目・Build & Test・実VRChatは未受入である。
 
@@ -112,6 +112,7 @@ Paintと表示textureで同じ解像度・更新頻度を必要とするかを09
 - [glTF材質仕様](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#materials): 色画像と数値map、MR channel、normal/tangentをadapter間で明示する。
 
 本書の初回策定時の検証は持込文書、現行ソース、既存記録、上記公式情報の照合のみだった。実装後のCore/Player/Bridge/SDK検証結果は[current_task](../current_task.md)へ時系列で追記し、合成fixtureと実アバター・実VRChatの受入を混同しない。
+
 
 
 

@@ -114,13 +114,17 @@ namespace NyaForge.UnityRuntime
             string extension = Path.GetExtension(path);
             Check(string.Equals(extension, ".glb", StringComparison.OrdinalIgnoreCase) || string.Equals(extension, ".vrm", StringComparison.OrdinalIgnoreCase), "All-mesh command-line model fixture must be .glb or .vrm.");
             var bytes = ReadModelFile(path);
-            var inventory = GlbSceneInventoryReader.Read(bytes);
+            var document = GlbDocumentReader.Read(bytes);
+            var inventory = GlbSceneInventoryReader.Read(document);
             int expected = inventory.Instances.Count > 0 ? inventory.Instances.Count : inventory.Meshes.Count;
             Check(expected > 1 && expected <= 64, "All-mesh command-line fixture must contain two to 64 mesh instances.");
 
             ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null);
             modelImportPath.SetValueWithoutNotify(path);
-            ImportAllModelInstances(path);
+            // Reuse the exact bytes/document inspected above. The production
+            // GUI path reads once; the command-line verifier used to parse the
+            // same large VRM a second time before importing it.
+            ImportAllModelInstances(path, bytes, document);
             Check(workspace.Document.Objects.Count == expected, "All-mesh command-line import did not publish every mesh instance.");
             int expectedRigs = inventory.Instances.Count(item => item.SkinIndex.HasValue);
             Check(importedRigSessions.Count == expectedRigs, "All-mesh command-line import did not retain one rig session per skinned graph.");
