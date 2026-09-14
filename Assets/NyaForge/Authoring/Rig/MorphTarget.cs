@@ -55,6 +55,26 @@ namespace NyaForge.Authoring.Rig
         internal static MorphTarget FromSerialized(string targetId, string name, string meshTopologyHash, IEnumerable<MorphDelta> deltas, int vertexCount)
             => FromSerialized(targetId, name, meshTopologyHash, deltas, null, null, vertexCount);
 
+        /// <summary>Builds an imported morph directly from sparse values.</summary>
+        /// <remarks>
+        /// GLB import already has one value per source vertex. Going through
+        /// millions of short-lived MorphDelta objects before constructing the
+        /// dictionaries needlessly increases the peak memory of large avatar
+        /// imports, so the importer uses this internal path.
+        /// </remarks>
+        internal static MorphTarget FromValues(MeshData mesh, string targetId, string name,
+            IReadOnlyDictionary<int, Vec3> deltas, IReadOnlyDictionary<int, Vec3> normalDeltas = null,
+            IReadOnlyDictionary<int, Vec3> tangentDeltas = null)
+        {
+            Checks.Require(mesh != null && deltas != null, "INVALID_MORPH", "Mesh and morph values are required.");
+            Checks.Id(targetId); Checks.Name(name);
+            var values = CopyValues(mesh, deltas, "position");
+            Checks.Require(normalDeltas == null || mesh.Normals.Count == mesh.VertexCount, "UNSUPPORTED_FORMAT", "Normal morph deltas require base normals.");
+            Checks.Require(tangentDeltas == null || mesh.Tangents.Count == mesh.VertexCount, "UNSUPPORTED_FORMAT", "Tangent morph deltas require base tangents.");
+            return new MorphTarget(targetId, name, mesh.TopologyHash, values,
+                CopyValues(mesh, normalDeltas, "normal"), CopyValues(mesh, tangentDeltas, "tangent"));
+        }
+
         internal static MorphTarget FromSerialized(string targetId, string name, string meshTopologyHash, IEnumerable<MorphDelta> deltas, IEnumerable<MorphDelta> normalDeltas, IEnumerable<MorphDelta> tangentDeltas, int vertexCount)
         {
             Checks.Require(deltas != null && vertexCount > 0, "INVALID_MORPH", "Serialized morph data is invalid.");
@@ -73,6 +93,19 @@ namespace NyaForge.Authoring.Rig
             }
             Checks.Require(values.Count <= mesh.VertexCount, "BUDGET_EXCEEDED", "Morph delta count exceeds the mesh domain.");
             return new System.Collections.ObjectModel.ReadOnlyDictionary<int, Vec3>(values);
+        }
+
+        static IReadOnlyDictionary<int, Vec3> CopyValues(MeshData mesh, IReadOnlyDictionary<int, Vec3> values, string label)
+        {
+            if (values == null) return new System.Collections.ObjectModel.ReadOnlyDictionary<int, Vec3>(new Dictionary<int, Vec3>());
+            Checks.Require(values.Count <= mesh.VertexCount, "BUDGET_EXCEEDED", "Morph " + label + " delta count exceeds the mesh domain.");
+            var copy = new Dictionary<int, Vec3>(values.Count);
+            foreach (var pair in values)
+            {
+                Checks.Require(pair.Key >= 0 && pair.Key < mesh.VertexCount, "INVALID_VERTEX", "Morph " + label + " vertex is outside the mesh domain.");
+                Checks.Finite(pair.Value); Checks.Require(copy.TryAdd(pair.Key, pair.Value), "DUPLICATE_MORPH", "A morph target cannot list one vertex twice.");
+            }
+            return new System.Collections.ObjectModel.ReadOnlyDictionary<int, Vec3>(copy);
         }
 
         static IReadOnlyDictionary<int, Vec3> SerializedValues(IEnumerable<MorphDelta> deltas, int vertexCount)

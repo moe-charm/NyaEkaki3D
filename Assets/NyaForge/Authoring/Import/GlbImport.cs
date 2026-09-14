@@ -204,25 +204,39 @@ namespace NyaForge.Authoring.Import
             int vertexOffset = 0;
             for (int i = 0; i < morphCount; i++)
             {
-                var entries = new List<MorphDelta>(); var normalEntries = new List<MorphDelta>(); var tangentEntries = new List<MorphDelta>(); vertexOffset = 0;
+                var entries = new Dictionary<int, Vec3>(); var normalEntries = new Dictionary<int, Vec3>(); var tangentEntries = new Dictionary<int, Vec3>(); vertexOffset = 0;
                 foreach (var part in parts)
                 {
-                    foreach (var delta in part.MorphDeltas[i].Select((delta, index) => new MorphDelta(index + vertexOffset, delta))) if (delta.Delta.X != 0 || delta.Delta.Y != 0 || delta.Delta.Z != 0) entries.Add(delta);
+                    for (int index = 0; index < part.MorphDeltas[i].Length; index++)
+                    {
+                        var delta = part.MorphDeltas[i][index];
+                        if (delta.X != 0 || delta.Y != 0 || delta.Z != 0) entries.Add(index + vertexOffset, delta);
+                    }
                     if (part.MorphNormalDeltas[i] != null)
                     {
-                        if (mesh.Normals.Count == mesh.VertexCount) foreach (var delta in part.MorphNormalDeltas[i].Select((delta, index) => new MorphDelta(index + vertexOffset, delta))) if (delta.Delta.X != 0 || delta.Delta.Y != 0 || delta.Delta.Z != 0) normalEntries.Add(delta);
+                        if (mesh.Normals.Count == mesh.VertexCount)
+                            for (int index = 0; index < part.MorphNormalDeltas[i].Length; index++)
+                            {
+                                var delta = part.MorphNormalDeltas[i][index];
+                                if (delta.X != 0 || delta.Y != 0 || delta.Z != 0) normalEntries.Add(index + vertexOffset, delta);
+                            }
                         else unsupportedNormalMorph = true;
                     }
                     if (part.MorphTangentDeltas[i] != null)
                     {
-                        if (mesh.Tangents.Count == mesh.VertexCount) foreach (var delta in part.MorphTangentDeltas[i].Select((delta, index) => new MorphDelta(index + vertexOffset, delta))) if (delta.Delta.X != 0 || delta.Delta.Y != 0 || delta.Delta.Z != 0) tangentEntries.Add(delta);
+                        if (mesh.Tangents.Count == mesh.VertexCount)
+                            for (int index = 0; index < part.MorphTangentDeltas[i].Length; index++)
+                            {
+                                var delta = part.MorphTangentDeltas[i][index];
+                                if (delta.X != 0 || delta.Y != 0 || delta.Z != 0) tangentEntries.Add(index + vertexOffset, delta);
+                            }
                         else unsupportedTangentMorph = true;
                     }
                     vertexOffset += part.Positions.Length;
                 }
                 string name = "Morph " + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 if (names != null && i < names.Count && names[i].Type == JTokenType.String && !string.IsNullOrWhiteSpace((string)names[i])) name = (string)names[i];
-                result.Add(MorphTarget.Create(mesh, MorphTargetId(sourceHash, meshIndex, i), name, entries,
+                result.Add(MorphTarget.FromValues(mesh, MorphTargetId(sourceHash, meshIndex, i), name, entries,
                     normalEntries.Count == 0 ? null : normalEntries, tangentEntries.Count == 0 ? null : tangentEntries));
             }
             return MorphSet.Create(mesh, result);

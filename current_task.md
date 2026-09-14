@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15B: 大規模morph取込の一時オブジェクト削減
+
+GLBのmorph取込で、各頂点を一度`MorphDelta`オブジェクトへ展開してから辞書へ変換していた経路を、疎な`Dictionary<int, Vec3>`へ直接構築する内部経路へ変更した。公開API、保存形式、表情の頂点値・順序・hash契約は維持する。Coreは**509 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a2c480428d624c4e8812c217bfdabe0d`）。`Builds/BoneSubsetV7/NyaForge.exe`でRadDollV3実衣装一周とUnity **2022.3.22f1** Bridge受け取りもPASS（Player `Artifacts/Authoring-20260914-155811-a5784b1b066d4d14958dba0b50d843ba/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-160042-912-f7f11707dd1f4b529a62bc3500e36b83/bridge-report.json`）。
+
+同じ`ImportOnly`条件の外部2秒サンプリングは約18.3秒、working set peak **1,081.3MB**、private bytes peak **1,527.8MB**（`C:/Users/tomoaki/AppData/Local/Temp/nyaforge-import-only-memory-9d8c56f67f244d7d84581d5f95061421.log`）で、前回の約1,140.9MB／1,587.4MBから約60MB減少した。OS・GPU・サンプリング間隔を含む観測であり、最終的な軽量性合格とは扱わない。通常編集の手動受入、出力段階の一時データ、全mesh一括、別Windows環境、VRChat Build & Test／実機表示は継続課題とする。
+
 ## 2026-09-14 NF-V1-15A: 通常候補と全meshの軽量性を分離
 
 `Builds/BoneSubsetV5/NyaForge.exe`でprivateのRadDollV3 VRM候補を通常の単一候補経路へ渡し、candidate確認・EditMesh・native Save/Open・skinned GLB／static GLB／VRM1出力までを含むAuthoring一周を再実行した。Player reportは**PASS**（`Artifacts/Authoring-20260914-153223-c5892e948e6a4b9b9dcebe0c7eea25ce/report.json`）。外部2秒サンプリングは約107.3秒、working set peak **2,730.7MB**、private bytes peak **3,399.6MB**（サンプル51回、`C:/Users/tomoaki/AppData/Local/Temp/nyaforge-single-memory-4fdf5fa76d1a4411a1c59533788ee7df.log`）だった。
