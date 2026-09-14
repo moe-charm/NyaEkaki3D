@@ -3861,3 +3861,9 @@ VRMのmeta利用条件、lookAt、firstPerson、expressionの材質・texture bi
 既存の明示ObjectField、曖昧候補を自動反映しない規則、保存／診断／適用の検証条件は変更していない。長い階層はウィンドウ全体の既存スクロールで確認する。現行packageを使ったUnity **2022.3.22f1** Bridge回帰は **PASS**（`Artifacts/BridgeReceiver-20260915-045302-404-74d6951b626b44ada74ca4c278b1e99a/bridge-report.json`）。Coreは **514 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-fcb0a78d84214929ab9a38dbe6bdbd9b`）。
 
 これは受け取り画面の対応確認を補助する実装・コンパイル回帰であり、実RadDollV3衣装の全周fit／貫通／材質見た目、avatar移動・回転・scale、VRChat Build & Testの手動受入を完了したことを意味しない。
+
+# 2026-09-15 VERIFICATION-01: UI改善後の実モデル一周再確認
+
+衣装受け取りUIの階層表示変更後、既存のWindows Player一周を現行 `main` 近傍で再実行した。privateの実RadDollV3 VRMを入力に、取込→全mesh→編集→native Save/Open→標準GLB／VRM1出力→衣装package生成まで **93 checks PASS**。レポートは `Artifacts/Authoring-20260915-045536-cc0ec63a35fc41c7aeb4088525c6518a/report.json`、衣装packageは `Artifacts/Authoring-20260915-045536-cc0ec63a35fc41c7aeb4088525c6518a/imported-accessory-skin-project/exports/clothing-20260914-195747-8572d7/skinned-clothing.nyaforge.json`。
+
+同packageを現行Unity BridgeソースでUnity **2022.3.22f1**へ受け取り、Bridge回帰も **PASS**（`Artifacts/BridgeReceiver-20260915-045824-396-97fd29bf619645df85ab5a26eb99c825/bridge-report.json`）。この再確認は実avatar入力と合成accessory fixtureによる自動経路であり、実EditorWindowの新しい階層表示、実衣装の全周fit／貫通／材質見た目、avatar移動・回転・scale、VRChat Build & Testの手動受入には読み替えない。
