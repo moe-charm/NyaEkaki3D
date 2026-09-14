@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10O: Unity Bridgeクラッシュ復旧回帰
+
+現行`PerformanceV39` Authoring出力をUnity **2022.3.22f1** Bridgeへ渡し、更新中断後の再起動復旧をmaterials／prefab／receiptの3フェーズで実行した。**3/3 PASS**。証跡は`Artifacts/BridgeReceiver-20260914-111256-925-9234a6641f3d4f29bbd894aea206d112`内の`materials-recovery.json`、`prefab-recovery.json`、`receipt-recovery.json`。これは受け取り側のcheckpoint復旧回帰であり、実VRChat Build & Testや実EditorWindowの手動受入を満たすものではない。
+
 ## 2026-09-14 NF-V1-10N: Windows native file picker回帰
 
 `Tests/WindowsPicker/WindowsPicker.Tests.csproj`へ、Viewer wrapperが参照するNyaForge側のnative picker実装を明示的に含めた。現行Windowsでnative dialogのキャンセルと、日本語・空白・アポストロフィを含むファイル選択を実行し、**2/2 PASS**した。これはWindows API／パス受け渡しの自動回帰であり、実EditorWindow内の実マウス・IME・高DPI操作を完了扱いしない。
