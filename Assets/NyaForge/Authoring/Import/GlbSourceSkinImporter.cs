@@ -22,6 +22,19 @@ namespace NyaForge.Authoring.Import
         }
     }
 
+    /// <summary>Source-space skin data bound to a mesh that was already decoded by another importer.</summary>
+    internal sealed class GlbSourceSkinData
+    {
+        internal SourceSkin Skin { get; }
+        internal SourceSkinBinding Binding { get; }
+
+        internal GlbSourceSkinData(SourceSkin skin, SourceSkinBinding binding)
+        {
+            Checks.Require(skin != null && binding != null, "INVALID_IMPORT", "Source skin data is incomplete.");
+            Skin = skin; Binding = binding;
+        }
+    }
+
     /// <summary>Reads one GLB mesh and source skin without publishing a native graph.</summary>
     public static class GlbSourceSkinImporter
     {
@@ -47,6 +60,26 @@ namespace NyaForge.Authoring.Import
         internal static GlbSourceSkinImportResult ReadFromDocument(GlbDocument document, int meshIndex, int skinIndex, string sourceDirectory)
         {
             return Read(document, meshIndex, skinIndex, sourceDirectory);
+        }
+
+        /// <summary>
+        /// Reads only source-space skin frames and weights for a mesh that has
+        /// already been decoded. The Workbench uses this to avoid parsing and
+        /// retaining a second copy of the same static geometry.
+        /// </summary>
+        internal static GlbSourceSkinData ReadDataFromDocument(GlbDocument document, int meshIndex, int skinIndex, MeshData mesh)
+        {
+            Checks.Require(document != null && mesh != null, "INVALID_IMPORT", "GLB document and decoded mesh are required.");
+            var root = document.Root; var meshes = Array(root, "meshes");
+            Checks.Require(meshIndex >= 0 && meshIndex < meshes.Count && meshes[meshIndex] is JObject, "INVALID_IMPORT", "Source skin mesh index is out of range.");
+            var buffers = Array(root, "buffers"); Checks.Require(buffers.Count == 1 && buffers[0] is JObject, "UNSUPPORTED_FORMAT", "Source skin candidate requires one embedded buffer.");
+            var buffer = (JObject)buffers[0]; Checks.Require(buffer["uri"] == null && buffer["extensions"] == null, "UNSUPPORTED_FORMAT", "Source skin candidate requires the embedded GLB buffer.");
+            int bufferLength = Integer(buffer["byteLength"], 1, AuthoringLimits.MaxGlbImportBytes, "buffer byteLength");
+            Checks.Require(bufferLength <= document.Bin.Length && document.Bin.Length - bufferLength <= 3, "INVALID_IMPORT", "GLB buffer length differs from BIN payload.");
+            var skins = Array(root, "skins"); Checks.Require(skinIndex >= 0 && skinIndex < skins.Count, "INVALID_IMPORT", "Source skin index is missing.");
+            var skin = GlbSourceSkinReader.Read(document, GlbNodeTransformReader.Read(root["nodes"] as JArray, document.SourceHash), skinIndex);
+            var binding = ReadWeights(document, skin, mesh, bufferLength, meshIndex);
+            return new GlbSourceSkinData(skin, binding);
         }
 
         static GlbSourceSkinImportResult Read(GlbDocument document, int meshIndex, int skinIndex, string sourceDirectory = null)

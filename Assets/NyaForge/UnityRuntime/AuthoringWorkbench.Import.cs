@@ -167,10 +167,14 @@ namespace NyaForge.UnityRuntime
             finalNode = AppendImportedMaterials(nodes, edges, deformId, imported.Mesh.Submeshes.Count, imported.Materials, materialWarnings, imageCache);
             edges.Add(new GraphEdge(finalNode, "mesh", outputId, "mesh"));
             var graph = new AuthoringGraph(Guid.NewGuid().ToString("D"), nodes, edges, outputId);
-            var sourceCandidate = parsedDocument == null
-                ? GlbSourceSkinImporter.ReadFromDirectory(bytes, meshIndex, skinIndex, sourceDirectory)
-                : GlbSourceSkinImporter.ReadFromDocument(parsedDocument, meshIndex, skinIndex, sourceDirectory);
-            var rigSession = ImportedRigSession.Create(imported, vrm, graph.GraphId, skeletonId).WithSourceSkin(sourceCandidate.Skin, sourceCandidate.Binding);
+            // The display importer has already decoded the selected mesh. Read
+            // only source-space frames and weights here instead of asking the
+            // source-skin importer to clone JSON and parse the same geometry a
+            // second time. SourceSkinBinding stores topology identity and
+            // weights, so the decoded mesh is safe to reuse (including an
+            // explicitly selected node affine).
+            var sourceData = GlbSourceSkinImporter.ReadDataFromDocument(parsedDocument ?? GlbDocumentReader.Read(bytes), meshIndex, skinIndex, imported.Mesh);
+            var rigSession = ImportedRigSession.Create(imported, vrm, graph.GraphId, skeletonId).WithSourceSkin(sourceData.Skin, sourceData.Binding);
             var diagnostics = new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, imported.SkinIndex, imported.Diagnostics, sourceNodeIndex);
             var candidate = new ImportMetadataCandidate(rigSession, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm, diagnostics);
             string display = (string.IsNullOrWhiteSpace(sourceName) ? "mesh " + meshIndex : sourceName) +
