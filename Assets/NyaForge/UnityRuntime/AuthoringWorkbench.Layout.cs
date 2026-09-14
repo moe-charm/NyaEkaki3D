@@ -29,7 +29,7 @@ namespace NyaForge.UnityRuntime
             // for the actual workbench; dividing by the DPI factor twice
             // leaves an avoidable blank strip and makes the controls tiny.
             // Injected panel-space probes stay at 1:1.
-            bool injectedUiProbe = Environment.GetCommandLineArgs().Any(a => a == "--authoring-check-output" || a == "--navigation-check");
+            bool injectedUiProbe = Environment.GetCommandLineArgs().Any(a => a == "--authoring-check-output" || a == "--navigation-check-output");
             bool dynamicDpiBounds = !injectedUiProbe && Screen.dpi > 96f;
             Action refreshDpiBounds = () =>
             {

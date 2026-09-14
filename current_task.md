@@ -3556,3 +3556,9 @@ Coreは **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 - Player回帰で通常起動の初期画面と自動検証Panelの両方を確認する。
 
 `Builds/GuiNavigationV1/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260914-230734-279.log`）をビルドし、Authoring **PASS**（`Artifacts/Authoring-20260914-230756-7f2f146bcf804aecb7f17c81e522da0e/report.json`）とNavigation **PASS**（`Artifacts/Navigation-20260914-230823-1546d7fc3b0c494da2e18505ad0c3453/report.json`）を確認した。自動検証はcompatibility分岐で詳細Panelを展開するため、通常起動時の折りたたみ状態はコード設定による確認として、実マウスのDPI／IME／長い名称と合わせて手動受入へ残す。
+
+# 2026-09-14 GUI-09補正: NavigationのDPI probe引数を統一
+
+Navigation検証の実引数は`--navigation-check-output`なのに、Viewer／Authoring双方のPanelSettings DPI判定が旧`--navigation-check`だけを見ていた。判定を実際の出力引数へ揃え、Navigationのpointer座標もAuthoringと同じ1:1 probe契約で扱うようにした。通常Windows起動時のDPI補正は変更していない。
+
+`Builds/DpiProbeV2/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260914-230955-386.log`）を再ビルドし、Navigation **PASS**（`Artifacts/Navigation-20260914-231017-60c00d9bd01b47fcb7be83615487e2d3/report.json`）、Authoring **PASS**（`Artifacts/Authoring-20260914-231021-53d734ecdcd24241a6eacdbcdebf2d9b/report.json`）を確認した。

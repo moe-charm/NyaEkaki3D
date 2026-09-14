@@ -23,7 +23,7 @@ namespace Viewer.Runtime
             // The headless authoring probes inject panel-space pointer events;
             // keep their 1:1 coordinate contract while the real Player uses
             // the Windows DPI factor for its drawable surface.
-            bool injectedUiProbe = Environment.GetCommandLineArgs().Any(a => a == "--authoring-check-output" || a == "--navigation-check");
+            bool injectedUiProbe = Environment.GetCommandLineArgs().Any(a => a == "--authoring-check-output" || a == "--navigation-check-output");
             settings.scale = injectedUiProbe ? 1f : Mathf.Clamp(Mathf.Max(96f, Screen.dpi) / 96f, 1f, 2f);
             settings.themeStyleSheet = Resources.Load<ThemeStyleSheet>("ViewerTheme");
             var doc = gameObject.AddComponent<UIDocument>(); doc.panelSettings = settings;
