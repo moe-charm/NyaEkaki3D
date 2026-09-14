@@ -126,15 +126,25 @@ namespace NyaForge.UnityBridge.Editor
                 if (unresolved > 0) summary += "、" + unresolved + " 本は未検出";
                 EditorGUILayout.HelpBox(summary + "。反映後も保存・適用前に全割当を確認してください。", MessageType.Info);
             }
+            else
+            {
+                int assigned = boneBindings.Count(pair => pair.Value != null);
+                EditorGUILayout.HelpBox("割当済み " + assigned + "/" + package.Skeleton.Bones.Count + " 本。各欄の下に期待階層と実際のTransformパスを表示します。", MessageType.Info);
+            }
             boneScroll = EditorGUILayout.BeginScrollView(boneScroll, GUILayout.MinHeight(210));
             foreach (var bone in package.Skeleton.Bones)
             {
                 Transform current;
                 boneBindings.TryGetValue(bone.BoneId, out current);
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 Transform assigned = (Transform)EditorGUILayout.ObjectField(
                     bone.Name + "  [" + bone.BoneId.Substring(0, 8) + "]", current, typeof(Transform), true);
                 if (assigned == null) boneBindings.Remove(bone.BoneId);
                 else boneBindings[bone.BoneId] = assigned;
+                string expectedPath = BonePath(package.Skeleton, bone.BoneId);
+                EditorGUILayout.LabelField("期待階層: " + (string.IsNullOrEmpty(expectedPath) ? "（package側で未定義）" : expectedPath), EditorStyles.miniLabel);
+                EditorGUILayout.LabelField("割当: " + (assigned == null ? "未設定" : ScenePath(assigned)), EditorStyles.miniLabel);
+                EditorGUILayout.EndVertical();
             }
             EditorGUILayout.EndScrollView();
 
@@ -326,6 +336,20 @@ namespace NyaForge.UnityBridge.Editor
                 current = current.parent;
             }
             if (current != root) return "";
+            names.Reverse();
+            return string.Join("/", names.ToArray());
+        }
+
+        static string ScenePath(Transform transform)
+        {
+            if (transform == null) return "";
+            var names = new List<string>();
+            var current = transform;
+            while (current != null)
+            {
+                names.Add(current.name);
+                current = current.parent;
+            }
             names.Reverse();
             return string.Join("/", names.ToArray());
         }

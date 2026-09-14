@@ -32,6 +32,7 @@
 ## 3. Unity受け取り
 
 - [ ] Unity 2022.3.22f1の受け取り側でmanifestを読み込み、stable BoneIdを手動割当する
+- [ ] 各BoneId欄の`期待階層`と割り当てたTransformの完全パスを確認してから保存する
 - [ ] avatar rootを移動・回転・scale変更した状態で適用し、衣装がavatar-local位置を保つ
 - [ ] 衣装Aを適用 → Bへ更新 → Unity再起動 → 割当を読込し、Aの重複やownership喪失がない
 - [ ] 削除後に割当だけを読み込め、Undoで管理objectと資産が戻る

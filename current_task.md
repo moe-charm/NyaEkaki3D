@@ -3848,3 +3848,16 @@ package側のstable bindingは `Child`／`Root` で、実avatarのstable identit
 # 次回受入候補: VRM意味情報の完全出力境界
 
 VRMのmeta利用条件、lookAt、firstPerson、expressionの材質・texture bindingなど、現行readerが完全保持できない意味情報は、完全互換出力と誤認しないゲートを設ける。未保持フィールドがある場合は警告または出力停止を選べるよう、`docs/Model-Interchange-Spec.md` の検証表へ往復比較項目を追加する。
+
+# 2026-09-15 UNITY-UI-03: 衣装骨割当の階層表示
+
+衣装受け取り画面のstable BoneId欄だけでは、実avatarのどのTransformを指定すべきか確認しづらかったため、`UnityBridge/Editor/SkinnedClothingPackageWindow.cs`の各割当欄へ次を表示するようにした。
+
+- package skeletonから再構成した`期待階層`
+- ObjectFieldへ指定したTransformのシーン完全パス
+- 未指定時の`未設定`表示
+- 候補生成前の割当済み本数（`n/全骨数`）
+
+既存の明示ObjectField、曖昧候補を自動反映しない規則、保存／診断／適用の検証条件は変更していない。長い階層はウィンドウ全体の既存スクロールで確認する。現行packageを使ったUnity **2022.3.22f1** Bridge回帰は **PASS**（`Artifacts/BridgeReceiver-20260915-045302-404-74d6951b626b44ada74ca4c278b1e99a/bridge-report.json`）。Coreは **514 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-fcb0a78d84214929ab9a38dbe6bdbd9b`）。
+
+これは受け取り画面の対応確認を補助する実装・コンパイル回帰であり、実RadDollV3衣装の全周fit／貫通／材質見た目、avatar移動・回転・scale、VRChat Build & Testの手動受入を完了したことを意味しない。
