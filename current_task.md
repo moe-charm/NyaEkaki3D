@@ -3833,3 +3833,18 @@ Unity **2022.3.22f1** の隔離 `PhysBonesSdkProbe-20260914` で、`UNITY-MANUAL
 - `管理対象の衣装を削除（Undo可）` → `管理対象衣装を削除しました。Undoで元の関連付けへ戻せます。`
 
 EditorWindowのボタン導線・scene書き込み前診断・適用／更新／削除の状態遷移は実操作で確認できた。入力は合成3頂点・2骨packageのため、実RadDollV3衣装の全周fit、貫通、pose変形、材質の見た目、avatar移動／回転／scale後の配置合格には使わない。Undoで復元する最終確認と、実衣装packageでの同じ一周は次の手動受入に残す。
+
+# 2026-09-15 STATUS-01: 実RadDollV3 packageのUnity読込状態
+
+現行HEADで再生成した実RadDollV3入力由来の衣装manifestを、Unity **2022.3.22f1** の隔離 `PhysBonesSdkProbe-20260914` に読み込んだ。Player側の実RadDollV3取込・衣装workflow・package生成と、Unity Bridge受け取りは **PASS**。Unity EditorWindowではmanifest、`3 vertices · 1 triangles`、`2 bones`、`RaddollV3 (Transform)` を確認した。
+
+package側のstable bindingは `Child`／`Root` で、実avatarのstable identityとは一致しないため、候補生成は **0/2本**。自動推測は行わず、次は object picker で実avatarの対応Transformを明示して、割当保存→事前診断→適用→更新→削除Undoを実packageで一周する。
+
+- 自動回帰: Core **514 passed / 0 failed**
+- Unity Bridge: **PASS**（`Artifacts/BridgeReceiver-20260915-043056-967-2de2edb815fe495a8e7e10d13c6820f1/bridge-report.json`）
+- Player実衣装workflow: **PASS**（`Artifacts/Authoring-20260915-042821-8826ff0bfd574ad7b05e92c148f76fdf/report.json`）
+- 境界: packageは合成3頂点・2骨fixtureを含むため、実RadDollV3衣装の全周fit／貫通／材質見た目、avatar移動・回転・scale、VRChat Build & Testの合格には読み替えない。
+
+# 次回受入候補: VRM意味情報の完全出力境界
+
+VRMのmeta利用条件、lookAt、firstPerson、expressionの材質・texture bindingなど、現行readerが完全保持できない意味情報は、完全互換出力と誤認しないゲートを設ける。未保持フィールドがある場合は警告または出力停止を選べるよう、`docs/Model-Interchange-Spec.md` の検証表へ往復比較項目を追加する。
