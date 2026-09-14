@@ -3867,3 +3867,16 @@ VRMのmeta利用条件、lookAt、firstPerson、expressionの材質・texture bi
 衣装受け取りUIの階層表示変更後、既存のWindows Player一周を現行 `main` 近傍で再実行した。privateの実RadDollV3 VRMを入力に、取込→全mesh→編集→native Save/Open→標準GLB／VRM1出力→衣装package生成まで **93 checks PASS**。レポートは `Artifacts/Authoring-20260915-045536-cc0ec63a35fc41c7aeb4088525c6518a/report.json`、衣装packageは `Artifacts/Authoring-20260915-045536-cc0ec63a35fc41c7aeb4088525c6518a/imported-accessory-skin-project/exports/clothing-20260914-195747-8572d7/skinned-clothing.nyaforge.json`。
 
 同packageを現行Unity BridgeソースでUnity **2022.3.22f1**へ受け取り、Bridge回帰も **PASS**（`Artifacts/BridgeReceiver-20260915-045824-396-97fd29bf619645df85ab5a26eb99c825/bridge-report.json`）。この再確認は実avatar入力と合成accessory fixtureによる自動経路であり、実EditorWindowの新しい階層表示、実衣装の全周fit／貫通／材質見た目、avatar移動・回転・scale、VRChat Build & Testの手動受入には読み替えない。
+# 2026-09-15 REAL-CLOTHING-01: 実RadDollV3からのチョーカー作成probe
+
+実際のprivate RadDollV3 VRMを入力に、既存の制作導線でチョーカーを作り、Neckへ明示的にskin-bindして、native Save/Open後に衣装packageを出力するPlayer probeを追加した。`Tools/Test-NyaForgeRealClothing.ps1`から`-RealClothing`を通じて実行でき、通常のsynthetic accessory probeとは分けている。チョーカー原形は24×8の編集トポロジーだが、評価・出力メッシュはシーム展開後の225頂点／384三角形となるため、検証は固定値ではなく生成結果の一致で確認する。
+
+- 追加ソース: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.RealClothingVerification.cs`（`.meta`を含む）
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Verification.cs`, `Tools/Test-NyaForgeAuthoring.ps1`, `Tools/Test-NyaForgeRealClothing.ps1`
+- Core回帰: **514 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-37fca489c97d436bb7deac435e9160cc`）
+- Unity 6000.4.3f1 Player `RealClothingV3`: build成功（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealClothingBuild-20260915/Builds/RealClothingV3/NyaForge.exe`）
+- 実RadDollV3 Player: **94 checks PASS**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealClothingBuild-20260915/Artifacts/Authoring-20260915-051810-399f508dbc4b452a95f5118f7a7fedad/report.json`）
+- 最終ソース反映後の再確認（Player `RealClothingV4`）も **PASS**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealClothingBuild-20260915/Artifacts/Authoring-20260915-052708-da52b52ea1b94ae0ac34864a972177e2/report.json`）。
+- 生成衣装package: `.../real-clothing-project/exports/clothing-20260914-202122-651891/skinned-clothing.nyaforge.json`（Neck参照、225 vertices／384 triangles）
+- Unity 2022.3.22f1 Bridge: 既存PhysBones reflection fixtureがUnityの`Temp`一時出力先を作る前に書き込み、**受け取り全体は未完了**。衣装package自体の生成とPlayer側検証はPASSで、このBridge失敗を衣装データの不一致とは扱わない。
+- 未受入: 実EditorWindowのマウスでの衣装作成・全周fit・貫通・材質見た目、avatar移動／回転／scale、Unity実SDKでの適用、VRChat Build & Test／実機表示。

@@ -23,6 +23,7 @@ $authoringArgs = @{
     ImportModel = $model
     ImportAllModel = $true
     VrmExport = $true
+    RealClothing = $true
     TimeoutSeconds = $TimeoutSeconds
 }
 $authoringOutput = @(& (Join-Path $PSScriptRoot 'Test-NyaForgeAuthoring.ps1') @authoringArgs 2>&1)

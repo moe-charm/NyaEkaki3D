@@ -50,6 +50,7 @@ namespace NyaForge.UnityRuntime
             bool glbOutputOnly = Array.IndexOf(arguments, "--authoring-glb-output-only") >= 0;
             bool vrmOutputOnly = Array.IndexOf(arguments, "--authoring-vrm-export-only") >= 0;
             bool vrmExport = Array.IndexOf(arguments, "--authoring-vrm-export") >= 0;
+            bool realClothing = Array.IndexOf(arguments, "--authoring-real-clothing") >= 0;
             int reopenIndex = Array.IndexOf(arguments, "--authoring-reopen-project");
             if (reopenIndex >= 0 && reopenIndex + 1 < arguments.Length)
             {
@@ -227,7 +228,14 @@ namespace NyaForge.UnityRuntime
                 VerifyChokerTemplate(output, checks);
                 VerifyCuffTemplate(output, checks);
                 VerifyAttachment(output, checks);
-                VerifyImportedAccessoryWorkflow(output, checks);
+                if (realClothing)
+                {
+                    Check(modelImportIndex >= 0 && modelImportIndex + 1 < arguments.Length,
+                        "--authoring-real-clothing requires --authoring-import-model <path>.");
+                    VerifyCommandLineRealClothing(arguments[modelImportIndex + 1], output, checks);
+                }
+                else
+                    VerifyImportedAccessoryWorkflow(output, checks);
                 VerifyVrmImportRoundtrip(output, checks);
                 VerifySecondaryMotionRebind(checks);
                 VerifyPhysBonesTargetStatus(output, checks);

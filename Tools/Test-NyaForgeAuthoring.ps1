@@ -12,6 +12,7 @@ param(
     [switch]$GlbExportOnly,
     [switch]$VrmExportOnly,
     [switch]$VrmExport,
+    [switch]$RealClothing,
     [string]$McpProbe,
     [string]$ImportModel,
     [ValidateRange(30,900)][int]$TimeoutSeconds = 120
@@ -57,6 +58,7 @@ if ($VrmExportOnly) {
     $arguments += '--authoring-vrm-export-only'
 }
 if ($VrmExport) { $arguments += '--authoring-vrm-export' }
+if ($RealClothing) { $arguments += '--authoring-real-clothing' }
 if ($SecondaryMotionMcp) {
     if (-not $McpProbe) { throw 'SecondaryMotionMcp requires -McpProbe.' }
     $arguments += '--authoring-secondary-mcp'
