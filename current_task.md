@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15R: 現行HEAD Core回帰
+
+現行HEAD `f0994a9`で`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`を再実行し、**509 passed / 0 failed**を確認した。artifactは`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ef359b1c35f74f23b4e08fd5cea3bf74`。これはCore経路の回帰証拠であり、実EditorWindowのマウス・IME・DPI・Explorer、実アバター全周fit／貫通／見た目、VRChat Build & Test／実機表示の受入とは分けて扱う。
+
 ## 2026-09-14 NF-V1-15Q: Authoring起動スクリプト
 
 `Tools/Start-NyaForgeAuthoring.ps1`を追加し、既定の`Builds/BoneSubsetV16/NyaForge.exe`を`--authoring true`で起動できるようにした。`-BuildName`で別候補を選べ、`-PrintOnly`でパスだけを検査できる。V16に対する`-PrintOnly`は**PASS**し、最新手動受入表・クイックスタートから同じ入口へ誘導する。入力モデルやprivateデータは扱わず、公開ツリーへコピーしない。
