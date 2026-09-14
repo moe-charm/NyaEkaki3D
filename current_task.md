@@ -4,6 +4,10 @@
 
 現行HEAD `f0994a9`で`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`を再実行し、**509 passed / 0 failed**を確認した。artifactは`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ef359b1c35f74f23b4e08fd5cea3bf74`。これはCore経路の回帰証拠であり、実EditorWindowのマウス・IME・DPI・Explorer、実アバター全周fit／貫通／見た目、VRChat Build & Test／実機表示の受入とは分けて扱う。
 
+## 2026-09-14 NF-V1-15S: V16起動・制作画面反復回帰
+
+`Tools/Test-NyaForgeNavigationRepeated.ps1 -BuildName BoneSubsetV16 -Count 2`を実行し、Playerの起動、制作画面遷移、保存状態・再開、viewport確認、終了を**2/2 PASS**した。集約結果は`Artifacts/Navigation-Repeated-BoneSubsetV16-20260914-170330.json`。これは自動fixtureの反復回帰であり、実EditorWindowのマウス・IME・DPI・Explorer操作やVRChat内表示の受入とは分けて扱う。
+
 ## 2026-09-14 NF-V1-15Q: Authoring起動スクリプト
 
 `Tools/Start-NyaForgeAuthoring.ps1`を追加し、既定の`Builds/BoneSubsetV16/NyaForge.exe`を`--authoring true`で起動できるようにした。`-BuildName`で別候補を選べ、`-PrintOnly`でパスだけを検査できる。V16に対する`-PrintOnly`は**PASS**し、最新手動受入表・クイックスタートから同じ入口へ誘導する。入力モデルやprivateデータは扱わず、公開ツリーへコピーしない。
