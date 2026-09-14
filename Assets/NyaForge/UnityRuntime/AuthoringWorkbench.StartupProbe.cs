@@ -94,6 +94,10 @@ namespace NyaForge.UnityRuntime
             };
             File.WriteAllText(Path.Combine(output, "report.json"), JsonConvert.SerializeObject(report, Formatting.Indented));
             Debug.Log("NYAFORGE_AUTHORING_STARTUP_PROBE " + (failures.Count == 0 ? "PASS" : "FAIL"));
+            // The normal window asks before quitting when the live session is
+            // dirty. A probe has already written its report and must exit
+            // deterministically instead of opening the user confirmation UI.
+            allowQuit = true;
             Application.Quit(failures.Count == 0 ? 0 : 1);
         }
     }

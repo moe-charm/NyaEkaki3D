@@ -3642,3 +3642,7 @@ body候補（object ID先頭`12707472`）を選択し、`選択中を参照と�
 - Player build: `Builds/EmptyProjectOpenV1/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260915-011934-290.log`）
 - 通常起動probe: **PASS**（`Artifacts/AuthoringStartup-20260915-012001-b73438a6d78c4626a94d7bdd4914fce5/report.json`）。`emptyProjectReopenVisible=true`、再開ボタンの表示高さ、既存の折りたたみ状態をPlayer内で確認した。Playerはreport出力後に終了しない環境挙動があり、probeのPASS marker／report／screenshotを証拠とした。
 - 境界: 実ウィンドウでのExplorer選択と、保存→終了→再起動→再開のmanual acceptanceは`MANUAL-03`で既に確認済み。今回の新ボタン自体の実マウス操作、DPI 150/200%、IME、長いpath、実RadDollV3のfit・材質、Unity／VRChatは未受入のまま。
+
+起動probeの終了時に`Application.Quit`が通常の未保存確認へ入り、reportはPASSでも外部スクリプトがタイムアウトしていた。probe側で`allowQuit`を有効にしてから終了するよう修正し、検証結果とプロセス終了の契約を揃える。
+
+`Builds/EmptyProjectOpenV2/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260915-012701-329.log`）を再ビルドし、`Tools/Test-NyaForgeAuthoringStartup.ps1 -BuildName EmptyProjectOpenV2`を実行。**PASS**（`Artifacts/AuthoringStartup-20260915-012723-a2d03fb9cbb142b78eb619960355b67a/report.json`）で、report生成後のプロセス終了まで確認できた。`emptyProjectReopenVisible=true`、再開ボタン表示、画面サイズ1600×1000、可視ピクセルありを記録した。
