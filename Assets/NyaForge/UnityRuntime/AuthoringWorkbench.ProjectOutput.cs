@@ -1,3 +1,6 @@
+using System;
+using System.Linq;
+using NyaForge.Authoring;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -43,6 +46,11 @@ namespace NyaForge.UnityRuntime
             };
             outputHelp.style.whiteSpace = WhiteSpace.Normal;
             panel.Add(outputHelp);
+            projectOutputScopeLabel = new Label { name = "authoring-output-scope" };
+            projectOutputScopeLabel.style.whiteSpace = WhiteSpace.NoWrap;
+            projectOutputScopeLabel.style.overflow = Overflow.Hidden;
+            projectOutputScopeLabel.tooltip = "汎用GLB／Unity出力の対象。衣装packageは選択中の衣装objectだけを出力します。";
+            panel.Add(projectOutputScopeLabel);
             var vrmMetadata = new Foldout { text = "VRM 1.0 metadata", value = false, name = "authoring-vrm-metadata" };
             vrmName = new TextField("名前") { value = "NyaForge Avatar", name = "authoring-vrm-name" }; vrmMetadata.Add(vrmName);
             vrmAuthors = new TextField("作者（カンマ区切り）") { value = "NyaForge", name = "authoring-vrm-authors" }; vrmMetadata.Add(vrmAuthors);
@@ -58,6 +66,32 @@ namespace NyaForge.UnityRuntime
             panel.Add(vrmMetadata);
             panel.Add(Button("VRM 1.0（humanoid）", ExportVrm1, "authoring-export-vrm1"));
             parent.Add(panel);
+        }
+
+        void RefreshProjectOutputScope()
+        {
+            if (projectOutputScopeLabel == null) return;
+            var objects = workspace?.Document?.Objects?.Where(item => item != null).ToArray();
+            if (objects == null || objects.Length == 0)
+            {
+                projectOutputScopeLabel.text = "納品対象: なし（制作対象を追加してください）";
+                projectOutputScopeLabel.tooltip = "汎用GLB／Unity出力の対象がありません。衣装や小物を追加してから対象を確認してください。";
+                return;
+            }
+
+            bool explicitAllowlist = deliveryAllowedObjectIds.Count > 0;
+            var targets = explicitAllowlist
+                ? objects.Where(item => deliveryAllowedObjectIds.Contains(item.ObjectId)).ToArray()
+                : objects;
+            int stale = explicitAllowlist ? deliveryAllowedObjectIds.Count(id => objects.All(item => item.ObjectId != id)) : 0;
+            int protectedCount = targets.Count(item => referenceProtectedObjectIds.Contains(item.ObjectId));
+            string mode = explicitAllowlist ? "指定 " + targets.Length + " object" : "全 " + targets.Length + " object（未指定）";
+            if (stale > 0) mode += " · allowlist不整合 " + stale + "件";
+            if (protectedCount > 0) mode += " · 参照保護 " + protectedCount + "件は汎用出力で停止";
+            projectOutputScopeLabel.text = "納品対象: " + mode;
+            var details = targets.Select(item => ObjectDisplayName(item) + " · " + item.ObjectId).ToArray();
+            projectOutputScopeLabel.tooltip = "汎用GLB／Unity出力: " + (details.Length == 0 ? "なし" : string.Join("\n", details)) +
+                "\n衣装package: 選択中objectのみ。参照保護objectは汎用出力に含められません。";
         }
 
         void BuildProjectStatus(VisualElement parent)

@@ -34,6 +34,7 @@ namespace NyaForge.UnityRuntime
                     projectManifestLabel.text = "正本: 保存先のパスを確認してください";
                 }
             }
+            RefreshProjectOutputScope();
         }
     }
 }

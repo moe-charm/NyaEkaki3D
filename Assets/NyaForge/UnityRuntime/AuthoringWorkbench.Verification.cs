@@ -96,6 +96,7 @@ namespace NyaForge.UnityRuntime
                 string emptyPath = Path.Combine(output, "empty");
                 projectPath.SetValueWithoutNotify(emptyPath); SaveProject();
                 Check(projectManifestLabel != null && projectManifestLabel.text.EndsWith(ProjectStore.ManifestName, StringComparison.OrdinalIgnoreCase), "Project manifest path was not shown in the output panel");
+                Check(projectOutputScopeLabel != null && projectOutputScopeLabel.text.StartsWith("納品対象: なし", StringComparison.Ordinal), "Output scope summary was not shown for an empty project");
                 string emptyId = workspace.Document.DocumentId;
                 OpenProject();
                 Check(workspace.Document.IsEmpty && workspace.Document.DocumentId == emptyId && !HasUnsaved, "Empty save/reopen failed");

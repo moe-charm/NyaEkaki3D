@@ -16,7 +16,7 @@ namespace NyaForge.UnityRuntime
         // Shared UI handles. Feature-specific controls live beside their
         // partial implementation; this file keeps only cross-panel handles.
         VisualElement root, view, confirmRow;
-        Label status, metrics, selectionLabel, projectLabel, projectManifestLabel, emptyHint;
+        Label status, metrics, selectionLabel, projectLabel, projectManifestLabel, projectOutputScopeLabel, emptyHint;
         VisualElement emptyProjectEntryPanel;
         TextField projectPath;
         TextField vrmName, vrmAuthors, vrmLicenseUrl;
