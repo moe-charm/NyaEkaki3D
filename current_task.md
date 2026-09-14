@@ -3580,3 +3580,9 @@ Viewerの設定パネルへ`pack-source-info`を追加し、現在の入口が�
 `Builds/FinalCandidateV1/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260914-232731-680.log`）をビルドし、Core回帰を**512 passed / 0 failed**で確認した。privateの`RadDollV3_VRM.vrm`を`Tools/Test-NyaForgeRealClothing.ps1`へ渡し、Playerの取込→全mesh→EditMesh→native Save/Open→GLB／VRM出力→衣装package生成をPASS、skeleton sidecar **2 bones**を確認した。証拠は`Artifacts/Authoring-20260914-232748-6f8ef341ef1e48198c27134dd1ba2f97/report.json`。Unity **2022.3.22f1** Bridgeの受け取りもPASSで、`Artifacts/BridgeReceiver-20260914-233013-035-58f88a9d96a741249bbd9c382429df9/bridge-report.json`に記録した。privateモデルbytesは公開ツリーへ追加していない。
 
 この結果は自動Player／Bridge経路の再確認であり、実EditorWindowのマウス操作、移動・回転・scale済み実avatar、全周の見た目・貫通、VRChat Build & Test／クライアント内表示、販売品質の受入とは分ける。次の手動受入は`docs/Windows-v1-Manual-Acceptance.md`の1〜4節に従う。
+
+# 2026-09-15 MANUAL-01: Windows実ウィンドウの基本操作probe
+
+Computer UseのWindows用`@oai/sky`で`Builds/FinalCandidateV1/NyaForge.exe`を一意に選択し、実ウィンドウを操作した。Viewerから「制作へ」へ移動し、空の制作projectで「基本形状を追加」→リング形状作成→viewport上の頂点クリック選択→ホイール拡大→ドラッグ回転→Undoを一周した。選択頂点のハイライト、形状表示、回転後の見え方、Undo後の空状態、右側Panelのスクロールを目視確認した。終了時の未保存確認は勝手に破棄せずキャンセルし、検証用Playerはプロセスを停止した。
+
+このprobeは実マウス相当の基本導線を確認したものだが、ファイルExplorer選択、日本語IME、DPI 150/200%、実RadDollV3のfit・貫通・材質・全周、移動／回転／scale済みavatar、VRChat Build & Testは未受入のまま残る。自動Player／BridgeのPASSや空projectの目視を、実モデル・販売品質の合格へ読み替えない。
