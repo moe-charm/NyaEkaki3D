@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15J: 現行クイック導線Playerの再ビルド確認
+
+`Tools/Build-NyaForge.ps1 -Target Player -BuildName BoneSubsetV15`で、モデル取込クイックボタンを含むWindows Playerを現行ソースから再ビルドした。Unity **6000.4.3f1**のビルドは**成功**（`Logs/build-player-20260914-163746-093.log`、`Builds/BoneSubsetV15/NyaForge.exe`）。private RadDollV3 VRMを使う`-ImportOnly` probeも**PASS**（`Artifacts/Authoring-20260914-163807-cca6bdd0131b4d989a6c671661eb2fbb/report.json`）。生成画像で全身表示、自動Frame、`モデルを開く…`、右側controls、status footerを再確認した。Coreは**509 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-5604fed038db491b99f5afabd283f163`）。実EditorWindowの手動マウス・IME・DPI・Explorer受入、実アバターの全周fit／貫通／見た目、VRChat Build & Test／実機表示は未受入として残す。
+
 ## 2026-09-14 NF-V1-15I: モデル取込のクイック導線
 
 右側controlsの「1 制作プロジェクト」直下へ`モデルを開く…`を追加し、押下時にGLB／VRM取込foldoutを展開してWindows Explorer pickerを起動するようにした。既存の詳細候補選択・ファイルパス入力・全mesh取込は維持する。`Builds/BoneSubsetV14/NyaForge.exe`のRadDollV3 `-ImportOnly` probeは**PASS**（`Artifacts/Authoring-20260914-163414-6780f993e81841d4a7c78e0513591ba0/report.json`）。capture画像でクイックボタン、全身Frame、選択点、status footer、スクロールcontrolsの同時表示を確認した。これは自動UI captureであり、実EditorWindowのマウス・IME・DPI受入は未完了として残す。
