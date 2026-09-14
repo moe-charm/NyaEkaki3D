@@ -3621,3 +3621,9 @@ GUI-11の最新V4 Playerでprivateの`RadDollV3_VRM.vrm`を再実行し、実モ
 GUI-12で取込アクション文言を短縮した現行`ImportActionsReadableV1` Playerへ、privateの`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-RealModelSmoke\RadDollV3_VRM.vrm`を再投入した。実モデルの取込→全mesh候補→EditMesh→native Save/Open→GLB／VRM出力→衣装package生成を**PASS**で確認した。Player reportは`Artifacts/Authoring-20260915-002910-f27cf09eb46e40198167d52ef290c0f5/report.json`、生成packageは`Artifacts/Authoring-20260915-002910-f27cf09eb46e40198167d52ef290c0f5/imported-accessory-skin-project/exports/clothing-20260914-153112-404e4b/skinned-clothing.nyaforge.json`、clothing skeleton sidecarは2 bonesだった。生成packageをUnity **2022.3.22f1**の隔離Bridgeへ渡し、manifest／GLB／skeleton／binding hash、stable BoneId、SkinnedMeshRenderer生成、semantic材質変換を含む受け取りも**PASS**（`Artifacts/BridgeReceiver-20260915-003406-911-ef6d444e19814f24b464905a15fe228d/bridge-report.json`）。
 
 これはGUI-12後のprivate実モデル自動Player／Bridge経路の再確認であり、実EditorWindowの全周fit・貫通・材質見た目、移動／回転／scale済みavatar、VRChat Build & Test／クライアント表示、販売品質の合格へは読み替えない。private素材とSDKは公開ツリーへ追加していない。次は手動受入表の実Unity EditorWindow経路とVRChat Build & Testを進める。
+
+# 2026-09-15 MANUAL-02: 現行Playerの実ウィンドウ部分受入
+
+`Builds/ImportActionsReadableV1/NyaForge.exe`をWindows native Computer Use（`@oai/sky`）で起動し、ExplorerのGLB／VRM pickerからprivateの`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-RealModelSmoke\RadDollV3_VRM.vrm`を指定した。候補確認後、縦積みの`node（配置）`／`mesh（形状）`／`skin（骨・weight）`欄、完全path表示、`全meshをまとめて取り込む`を実操作で確認した。全mesh取込後のstatusは`GLB / VRMの全mesh instanceを取り込みました。10 objects`。画面を最大化して10個のスキンモデル一覧、制作対象切替、`メッシュ全体を表示`導線を確認した。
+
+body候補（object ID先頭`12707472`）を選択し、`選択中を参照として保護（編集不可）`を有効化した。status `選択中のobjectを参照として保護しました。編集操作は停止します。`を確認し、viewportクリック後も編集停止状態が維持された。これは実ウィンドウのExplorer／候補／全mesh／対象切替／参照保護の部分受入であり、保存／再開、実衣装の頂点編集・fit・貫通、移動／回転／scale済みavatar、Unity更新／削除Undo、normal／MR／UV0画素、VRChat Build & Testは未受入のまま残る。private素材とSDKは公開ツリーへ追加していない。詳細は`docs/Windows-v1-Manual-Acceptance.md`の2026-09-15節へ同期した。

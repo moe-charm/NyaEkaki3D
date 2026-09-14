@@ -58,3 +58,15 @@
 - 未受入・再現条件:
 
 「fit状態を測定」の裏側候補値は最近面のwindingによる保守的なサンプルであり、三角形交差・閉じた体積の内外判定・貫通ゼロを証明しない。画像の可愛さや販売品質も、数値検査とは別に人間またはAIの確認結果として記録する。
+
+## 2026-09-15 実ウィンドウ部分受入（現行Player）
+
+`Builds/ImportActionsReadableV1/NyaForge.exe`をWindows native Computer Use（`@oai/sky`）で起動し、次を実マウス操作で確認した。
+
+- 「制作へ」→「モデルを追加」からExplorerのGLB／VRM pickerを開き、privateの`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-RealModelSmoke\RadDollV3_VRM.vrm`を指定。
+- 候補確認後、縦積みの`node（配置）`／`mesh（形状）`／`skin（骨・weight）`欄と完全path表示を確認。
+- `全meshをまとめて取り込む`を実行し、status `GLB / VRMの全mesh instanceを取り込みました。10 objects`を確認。
+- 画面を最大化し、10個の`スキンモデル`対象一覧、制作対象の切替、`メッシュ全体を表示`導線を確認。
+- body候補（object ID先頭`12707472`）を選択して`選択中を参照として保護（編集不可）`を有効化。status `選択中のobjectを参照として保護しました。編集操作は停止します。`を確認し、viewportクリック後も編集停止状態が維持された。
+
+これはExplorer選択、候補確認、全mesh取込、対象切替、参照保護の実ウィンドウ部分受入である。DPI 150/200%、日本語IME、保存／再開、実衣装の頂点編集・fit・貫通、Unity受け取りの更新／削除Undo、normal／MR／UV0画素、VRChat Build & Testは未受入のまま残る。private素材とSDKは公開ツリーへ追加していない。
