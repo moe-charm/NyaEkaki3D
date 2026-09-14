@@ -37,7 +37,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthori
 実モデルの取込・保存・出力と、制御されたaccessory fixtureの衣装package／Bridge受け取りを一括確認する場合は、Playerを先にビルドして次を実行します。入力VRM/GLBは指定した場所から読み込むだけで、公開リポジトリへコピーしません。既定のBridge検証はUnity 2022.3.22f1を使います。実RadDollV3から新規衣装を全周fitしてpackage化する作業は、この自動fixtureとは別に手動で確認してください。
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeRealClothing.ps1 -ModelPath <モデルの絶対パス> -BuildName ClothingPackageV2
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeRealClothing.ps1 -ModelPath <モデルの絶対パス> -BuildName PerformanceV39
 ```
 
 このコマンドは実モデルの取込・編集・保存・GLB/VRM出力、fixture衣装の選択package、Unity Bridgeの適用確認を順番に行い、最後にPlayer reportとpackage manifestの場所を表示します。

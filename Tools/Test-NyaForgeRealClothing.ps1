@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$ModelPath,
     [ValidatePattern('^[A-Za-z0-9_-]+$')]
-    [string]$BuildName = 'ClothingPackageV2',
+    [string]$BuildName = 'PerformanceV39',
     [string]$UnityPath,
     [ValidateRange(60, 1800)]
     [int]$TimeoutSeconds = 900

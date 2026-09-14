@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10S: 現行PerformanceV39の実衣装一周再確認
+
+privateのRadDollV3 VRM候補を現行`PerformanceV39`へ渡し、全mesh取込、EditMesh、native Save/Open、GLB／VRM1、選択衣装skin package生成、Unity **2022.3.22f1** Bridge受け取りを再実行した。Player **93 checks PASS**（`Artifacts/Authoring-20260914-113055-0cd70cb457dd42d0be9f9af85e84639e/report.json`）、Bridge **16 checks PASS**（`Artifacts/BridgeReceiver-20260914-113333-758-cf279d4ec1eb4efdb11c5d624dabd6ed/bridge-report.json`）。衣装packageは`Artifacts/Authoring-20260914-113055-0cd70cb457dd42d0be9f9af85e84639e/imported-accessory-skin-project/exports/clothing-20260914-023310-da7073/skinned-clothing.nyaforge.json`に生成され、reportの`passed=true`／`status=passed`とpackage存在を再確認した。画面証跡も目視し、1600×1000のviewport・右panel・status footer・スクロール可能なcontrolsを確認した。
+
+これは実ファイルの自動受け渡しと画面証跡であり、実EditorWindowのマウス／IME／DPI操作、実アバター全周fit・貫通・見た目、VRChat Build & Test／実機表示を完了扱いしない。
+
 ## 2026-09-14 NF-V1-10R: f010146フィードバックの現行HEAD再照合
 
 提示された`f010146`基準のP1 3件／P2 5件を現行`main` **`5f90cb9`**へ再照合した。MCP batchの参照保護、単一object汎用出力、Polygon→skinの疎material slot、Unity BridgeのMR係数、Paint原画像のnode identity、allowlist 1対象、高DPI bounds、fit対象のobject境界はいずれも後続実装と回帰で解消済みで、同じ本番コードの重複修正は行っていない。詳細は[フィードバック再照合](docs/reviews/2026-09-14-Feedback-f010146-Recheck-5f90cb9.md)へ固定した。
