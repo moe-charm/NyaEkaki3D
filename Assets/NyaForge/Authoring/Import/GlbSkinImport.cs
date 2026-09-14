@@ -110,17 +110,10 @@ namespace NyaForge.Authoring.Import
             var world = sourceNodes.World.Select(frame => frame.TransformPoint(new Vec3())).ToArray();
             var jointToBone = BuildSkeleton(document.SourceHash, skin, nodes, joints, jointNodes, parentByNode, world, document);
 
-            // Reuse the static mesh adapter after removing only skin attributes from a cloned JSON tree.
-            // This keeps geometry/morph parsing in one module and preserves the original source hash.
-            var staticRoot = (JObject)root.DeepClone(); staticRoot.Remove("skins");
-            var staticMeshes = (JArray)staticRoot["meshes"]; var staticMesh = (JObject)staticMeshes[meshIndex];
-            foreach (var token in (JArray)staticMesh["primitives"])
-            {
-                var primitive = token as JObject; Checks.Require(primitive != null, "INVALID_IMPORT", "GLB primitive is invalid.");
-                var attributes = primitive["attributes"] as JObject; Checks.Require(attributes != null, "INVALID_IMPORT", "GLB primitive attributes are required.");
-                foreach (var property in attributes.Properties().Where(p => p.Name.StartsWith("JOINTS_", StringComparison.Ordinal) || p.Name.StartsWith("WEIGHTS_", StringComparison.Ordinal)).ToArray()) property.Remove();
-            }
-            var baseSource = GlbImporter.ReadDocument(new GlbDocument(staticRoot, document.Bin, document.SourceHash, false), meshIndex, null, sourceDirectory);
+            // Reuse the static geometry adapter while ignoring skin attributes
+            // directly; cloning the complete JSON root would retain a second
+            // copy of a large multi-mesh scene for no semantic benefit.
+            var baseSource = GlbImporter.ReadDocumentWithoutSkin(document, meshIndex, sourceDirectory);
             var rawWeights = new List<SkinBinding.VertexWeightInput>(); int vertexOffset = 0;
             for (int p = 0; p < primitives.Count; p++)
             {

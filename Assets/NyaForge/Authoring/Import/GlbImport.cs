@@ -76,12 +76,19 @@ namespace NyaForge.Authoring.Import
             => ReadDocument(document, meshIndex, instanceWorld, null);
 
         internal static ImportedMeshSource ReadDocument(GlbDocument document, int meshIndex, SourceAffine instanceWorld, string sourceDirectory)
+            => ReadDocument(document, meshIndex, instanceWorld, sourceDirectory, false);
+
+        /// <summary>Reads geometry from a skinned primitive while ignoring its skin attributes.</summary>
+        internal static ImportedMeshSource ReadDocumentWithoutSkin(GlbDocument document, int meshIndex, string sourceDirectory = null)
+            => ReadDocument(document, meshIndex, null, sourceDirectory, true);
+
+        static ImportedMeshSource ReadDocument(GlbDocument document, int meshIndex, SourceAffine instanceWorld, string sourceDirectory, bool allowSkinAttributes)
         {
             Checks.Require(document != null, "INVALID_IMPORT", "GLB document is required.");
-            return Parse(document.Root, document.Bin, document.SourceHash, meshIndex, instanceWorld, sourceDirectory);
+            return Parse(document.Root, document.Bin, document.SourceHash, meshIndex, instanceWorld, sourceDirectory, allowSkinAttributes);
         }
 
-        static ImportedMeshSource Parse(JObject root, byte[] bin, string sourceHash, int meshIndex, SourceAffine instanceWorld, string sourceDirectory)
+        static ImportedMeshSource Parse(JObject root, byte[] bin, string sourceHash, int meshIndex, SourceAffine instanceWorld, string sourceDirectory, bool allowSkinAttributes = false)
         {
             Checks.Require((string)root["asset"]?["version"] == "2.0", "UNSUPPORTED_FORMAT", "GLB asset version must be 2.0.");
             GlbImportDiagnostics.RequireSupportedRequiredExtensions(root);
@@ -94,11 +101,11 @@ namespace NyaForge.Authoring.Import
             // A GLB may contain both skinned and static node instances.  Only reject a
             // selected mesh when that mesh itself is linked to a skin; unrelated skins
             // must not prevent importing a static accessory.
-            if (root["skins"] is JArray && ((JArray)root["skins"]).Count > 0)
+            if (!allowSkinAttributes && root["skins"] is JArray && ((JArray)root["skins"]).Count > 0)
                 Checks.Require(!MeshHasSkin(root, meshIndex), "UNSUPPORTED_FORMAT", "Selected GLB mesh has skin bindings; use the skinned importer.");
             var primitives = Array(meshToken, "primitives"); Checks.Require(primitives.Count > 0 && primitives.Count <= AuthoringLimits.MaxSubmeshes, "BUDGET_EXCEEDED", "GLB primitive count exceeds the submesh budget.");
             int materialCount = root["materials"] is JArray materialArray ? materialArray.Count : 0;
-            var parts = primitives.Select(token => { var primitive = token as JObject; Checks.Require(primitive != null, "INVALID_IMPORT", "GLB primitive is invalid."); return ReadPrimitive(primitive, accessors, views, bin, materialCount); }).ToArray();
+            var parts = primitives.Select(token => { var primitive = token as JObject; Checks.Require(primitive != null, "INVALID_IMPORT", "GLB primitive is invalid."); return ReadPrimitive(primitive, accessors, views, bin, materialCount, allowSkinAttributes); }).ToArray();
             bool hasNormals = AttributePresence(parts, p => p.Normals.Length > 0, "NORMAL");
             bool hasTangents = AttributePresence(parts, p => p.Tangents.Length > 0, "TANGENT");
             bool hasUv0 = AttributePresence(parts, p => p.Uv0.Length > 0, "TEXCOORD_0");
@@ -145,7 +152,7 @@ namespace NyaForge.Authoring.Import
             public Vec3[] Positions; public Vec3[] Normals; public Vec4[] Tangents; public Vec2[] Uv0; public int[] Indices; public Vec3[][] MorphDeltas; public Vec3[][] MorphNormalDeltas; public Vec3[][] MorphTangentDeltas; public int MaterialIndex;
         }
 
-        static PrimitiveData ReadPrimitive(JObject primitive, JArray accessors, JArray views, byte[] bin, int materialCount)
+        static PrimitiveData ReadPrimitive(JObject primitive, JArray accessors, JArray views, byte[] bin, int materialCount, bool allowSkinAttributes = false)
         {
             Checks.Require(primitive != null, "INVALID_IMPORT", "GLB primitive is invalid.");
             Checks.Require(primitive["mode"] == null || Int(primitive, "mode", 4, 4) == 4, "UNSUPPORTED_FORMAT", "Only triangle primitives are supported.");
@@ -154,7 +161,7 @@ namespace NyaForge.Authoring.Import
             // TEXCOORD_1 input instead of silently dropping the second UV set
             // and producing a mesh whose material may sample the wrong data.
             Checks.Require(attributes["TEXCOORD_1"] == null, "UNSUPPORTED_UV_SET", "GLB TEXCOORD_1 is not supported in Windows v1; use TEXCOORD_0 or remove the extra UV set.");
-            Checks.Require(attributes["JOINTS_0"] == null && attributes["WEIGHTS_0"] == null, "UNSUPPORTED_FORMAT", "Skin attributes are not imported yet.");
+            Checks.Require(allowSkinAttributes || (attributes["JOINTS_0"] == null && attributes["WEIGHTS_0"] == null), "UNSUPPORTED_FORMAT", "Skin attributes are not imported yet.");
             int positionAccessor = AccessorId(attributes, "POSITION"); var positions = Vec3Accessor(accessors, views, bin, positionAccessor, "position");
             var normals = OptionalVec3(attributes, "NORMAL", accessors, views, bin, positions.Length, "normal");
             var tangents = OptionalVec4(attributes, "TANGENT", accessors, views, bin, positions.Length, "tangent");
