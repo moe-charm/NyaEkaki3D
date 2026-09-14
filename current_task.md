@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15Q: Authoring起動スクリプト
+
+`Tools/Start-NyaForgeAuthoring.ps1`を追加し、既定の`Builds/BoneSubsetV16/NyaForge.exe`を`--authoring true`で起動できるようにした。`-BuildName`で別候補を選べ、`-PrintOnly`でパスだけを検査できる。V16に対する`-PrintOnly`は**PASS**し、最新手動受入表・クイックスタートから同じ入口へ誘導する。入力モデルやprivateデータは扱わず、公開ツリーへコピーしない。
+
 ## 2026-09-14 NF-V1-15P: V16 status修正後の実衣装一周
 
 status footerの折返し修正を含む`Builds/BoneSubsetV16/NyaForge.exe`で、private RadDollV3 VRMの全mesh取込、native Save/Open、GLB／VRM1出力、衣装skin package生成、Unity **2022.3.22f1** Bridge受け取りを再実行した。Player **PASS**（`Artifacts/Authoring-20260914-165304-a4fdb279b679471d99fcba5733339b17/report.json`）、Bridge **PASS**（`Artifacts/BridgeReceiver-20260914-165530-393-cb754fbf3e254af482bb0fecda21ca22/bridge-report.json`）。これは自動Player／Bridge回帰であり、実EditorWindowのマウス・IME・DPI・Explorer、実アバター全周fit／貫通／見た目、VRChat Build & Test／実機表示は未受入として残す。

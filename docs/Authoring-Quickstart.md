@@ -2,7 +2,13 @@
 
 これは現在動く制作プレビューの操作説明です。空projectから形状を作り、graph・polygon・paint・Rigの編集を試して、Unityへ渡すところまで確認できます。製品全体の目標は [設計v2](NyaForge-Authoring-Design2.md)、次の実装範囲は [開発計画](Development-Plan.md) を参照してください。
 
-現行のWindows確認候補は `Builds/BoneSubsetV15/NyaForge.exe` です。制作画面の「1 制作プロジェクト」にある **モデルを開く…** を押すと、GLB／VRMの取込欄を開きながらWindows Explorerのファイル選択を直接起動できます。全身Frameは取込後に自動で行われます。
+現行のWindows確認候補は `Builds/BoneSubsetV16/NyaForge.exe` です。制作画面の「1 制作プロジェクト」にある **モデルを開く…** を押すと、GLB／VRMの取込欄を開きながらWindows Explorerのファイル選択を直接起動できます。全身Frameは取込後に自動で行われます。
+
+最新の候補をAuthoringモードで起動するには、リポジトリ直下で次を実行します（現在の既定はV16です）。
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Start-NyaForgeAuthoring.ps1
+```
 
 ## キャラ・衣装をビューワーで開く
 
