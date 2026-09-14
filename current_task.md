@@ -2724,3 +2724,14 @@ Coreは **483 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 制作対象パネルへ **選択中を参照として保護（編集不可）** を追加した。avatarなどの基準objectを保護すると、表示・選択・保存・出力は維持したまま、頂点・材質・リグ・graphの編集commandとMCP操作を`REFERENCE_PROTECTED`で停止する。保護対象IDはnative schema 4の許可attachment `reference-protection.nyaforge.bin`へ、sortedなGUID列として保存する。Save/OpenでIDとGUIトグルを復元し、解除後は通常編集へ戻れる。
 
 Coreは **497 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a7d03400063146bc8b010f7bf4e874bb`）。参照ID codecの重複・順序・破損入力とnative attachment roundtripを確認した。Unity **6000.4.3f1** Player `Builds/RefProtection/NyaForge.exe`は、2 objectの選択・表示・Save/Open・編集分離に加え、保護中の頂点編集停止、保護設定の保存・再読込、解除まで **PASS**（`Artifacts/Authoring-20260914-033432-f1362aff12ff4b2b8e1db3edfd231ac4/report.json`）。同成果物のUnity **2022.3.22f1** Bridge receiver suiteも **15 checks PASS**（`Artifacts/BridgeReceiver-20260914-033504-121-546e15ff46e24f19b28033b7b97acac7/bridge-report.json`）。これは自動fixtureでの保存・command境界回帰であり、実RadDollV3 EditorWindowの手動操作、実body全周fit・貫通・見た目、VRChat内表示は未受入である。
+
+# 2026-09-14 Windows native mouse acceptance (partial)
+
+Windows用Computer Useで、`Builds/PerformanceV39/NyaForge.exe`を実際に起動し、次の操作をマウスで確認した。
+
+- 「制作へ」→「ビューアーに戻る」の画面遷移
+- 「パックを開く…」からWindowsファイル選択ダイアログを開く
+- `GeneratedPacks/NyaForgeFixture/current.StandaloneWindows64.json`を選択して読み込む
+- 「身体だけ表示」でCollarを非表示にし、「パック既定の表示に戻す」で復帰
+
+読み込み後は`NyaForge synthetic fixture`が表示され、パーツ表示のチェック状態とステータス「調整しました」を画面で確認できた。これは実マウス経路が動くことの受入であり、実RadDollV3の読み込み、頂点編集、保存・再開、実DPI差、VRChat内表示は別の手動受入として継続する。Windows native Computer Useは、ブラウザ用Cuaとは別の操作経路を使用する。
