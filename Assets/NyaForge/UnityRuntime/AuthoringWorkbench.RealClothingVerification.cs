@@ -47,6 +47,15 @@ namespace NyaForge.UnityRuntime
             string polygonObjectId = workspace.Document.ActiveObjectId;
             Check(polygonObjectId != avatarObjectId && IsGraph,
                 "Real clothing probe did not create a separate choker graph object.");
+            string chokerBeforeEdit = workspace.Document.StateHash;
+            Select(new[] { 0 });
+            moveX.SetValueWithoutNotify(1);
+            moveY.SetValueWithoutNotify(0);
+            moveZ.SetValueWithoutNotify(0);
+            MoveSelection();
+            Check(workspace.Document.StateHash != chokerBeforeEdit,
+                "Real clothing probe did not commit the authored choker vertex edit.");
+            checks.Add("real clothing choker vertex edit commits before binding and output");
             attachmentTargetChoice = avatarObjectId;
             RefreshAttachmentControls();
             int neckIndex = attachmentBoneIds.IndexOf(neck.BoneId);
