@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10G: f010146フィードバックの現行HEAD再照合
+
+提示された`f010146`基準のP1 3件／P2 5件を現行`main` **`f3b3d29`**へ再照合した。MCP参照保護、単一object汎用出力、Polygon→skinの疎material slot、Unity BridgeのMR係数、Paint原画像のnode identity、allowlist 1対象、高DPI bounds、fit対象のobject境界はいずれも後続実装と回帰で解消済みで、重複修正は行っていない。詳細は[フィードバック再照合](docs/reviews/2026-09-14-Feedback-f010146-Recheck-f3b3d29.md)へ固定した。
+
+Coreは**506 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-adbcb4a7267c48eda030ca0e8ccf6eb4`）。Unity `2022.3.22f1` Bridgeも**PASS**（`Artifacts/BridgeReceiver-20260914-103539-671-7874a6c7ed7948e0a48a1ba6fca0536b/bridge-report.json`）。残る受入境界は実EditorWindowのマウス／IME／Explorer、実アバター全周fit・貫通ゼロ・見た目、VRChat Build & Test／実機表示、同一条件の実アバターheap censusである。
+
 ## 2026-09-14 NF-V1-10F: imported material encoded bytes共有
 
 同一GLB imageを複数materialが参照する場合に、base-colorの原画像、normal、metallic-roughnessのencoded bytesをmaterialごとに複製していた。公開の `Copy...Bytes()` は防御コピーを維持し、取込内部だけ不変bytesを共有する生成経路を追加した。PaintNodeId、sampler、semantic、原画像の個別node identityは変えない。変更は `c0127d6` に固定した。
