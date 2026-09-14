@@ -11,9 +11,25 @@ namespace NyaForge.UnityRuntime
 {
     public sealed partial class AuthoringWorkbench
     {
-        static string AppendImportedMaterials(List<GraphNode> nodes, List<GraphEdge> edges, string meshNodeId, int submeshCount, IReadOnlyList<GlbMaterialSource> materials, List<string> warnings = null)
+        sealed class ImportedBaseColorImage
+        {
+            internal readonly PaintImage Preview;
+            internal readonly int SourceWidth;
+            internal readonly int SourceHeight;
+            internal readonly string MimeType;
+            internal readonly string PreviewHash;
+
+            internal ImportedBaseColorImage(PaintImage preview, int sourceWidth, int sourceHeight, string mimeType)
+            {
+                Preview = preview; SourceWidth = sourceWidth; SourceHeight = sourceHeight; MimeType = mimeType;
+                PreviewHash = Checks.Hash(PaintImageCodec.Write(preview));
+            }
+        }
+
+        static string AppendImportedMaterials(List<GraphNode> nodes, List<GraphEdge> edges, string meshNodeId, int submeshCount, IReadOnlyList<GlbMaterialSource> materials, List<string> warnings = null, IDictionary<int, ImportedBaseColorImage> imageCache = null)
         {
             if (materials == null || materials.Count == 0 || submeshCount <= 0) return meshNodeId;
+            imageCache = imageCache ?? new Dictionary<int, ImportedBaseColorImage>();
             // A glTF primitive may omit its material. Build the assignment for
             // every slot and fill only the omitted slots with the standard
             // default, preserving all explicitly imported material/image links.
@@ -38,12 +54,17 @@ namespace NyaForge.UnityRuntime
                 if (material?.HasEmbeddedBaseColorImage == true)
                 {
                     string imageId = Guid.NewGuid().ToString("D");
-                    PaintImage image; int sourceWidth, sourceHeight; GraphOriginalImage original;
+                    ImportedBaseColorImage decoded; GraphOriginalImage original;
                     try
                     {
-                        image = DecodeEmbeddedImage(material, out sourceWidth, out sourceHeight);
-                        string sourceMime = ImageMime(material);
-                        original = new GraphOriginalImage(imageId, sourceWidth, sourceHeight, sourceMime, material.CopyBaseColorImageBytes(), Checks.Hash(PaintImageCodec.Write(image)));
+                        int sourceImageIndex = material.BaseColorImageIndex;
+                        if (!imageCache.TryGetValue(sourceImageIndex, out decoded))
+                        {
+                            var image = DecodeEmbeddedImage(material, out int sourceWidth, out int sourceHeight);
+                            decoded = new ImportedBaseColorImage(image, sourceWidth, sourceHeight, ImageMime(material));
+                            imageCache.Add(sourceImageIndex, decoded);
+                        }
+                        original = new GraphOriginalImage(imageId, decoded.SourceWidth, decoded.SourceHeight, decoded.MimeType, material.CopyBaseColorImageBytes(), decoded.PreviewHash);
                     }
                     catch (AuthoringException error)
                     {
@@ -51,12 +72,12 @@ namespace NyaForge.UnityRuntime
                         warnings?.Add(message); Debug.LogWarning(message);
                         continue;
                     }
-                    nodes.Add(GraphNode.Paint(imageId, image.Width, image.Height, image));
+                    nodes.Add(GraphNode.Paint(imageId, decoded.Preview.Width, decoded.Preview.Height, decoded.Preview));
                     edges.Add(new GraphEdge(meshNodeId, "mesh", imageId, "mesh"));
                     edges.Add(new GraphEdge(imageId, "image", materialId, "baseColor"));
                     nodes.Add(GraphNode.OriginalImageNode(Guid.NewGuid().ToString("D"), original));
-                    if (sourceWidth != image.Width || sourceHeight != image.Height)
-                        warnings?.Add("material " + material.SourceMaterialIndex + " のbase color画像を " + sourceWidth + "x" + sourceHeight + " から " + image.Width + "x" + image.Height + " へ縮小しました。native projectは作業画像と原画像bytesを別保持します。");
+                    if (decoded.SourceWidth != decoded.Preview.Width || decoded.SourceHeight != decoded.Preview.Height)
+                        warnings?.Add("material " + material.SourceMaterialIndex + " のbase color画像を " + decoded.SourceWidth + "x" + decoded.SourceHeight + " から " + decoded.Preview.Width + "x" + decoded.Preview.Height + " へ縮小しました。native projectは作業画像と原画像bytesを別保持します。");
                 }
             }
             return assignmentId;
