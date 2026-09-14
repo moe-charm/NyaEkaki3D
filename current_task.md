@@ -3733,3 +3733,14 @@ Core／Bridgeの自動回帰はコード変更後に再実行する。実SDK・�
 - Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-025420-2e4f70571a01471089c95ba5991aff88/report.json`、装着・skin-bind・fit・weight・保存/再読込を含む）
 - Core: **512 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0efac60471e445408f5f3411e2e2f6dd`）
 - 未受入: 実マウスでのDPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、VRChat内表示。自動Player回帰をこれらの手動受入へ読み替えない。
+
+# 2026-09-15 UNITY-UI-03: GUI-16後の衣装package Bridge回帰
+
+GUI-16で整理した装着手順PanelのPlayer生成物と、同じAuthoring artifactから生成した衣装packageをUnity **2022.3.22f1**の隔離Bridgeへ渡し、package検証・manifest／GLB／skeleton／bindingのhash・stable BoneId・SkinnedMeshRenderer生成・semantic材質変換を含む受け取り回帰を再実行した。**PASS**。
+
+- Player入力: `Artifacts/Authoring-20260915-025420-2e4f70571a01471089c95ba5991aff88/report.json`
+- 衣装package: 同artifactの`imported-accessory-skin-project/exports/clothing-20260914-175424-989b71/skinned-clothing.nyaforge.json`
+- Bridge証跡: `Artifacts/BridgeReceiver-20260915-030038-621-9970614e7d33432db720866c76f398bd/bridge-report.json`
+- 実EditorWindowではsynthetic packageの操作到達性まで確認済み。実RadDollV3衣装の適用見た目・fit・貫通、移動／回転／scale済みavatar、更新／削除Undo、VRChat Build & Testは未受入。
+
+現行HEADは`9f89414`（GUI-16）で、今回の変更は証跡ドキュメントのみ。次は実Unity EditorWindowで実アバターへ衣装を適用し、座標変換・fit・weight・全周見た目を確認する。VRM意味情報の完全保持、Quest／macOS、FBX／BLEND parserはv1手動受入後の範囲に残す。
