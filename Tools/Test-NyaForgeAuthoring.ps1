@@ -8,6 +8,7 @@ param(
     [switch]$SecondaryMotionMcp,
     [switch]$GlbExportMcp,
     [switch]$ImportAllModel,
+    [switch]$ImportOnly,
     [switch]$VrmExport,
     [string]$McpProbe,
     [string]$ImportModel,
@@ -38,6 +39,10 @@ if ($ImportModel) { $arguments += @('--authoring-import-model', ('"{0}"' -f (Res
 if ($ImportAllModel) {
     if (-not $ImportModel) { throw '-ImportAllModel requires -ImportModel.' }
     $arguments += @('--authoring-import-all-model', ('"{0}"' -f (Resolve-Path -LiteralPath $ImportModel).Path))
+}
+if ($ImportOnly) {
+    if (-not $ImportModel) { throw '-ImportOnly requires -ImportModel.' }
+    $arguments += '--authoring-import-only'
 }
 if ($VrmExport) { $arguments += '--authoring-vrm-export' }
 if ($SecondaryMotionMcp) {

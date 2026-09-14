@@ -46,6 +46,7 @@ namespace NyaForge.UnityRuntime
             var arguments = Environment.GetCommandLineArgs();
             int modelImportIndex = Array.IndexOf(arguments, "--authoring-import-model");
             int modelImportAllIndex = Array.IndexOf(arguments, "--authoring-import-all-model");
+            bool importOnly = Array.IndexOf(arguments, "--authoring-import-only") >= 0;
             bool vrmExport = Array.IndexOf(arguments, "--authoring-vrm-export") >= 0;
             int reopenIndex = Array.IndexOf(arguments, "--authoring-reopen-project");
             if (reopenIndex >= 0 && reopenIndex + 1 < arguments.Length)
@@ -92,26 +93,54 @@ namespace NyaForge.UnityRuntime
                 OpenProject();
                 Check(workspace.Document.IsEmpty && workspace.Document.DocumentId == emptyId && !HasUnsaved, "Empty save/reopen failed");
                 if (modelImportIndex >= 0 && modelImportIndex + 1 < arguments.Length)
-                    VerifyCommandLineModelImport(arguments[modelImportIndex + 1], output, checks);
-                if (vrmExport && modelImportIndex >= 0)
+                {
+                    if (importOnly)
+                        VerifyCommandLineModelImportOnly(arguments[modelImportIndex + 1]);
+                    else
+                        VerifyCommandLineModelImport(arguments[modelImportIndex + 1], output, checks);
+                }
+                if (!importOnly && vrmExport && modelImportIndex >= 0)
                     VerifyCommandLineVrmExport(output, checks);
-                if (modelImportAllIndex >= 0 && modelImportAllIndex + 1 < arguments.Length)
+                if (!importOnly && modelImportAllIndex >= 0 && modelImportAllIndex + 1 < arguments.Length)
                     VerifyCommandLineAllModelImport(arguments[modelImportAllIndex + 1], output, checks);
-                AddSample(1);
-                Check(!workspace.Document.IsEmpty && workspace.CanUndo && projection.Points.Length > 0, "Sample did not use the command path");
-                VerifyImportDiagnosticsPanel(checks);
-                bool replaced = false;
-                ConfirmReplace(() => replaced = true);
-                Check(confirmRow.resolvedStyle.display != UnityEngine.UIElements.DisplayStyle.None, "Unsaved guard missing");
-                CancelReplace();
-                Check(confirmRow.style.display.value == DisplayStyle.None && !replaced && !workspace.Document.IsEmpty && HasUnsaved, "Cancel changed the project or left confirmation open");
-                Execute(AuthoringOperation.Undo());
-                Check(workspace.Document.IsEmpty && !HasUnsaved && projection.DisplayMesh == null, "Undo did not restore empty saved project");
-                Check(projection.Points.Length == 0, "Stale vertex markers remained");
-                controls.scrollOffset = Vector2.zero;
-                checks.Add("empty startup/save/reopen; sample command; unsaved cancel; Undo clears projection");
+                if (!importOnly)
+                {
+                    AddSample(1);
+                    Check(!workspace.Document.IsEmpty && workspace.CanUndo && projection.Points.Length > 0, "Sample did not use the command path");
+                    VerifyImportDiagnosticsPanel(checks);
+                    bool replaced = false;
+                    ConfirmReplace(() => replaced = true);
+                    Check(confirmRow.resolvedStyle.display != UnityEngine.UIElements.DisplayStyle.None, "Unsaved guard missing");
+                    CancelReplace();
+                    Check(confirmRow.style.display.value == DisplayStyle.None && !replaced && !workspace.Document.IsEmpty && HasUnsaved, "Cancel changed the project or left confirmation open");
+                    Execute(AuthoringOperation.Undo());
+                    Check(workspace.Document.IsEmpty && !HasUnsaved && projection.DisplayMesh == null, "Undo did not restore empty saved project");
+                    Check(projection.Points.Length == 0, "Stale vertex markers remained");
+                    controls.scrollOffset = Vector2.zero;
+                    checks.Add("empty startup/save/reopen; sample command; unsaved cancel; Undo clears projection");
+                }
             }
             catch (Exception e) { failure = e.ToString(); Debug.LogException(e); }
+            if (importOnly)
+            {
+                string importScreenshot = Path.Combine(output, "import-only.png");
+                yield return WorkbenchCapture.Write(GetComponent<UnityEngine.UIElements.UIDocument>(), camera, importScreenshot,
+                    error => { if (error != null) failure = (failure ?? "") + "\n" + error; });
+                checks.Add("import-only probe: selected model published without export or all-mesh verification");
+                var importReport = new VerificationReport
+                {
+                    passed = failure == null, failure = failure, unityVersion = Application.unityVersion,
+                    graphicsDevice = SystemInfo.graphicsDeviceName, checks = checks.ToArray(),
+                    bakeManifests = Array.Empty<string>(), graphBakeManifests = Array.Empty<string>(),
+                    screenshot = importScreenshot, width = Screen.width, height = Screen.height,
+                    triangles = workspace?.Evaluate()?.TriangleCount ?? 0
+                };
+                File.WriteAllText(Path.Combine(output, "report.json"), JsonUtility.ToJson(importReport, true));
+                Debug.Log("NYAFORGE_AUTHORING_CHECK " + (importReport.passed ? "PASS" : "FAIL"));
+                allowQuit = true;
+                Application.Quit(importReport.passed ? 0 : 1);
+                yield break;
+            }
             yield return WorkbenchCapture.Write(GetComponent<UnityEngine.UIElements.UIDocument>(), camera, Path.Combine(output, "empty.png"),
                 error => { if (error != null) failure = (failure ?? "") + "\n" + error; });
             try

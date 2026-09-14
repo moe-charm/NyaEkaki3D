@@ -97,7 +97,7 @@ NF-V1のIDは持込提案との対応用に維持。状態は実装済み・合�
 
 ## 6. 軽量性と画像品質の受入
 
-持込の「P95入力100ms、1080pで30fps、2時間、50回Open/Close、warm baseline比10%または100MiB以内」は暫定測定案。V30では標準fixtureのforeground再生60秒＋停止5秒を実行し、**60.0016 FPS、P95 16.8724ms、最大17.7144ms、private bytes約577MB→563MB、working set peak約335MB**を観測した（レポート `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PerformanceV30-Foreground-e8eaeb64df894b969e80fee4a092b347/performance.json`）。これはUnity 6000.4.3f1／RTX 4090／Windows 11／1280×800／DPI150%の一回の基準値で、予算合否や実RadDollV3通常編集の保証ではない。V39では50回の自動起動・終了回帰を完了した（`Artifacts/Navigation-Repeated-PerformanceV39-official-50.json`）。ただし20回更新・2時間編集、実マウス操作、別Windows環境の最終計測は未実施。FPS平均だけで長い入力停止を見逃さず、保持Unity Object数とmanaged/nativeメモリも記録する。異なる場面のピーク同士を比較してリーク判定しない。
+持込の「P95入力100ms、1080pで30fps、2時間、50回Open/Close、warm baseline比10%または100MiB以内」は暫定測定案。V30では標準fixtureのforeground再生60秒＋停止5秒を実行し、**60.0016 FPS、P95 16.8724ms、最大17.7144ms、private bytes約577MB→563MB、working set peak約335MB**を観測した（レポート `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PerformanceV30-Foreground-e8eaeb64df894b969e80fee4a092b347/performance.json`）。実RadDollV3では、候補取込直後だけを測る`Tools/Test-NyaForgeAuthoring.ps1 -ImportOnly`を追加し、working set peak **1,140.9MB**／private bytes **1,587.4MB**、通常の編集・出力一周は**2,730.7MB／3,399.6MB**、全mesh一括は**3,667MB／4,492.3MB**を観測した（詳細は[current_task](../current_task.md) NF-V1-15A）。これらはUnity 6000.4.3f1／RTX 4090／Windows 11の単一環境で、出力・再読込を含む一時ピークを含むため、日常アイドル時の予算合否や別環境の保証ではない。V39では50回の自動起動・終了回帰を完了した（`Artifacts/Navigation-Repeated-PerformanceV39-official-50.json`）。ただし20回更新・2時間編集、実マウス操作、別Windows環境の最終計測は未実施。FPS平均だけで長い入力停止を見逃さず、保持Unity Object数とmanaged/nativeメモリも記録する。異なる場面のピーク同士を比較してリーク判定しない。
 
 Paintと表示textureで同じ解像度・更新頻度を必要とするかを09Aで判断する。原本4Kを常時CPU展開して全layerへ複製する変更は、軽量性・Undo・保存予算の検証を伴わせる。画像の縮小をユーザーへ明示し、原本未保持は出力損失として扱う。
 

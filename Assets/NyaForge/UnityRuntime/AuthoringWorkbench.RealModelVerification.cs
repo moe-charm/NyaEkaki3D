@@ -107,6 +107,23 @@ namespace NyaForge.UnityRuntime
             OpenProject();
         }
 
+        void VerifyCommandLineModelImportOnly(string path)
+        {
+            path = Path.GetFullPath(path);
+            Check(File.Exists(path), "Import-only model fixture was not found: " + path);
+            string extension = Path.GetExtension(path);
+            Check(string.Equals(extension, ".glb", StringComparison.OrdinalIgnoreCase) || string.Equals(extension, ".vrm", StringComparison.OrdinalIgnoreCase), "Import-only model fixture must be .glb or .vrm.");
+            ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null);
+            modelImportPath.SetValueWithoutNotify(path);
+            modelImportMeshIndex.SetValueWithoutNotify(1);
+            modelImportSkinIndex.SetValueWithoutNotify(0);
+            modelImportInstanceIndex.SetValueWithoutNotify(-1);
+            ImportModel(path);
+            Check(workspace.Document.Objects.Count == 1, "Import-only probe did not publish exactly one graph object.");
+            Check(workspace.Document.ActiveObject.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.EditMesh), "Import-only probe did not publish an editable graph stage.");
+            Check(workspace.Evaluate().TriangleCount > 0, "Import-only probe published an empty mesh.");
+        }
+
         void VerifyCommandLineAllModelImport(string path, string output, List<string> checks)
         {
             path = Path.GetFullPath(path);
