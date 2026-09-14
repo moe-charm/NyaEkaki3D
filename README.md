@@ -46,6 +46,15 @@ Core regression tests require .NET 10:
 dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj
 ```
 
+Windows path and startup/reopen regression checks:
+
+```powershell
+dotnet run --project Tests/WindowsPicker/WindowsPicker.Tests.csproj
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeNavigationRepeated.ps1 -BuildName Windows -Count 50
+```
+
+The repeated navigation runner creates one isolated report directory per process and writes an aggregate JSON under `Artifacts/`. Unity Bridge checkpoint recovery is run separately with `Tools/Test-NyaForgeCrashRecovery.ps1` against a passed Player report.
+
 ## Scope
 
 The Viewer runtime is generic. Avatar-specific pack builders, binding profiles, source models, and licensed dependencies are intentionally maintained outside this repository.
