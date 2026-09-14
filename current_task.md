@@ -2785,3 +2785,9 @@ Coreは **507 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 修正版 `Builds/ClothingPackageV3/NyaForge.exe`をWindows native Computer Useで起動し、実RadDollV3＋手首カフのnative作品 `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ManualAcceptance-Cuff3-20260914\project.nyaforge.json`をExplorerから開いた。派生衣装graph `73e5a236`を選択した状態で「選択衣装をskin packageで出力」を実行し、ステータスに成功表示が出た。
 
 出力先 `exports\clothing-20260914-042448-0333be`には `skinned-clothing.nyaforge.json`、`clothing.glb`、`skeleton.nyaforge.bin`、`binding.nyaforge.bin` が生成された。元のBoneId装着Polygonを同じ作品に残したまま、選択したskin衣装だけをpackage化できることを実モデルで確認した。次の受入はこのpackageをUnity Bridgeへ適用し、移動済みavatar・更新・材質・UVを一周することにする。
+
+# 2026-09-14 実カフpackageのUnity Bridge受け渡し
+
+既存の合格済みPlayer reportを基準に、実RadDollV3＋手首カフから生成した `skinned-clothing.nyaforge.json` を `Tools/Test-NyaForgeUnityBridge.ps1` の隔離receiverへ渡した。Unity **2022.3.22f1** の `BridgeBatch.VerifyRoundTrip` は終了コード0、`NYAFORGE_BRIDGE_ROUNDTRIP_PASSED`、status `passed` を返した。証拠は `Artifacts/BridgeReceiver-20260914-132906-406-7039fd4e03d344759dd7ade55e5032f0/bridge-report.json` と `bridge.log`。
+
+この経路ではpackageのmanifest／GLB／skeleton／binding hash検査後、stable BoneId mapからSkinnedMeshRendererを生成し、所有markerとgeometry/materialの受け渡しを確認した。Bridgeは合成avatar fixture上の受け取り確認であり、実Unity EditorWindowでの手動BoneId割当、移動・回転・scale済み実avatar、衣装更新・削除Undo、実VRChat表示はまだ別受入である。次は実receiver sceneへpackageを適用し、手動受入チェック表の3章を埋める。
