@@ -3756,3 +3756,21 @@ AI接続（MCP）Panelの長い説明が常時表示されると、狭いWindows
 - Navigation回帰: **PASS**（`Artifacts/Navigation-20260915-030737-4b8a8bd01a074b71a18c2cdd9fcfc6fa/report.json`）
 - Core: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b4af5ea13eca4b0aa72bed2666bf9d67`）
 - 手動境界: 通常サイズでのコード／Player回帰は確認したが、実ウィンドウの幅441px相当、DPI 150/200%、日本語IME、実sidecar接続の目視は未受入。実RadDollV3のfit・貫通・材質、Unity更新／削除Undo、VRChat内表示も未受入。
+
+# 2026-09-15 RECHECK-01: 現行HEADのCore／Unity Bridge再検証
+
+GUI-17後の現行HEAD `bed3e6228767a41ad0558c81d5675c22786c9dfc` で、保存・出力・保護・材質slot・semantic texture・衣装fitの回帰を再実行した。Coreは `512 passed / 0 failed`。証跡は `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-fbf71f3edab345e8ad73edaaa4bd0fb2`。
+
+GUI-17で生成した実package（`Artifacts/Authoring-20260915-030639-db3f07ec15ab48f995d996e2900b454d`）をUnity **2022.3.22f1**の隔離receiverへ再投入し、manifest／GLB／skeleton／bindingのhash、stable BoneId、SkinnedMeshRenderer生成、semantic材質変換を **PASS**。証跡は `Artifacts/BridgeReceiver-20260915-031943-436-367517da82af43f2b2f064bf95204751/bridge-report.json`。
+
+これはCore／Bridgeの自動再検証であり、実RadDollV3 EditorWindowでの衣装fit・貫通・全周見た目、移動／回転／scale後の手動適用、Unity更新／削除Undo、VRChat Build & Test／クライアント表示の受入へは読み替えない。Unity `PhysBonesSdkProbe-20260914` は別のUnity instanceが同じprojectを開いているため、今回のprobe起動は再実行していない。既存の `private/PhysBonesSdkProbe-20260914/sdk-probe-report-latest.json` に記録済みのverified結果を正本として扱う。
+
+次の実作業は、既存Unity EditorWindowへ実RadDollV3用packageを読み込み、候補生成・明示割当・適用・更新／削除Undoを一周すること。手動確認が終わるまでQuest／macOS、FBX／BLEND parser、完全VRM互換はv1へ追加しない。
+
+# 2026-09-15 UNITY-MANUAL-01: 実Unityでのpackage読込とBoneId手動割当
+
+開いているUnity **2022.3.22f1** の `PhysBonesSdkProbe-20260914` で、現行の衣装manifest `Artifacts/Authoring-20260915-015427-cc42204ac895443fb34bfc28c4fc601a/imported-accessory-skin-project/exports/clothing-20260914-165627-2cfadd/skinned-clothing.nyaforge.json` を `NyaForge Clothing` windowへ読み込んだ。manifest／3 vertices・1 triangle／2 bones／`RaddollV3 (Transform)` の表示を確認した。
+
+`候補を生成（名前・階層）`ではpackage側の `Child`／`Root` と実avatarのstable identityが一致せず、`0/2本を一意候補として検出`となった。推測割当は行わず、Unity object pickerから `Child → Neck (Transform)`、`Root → Hips (Transform)`を手動指定できることを確認した。これは候補生成と明示割当のUI・identity境界の受入である。
+
+packageはsynthetic 3頂点のため、割当保存・事前診断・衣装適用後の実RadDollV3全周見た目・貫通・pose変形の合格材料にはしない。実衣装packageでの候補／手動割当→保存→診断→適用→更新／削除UndoとVRChat Build & Testは未受入のまま残す。作業中のUnity projectは別instanceによるロックを避けるため閉じていない。
