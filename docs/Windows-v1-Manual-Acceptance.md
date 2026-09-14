@@ -135,3 +135,13 @@ Core／Bridgeの自動回帰はコード変更後に再実行する。実SDK・�
 保存先`Z:\TextureVoice_local\git\RadDollV3-clothing\private\viewer-data\packs\manual-real-model-choker-20260915`へ`保存`を実行し、status `保存しました`と保存済み表示を確認した。同じ画面で`開く`を実行し、status `制作状態を開きました。ここから新しい履歴を始めます。`、リングの再表示、`保存済み`表示を確認した。
 
 これは実RadDollV3のExplorer取込→全mesh→基本形状追加→対象切替→単独表示→頂点選択／移動→native Save/Openの手動受入PASSである。材質の見た目、衣装skin-bind／fit／貫通、Unity受け取り、VRChat Build & Testは別受入として未完了のまま残す。private素材と制作データは公開ツリーへ追加していない。
+
+# 2026-09-15 MANUAL-06: 隔離ビルドの初期制作画面レイアウト
+
+`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Builds\AttachmentLabelsV2\NyaForge.exe`を`@oai/sky`で起動し、Viewerの`制作へ`を実マウスクリックした。1069×698のWindowsウィンドウで、空プロジェクト案内と右側controlsの`AI接続（MCP）`、`新しい空プロジェクト`、`モデルを開く…`、`保存済み制作を開く…`を確認した。長い日本語ボタンはcontrols欄内で折り返され、右端へはみ出さなかった。下部statusも表示された。
+
+- [x] 初期空状態の導線・長いボタンの折返し・status表示
+- [ ] DPI 150/200%、IME、Explorer、実モデル取込、装着先候補の表示名／tooltip
+- [ ] 実RadDollV3の全周fit・貫通・材質見た目、Unity／VRChat実機
+
+これは初期レイアウトの部分受入であり、上の未確認項目を合格扱いしない。証跡の詳細は`current_task.md`のMANUAL-01に記録した。
