@@ -177,6 +177,7 @@ namespace NyaForge.UnityRuntime
             if (accessoryFitSummary == null) return;
             if (workspace == null || workspace.Document.IsEmpty || !IsGraph)
             {
+                ClearAccessoryFitSummaryEvaluation();
                 accessoryFitSummary.text = "fit対象: 衣装graphを選択してください。";
                 accessoryFitSummary.tooltip = accessoryFitSummary.text;
                 return;
@@ -233,6 +234,9 @@ namespace NyaForge.UnityRuntime
             }
             catch (Exception) { }
 
+            if (target == null || target.Graph == null)
+                ClearAccessoryFitSummaryEvaluation();
+
             string avatarScope = "全三角形";
             try
             {
@@ -251,6 +255,13 @@ namespace NyaForge.UnityRuntime
                 targetText + " " + avatarScope + "（全 " + avatarTriangleCount.ToString(CultureInfo.InvariantCulture) + "面） · " + bindText + " · " + measurement;
             if (!surfaceReady && target != null) accessoryFitSummary.text += " · avatar表面rest mesh／weightを確認";
             accessoryFitSummary.tooltip = accessoryFitSummary.text;
+        }
+
+        void ClearAccessoryFitSummaryEvaluation()
+        {
+            accessoryFitSummaryTargetGraph = null;
+            accessoryFitSummaryTargetEvaluation = null;
+            accessoryFitSummaryTargetObjectId = "";
         }
 
         static SkeletonDefinition TryResolveSkeleton(ImportedRigSession session, AuthoringGraph graph)

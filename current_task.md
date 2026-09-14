@@ -4018,3 +4018,13 @@ source-skin表示と投影のキャッシュ判定は、従来の複数hashを�
 - Authoring自動検証: **88 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-081829-b889542fdc0e4c0d99823a773e652fb1\report.json`）
 - Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-39b4c52f3ec64ba6a32db0667263a20b`）
 - 境界: 自動回帰と不変Graph評価の再利用確認であり、実EditorWindowのGC/native memory計測、実マウスのDPI／IME、実RadDollV3全周fit・貫通・材質見た目、Unity実SDK、VRChat実機受入は未完了。
+
+# 2026-09-15 PERF-06: fitサマリー評価の解放境界
+
+制作対象を空projectへ戻したときや装着先avatarが外れたときに、fitサマリーが保持していた大きなGraphEvaluationを明示的に解放する境界を追加した。対象切替時の再評価キャッシュと合わせ、古いavatarのmesh評価をUI状態が参照し続けないようにした。表示内容、fit計測、保存形式、Undo、出力は変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Attachments.cs`
+- Unity 6000.4.3f1 隔離Windows Player `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Builds\SourceSkinCacheV6\NyaForge.exe`：build成功
+- Authoring自動検証: **88 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-082218-2508a45a9961408283b3b1dc6c9328ff\report.json`）
+- Core: **515 passed / 0 failed**（直近Coreソース変更なし）
+- 境界: 自動回帰によるキャッシュ無効化経路の確認であり、実EditorWindowのGC/native memory計測、実マウスのDPI／IME、実RadDollV3全周fit・貫通・材質見た目、Unity実SDK、VRChat実機受入は未完了。
