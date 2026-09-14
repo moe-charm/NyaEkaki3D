@@ -4000,3 +4000,10 @@ source-skin表示のキャッシュ判定は、従来の複数hashを毎回連�
 - Unity 6000.4.3f1 隔離Player `NyaForge-MorphTargetContextV1`へ反映してbuild成功。通常Authoring **88 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-080040-a6c06217d1ff44c3b8258a2862315543\report.json`）。明示ループ版も同Playerでbuild成功し、通常Authoring **88 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-080440-8b10674a8b944889a5d84d2f3c9fefc7\report.json`）。
 - commit/push: `b9b30b7 perf: avoid source skin cache key allocations` と `8b89fe6 perf: reduce source skin cache scan allocations` を`origin/main`へpush済み。
 - 境界: Unity実EditorWindowのGC／native memory計測、実RadDollV3の全周fit・貫通・材質見た目、VRChat実機受入は未完了。今回の変更はキー生成の割当削減であり、軽量性合格を単独で宣言しない。
+# 2026-09-15 PERF-04: 軽量化後の起動・終了反復
+
+軽量化後の隔離Windows Player `NyaForge-MorphTargetContextV1`へ公開fixtureのmanifestとrevision sidecar一式を配置し、通常Navigation（1280x800、windowed）を20回連続実行した。各回でfixtureのOpen、viewport領域、source mapping表示を確認し、**20/20 PASS**となった。初回試行は隔離コピーにfixture sidecarがなく検証前提を満たさなかったため、fixture一式を揃えて再実行した。実アバターの長時間編集・GC/native memory・別Windows環境の性能合格へは読み替えない。
+
+- Player: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Builds\SourceSkinCacheV2\NyaForge.exe`
+- 記録: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Navigation-Repeated-SourceSkinCacheV2-20260915-080734.json`
+- 境界: 20回の起動・終了と基本navigationの安定性のみ。2時間編集、20回の衣装更新、実EditorWindowのDPI／IME、実RadDollV3の全周fit・貫通・材質見た目、Unity／VRChat実機は未受入。
