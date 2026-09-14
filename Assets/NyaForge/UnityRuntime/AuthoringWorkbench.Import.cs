@@ -268,6 +268,21 @@ namespace NyaForge.UnityRuntime
                 if (!ReferenceEquals(previous, workspace) || state != workspace.Document.StateHash) { SetStatus("選択中に作品が変わったため、GLB取り込みを取り消しました。"); yield break; }
                 modelImportPath.SetValueWithoutNotify(picker.Result);
                 modelImportPath.tooltip = picker.Result;
+                // Choosing a file is the start of the import flow. Inspect it
+                // immediately so an empty project shows the actual node/mesh/
+                // skin choices instead of appearing unchanged until the user
+                // finds the second button deep in the scroll view.
+                try
+                {
+                    InspectModelSelection(picker.Result);
+                    controls?.ScrollTo((VisualElement)modelImportSelectionStatus ?? modelImportPanel);
+                    SetStatus("GLB / VRMの候補を確認しました。候補を選んで取り込んでください。");
+                }
+                catch (Exception error)
+                {
+                    modelImportSelectionStatus.text = "候補を確認できませんでした。ファイル形式とパスを確認してください。";
+                    SetStatus(error.Message);
+                }
             }
             finally { modelPickerOpen = false; }
 #else

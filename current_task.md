@@ -3656,3 +3656,17 @@ body候補（object ID先頭`12707472`）を選択し、`選択中を参照と�
 追加レビューで、既知VRM拡張を認識しただけで完全保持と表示しない契約を再確認した。metaの利用条件、lookAt、firstPerson、expressionの材質・texture binding・制御flagなど、未保持・未解決の意味情報を含む入力は診断を残し、完全VRM出力を成功扱いにしない。`docs/Model-Interchange-Spec.md`にはこの判定と往復検証表が既に反映されている。
 
 次は、(1) 実RadDollV3 sceneでの衣装一着のEditorWindow操作（fit・surface weight・手修正・全周確認）、(2) Unity側の移動／回転／scale・更新／削除Undo、(3) VRChat Build & Test／クライアント表示、の順に手動受入カードを進める。FBX／BLEND parser、全shader、Quest／macOS、完全VRM互換はこの受入が終わるまでv1の途中へ追加しない。
+
+# 2026-09-15 GUI-14: モデル選択後の候補自動確認
+
+Windows ExplorerでGLB／VRMを選んだ直後に、モデル取込欄の候補確認を自動実行するようにした。ファイル選択後、`node（配置）`／`mesh（形状）`／`skin（骨・weight）`の候補、完全パス、source情報を表示し、候補欄へスクロールする。確認に失敗した場合は取込を進めず、ファイル形式またはパスを確認するstatusを表示する。既存の候補選択、全mesh取込、保存形式、MCP wire、GLB／VRM出力は変更していない。
+
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Import.cs`（`PickModel()`）
+- Player build: `Builds/GuiModelAutoInspectV1/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260915-015320-803.log`）
+- Core回帰: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2807675c101d433283df2dc3e07f73f6`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-015342-cdd6678f04e5417a9e714a2a70207d3a/report.json`）
+- 実モデル自動一周: private `RadDollV3_VRM.vrm` の取込→全mesh→EditMesh→native Save/Open→GLB／VRM出力→衣装packageを **PASS**（`Artifacts/Authoring-20260915-015427-cc42204ac895443fb34bfc28c4fc601a/report.json`）
+- Unity Bridge: Unity **2022.3.22f1** の隔離受け取りを **PASS**（`Artifacts/BridgeReceiver-20260915-015651-585-d7b33c111c874af7ad14d2131cf6242b/bridge-report.json`、clothing skeleton 2 bones）
+- 実ウィンドウ確認: 新Playerの制作画面とモデル取込欄（path／node／mesh／skin／取込操作）は表示確認済み。Explorer選択から自動候補確認までの一連は、複数ウィンドウ環境でpickerの対象が安定しなかったため、手動受入PASSとは扱わず残す。
+
+この変更で空の制作projectでも、ファイルを選んだ後に候補確認を探す必要がなくなる。自動回帰はコード・Player経路の証拠であり、DPI 150/200%、日本語IME、実EditorWindowでの実衣装fit・貫通・全周見た目、移動／回転／scale済みavatar、Unity更新／削除Undo、VRChat Build & Test／クライアント表示の受入とは分ける。private素材とSDKは公開ツリーへ追加していない。
