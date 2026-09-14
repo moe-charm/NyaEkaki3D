@@ -2801,3 +2801,7 @@ Windows v1の次の完了ゲートは、機能追加ではなく実環境の一�
 # 2026-09-14 実カフpackageのUnity Bridge再確認
 
 現行 main から、実RadDollV3＋手首カフで生成した skinned-clothing.nyaforge.json を Tools/Test-NyaForgeUnityBridge.ps1 へ再投入した。Unity **2022.3.22f1** の隔離receiverは終了コード0、Unity Bridge verification passed、status passed。証跡は $p/bridge-report.json と $p/bridge.log。manifest／GLB／skeleton／bindingのhash、stable BoneId、SkinnedMeshRenderer生成、所有marker、geometry/material受け渡し、変換済みavatar fixtureを再確認した。実EditorWindowでの全周fit・貫通、VRChat Build & Test／実機表示は未受入である。
+
+# 2026-09-14 実Unity Editorのavatar変換観察（部分受入）
+
+privateの `PhysBonesSdkProbe-20260914` をUnity **2022.3.22f1**で開き、実RadDollV3の子階層にある `RadDollV3 Cuff Probe` を確認した。Inspectorには `Skinned Mesh Renderer`、root bone `lower_arm.L (Transform)`、`Nya Forge Skinned Clothing Managed`、stable ObjectId／State Hash／GLB・skeleton・binding hashが表示された。avatar rootのPosition Xを一時的に2、Rotation Yを45、Scaleを1.5へ変更した後も、カフはavatar階層の管理objectとして残り、カフ自身のlocal Position/Rotationは0、local Scaleは1のままだった。最後にavatar rootをPosition 0、Rotation 0、Scale 1へ戻した。これは親子関係とlocal placementの部分観察であり、実アバター全周の貫通・見た目、衣装A→B更新、削除Undo、VRChat内表示を合格とする証拠ではない。
