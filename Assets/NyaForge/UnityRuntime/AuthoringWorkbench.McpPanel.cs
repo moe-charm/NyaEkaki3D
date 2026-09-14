@@ -13,11 +13,17 @@ namespace NyaForge.UnityRuntime
         {
             var panel = new Foldout { text = "AI接続（MCP）", value = false, name = "mcp-panel" };
             panel.AddToClassList("mcp-panel");
+            panel.style.width = Length.Percent(100);
+            panel.style.minWidth = 0;
             var guide = new Label("手順：接続開始 → 表示されたinstance IDをsidecarへ指定")
             {
                 name = "mcp-guide"
             };
             guide.AddToClassList("mcp-guide");
+            guide.style.width = Length.Percent(100);
+            guide.style.minWidth = 0;
+            guide.style.flexShrink = 1;
+            guide.style.whiteSpace = WhiteSpace.Normal;
             panel.Add(guide);
             mcpInstanceField = new TextField("instance ID（sidecar用）") { isReadOnly = true, name = "mcp-instance-id" };
             mcpInstanceField.style.flexDirection = FlexDirection.Column;
@@ -38,6 +44,8 @@ namespace NyaForge.UnityRuntime
             panel.Add(stop);
             var details = new Foldout { text = "接続の使い方（詳細）", value = false, name = "mcp-details" };
             details.AddToClassList("mcp-details");
+            details.style.width = Length.Percent(100);
+            details.style.minWidth = 0;
             var help = new Label("状態・グラフ取得と一部の編集に対応。AIの編集はUndoで戻せます。文書を開き直すと接続を停止します。表示したIDをsidecarの --instance に指定してください。")
             {
                 name = "mcp-help"
