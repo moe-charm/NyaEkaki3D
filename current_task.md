@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15A: 通常候補と全meshの軽量性を分離
+
+`Builds/BoneSubsetV5/NyaForge.exe`でprivateのRadDollV3 VRM候補を通常の単一候補経路へ渡し、candidate確認・EditMesh・native Save/Open・skinned GLB／static GLB／VRM1出力までを含むAuthoring一周を再実行した。Player reportは**PASS**（`Artifacts/Authoring-20260914-153223-c5892e948e6a4b9b9dcebe0c7eea25ce/report.json`）。外部2秒サンプリングは約107.3秒、working set peak **2,730.7MB**、private bytes peak **3,399.6MB**（サンプル51回、`C:/Users/tomoaki/AppData/Local/Temp/nyaforge-single-memory-4fdf5fa76d1a4411a1c59533788ee7df.log`）だった。
+
+同じ候補の全mesh取込計測（NF-V1-15の既存記録）はworking set **3,667MB**、private bytes **4,492.3MB**。条件はいずれも単一PC・同じ実VRM・検証一周を含むため、日常のアイドル編集やGPU描画の予算合否へ直接読み替えない。現段階の出荷方針は、**通常の1メッシュ編集を主経路として軽量化・手動受入を続け、全mesh一括は明示操作の任意機能として隔離する**こと。次は「候補取込直後だけ」「編集一周」「全mesh一括」を別モードで測れる検証入口を用意し、画像デコード・一時mesh保持・出力再読込のどこがピークを作るかを切り分ける。実EditorWindowの長時間操作、別Windows環境、VRChat Build & Test／実機表示は未受入のまま残す。
+
 ## 2026-09-14 NF-V1-10S: 現行PerformanceV39の実衣装一周再確認
 
 privateのRadDollV3 VRM候補を現行`PerformanceV39`へ渡し、全mesh取込、EditMesh、native Save/Open、GLB／VRM1、選択衣装skin package生成、Unity **2022.3.22f1** Bridge受け取りを再実行した。Player **93 checks PASS**（`Artifacts/Authoring-20260914-113055-0cd70cb457dd42d0be9f9af85e84639e/report.json`）、Bridge **16 checks PASS**（`Artifacts/BridgeReceiver-20260914-113333-758-cf279d4ec1eb4efdb11c5d624dabd6ed/bridge-report.json`）。衣装packageは`Artifacts/Authoring-20260914-113055-0cd70cb457dd42d0be9f9af85e84639e/imported-accessory-skin-project/exports/clothing-20260914-023310-da7073/skinned-clothing.nyaforge.json`に生成され、reportの`passed=true`／`status=passed`とpackage存在を再確認した。画面証跡も目視し、1600×1000のviewport・右panel・status footer・スクロール可能なcontrolsを確認した。
