@@ -1,6 +1,6 @@
 # Nya Ekaki 3D Windows v1 手動受入チェック
 
-この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/PerformanceV39/NyaForge.exe`（コード `d5b7666`）。Authoring suiteの自動navigation／Save As・保存状態・再開・viewport確認は50回反復し、`Artifacts/Navigation-Repeated-PerformanceV39-50.json`へ記録した。実RadDollV3一周はV39のprivate候補で確認した。証跡は`Artifacts/Authoring-20260914-083803-8d33406704a64fa58853d2c5220bdfb6/authoring.png`、`Artifacts/Authoring-20260914-081548-c6b6d08ca3f84bef9b44a8614b4fcc8c/authoring.png`、`Artifacts/Authoring-20260914-082145-4f42a375b1224914af0782043c15f279/report.json`。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
+この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/PerformanceV39/NyaForge.exe`（コード `d5b7666`）。Authoring suiteの自動navigation／Save As・保存状態・再開・viewport確認は50回反復し、`Artifacts/Navigation-Repeated-PerformanceV39-official-50.json`へ記録した。実RadDollV3一周はV39のprivate候補で確認した。証跡は`Artifacts/Authoring-20260914-083803-8d33406704a64fa58853d2c5220bdfb6/authoring.png`、`Artifacts/Authoring-20260914-081548-c6b6d08ca3f84bef9b44a8614b4fcc8c/authoring.png`、`Artifacts/Authoring-20260914-082145-4f42a375b1224914af0782043c15f279/report.json`。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
 
 ## 1. 実EditorWindow（Windows）
 
