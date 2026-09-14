@@ -70,3 +70,13 @@
 - body候補（object ID先頭`12707472`）を選択して`選択中を参照として保護（編集不可）`を有効化。status `選択中のobjectを参照として保護しました。編集操作は停止します。`を確認し、viewportクリック後も編集停止状態が維持された。
 
 これはExplorer選択、候補確認、全mesh取込、対象切替、参照保護の実ウィンドウ部分受入である。DPI 150/200%、日本語IME、保存／再開、実衣装の頂点編集・fit・貫通、Unity受け取りの更新／削除Undo、normal／MR／UV0画素、VRChat Build & Testは未受入のまま残る。private素材とSDKは公開ツリーへ追加していない。
+
+## 2026-09-15 MANUAL-03: native制作状態の保存・終了・再開
+
+`Builds/ImportActionsReadableV1/NyaForge.exe`で空の制作プロジェクトへリング形状を追加し、制作画面の`3 保存とUnityへの受け渡し`で次の一周を実ウィンドウ操作した。
+
+- 保存先を`Z:\TextureVoice_local\git\RadDollV3-clothing\private\viewer-data\packs\manual-authoring-reopen-20260915`へ指定し、`保存`を実行。status `保存しました: ...manual-authoring-reopen-20260915`、`project.nyaforge.json`と`blobs/`の生成を確認。
+- アプリを閉じて同じPlayerを再起動し、`制作へ`→`確認・出力`→`3 保存とUnityへの受け渡し`を開いた。
+- 保存先を再指定して`開く`を実行。未保存確認で`変更を破棄して進む`を選択し、status `制作状態を開きました。ここから新しい履歴を始めます。`、保存前と同じobject ID先頭`3f98f4a4`、リング形状の再表示、上部`保存済み`を確認。
+
+これはnative制作状態の保存→アプリ終了→再起動→再開の手動受入PASSである。実RadDollV3の衣装編集・fit・貫通、Unity更新／削除Undo、normal／MR／UV0画素、VRChat Build & Testは未受入のまま残る。検証用リングのprojectはprivate配下で、公開ツリーへ追加していない。

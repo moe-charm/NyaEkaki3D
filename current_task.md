@@ -3627,3 +3627,9 @@ GUI-12で取込アクション文言を短縮した現行`ImportActionsReadableV
 `Builds/ImportActionsReadableV1/NyaForge.exe`をWindows native Computer Use（`@oai/sky`）で起動し、ExplorerのGLB／VRM pickerからprivateの`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-RealModelSmoke\RadDollV3_VRM.vrm`を指定した。候補確認後、縦積みの`node（配置）`／`mesh（形状）`／`skin（骨・weight）`欄、完全path表示、`全meshをまとめて取り込む`を実操作で確認した。全mesh取込後のstatusは`GLB / VRMの全mesh instanceを取り込みました。10 objects`。画面を最大化して10個のスキンモデル一覧、制作対象切替、`メッシュ全体を表示`導線を確認した。
 
 body候補（object ID先頭`12707472`）を選択し、`選択中を参照として保護（編集不可）`を有効化した。status `選択中のobjectを参照として保護しました。編集操作は停止します。`を確認し、viewportクリック後も編集停止状態が維持された。これは実ウィンドウのExplorer／候補／全mesh／対象切替／参照保護の部分受入であり、保存／再開、実衣装の頂点編集・fit・貫通、移動／回転／scale済みavatar、Unity更新／削除Undo、normal／MR／UV0画素、VRChat Build & Testは未受入のまま残る。private素材とSDKは公開ツリーへ追加していない。詳細は`docs/Windows-v1-Manual-Acceptance.md`の2026-09-15節へ同期した。
+
+# 2026-09-15 MANUAL-03: native制作状態の保存・終了・再開
+
+`Builds/ImportActionsReadableV1/NyaForge.exe`の実ウィンドウで、空の制作プロジェクトへリング形状を追加し、private保存先`Z:\TextureVoice_local\git\RadDollV3-clothing\private\viewer-data\packs\manual-authoring-reopen-20260915`へ保存した。`project.nyaforge.json`と`blobs/`の生成、status `保存しました: ...manual-authoring-reopen-20260915`を確認した。その後アプリを終了・再起動し、`制作へ`→`確認・出力`→`3 保存とUnityへの受け渡し`から同じフォルダを指定して`開く`を実行。未保存確認で`変更を破棄して進む`を選択し、status `制作状態を開きました。ここから新しい履歴を始めます。`、保存前と同じobject ID先頭`3f98f4a4`、リング形状の再表示、上部`保存済み`を確認した。
+
+これはnative制作状態の保存→終了→再起動→再開の手動受入PASS。実RadDollV3の衣装編集・fit・貫通、Unity更新／削除Undo、normal／MR／UV0画素、VRChat Build & Testは未受入。検証用projectはprivate配下で公開ツリーへ追加していない。
