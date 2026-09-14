@@ -2823,3 +2823,11 @@ Windows v1の実装順を次のように固定する。
 受け取りGUIのstable bone欄へ、`候補を生成（名前・階層）` と `候補を割当に反映` を追加した。packageのBoneIdとavatar配下Transformについて、まず親子名から作った階層pathの一意一致を探し、見つからない場合だけTransform名の一意一致を候補にする。候補は一意なものだけを別辞書へ保持し、ユーザーが反映ボタンを押すまで現在の割当を変更しない。重複・欠落は件数を表示し、全割当が揃わない限り従来どおり保存・適用を有効化しない。これにより、名前だけの無確認自動装着を避けつつ、171本の初回割当を確認付きで短縮できる。
 
 `NyaForge.UnityBridge.Editor` のソース構文はUnity Editor projectへ反映する対象として確認し、既存Core回帰は **507 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-91513ffd9c2644168de5332754722304`）。候補表示の実Unity画面反映と171本一括割当後の適用は、Editorの再import後に手動受入する。現時点で実packageの読込・Avatar root指定までは確認済みだが、実アバター全周の見た目・貫通・VRChat内表示は未受入である。
+
+# 2026-09-14 実EditorWindowでstable BoneId候補を反映
+
+Unity **2022.3.22f1**のprivateプローブへ最新のEditor/Runtimeソースを反映し、全アセット再import後にC#コンパイルエラーが消えることを確認した（VRChat SDK由来の警告2件のみ）。実カフpackageをファイル選択から読み込み、`RaddollV3 (Transform)`をAvatar rootへ指定した。
+
+`候補を生成（名前・階層）`を実行すると、packageの **171 bones** に対して **169/171本を一意候補として検出**し、残り2本は候補が曖昧な状態で停止した。続けて`候補を割当に反映`を押すと、一覧のTransform欄へ一意候補だけが入り、既存の手動割当を上書きしないことを画面で確認した。候補生成・反映後も、保存・診断・適用の前に全割当確認を要求する表示が残る。
+
+これは実Unity EditorWindowでの候補生成・明示反映の受入であり、169本の自動確定や残り2本の推測割当は行っていない。実衣装の適用、移動・回転・scale済みavatarでの全周見た目・貫通、衣装更新・削除Undo、VRChat Build & Testは引き続き未受入である。
