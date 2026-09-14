@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10R: f010146フィードバックの現行HEAD再照合
+
+提示された`f010146`基準のP1 3件／P2 5件を現行`main` **`5f90cb9`**へ再照合した。MCP batchの参照保護、単一object汎用出力、Polygon→skinの疎material slot、Unity BridgeのMR係数、Paint原画像のnode identity、allowlist 1対象、高DPI bounds、fit対象のobject境界はいずれも後続実装と回帰で解消済みで、同じ本番コードの重複修正は行っていない。詳細は[フィードバック再照合](docs/reviews/2026-09-14-Feedback-f010146-Recheck-5f90cb9.md)へ固定した。
+
+現行HEADのCoreは**506 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f886ca565d5b4d198da6efd94a0f4e76`）。実RadDollV3のPlayer取込→編集→Save/Open→GLB／VRM1→衣装package、Unity 2022.3.22f1 Bridgeの衣装受取とsemantic normal／MRも既存のprivate成果物で確認済み。実EditorWindowのマウス／IME／DPI、実アバター全周fit・貫通・見た目、VRChat内表示は未受入として残す。
+
 ## 2026-09-14 NF-V1-10Q: V39実RadDollV3衣装package一周
 
 privateのRadDollV3 VRM候補を`PerformanceV39`へ渡し、全mesh取込、EditMesh、native Save/Open、GLB／VRM出力、衣装package生成、Unity **2022.3.22f1** Bridge適用まで実行した。Authoring **93 checks PASS**（`Artifacts/Authoring-20260914-111811-e062516475844dda86104aef8211faf1/report.json`）、Bridge **16 checks PASS**（`Artifacts/BridgeReceiver-20260914-112041-541-fa47513ae1124c099583c27acb0c6530/bridge-report.json`）。packageは同Authoring artifact内の`imported-accessory-skin-project/exports/clothing-20260914-022018-bbcb57/skinned-clothing.nyaforge.json`へ生成された。
