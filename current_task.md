@@ -3989,5 +3989,6 @@ Unity **2022.3.22f1** の隔離 `PhysBonesSdkProbe-20260914` で、現行の実R
 - 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Morph.cs`
 - 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.WorkModes.cs`
 - 回帰拡張: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.WorkModeVerification.cs`（確認・出力モードでMorph Panelも開き、装着・骨Panelが閉じることを確認）
-- 検証: 隔離Windows Player `NyaForge-MorphTooltipV1`をbuild。通常Authoring回帰は実行中（完了後のreportを追記する）。
+- 検証: 隔離Windows Player `NyaForge-MorphTooltipV1`をbuildし、通常Authoring回帰 **87 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTooltipV1-src\Artifacts\Authoring-20260915-074029-a4b4d8d5358947d2b529739450e241d4\report.json`）。
 - 境界: tooltipの実マウス表示、長いtarget名・高DPI、実RadDollV3の表情見た目、Unity／VRChat実機は手動受入として残る。
+
