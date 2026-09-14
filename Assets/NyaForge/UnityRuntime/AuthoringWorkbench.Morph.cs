@@ -60,7 +60,8 @@ namespace NyaForge.UnityRuntime
             int selected = morphTargetIds.IndexOf(SelectedMorphTargetId(deformNode)); if (selected < 0) selected = 0;
             morphTargetChoice.choices = labels; morphTargetChoice.SetValueWithoutNotify(labels[selected]);
             string targetId = morphTargetIds[selected];
-            morphTargetChoice.tooltip = MorphTargetTooltip(morphNode.Morphs.Targets[selected].Name, targetId);
+            string activeObjectLabel = ObjectDisplayName(workspace.Document.ActiveObject);
+            morphTargetChoice.tooltip = CurrentMorphTargetTooltip(morphNode.Morphs.Targets[selected].Name, targetId);
             morphWeight.SetValueWithoutNotify(deformNode.MorphWeights.TryGetValue(targetId, out var value) ? value : 0);
             bool fresh = true;
             try
@@ -70,7 +71,7 @@ namespace NyaForge.UnityRuntime
                 else morphNode.Morphs.ValidateFor(input.Mesh);
             }
             catch (AuthoringException) { fresh = false; }
-            morphStatus.text = "target " + morphNode.Morphs.Targets.Count + "個 · 差分 " + morphNode.Morphs.Targets.Sum(target => target.Deltas.Count) + "頂点" + (fresh ? "" : " · stale: mesh topologyを確認");
+            morphStatus.text = "対象: " + activeObjectLabel + " · target " + morphNode.Morphs.Targets.Count + "個 · 差分 " + morphNode.Morphs.Targets.Sum(target => target.Deltas.Count) + "頂点" + (fresh ? "" : " · stale: mesh topologyを確認");
             bool editable = !workspace.Document.ActiveObject.IsStaticProfile && fresh;
             applyMorphWeight.SetEnabled(editable); morphWeight.SetEnabled(editable);
             var expressionLabels = importedVrmExpressions.Count == 0 ? new List<string> { "なし" } : importedVrmExpressions.Select(expression => expression.Name + (expression.IsCustom ? " · custom" : " · preset")).ToList();
@@ -92,6 +93,15 @@ namespace NyaForge.UnityRuntime
                 "\nこのIDで現在のMorph差分とweightを対応付けます。";
         }
 
+        string CurrentMorphTargetTooltip(string name, string targetId)
+        {
+            string result = MorphTargetTooltip(name, targetId);
+            if (workspace != null && !workspace.Document.IsEmpty && workspace.Document.ActiveObject != null)
+                result += "\n現在の制作対象: " + ObjectDisplayName(workspace.Document.ActiveObject) +
+                    "\nobject ID: " + workspace.Document.ActiveObjectId;
+            return result;
+        }
+
         void RefreshMorphTargetTooltip()
         {
             int index = morphTargetChoice == null ? -1 : morphTargetChoice.index;
@@ -104,7 +114,7 @@ namespace NyaForge.UnityRuntime
             string name = morphTargetChoice.value;
             int separator = name.IndexOf(" · ", StringComparison.Ordinal);
             if (separator >= 0) name = name.Substring(0, separator);
-            morphTargetChoice.tooltip = MorphTargetTooltip(name, morphTargetIds[index]);
+            morphTargetChoice.tooltip = CurrentMorphTargetTooltip(name, morphTargetIds[index]);
         }
 
         void SetSelectedMorphWeight()
