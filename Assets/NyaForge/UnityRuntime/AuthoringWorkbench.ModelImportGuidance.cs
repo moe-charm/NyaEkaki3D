@@ -11,7 +11,7 @@ namespace NyaForge.UnityRuntime
                 "取込の流れ\n" +
                 "① ファイルを選ぶ → ②候補を確認 → ③取り込む\n" +
                 "アバターはskin付き、髪・小物はskinなしの候補を選びます。\n" +
-                "迷ったら「このファイルの全mesh instanceを取り込む」でまとめて確認できます。")
+                "迷ったら「全meshをまとめて取り込む」で一度に確認できます。")
             {
                 name = "model-import-guidance"
             };

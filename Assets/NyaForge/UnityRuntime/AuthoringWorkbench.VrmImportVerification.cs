@@ -6,6 +6,7 @@ using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Rig;
 using NyaForge.Authoring.Import;
 using NyaForge.Authoring.Simulation;
+using UnityEngine.UIElements;
 
 namespace NyaForge.UnityRuntime
 {
@@ -22,6 +23,7 @@ namespace NyaForge.UnityRuntime
             Check(modelImportSelectionStatus.text.Contains("mesh 1") && modelImportSelectionStatus.text.Contains("skins 1"), "Mesh selection inventory was not shown in the import GUI");
             Check(modelImportInstanceChoice.ClassListContains("model-import-choice") && modelImportMeshChoice.ClassListContains("model-import-choice") && modelImportSkinChoice.ClassListContains("model-import-choice"), "Model import choices did not use the readable field style");
             Check(modelImportInstanceChoice.style.flexDirection.value == UnityEngine.UIElements.FlexDirection.Column && modelImportMeshChoice.style.flexDirection.value == UnityEngine.UIElements.FlexDirection.Column && modelImportSkinChoice.style.flexDirection.value == UnityEngine.UIElements.FlexDirection.Column, "Model import choices did not stack their labels above the values");
+            Check(modelImportPanel.Q<UnityEngine.UIElements.Button>("model-import-apply").text == "選択候補を取り込む" && modelImportPanel.Q<UnityEngine.UIElements.Button>("model-import-all").text == "全meshをまとめて取り込む", "Model import actions did not use compact readable labels");
             Check(modelImportMeshChoice != null && modelImportMeshChoice.choices.Count == 2 && modelImportMeshChoice.choices[1].Contains("mesh 1"), "Mesh candidates were not exposed by name");
             Check(modelImportSkinChoice != null && modelImportSkinChoice.choices.Count == 1 && modelImportSkinChoice.choices[0].Contains("skin 0"), "Skin candidates were not exposed by name");
             Check(modelImportInstanceChoice != null && modelImportInstanceChoice.choices.Count >= 3 && modelImportInstanceChoice.choices.Any(choice => choice.Contains("Accessory")), "Node instance candidates were not exposed by name");

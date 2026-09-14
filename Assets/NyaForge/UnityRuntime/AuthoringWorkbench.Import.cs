@@ -54,8 +54,8 @@ namespace NyaForge.UnityRuntime
             modelImportPath.RegisterValueChangedCallback(change => modelImportPath.tooltip = string.IsNullOrWhiteSpace(change.newValue) ? "選択したGLB／VRMの完全パス" : change.newValue);
             modelImportPanel.Add(modelImportPath);
             BuildModelImportSelection(modelImportPanel);
-            modelImportPanel.Add(Button("このGLB / VRMをgraph objectへ取り込む", () => Try(() => ImportModel(modelImportPath.value)), "model-import-apply"));
-            modelImportPanel.Add(Button("このファイルの全mesh instanceを取り込む", () => Try(() => ImportAllModelInstances(modelImportPath.value)), "model-import-all"));
+            modelImportPanel.Add(Button("選択候補を取り込む", () => Try(() => ImportModel(modelImportPath.value)), "model-import-apply"));
+            modelImportPanel.Add(Button("全meshをまとめて取り込む", () => Try(() => ImportAllModelInstances(modelImportPath.value)), "model-import-all"));
             parent.Add(modelImportPanel);
         }
 

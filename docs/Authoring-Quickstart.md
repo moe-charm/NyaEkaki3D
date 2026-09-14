@@ -35,7 +35,7 @@ bodyを基準に衣装を調整するときは、制作対象パネルでavatar 
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\New-NyaForgeGlbFixture.ps1
 ```
 
-Playerのビルド後は、候補選択からEditMesh編集、Save/Open、標準skinned GLB出力、再取込までを一周できます。
+Playerのビルド後は、候補選択からEditMesh編集、Save/Open、標準skinned GLB出力、再取込までを一周できます。画面では短い **「選択候補を取り込む」** と **「全meshをまとめて取り込む」** を使い分けます。
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Test-NyaForgeAuthoring.ps1 -BuildName UiNarrowStatusV2 -Width 800 -Height 600 -ImportModel .\Artifacts\NyaForgeGlbFixture\clothing-fixture.glb

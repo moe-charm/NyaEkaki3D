@@ -3605,3 +3605,13 @@ Computer UseのWindows用`@oai/sky`で`Builds/FinalCandidateV1/NyaForge.exe`を�
 GUI-11の最新V4 Playerでprivateの`RadDollV3_VRM.vrm`を再実行し、実モデルの取込→全mesh候補→編集→native Save/Open→GLB／VRM出力→衣装package生成を**PASS**で確認した。Player reportは`Artifacts/Authoring-20260915-000854-8a1e3e5b8aa041c382b52d32839d1303/report.json`、生成した衣装skeleton sidecarは2 bones。生成packageをUnity **2022.3.22f1**の隔離Bridgeへ渡し、manifest／GLB／skeleton／binding hash、stable BoneId、SkinnedMeshRenderer生成、semantic材質変換を含む受け取りも**PASS**（`Artifacts/BridgeReceiver-20260915-001401-193-671cf5d1fd4c4e099cbe42a9b6aa6b9d/bridge-report.json`）。
 
 これはprivate実モデルの自動Player／Bridge経路の証拠であり、実EditorWindowのマウスによる全周fit・貫通・材質見た目、移動／回転／scale済みavatar、VRChat Build & Test／クライアント表示の合格へは読み替えない。private素材とSDKは公開ツリーへ追加していない。
+
+# 2026-09-15 GUI-12: 取込アクション文言の短縮
+
+実ウィンドウで長い取込ボタンの末尾が切れるため、`このGLB / VRMをgraph objectへ取り込む`を`選択候補を取り込む`へ、`このファイルの全mesh instanceを取り込む`を`全meshをまとめて取り込む`へ短縮した。取込処理・保存形式・MCP wireは変更していない。案内文とPlayer検証も同じ呼称へ同期した。
+
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Import.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ModelImportGuidance.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.VrmImportVerification.cs`, `docs/Authoring-Quickstart.md`
+- Player build: `Builds/ImportActionsReadableV1/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260915-002138-057.log`）
+- Core回帰: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-cf7d142174a94026b93c75ab0564e17b`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-002200-90321977e7c84c258db67811cb4b82e3/report.json`）。3つの候補欄の可読性と短い取込アクション文言をPlayer内で検査した。
+- 実ウィンドウ: V4でWindows ExplorerのGLB／VRM picker起動、private RadDollV3 path入力、候補inventory表示、node／mesh／skin縦積みと短いpopup候補を確認済み。新しい短縮ボタンの自動確認は上記Player回帰で行った。
