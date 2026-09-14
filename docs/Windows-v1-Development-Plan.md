@@ -8,7 +8,7 @@ V30〜V31では頂点選択変更の部分refresh境界を`AuthoringWorkbench.Se
 
 **実装済みの機能が多いことを、GUIが制作に使いやすいことの証明にしない。** 以下の従来計画と回帰結果は維持し、最新の着手順は[current_task](../current_task.md)冒頭とGUI計画を優先する。Unity／VRChat・長時間・別Windowsの未受入条件を削除しない。
 
-最新追記（2026-09-15、main `91a4a01`）: private RadDollV3 VRMを入力に、既存のチョーカー生成・Neckへの明示skin-bind・native Save/Open・衣装package出力をWindows Playerで94 checks PASSし、同packageをUnity 2022.3.22f1 Bridgeへ渡す検証もPASSした。実EditorWindowでの頂点編集・fit・貫通・見た目、実SDK／VRChat Build & Test・実機表示は引き続き外部受入として残す。検証 harness はUnity起動時に掃除されるproject `Temp`をPhysBones fixtureの出力先に使わない。
+最新追記（2026-09-15、main `7233ec2`）: private RadDollV3 VRMを入力に、既存のチョーカー生成・頂点1点の編集・Neckへの明示skin-bind・native Save/Open・衣装package出力をWindows Playerで95 checks PASSし、同packageをUnity 2022.3.22f1 Bridgeへ渡す検証もPASSした。実EditorWindowでの全周fit・貫通・見た目、実SDK／VRChat Build & Test・実機表示は引き続き外部受入として残す。検証 harness はUnity起動時に掃除されるproject `Temp`をPhysBones fixtureの出力先に使わない。
 
 ## 従来計画・検証記録
 
