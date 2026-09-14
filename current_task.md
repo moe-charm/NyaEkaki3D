@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09W: 9855d43衣装・材質フィードバックの現行HEAD再照合
+
+提示された`9855d43`基準のP1 3件／P2 5件を、現行HEAD `734ecb4`へ再照合した。avatar移動後の座標、衣装更新時のownership、UV1の明示拒否、sparse material slot、MR係数、Cuff winding、sampler variant、適用前・削除後の割当読込はいずれも後続実装と回帰で解消済みで、本番コードの重複修正は行っていない。詳細は[現行HEAD再照合](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-734ecb4.md)へ固定した。
+
+Coreは**506 passed / 0 failed**。private Unity 2022.3.22f1のRadDollV3 probe、`Builds/PerformanceV30/NyaForge.exe`のAuthoring／navigation／foreground性能回帰、実RadDollV3単一候補のSave/Open・GLB／VRM1 smokeもPASSを維持している。残る受入境界は実EditorWindowのマウス／IME／Explorer、実アバター衣装の全周fit・貫通・見た目、VRChat Build & Test／実機表示である。
+
 ## 2026-09-14 NF-V1-09V: Cuff法線向きのCore回帰追加
 
 報告されていたCuffの面向き逆転を再発させないため、各面の幾何面法線と指定corner normalの内積が正になる回帰を追加した。**Core 506 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-d95cc0756d7f4197b67fd9d3ac7f0e7e`）。既存の閉シェル・頂点属性・片面材質向けwinding契約を維持している。
