@@ -18,6 +18,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Start-NyaForgeAuthor
 制作データの正本は、制作画面の保存で作られるフォルダです。`project.nyaforge.json`がmanifest、`blobs/`が内容本体、許可された`.nyaforge.*` attachmentがrig・表情・揺れ・表示名などの補助情報を持ちます。
 
 ポインターと実体は併用します。`current.StandaloneWindows64.json`のような小さなポインターは、現在採用するrevisionとmanifestの相対パス・hashを示す入口です。確認環境の切替や共有では便利ですが、ポインターだけをバックアップしたり制作正本として編集したりしません。実体はrevision配下の`manifest.json`と関連blobです。ポインターを失っても実体manifestを直接開けますし、実体を失ったポインターは復元できません。制作作品では、`project.nyaforge.json`＋`blobs/`＋許可されたattachmentを一組で保存します。
+ポインターと実体の対応を端末で確認する場合は、`Tools/Test-NyaForgePackPointer.ps1`を実行します。パス脱出、実体欠損、pack／revision不一致、manifest hash不一致を出力前に停止します。
 3. 次回は上部の **最近** から選んで **開く**。履歴は読み込み成功時だけ最大8件保存します。
 
 通常のパックは初期表示で開き、確認セットを選んだ場合は保存した表示状態を復元します。未保存変更があれば切替前に確認します。選択のキャンセルや読み込み失敗では現在のモデル・確認セットを保持します。

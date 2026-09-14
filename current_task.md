@@ -3520,3 +3520,5 @@ V43でprivate一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge
 - 対象: `GeneratedPacks/NyaForgeFixture/current.StandaloneWindows64.json`
 - 検証: ポインターが`manifestPath`と`manifestSha256`を持ち、同じrevision実体へ解決することを確認
 - 残り: ポインター欠損・実体欠損・hash不一致をGUIで診断する手動受入
+
+ポインターの実体対応を確認する`Tools/Test-NyaForgePackPointer.ps1`を追加した。相対manifest pathのroot脱出、必須欄／Windows target、実体欠損、SHA-256、packId／revision一致を検証し、検証済みの絶対パスとrevisionをJSONで返す。GUIのエラー表示と、ポインター欠損・実体欠損・hash不一致の手動受入は残る。
