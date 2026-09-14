@@ -25,6 +25,7 @@ namespace NyaForge.UnityRuntime
                 SetPanelVisible(evidencePanel, true);
                 SetPanelVisible(validationPanel, true);
                 SetPanelVisible(modelImportPanel, true);
+                SetPanelVisible(emptyProjectEntryPanel, true);
                 return;
             }
             SetPanelVisible(objectSelectionPanel, hasObject);
@@ -33,6 +34,7 @@ namespace NyaForge.UnityRuntime
             SetPanelVisible(projectOutputPanel, hasObject);
             SetPanelVisible(evidencePanel, hasObject);
             SetPanelVisible(validationPanel, hasObject);
+            SetPanelVisible(emptyProjectEntryPanel, !hasObject);
 
             // The import panel is opened explicitly by the command bar or its
             // own picker. Keep it visible while the user is reviewing a

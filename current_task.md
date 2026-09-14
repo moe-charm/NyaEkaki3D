@@ -3633,3 +3633,12 @@ body候補（object ID先頭`12707472`）を選択し、`選択中を参照と�
 `Builds/ImportActionsReadableV1/NyaForge.exe`の実ウィンドウで、空の制作プロジェクトへリング形状を追加し、private保存先`Z:\TextureVoice_local\git\RadDollV3-clothing\private\viewer-data\packs\manual-authoring-reopen-20260915`へ保存した。`project.nyaforge.json`と`blobs/`の生成、status `保存しました: ...manual-authoring-reopen-20260915`を確認した。その後アプリを終了・再起動し、`制作へ`→`確認・出力`→`3 保存とUnityへの受け渡し`から同じフォルダを指定して`開く`を実行。未保存確認で`変更を破棄して進む`を選択し、status `制作状態を開きました。ここから新しい履歴を始めます。`、保存前と同じobject ID先頭`3f98f4a4`、リング形状の再表示、上部`保存済み`を確認した。
 
 これはnative制作状態の保存→終了→再起動→再開の手動受入PASS。実RadDollV3の衣装編集・fit・貫通、Unity更新／削除Undo、normal／MR／UV0画素、VRChat Build & Testは未受入。検証用projectはprivate配下で公開ツリーへ追加していない。
+# 2026-09-15 GUI-13: 空projectから保存済み制作を再開する導線
+
+空の制作projectでは従来、保存Panelが対象object追加後まで非表示だったため、保存済み作品を開くにはダミー形状を作って「確認・出力」へ移動する必要があった。右側の制作project直下へ「保存済み制作を再開」欄と「保存済み制作を開く…」ボタンを追加し、既存のWindows Explorer picker／未保存確認／native Open経路へ直接つないだ。自動検証時は既存のcompatibility表示を維持し、通常起動だけ空project欄を表示する。保存形式・MCP wire・GLB/VRM出力は変更していない。
+
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Layout.cs`, `AuthoringWorkbench.ContextVisibility.cs`, `AuthoringWorkbench.State.cs`, `AuthoringWorkbench.StartupProbe.cs`
+- Quickstart: `docs/Authoring-Quickstart.md`
+- Player build: `Builds/EmptyProjectOpenV1/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260915-011934-290.log`）
+- 通常起動probe: **PASS**（`Artifacts/AuthoringStartup-20260915-012001-b73438a6d78c4626a94d7bdd4914fce5/report.json`）。`emptyProjectReopenVisible=true`、再開ボタンの表示高さ、既存の折りたたみ状態をPlayer内で確認した。Playerはreport出力後に終了しない環境挙動があり、probeのPASS marker／report／screenshotを証拠とした。
+- 境界: 実ウィンドウでのExplorer選択と、保存→終了→再起動→再開のmanual acceptanceは`MANUAL-03`で既に確認済み。今回の新ボタン自体の実マウス操作、DPI 150/200%、IME、長いpath、実RadDollV3のfit・材質、Unity／VRChatは未受入のまま。

@@ -17,6 +17,7 @@ namespace NyaForge.UnityRuntime
         // partial implementation; this file keeps only cross-panel handles.
         VisualElement root, view, confirmRow;
         Label status, metrics, selectionLabel, projectLabel, emptyHint;
+        VisualElement emptyProjectEntryPanel;
         TextField projectPath;
         TextField vrmName, vrmAuthors, vrmLicenseUrl;
         IntegerField vertexId;

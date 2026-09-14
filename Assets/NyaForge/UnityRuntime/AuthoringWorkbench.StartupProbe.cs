@@ -41,6 +41,9 @@ namespace NyaForge.UnityRuntime
             var shape = root?.Q<Button>("command-add-shape");
             Check(save != null && save.worldBound.height >= 30, "top command save is not visible");
             Check(shape != null && shape.worldBound.height >= 30, "top shape command is not visible");
+            var reopen = root?.Q<Button>("authoring-open-project-empty");
+            Check(emptyProjectEntryPanel != null && emptyProjectEntryPanel.resolvedStyle.display != DisplayStyle.None, "empty project reopen entry is hidden");
+            Check(reopen != null && reopen.worldBound.height >= 30, "empty project reopen button is not visible");
             Check(root?.worldBound.width > 0 && root?.worldBound.height > 0, "authoring root has no laid out bounds");
 
             string screenshotPath = Path.Combine(output, "authoring-startup.png");
@@ -81,6 +84,7 @@ namespace NyaForge.UnityRuntime
                 shapeCreationExpanded = shapeCreationPanel?.value ?? false,
                 commandSaveVisible = save != null && save.worldBound.height >= 30,
                 commandShapeVisible = shape != null && shape.worldBound.height >= 30,
+                emptyProjectReopenVisible = reopen != null && reopen.worldBound.height >= 30,
                 screenshotHasVisiblePixels,
                 width = Screen.width,
                 height = Screen.height,

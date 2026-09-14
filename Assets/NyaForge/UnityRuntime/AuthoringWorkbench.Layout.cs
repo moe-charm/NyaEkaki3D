@@ -141,6 +141,16 @@ namespace NyaForge.UnityRuntime
                 if (!modelPickerOpen) StartCoroutine(PickModel());
             }, "authoring-open-model"));
             side.Add(new Label("上部の「モデルを追加」または「基本形状を追加」から制作を始めます。"));
+            emptyProjectEntryPanel = new VisualElement { name = "empty-project-entry" };
+            emptyProjectEntryPanel.Add(new Label("保存済み制作を再開") { name = "empty-project-entry-title" });
+            var emptyProjectHelp = new Label("既存の project.nyaforge.json をExplorerから選んで開きます。")
+            {
+                name = "empty-project-entry-help"
+            };
+            emptyProjectHelp.style.whiteSpace = WhiteSpace.Normal;
+            emptyProjectEntryPanel.Add(emptyProjectHelp);
+            emptyProjectEntryPanel.Add(Button("保存済み制作を開く…", BrowseProject, "authoring-open-project-empty"));
+            side.Add(emptyProjectEntryPanel);
             var fixturesPanel = new Foldout { text = "開発者向け確認用fixture", value = false, name = "developer-fixtures" };
             fixturesPanel.Add(new Label("通常の制作には使いません。尺度・回帰確認用のプレートです。"));
             var fixtures = Row(fixturesPanel);
