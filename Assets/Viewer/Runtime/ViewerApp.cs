@@ -75,11 +75,13 @@ namespace Viewer.Runtime
             if (Arg("--startup-output") != null) StartCoroutine(RunStartupProbe(Arg("--startup-output")));
             if (Arg("--navigation-check-output") != null) StartCoroutine(RunNavigationCheck(Arg("--navigation-check-output")));
             if (Arg("--sets-output") != null) StartCoroutine(RunSetsCheck(Arg("--sets-output")));
-            if (Arg("--authoring") == "true" || Arg("--authoring-check-output") != null)
+            if (Arg("--authoring") == "true" || Arg("--authoring-check-output") != null || Arg("--authoring-startup-output") != null)
             {
                 OpenAuthoring();
                 if (Arg("--authoring-check-output") != null && authoringWorkbench != null)
                     authoringWorkbench.RunVerification(Arg("--authoring-check-output"));
+                if (Arg("--authoring-startup-output") != null && authoringWorkbench != null)
+                    authoringWorkbench.RunStartupProbe(Arg("--authoring-startup-output"));
             }
         }
         public static string Arg(string key)

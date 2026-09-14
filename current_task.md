@@ -3568,3 +3568,9 @@ Navigation検証の実引数は`--navigation-check-output`なのに、Viewer／A
 Viewerの設定パネルへ`pack-source-info`を追加し、現在の入口がポインター・確認セット・実体manifestのどれか、実際に読み込んだmanifestのファイル名・revision・完全pathを表示するようにした。保存済みセットを開いた場合も、入口と実体を分けて表示する。ポインターの検証・hash・読み込み処理は既存経路を再利用し、保存形式は変更していない。Navigation回帰へ入口→実体表示の確認を追加した。
 
 `Builds/SourceInfoV1/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260914-231206-990.log`）でNavigation **PASS**（`Artifacts/Navigation-20260914-231227-80feff88b9cb400dbb3adb1998e38b3f/report.json`）を確認し、`settings shows pointer-to-manifest source mapping`が通過した。Authoringも **PASS**（`Artifacts/Authoring-20260914-231231-e269782106c04638b8933d118c3425be/report.json`）。実マウスでの表示確認とDPI／IME／長いpathの手動受入は残る。
+
+# 2026-09-14 GUI-09検証: 通常Authoring起動probeを追加
+
+自動検証時だけPanelを展開するcompatibility分岐と、通常起動時の折りたたみ状態を混同しないよう、`AuthoringWorkbench.RunStartupProbe`と`Tools/Test-NyaForgeAuthoringStartup.ps1`を追加した。通常の空project起動で、graph詳細・保存出力Panelが閉じ、基本形状・上部の保存／形状ボタンが見えることをPlayer自身が確認し、screenshot／reportを保存する。これは実マウス、DPI／IME、実モデル、VRChatの受入とは分ける。
+
+`Builds/StartupProbeV2/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260914-232327-160.log`）をビルドし、通常起動probeを**PASS**で確認した。証拠は`Artifacts/AuthoringStartup-20260914-232348-2b18395db4e244049ecb51ce5e8c660c/report.json`と`authoring-startup.png`。`graphDetailsExpanded=false`、`projectOutputExpanded=false`、`shapeCreationExpanded=true`、保存／形状ボタン表示、画面サイズ1600×1000、スクリーンショット非黒を確認した。probeは非表示起動では黒画像になり得るため、確認時はPlayerを通常ウィンドウで起動し、画像の可視ピクセルも検査する。
