@@ -3930,3 +3930,15 @@ Unity **2022.3.22f1** の隔離 `PhysBonesSdkProbe-20260914` で、現行の実R
 - Authoring自動検証: **87 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ShapeInputsV2-src\Artifacts\Authoring-20260915-063948-4b3e0d858ae1425dbf999c7859b1c3d5\report.json`）。追加項目 `shape creation inputs: custom dimensions survive refresh and preset changes restore only the selected preset defaults` を確認。
 - Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-effb6d4787db4461b3aaff3339cc6704`）
 - 境界: Player自動UI回帰であり、実マウスのDPI別表示、実RadDollV3への全周fit／貫通／材質見た目、Unity実SDK、VRChat実機受入は完了扱いにしない。
+
+# 2026-09-15 GUI-05: 制作正本ファイルの表示
+
+保存・再開用のnative制作状態が、入力した制作フォルダのどこにあるか画面だけでは分かりにくかったため、保存欄の直下へ `project.nyaforge.json` のフルパスを表示するラベルを追加した。フォルダ欄の保存方式とExplorer選択は変更していない。長いパスは1行表示でレイアウトを押し広げず、ラベルのツールチップに実体パス全体を入れる。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.State.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ProjectOutput.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.PersistenceRefresh.cs`
+- 回帰: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Verification.cs`（保存直後に正本ファイル名が表示されることを確認）
+- Unity 6000.4.3f1 隔離Windows Player `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ManifestPathV1-src\Builds\ManifestPathV2\NyaForge.exe`：build成功
+- Authoring自動検証: **87 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ManifestPathV1-src\Artifacts\Authoring-20260915-065717-5a9a6f3a006148a1850fa9e28dab5d45\report.json`）。正本パス表示追加後もruntime pointer、保存／再開／出力導線を含む一周が合格。
+- 境界: フルパス表示と自動UI回帰の確認であり、実マウスのDPI別文字サイズ、実RadDollV3の外観、Unity実SDK、VRChat実機受入は完了扱いにしない。

@@ -95,6 +95,7 @@ namespace NyaForge.UnityRuntime
                 checks.Add("native project Explorer picker is available and accepts project.nyaforge.json");
                 string emptyPath = Path.Combine(output, "empty");
                 projectPath.SetValueWithoutNotify(emptyPath); SaveProject();
+                Check(projectManifestLabel != null && projectManifestLabel.text.EndsWith(ProjectStore.ManifestName, StringComparison.OrdinalIgnoreCase), "Project manifest path was not shown in the output panel");
                 string emptyId = workspace.Document.DocumentId;
                 OpenProject();
                 Check(workspace.Document.IsEmpty && workspace.Document.DocumentId == emptyId && !HasUnsaved, "Empty save/reopen failed");

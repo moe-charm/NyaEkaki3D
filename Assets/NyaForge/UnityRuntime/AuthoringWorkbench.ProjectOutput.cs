@@ -23,6 +23,11 @@ namespace NyaForge.UnityRuntime
             projectPath.style.flexDirection = FlexDirection.Column;
             projectPath.tooltip = "project.nyaforge.json と blobs を保存するフォルダ。開く場合もフォルダを指定します。";
             panel.Add(projectPath);
+            projectManifestLabel = new Label { name = "authoring-project-manifest-path" };
+            projectManifestLabel.style.whiteSpace = WhiteSpace.NoWrap;
+            projectManifestLabel.style.overflow = Overflow.Hidden;
+            projectManifestLabel.tooltip = "この制作状態の正本ファイル。表示が省略される場合はここへマウスを載せると全文を確認できます。";
+            panel.Add(projectManifestLabel);
             var files = Row(panel);
             files.Add(Button("保存", SaveProject, "authoring-save"));
             files.Add(Button("開く", () => ConfirmReplace(OpenProject), "authoring-open"));
