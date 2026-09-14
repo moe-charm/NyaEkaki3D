@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10C: GLB解析中BINの重複コピー削減
+
+GLB読込時、skin importerがskin属性を除いた静的rootを評価する際に、モデルサイズのBINを複製していた。`GlbDocument`へ解析中BINを共有できる生成経路を追加し、`GlbDocumentReader`とskin／source-skinの静的評価で同一不変BINを再利用する。既存の通常生成子は防御コピーを維持する。変更は `66a45b3` に固定した。
+
+Coreは**506 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-d8a1d2c201de4794b3dee22da8185dda`）。Unity `6000.4.3f1`のV34 Player build、合成Authoring suite、private RadDollV3候補のSave/Open・VRM1出力もPASS（実候補report `Artifacts/Authoring-20260914-100805-568c43d580de4d4abf731793a7dd7843/report.json`）。これは一時BIN保持を減らす実装と経路回帰の証拠であり、候補取込の軽量性を合格とするものではない。実アバター全周fit／見た目、実EditorWindow操作、VRChat実機は引き続き未受入である。
+
 ## 2026-09-14 NF-V1-10B: f010146フィードバックの現行HEAD再照合
 
 提示された `f010146` 基準のP1 3件／P2 5件を、現行 `main` **`403078b`**へ再照合した。MCP batchの参照保護、単一object汎用出力の保護検査、疎なmaterial slot、Unity Bridge MR係数、Paint原画像のnode identity、納品対象allowlist、高DPI bounds、fit対象のobject境界はいずれも後続実装と回帰で解消済みで、本番コードの重複修正は行っていない。詳細は[フィードバック再照合](docs/reviews/2026-09-14-Feedback-f010146-Recheck-403078b.md)へ固定した。
