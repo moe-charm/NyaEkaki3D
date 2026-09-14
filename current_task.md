@@ -2797,3 +2797,7 @@ Coreは **507 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 現行 `main` (`b7237bb`) で `dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore` を再実行し、**507 passed / 0 failed** を確認した。artifact は `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-bc81d7dd83934127808e42f22b3e246d`。GLBの骨・skin・材質・UV0制限・衣装package・VRM node map・Spring・保存再開・Undo/Redoを含むCore回帰は通過している。
 
 Windows v1の次の完了ゲートは、機能追加ではなく実環境の一貫性確認に固定する。順序は、(1) 実Unity Editorで移動・回転・scaleしたavatarへの衣装適用、衣装A→B更新、削除・Undo、(2) material slot／semantic normal・MR／UV0の見た目確認、(3) Unity受け取り後の保存・再開とVRChat Build & Test、(4) 受入結果を記録してpush、である。Mac、Quest、複数avatar、完全なBlender代替編集はWindows v1完了後へ送る。実RadDollV3と手首カフのpackage生成・Bridge受け渡しは確認済みだが、実EditorWindowでの全周fit・貫通ゼロ・VRChat内表示は未受入のまま残す。
+
+# 2026-09-14 実カフpackageのUnity Bridge再確認
+
+現行 main から、実RadDollV3＋手首カフで生成した skinned-clothing.nyaforge.json を Tools/Test-NyaForgeUnityBridge.ps1 へ再投入した。Unity **2022.3.22f1** の隔離receiverは終了コード0、Unity Bridge verification passed、status passed。証跡は $p/bridge-report.json と $p/bridge.log。manifest／GLB／skeleton／bindingのhash、stable BoneId、SkinnedMeshRenderer生成、所有marker、geometry/material受け渡し、変換済みavatar fixtureを再確認した。実EditorWindowでの全周fit・貫通、VRChat Build & Test／実機表示は未受入である。
