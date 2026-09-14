@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15O: status footerの狭幅折返し
+
+診断statusをprobeだけ一行・hiddenにしていた分岐を廃止し、実EditorWindowと自動probeの双方で折返し・表示するようにした。これにより800×600の長い取込診断も画面内で読める。`Builds/BoneSubsetV16/NyaForge.exe`のprivate RadDollV3 `-ImportOnly` probeは**PASS**（`Artifacts/Authoring-20260914-165134-a0c1b46b609043d4a29373c9c2342aeb/report.json`）。画像`import-only.png`で、statusが2行に折り返され、右側controlsのクイック導線とスクロールを維持することを確認した。Coreは直前の**509 passed / 0 failed**を正とする。実EditorWindowのマウス・IME・DPI・Explorer受入、実アバター全周fit／貫通／見た目、VRChat Build & Test／実機表示は未受入として残す。
+
 ## 2026-09-14 NF-V1-15N: V15狭幅取込表示確認
 
 `Builds/BoneSubsetV15/NyaForge.exe`を800×600で起動する`-ImportOnly` probeを実行し、private RadDollV3 VRMの取込、自動Frame、`モデルを開く…`、右側controlsのスクロールを**PASS**した（`Artifacts/Authoring-20260914-164924-2ad2784091a74cbcb89a01d97a13e3e9/report.json`、画像`import-only.png`）。狭幅ではviewportとcontrolsが縦に収まり、下段はスクロールで操作できる。自動probeのstatus footerは診断長のため一行表示だが、実EditorWindowでは折返し・tooltipを使う。実マウス・IME・DPI・Explorerの手動受入は未完了として残す。
