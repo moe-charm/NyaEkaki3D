@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10N: Windows native file picker回帰
+
+`Tests/WindowsPicker/WindowsPicker.Tests.csproj`へ、Viewer wrapperが参照するNyaForge側のnative picker実装を明示的に含めた。現行Windowsでnative dialogのキャンセルと、日本語・空白・アポストロフィを含むファイル選択を実行し、**2/2 PASS**した。これはWindows API／パス受け渡しの自動回帰であり、実EditorWindow内の実マウス・IME・高DPI操作を完了扱いしない。
+
 ## 2026-09-14 NF-V1-10M: 50回反復起動・終了回帰
 
 `PerformanceV39`のWindows Playerを新規プロセスで50回起動し、標準fixtureのnavigation／Save As・保存状態・再開・viewport確認を各回で実行した。**50/50 PASS**。集約結果は`Artifacts/Navigation-Repeated-PerformanceV39-50.json`。再現用の`Tools/Test-NyaForgeNavigationRepeated.ps1`を追加し、`-Count 2`の自己検証もPASSした（`Artifacts/Navigation-Repeated-PerformanceV39-smoke.json`）。
