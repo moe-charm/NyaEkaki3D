@@ -8,7 +8,50 @@ namespace NyaForge.UnityRuntime
 {
     public sealed partial class AuthoringWorkbench
     {
-        string sourceSkinDisplayKey;
+        readonly struct SourceSkinDisplayCacheKey : IEquatable<SourceSkinDisplayCacheKey>
+        {
+            readonly string graphId;
+            readonly string evaluationHash;
+            readonly string poseHash;
+            readonly string sourceHash;
+            readonly string bindingHash;
+
+            internal SourceSkinDisplayCacheKey(string graphId, string evaluationHash, string poseHash, string sourceHash, string bindingHash)
+            {
+                this.graphId = graphId ?? "";
+                this.evaluationHash = evaluationHash ?? "";
+                this.poseHash = poseHash ?? "";
+                this.sourceHash = sourceHash ?? "";
+                this.bindingHash = bindingHash ?? "";
+            }
+
+            public bool Equals(SourceSkinDisplayCacheKey other)
+            {
+                return string.Equals(graphId, other.graphId, StringComparison.Ordinal)
+                    && string.Equals(evaluationHash, other.evaluationHash, StringComparison.Ordinal)
+                    && string.Equals(poseHash, other.poseHash, StringComparison.Ordinal)
+                    && string.Equals(sourceHash, other.sourceHash, StringComparison.Ordinal)
+                    && string.Equals(bindingHash, other.bindingHash, StringComparison.Ordinal);
+            }
+
+            public override bool Equals(object obj) { return obj is SourceSkinDisplayCacheKey other && Equals(other); }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int hash = 17;
+                    hash = hash * 31 + graphId.GetHashCode();
+                    hash = hash * 31 + evaluationHash.GetHashCode();
+                    hash = hash * 31 + poseHash.GetHashCode();
+                    hash = hash * 31 + sourceHash.GetHashCode();
+                    return hash * 31 + bindingHash.GetHashCode();
+                }
+            }
+        }
+
+        SourceSkinDisplayCacheKey sourceSkinDisplayKey;
+        bool hasSourceSkinDisplayKey;
         GraphMeshValue sourceSkinDisplayValue;
         string sourceSkinProjectionKey;
 
@@ -21,9 +64,9 @@ namespace NyaForge.UnityRuntime
             var bindingNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);
             var currentBinding = bindingNode != null && evaluation.SkinBindingOutputs.TryGetValue(bindingNode.NodeId, out var bindingValue) ? bindingValue.Binding : bindingNode?.Binding;
             string bindingKey = currentBinding?.ContentHash ?? "";
-            string key = graph.GraphId + ":" + (evaluation.Output?.SnapshotHash ?? "") + ":" + poseHash + ":" + importedRigSession.SourceHash + ":" + bindingKey;
-            if (key == sourceSkinDisplayKey) return sourceSkinDisplayValue;
-            sourceSkinDisplayKey = key; sourceSkinDisplayValue = null;
+            var key = new SourceSkinDisplayCacheKey(graph.GraphId, evaluation.Output?.SnapshotHash, poseHash, importedRigSession.SourceHash, bindingKey);
+            if (hasSourceSkinDisplayKey && key.Equals(sourceSkinDisplayKey)) return sourceSkinDisplayValue;
+            sourceSkinDisplayKey = key; hasSourceSkinDisplayKey = true; sourceSkinDisplayValue = null;
             try { sourceSkinDisplayValue = SourceSkinGraphAdapter.ApplyToEvaluation(evaluation, graph, importedRigSession, currentBinding); }
             catch (AuthoringException) { }
             return sourceSkinDisplayValue;
@@ -39,7 +82,7 @@ namespace NyaForge.UnityRuntime
         {
             if (!IsGraph || workspace?.Preview?.Evaluation == null)
             {
-                sourceSkinDisplayKey = sourceSkinProjectionKey = ""; sourceSkinDisplayValue = null; return;
+                hasSourceSkinDisplayKey = false; sourceSkinProjectionKey = ""; sourceSkinDisplayValue = null; return;
             }
             var graph = workspace.Document.ActiveObject.Graph;
             var final = SourceSkinDisplayValue();
