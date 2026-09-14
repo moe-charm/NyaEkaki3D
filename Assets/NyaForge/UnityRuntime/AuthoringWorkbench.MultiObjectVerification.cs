@@ -34,6 +34,8 @@ namespace NyaForge.UnityRuntime
                 Check(ObjectDisplayName(workspace.Document.ActiveObject) == "白虎ボディ" &&
                     root.Q<Button>("object-select-" + activeId).text.Contains("白虎ボディ"),
                     "Object display name was not applied to the active selector");
+                Check(commandBarContext.text.Contains("白虎ボディ") && commandBarContext.tooltip.Contains(activeId),
+                    "Command bar did not expose the active display name and full object identity");
                 var mcpLabel = SetObjectLabelMcp(new ObjectLabelRequest(workspace.InstanceId, workspace.Document.DocumentId,
                     workspace.Document.DocumentRevision, workspace.Attachments.ContentHash, activeId, "AI経由ボディ"));
                 Check((bool)mcpLabel["success"] && ObjectDisplayName(workspace.Document.ActiveObject) == "AI経由ボディ",

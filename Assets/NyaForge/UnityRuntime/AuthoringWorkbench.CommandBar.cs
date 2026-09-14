@@ -49,13 +49,15 @@ namespace NyaForge.UnityRuntime
             if (document.IsEmpty)
             {
                 commandBarContext.text = "制作対象: 未選択（モデルまたは基本形状を追加）";
+                commandBarContext.tooltip = "モデルまたは基本形状を追加すると、制作対象の名前と役割がここに表示されます。";
             }
             else
             {
                 var active = document.ActiveObject;
                 var kind = active.IsStaticProfile ? "モデル" : "制作物";
-                commandBarContext.text = "制作対象: " + kind + " · " + ShortId(document.ActiveObjectId) +
+                commandBarContext.text = "制作対象: " + ObjectDisplayName(active) + " · " + kind + " · " + ShortId(document.ActiveObjectId) +
                     (workspace.IsDirty ? " · 未保存" : " · 保存済み");
+                commandBarContext.tooltip = ObjectDisplayDetails(active) + "\n内部ID " + document.ActiveObjectId;
             }
             bool canEdit = !document.IsEmpty && !document.ActiveObject.IsStaticProfile;
             commandBarModel.SetEnabled(!modelPickerOpen && (document.IsEmpty || canEdit));

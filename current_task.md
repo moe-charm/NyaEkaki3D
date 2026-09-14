@@ -3697,3 +3697,21 @@ Core／Bridgeの自動回帰はコード変更後に再実行する。実SDK・�
 `Builds/GuiModelAutoInspectV1/NyaForge.exe`をWindows native `@oai/sky`で操作し、Explorerからprivateの`Z:\TextureVoice_local\git\RadDollV3-clothing\private\viewer-data\packs\avatar-raddollv3-local\RadDollV3_VRM.vrm`を選択した。自動候補確認後、`選択候補を取り込む`を実行し、status `GLB skinを取り込みました。mesh 0・skin 0・mesh 0・bone 171・weight 2990・morphなし`を確認した。取込診断には`MATERIALS_NOT_RETAINED`、`EXTENSIONS_PARTIAL`、材質画像の注意1件が表示された。
 
 これは実Explorer選択・候補確認・単一skin取込の手動受入PASSである。viewportで対象メッシュが表示されたことも確認した。材質保持・全mesh取込・実衣装編集・fit／貫通・保存再開・Unity適用・VRChat表示は別受入として未完了のまま残す。private素材と生成物は公開ツリーへ追加していない。
+
+# 2026-09-15 GUI-15: コマンドバーへ現在対象の表示名と完全IDを表示
+
+上部の制作対象表示が短い内部IDだけだったため、複数モデル編集時に何を操作しているか判別しにくかった。`AuthoringWorkbench.CommandBar`で、現在対象の表示名（カスタム名または役割名）・種別・短いID・保存状態を常時表示し、tooltipへ完全object IDとgraph情報を出すようにした。空projectでは従来の開始案内tooltipを表示する。対象一覧のstable ID、保存形式、MCP wireは変更していない。
+
+- [x] 表示名／役割名をコマンドバーへ反映
+- [x] tooltipへ完全object IDを反映
+- [x] Multi-object Player検証へ表示名・ID確認を追加
+- [ ] 実マウスで長い日本語名・DPI 150/200%の折返しを確認
+
+# 2026-09-15 GUI-15: コマンドバーの現在対象表示
+
+上部のコマンドバーが短いobject IDだけを示していたため、複数モデル編集時に現在の対象を判別しにくかった。`AuthoringWorkbench.CommandBar`を、表示名（カスタム名または役割名）・種別・短いID・保存状態の表示へ更新し、tooltipには完全object IDとgraph情報を残した。空projectではモデル／基本形状の開始案内をtooltipへ表示する。Multi-object検証へ表示名と完全IDの確認を追加した。
+
+- Player build: `Builds/CommandContextV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-023657-149.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-023719-20f7d87d697e4efd9cb09e132bb949b3/report.json`、86 checks）。multi-object表示名／MCP更新／Undo／Redo／Save/Openを含む。
+- Core回帰: **512 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-423186c6f063442b9990083304938634`）
+- 未受入: 実マウスでの長い日本語名・DPI 150/200%の折返し、実RadDollV3衣装fit／貫通／材質、Unity／VRChat実機。
