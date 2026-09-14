@@ -450,8 +450,13 @@ namespace NyaForge.Authoring
                 // Validate the exact bytes before publishing the destination. This
                 // keeps a malformed writer result from appearing as a successful
                 // export even when a later consumer would reject it.
-                var inventory = GlbSceneInventoryReader.Read(bytes);
-                ValidateResourceReadback(bytes, inventory);
+            // Parse the exact output once and let every bounded resource
+            // reader share its immutable document. Re-reading from `bytes`
+            // for each mesh/skin reparsed JSON and copied the BIN chunk each
+            // time, creating a large transient peak for multi-resource GLBs.
+            var document = GlbDocumentReader.Read(bytes);
+            var inventory = GlbSceneInventoryReader.Read(document);
+            ValidateResourceReadback(document, inventory);
                 string path = Path.Combine(staging, FileName); File.WriteAllBytes(path, bytes);
                 string reportPath = Path.Combine(staging, ReportFileName);
                 var objectReports = new JArray();
@@ -511,12 +516,13 @@ namespace NyaForge.Authoring
             }
         }
 
-        static void ValidateResourceReadback(byte[] bytes, GlbSceneInventory inventory)
+        static void ValidateResourceReadback(GlbDocument document, GlbSceneInventory inventory)
         {
             // Validate each emitted resource through the same bounded readers
             // used by import. This catches an exporter that writes a structurally
             // valid scene whose mesh/skin accessors the authoring pipeline cannot
             // reopen. Read each resource once even when several nodes alias it.
+            Checks.Require(document != null, "INVALID_IMPORT", "GLB document is required for resource readback.");
             var skinned = new HashSet<string>(StringComparer.Ordinal);
             var staticMeshes = new HashSet<int>();
             foreach (var instance in inventory.Instances)
@@ -524,11 +530,11 @@ namespace NyaForge.Authoring
                 if (instance.SkinIndex.HasValue)
                 {
                     string key = instance.MeshIndex.ToString(System.Globalization.CultureInfo.InvariantCulture) + ":" + instance.SkinIndex.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    if (skinned.Add(key)) GlbSkinImporter.Read(bytes, instance.MeshIndex, instance.SkinIndex.Value);
+                    if (skinned.Add(key)) GlbSkinImporter.ReadFromDocument(document, instance.MeshIndex, instance.SkinIndex.Value, null);
                 }
                 else
                 {
-                    if (staticMeshes.Add(instance.MeshIndex)) GlbImporter.Read(bytes, instance.MeshIndex);
+                    if (staticMeshes.Add(instance.MeshIndex)) GlbImporter.ReadDocument(document, instance.MeshIndex);
                 }
             }
             // A mesh resource may be present without a node instance. The
@@ -536,7 +542,7 @@ namespace NyaForge.Authoring
             // those resources too instead of silently skipping them.
             var instancedMeshes = new HashSet<int>(inventory.Instances.Select(instance => instance.MeshIndex));
             foreach (var mesh in inventory.Meshes)
-                if (!instancedMeshes.Contains(mesh.MeshIndex)) GlbImporter.Read(bytes, mesh.MeshIndex);
+                if (!instancedMeshes.Contains(mesh.MeshIndex)) GlbImporter.ReadDocument(document, mesh.MeshIndex);
         }
     }
 
