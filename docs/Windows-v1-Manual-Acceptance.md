@@ -126,3 +126,11 @@ Core／Bridgeの自動回帰はコード変更後に再実行する。実SDK・�
 - Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-023719-20f7d87d697e4efd9cb09e132bb949b3/report.json`、86 checks）。multi-object表示名／MCP更新／Undo／Redo／Save/Openを含む。
 - Core回帰: **512 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-423186c6f063442b9990083304938634`）
 - 未受入: 実マウスでの長い日本語名・DPI 150/200%の折返し、実RadDollV3衣装fit／貫通／材質、Unity／VRChat実機。
+
+# 2026-09-15 MANUAL-05: 実RadDollV3取込からチョーカー頂点編集・保存再開
+
+`Builds/GuiModelAutoInspectV1/NyaForge.exe`をWindows native `@oai/sky`で操作し、privateのRadDollV3 VRMをExplorerから選択、自動候補確認後に`全meshをまとめて取り込む`を実行した。statusは`GLB / VRMの全mesh instanceを取り込みました。10 objects`。上部の`基本形状を追加`からリング（チョーカー）を追加し、制作対象一覧で追加された`基本形状`を選択、`他の制作対象も表示`をオフにして単独表示した。`メッシュ全体を表示`で形状をフレームし、viewportの頂点をクリックして選択、X方向10mmの`選択頂点を移動`を実行した。status `編集を反映しました。元に戻す・やり直すで確認できます。`を確認した。
+
+保存先`Z:\TextureVoice_local\git\RadDollV3-clothing\private\viewer-data\packs\manual-real-model-choker-20260915`へ`保存`を実行し、status `保存しました`と保存済み表示を確認した。同じ画面で`開く`を実行し、status `制作状態を開きました。ここから新しい履歴を始めます。`、リングの再表示、`保存済み`表示を確認した。
+
+これは実RadDollV3のExplorer取込→全mesh→基本形状追加→対象切替→単独表示→頂点選択／移動→native Save/Openの手動受入PASSである。材質の見た目、衣装skin-bind／fit／貫通、Unity受け取り、VRChat Build & Testは別受入として未完了のまま残す。private素材と制作データは公開ツリーへ追加していない。
