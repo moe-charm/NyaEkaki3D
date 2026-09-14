@@ -4028,3 +4028,13 @@ source-skin表示と投影のキャッシュ判定は、従来の複数hashを�
 - Authoring自動検証: **88 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-082218-2508a45a9961408283b3b1dc6c9328ff\report.json`）
 - Core: **515 passed / 0 failed**（直近Coreソース変更なし）
 - 境界: 自動回帰によるキャッシュ無効化経路の確認であり、実EditorWindowのGC/native memory計測、実マウスのDPI／IME、実RadDollV3全周fit・貫通・材質見た目、Unity実SDK、VRChat実機受入は未完了。
+
+# 2026-09-15 REAL-CLOTHING-08: 軽量化後の実RadDollV3一周
+
+最新のfitサマリー評価キャッシュ／解放境界を反映した隔離Windows Player `RealClothingV7`で、private `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-RealModelSmoke\RadDollV3_VRM.vrm`を使った実モデル自動一周を再実行した。取込→全mesh→制作形状追加→頂点編集→skin／装着→native Save/Open→GLB／VRM出力→衣装package生成まで **97 checks PASS**。生成packageのskeleton sidecarは4 bonesで、Unity **2022.3.22f1** Bridge受け取りも **16 checks PASS**（status `passed`）となった。
+
+- Player: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Builds\RealClothingV7\NyaForge.exe`
+- Player report: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-082445-5015fc2033b64326ace23df85ea75d2b\report.json`
+- Clothing package: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-082445-5015fc2033b64326ace23df85ea75d2b\real-clothing-project\exports\clothing-20260914-232807-0f560a\skinned-clothing.nyaforge.json`
+- Bridge report: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\BridgeReceiver-20260915-082831-438-16d1b54182ec46b59de121237461fc7d\bridge-report.json`
+- 境界: これはprivate実モデルの自動Player／Bridge経路の確認であり、実EditorWindowのマウス操作、全周fit・貫通・材質見た目、avatar移動／回転／scale、VRChat Build & Test／実機表示、販売品質の合格には読み替えない。private素材とUnity SDKは公開ツリーへ追加していない。
