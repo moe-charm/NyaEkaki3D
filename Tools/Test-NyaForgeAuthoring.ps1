@@ -10,6 +10,7 @@ param(
     [switch]$ImportAllModel,
     [switch]$ImportOnly,
     [switch]$GlbExportOnly,
+    [switch]$VrmExportOnly,
     [switch]$VrmExport,
     [string]$McpProbe,
     [string]$ImportModel,
@@ -46,9 +47,14 @@ if ($ImportOnly) {
     $arguments += '--authoring-import-only'
 }
 if ($GlbExportOnly) {
-    if ($ImportOnly) { throw '-GlbExportOnly cannot be combined with -ImportOnly.' }
+    if ($ImportOnly -or $VrmExportOnly) { throw '-GlbExportOnly cannot be combined with -ImportOnly or -VrmExportOnly.' }
     if (-not $ImportModel) { throw '-GlbExportOnly requires -ImportModel.' }
     $arguments += '--authoring-glb-output-only'
+}
+if ($VrmExportOnly) {
+    if ($ImportOnly -or $GlbExportOnly -or $VrmExport) { throw '-VrmExportOnly cannot be combined with -ImportOnly, -GlbExportOnly, or -VrmExport.' }
+    if (-not $ImportModel) { throw '-VrmExportOnly requires -ImportModel.' }
+    $arguments += '--authoring-vrm-export-only'
 }
 if ($VrmExport) { $arguments += '--authoring-vrm-export' }
 if ($SecondaryMotionMcp) {

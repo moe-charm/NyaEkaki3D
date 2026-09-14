@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15E: VRM1出力だけの測定入口
+
+VRM1出力のピークを通常GLB／全mesh経路と分けるため、`Tools/Test-NyaForgeAuthoring.ps1 -VrmExportOnly -ImportModel <path>`／`--authoring-vrm-export-only`を追加した。probeは取込後にnative projectを保存・再開し、VRM1 packageを一度だけ出力してから、検証済みの空projectへ戻す。初回実行でclean continuation pathの未作成を検出して修正し、`Builds/BoneSubsetV11/NyaForge.exe`で実RadDollV3を使ったprobeは**PASS**（`Artifacts/Authoring-20260914-161914-1e5a9d01f19c409e8027a262d1a740a4/report.json`）。出力`model.vrm`は**85,585,656 bytes**、外部2秒サンプリングは約40.5秒、working set peak **2,428.9MB**、private bytes peak **3,145.5MB**（`C:/Users/tomoaki/AppData/Local/Temp/nyaforge-vrm-output-memory-393ceeb7e5b5474393daad5f05bdf1d7.log`）。これはVRM1のpackage・readbackと取込・保存再開を含む単一環境の一時ピークで、通常編集のアイドル予算ではない。VRM1は通常操作から分離した任意出力として扱い、次の最適化は`File.ReadAllBytes`とpackage再構築の一時配列を測定点ごとに削減する。
+
 ## 2026-09-14 NF-V1-15D: GLB readbackの共有解析
 
 GLB出力後のreadbackで、mesh／skinごとにGLB JSONとBINを再読込していた経路を、`GlbDocumentReader`で1回だけ解析した不変documentを`GlbSceneInventoryReader`・`GlbImporter`・`GlbSkinImporter`で共有するようにした。出力検証の対象・reader・reportは維持している。Coreは**509 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-8338cd643acf4bd9bc8264af6e1b26a6`）。`Builds/BoneSubsetV9/NyaForge.exe`の実RadDollV3 GLB-output-only probeも**PASS**（`Artifacts/Authoring-20260914-161455-568d9bd86fec4c8f8d6efd6a7d89aa9d/report.json`）。外部2秒サンプリングは約22.3秒、working set peak **1,669.5MB**、private bytes peak **2,156.4MB**（`C:/Users/tomoaki/AppData/Local/Temp/nyaforge-glb-output-memory-56d44c799a684d3aaa5b329fdd4a0229.log`）。直前のBIN長取得修正後の同条件2,238.2MBからprivate bytesは約82MB低下したが、working setはOS状態の影響を受けるため、単一サンプルを一般保証や軽量性合格とは扱わない。次はVRM1のpackage経路と、実EditorWindowの手動保存・再開を別測定する。
