@@ -216,14 +216,7 @@ namespace NyaForge.UnityRuntime
                     // Selection refreshes call this summary frequently. Graphs
                     // are immutable, so reuse the last evaluation while the
                     // selected target still points at the same graph instance.
-                    if (target.ObjectId != accessoryFitSummaryTargetObjectId ||
-                        !ReferenceEquals(target.Graph, accessoryFitSummaryTargetGraph))
-                    {
-                        accessoryFitSummaryTargetObjectId = target.ObjectId;
-                        accessoryFitSummaryTargetGraph = target.Graph;
-                        accessoryFitSummaryTargetEvaluation = target.EvaluateGraph();
-                    }
-                    var evaluation = accessoryFitSummaryTargetEvaluation;
+                    var evaluation = EvaluateAttachmentTarget(target);
                     var bind = target.Graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);
                     if (bind != null && evaluation.MeshInputs.TryGetValue(bind.NodeId, out var meshValue) && meshValue?.Mesh != null)
                     {
@@ -262,6 +255,19 @@ namespace NyaForge.UnityRuntime
             accessoryFitSummaryTargetGraph = null;
             accessoryFitSummaryTargetEvaluation = null;
             accessoryFitSummaryTargetObjectId = "";
+        }
+
+        GraphEvaluation EvaluateAttachmentTarget(AuthoringObject target)
+        {
+            if (target?.Graph == null) return null;
+            if (target.ObjectId != accessoryFitSummaryTargetObjectId ||
+                !ReferenceEquals(target.Graph, accessoryFitSummaryTargetGraph))
+            {
+                accessoryFitSummaryTargetObjectId = target.ObjectId;
+                accessoryFitSummaryTargetGraph = target.Graph;
+                accessoryFitSummaryTargetEvaluation = target.EvaluateGraph();
+            }
+            return accessoryFitSummaryTargetEvaluation;
         }
 
         static SkeletonDefinition TryResolveSkeleton(ImportedRigSession session, AuthoringGraph graph)
@@ -386,7 +392,7 @@ namespace NyaForge.UnityRuntime
         {
             try
             {
-                var evaluation = target.EvaluateGraph();
+                var evaluation = EvaluateAttachmentTarget(target);
                 var bind = target.Graph.Nodes.Values.SingleOrDefault(item => item.TypeId == BuiltinNodes.SkinBind && item.Binding != null);
                 return bind != null && evaluation.MeshInputs.TryGetValue(bind.NodeId, out var mesh) && mesh != null && mesh.Mesh != null &&
                     evaluation.SkinBindingOutputs.TryGetValue(bind.NodeId, out var binding) && binding != null && binding.Binding != null;
@@ -422,7 +428,7 @@ namespace NyaForge.UnityRuntime
                 if (string.IsNullOrEmpty(targetId) && IsGraph)
                     targetId = workspace.Document.ActiveObject.Graph.Nodes.Values.FirstOrDefault(item => item.TypeId == BuiltinNodes.PoseSource)?.PoseSourceObjectId;
                 var target = FindObject(targetId);
-                var value = target?.EvaluateGraph()?.Output;
+                var value = EvaluateAttachmentTarget(target)?.Output;
                 var selected = SurfaceTriangleSelection();
                 avatarSurfaceSelection.Refresh(value?.Mesh, value?.Transform ?? new RestTransform(1, new Vec3()), selected);
             }
@@ -451,7 +457,7 @@ namespace NyaForge.UnityRuntime
                 int targetIndex = attachmentTarget.index;
                 if (targetIndex < 0 || targetIndex >= attachmentTargetIds.Count) throw new InvalidOperationException("面を選ぶavatarを指定してください。");
                 var avatar = FindObject(attachmentTargetIds[targetIndex]);
-                var evaluation = avatar?.EvaluateGraph();
+                var evaluation = EvaluateAttachmentTarget(avatar);
                 var value = evaluation?.Output;
                 if (value?.Mesh == null) throw new InvalidOperationException("avatarのrest mesh評価結果を取得できません。");
                 var rect = view.worldBound;
@@ -513,7 +519,7 @@ namespace NyaForge.UnityRuntime
             if (target == null || target.Graph == null) throw new InvalidOperationException("fit検査対象avatarが見つかりません。");
             var avatarBind = target.Graph.Nodes.Values.SingleOrDefault(item => item.TypeId == BuiltinNodes.SkinBind && item.Binding != null);
             if (avatarBind == null) throw new InvalidOperationException("avatarへ有効なSkinBindがありません。");
-            var avatarEvaluation = target.EvaluateGraph();
+            var avatarEvaluation = EvaluateAttachmentTarget(target);
             if (!avatarEvaluation.MeshInputs.TryGetValue(avatarBind.NodeId, out var avatarMeshValue) || avatarMeshValue?.Mesh == null)
                 throw new InvalidOperationException("avatarのrest mesh評価結果を取得できません。");
             var graph = workspace.Document.ActiveObject.Graph;
@@ -643,7 +649,7 @@ namespace NyaForge.UnityRuntime
                 if (skeleton == null) throw new InvalidOperationException("fit対象avatarのskeletonがありません。");
                 var avatarBind = target.Graph.Nodes.Values.SingleOrDefault(item => item.TypeId == BuiltinNodes.SkinBind && item.Binding != null);
                 if (avatarBind == null) throw new InvalidOperationException("avatarへ有効なSkinBindがありません。");
-                var avatarEvaluation = target.EvaluateGraph();
+                var avatarEvaluation = EvaluateAttachmentTarget(target);
                 if (!avatarEvaluation.MeshInputs.TryGetValue(avatarBind.NodeId, out var avatarMeshValue) || avatarMeshValue?.Mesh == null)
                     throw new InvalidOperationException("avatarのrest mesh評価結果を取得できません。");
                 var graph = workspace.Document.ActiveObject.Graph;
@@ -693,7 +699,7 @@ namespace NyaForge.UnityRuntime
                 if (skeleton == null) throw new InvalidOperationException("weight移行元avatarのskeletonがありません。");
                 var avatarBind = target.Graph.Nodes.Values.SingleOrDefault(item => item.TypeId == BuiltinNodes.SkinBind && item.Binding != null);
                 if (avatarBind == null) throw new InvalidOperationException("avatarへ有効なSkinBindがありません。");
-                var avatarEvaluation = target.EvaluateGraph();
+                var avatarEvaluation = EvaluateAttachmentTarget(target);
                 if (!avatarEvaluation.MeshInputs.TryGetValue(avatarBind.NodeId, out var avatarMeshValue) || avatarMeshValue?.Mesh == null ||
                     !avatarEvaluation.SkinBindingOutputs.TryGetValue(avatarBind.NodeId, out var avatarBindingValue) || avatarBindingValue?.Binding == null)
                     throw new InvalidOperationException("avatarのrest meshとweight評価結果を取得できません。");
@@ -729,7 +735,7 @@ namespace NyaForge.UnityRuntime
                 var target = FindObject(attachmentTargetIds[targetIndex]);
                 if (target == null || target.Graph == null) throw new InvalidOperationException("poseのコピー元avatarが見つかりません。");
                 if (!TryResolvePose(out var poseNode, out var clothingSkeleton)) throw new InvalidOperationException("衣装のpose nodeへskeletonを接続してください。");
-                var targetPose = target.EvaluateGraph().PoseOutputs.Values.Select(value => value.Pose)
+                var targetPose = EvaluateAttachmentTarget(target).PoseOutputs.Values.Select(value => value.Pose)
                     .FirstOrDefault(pose => pose.SkeletonHash == clothingSkeleton.ContentHash);
                 if (targetPose == null) throw new InvalidOperationException("avatarのposeが衣装と同じskeletonではありません。");
                 attachmentTargetChoice = target.ObjectId;

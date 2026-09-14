@@ -4038,3 +4038,15 @@ source-skin表示と投影のキャッシュ判定は、従来の複数hashを�
 - Clothing package: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-082445-5015fc2033b64326ace23df85ea75d2b\real-clothing-project\exports\clothing-20260914-232807-0f560a\skinned-clothing.nyaforge.json`
 - Bridge report: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\BridgeReceiver-20260915-082831-438-16d1b54182ec46b59de121237461fc7d\bridge-report.json`
 - 境界: これはprivate実モデルの自動Player／Bridge経路の確認であり、実EditorWindowのマウス操作、全周fit・貫通・材質見た目、avatar移動／回転／scale、VRChat Build & Test／実機表示、販売品質の合格には読み替えない。private素材とUnity SDKは公開ツリーへ追加していない。
+
+# 2026-09-15 PERF-07: attachment target evaluationの共有
+
+装着Panelのfitサマリーだけでなく、avatar表面の表示・面選択・fit測定・fit適用・surface weight・poseコピーでも同じavatar GraphEvaluationを使うよう、`EvaluateAttachmentTarget`へ集約した。対象ObjectIdと不変Graph参照が同じ間は再評価せず、対象変更・Graph置換時だけ更新する。fit・weight・poseの計算結果や保存形式は変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Attachments.cs`
+- 隔離Player `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Builds\SourceSkinCacheV8\NyaForge.exe`：build成功
+- 通常Authoring: **88 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-083149-b11f5765a1b0432cb338f1b9e4211259\report.json`）
+- 実RadDollV3自動一周: **97 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-083227-6ec20b3fb8804fed8c035e54bd99d33e\report.json`）
+- Unity Bridge: **16 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\BridgeReceiver-20260915-083546-672-e5646219b9824c50b34f358c08d8f1cb\bridge-report.json`）
+- Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-9ed55fff469b483b86c15bd8f5a6192d`）
+- 境界: 自動経路の評価共有確認であり、実EditorWindowのGC/native memory計測、実マウスのDPI／IME、実RadDollV3全周fit・貫通・材質見た目、avatar移動／回転／scale、VRChat Build & Test／実機表示は未完了。
