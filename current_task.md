@@ -3574,3 +3574,9 @@ Viewerの設定パネルへ`pack-source-info`を追加し、現在の入口が�
 自動検証時だけPanelを展開するcompatibility分岐と、通常起動時の折りたたみ状態を混同しないよう、`AuthoringWorkbench.RunStartupProbe`と`Tools/Test-NyaForgeAuthoringStartup.ps1`を追加した。通常の空project起動で、graph詳細・保存出力Panelが閉じ、基本形状・上部の保存／形状ボタンが見えることをPlayer自身が確認し、screenshot／reportを保存する。これは実マウス、DPI／IME、実モデル、VRChatの受入とは分ける。
 
 `Builds/StartupProbeV2/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260914-232327-160.log`）をビルドし、通常起動probeを**PASS**で確認した。証拠は`Artifacts/AuthoringStartup-20260914-232348-2b18395db4e244049ecb51ce5e8c660c/report.json`と`authoring-startup.png`。`graphDetailsExpanded=false`、`projectOutputExpanded=false`、`shapeCreationExpanded=true`、保存／形状ボタン表示、画面サイズ1600×1000、スクリーンショット非黒を確認した。probeは非表示起動では黒画像になり得るため、確認時はPlayerを通常ウィンドウで起動し、画像の可視ピクセルも検査する。
+
+# 2026-09-14 NF-V1-実モデル一周: 最新候補で再確認
+
+`Builds/FinalCandidateV1/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260914-232731-680.log`）をビルドし、Core回帰を**512 passed / 0 failed**で確認した。privateの`RadDollV3_VRM.vrm`を`Tools/Test-NyaForgeRealClothing.ps1`へ渡し、Playerの取込→全mesh→EditMesh→native Save/Open→GLB／VRM出力→衣装package生成をPASS、skeleton sidecar **2 bones**を確認した。証拠は`Artifacts/Authoring-20260914-232748-6f8ef341ef1e48198c27134dd1ba2f97/report.json`。Unity **2022.3.22f1** Bridgeの受け取りもPASSで、`Artifacts/BridgeReceiver-20260914-233013-035-58f88a9d96a741249bbd9c382429df9/bridge-report.json`に記録した。privateモデルbytesは公開ツリーへ追加していない。
+
+この結果は自動Player／Bridge経路の再確認であり、実EditorWindowのマウス操作、移動・回転・scale済み実avatar、全周の見た目・貫通、VRChat Build & Test／クライアント内表示、販売品質の受入とは分ける。次の手動受入は`docs/Windows-v1-Manual-Acceptance.md`の1〜4節に従う。
