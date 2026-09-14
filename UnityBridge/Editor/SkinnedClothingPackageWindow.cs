@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NyaForge.Authoring;
+using NyaForge.Authoring.Rig;
 using NyaForge.UnityBridge;
 using UnityEditor;
 using UnityEngine;
@@ -20,8 +21,11 @@ namespace NyaForge.UnityBridge.Editor
         Transform avatarRoot;
         NyaForgeSkinnedClothingBinding binding;
         readonly Dictionary<string, Transform> boneBindings = new Dictionary<string, Transform>(StringComparer.Ordinal);
+        readonly Dictionary<string, Transform> suggestedBindings = new Dictionary<string, Transform>(StringComparer.Ordinal);
         Vector2 boneScroll;
         bool managedOnly;
+        bool suggestionsReady;
+        int suggestionAmbiguous;
         string status = "";
         MessageType statusType = MessageType.Info;
 
@@ -43,13 +47,19 @@ namespace NyaForge.UnityBridge.Editor
             {
                 package = null;
                 boneBindings.Clear();
+                suggestedBindings.Clear();
+                suggestionsReady = false;
                 binding = null;
                 status = "";
             }
             if (GUILayout.Button("選択", GUILayout.Width(56)))
             {
                 string chosen = EditorUtility.OpenFilePanel("NyaForge skinned clothing manifest", "", "json");
-                if (!string.IsNullOrEmpty(chosen)) { manifestPath = chosen; package = null; boneBindings.Clear(); status = ""; }
+                if (!string.IsNullOrEmpty(chosen))
+                {
+                    manifestPath = chosen; package = null; boneBindings.Clear();
+                    suggestedBindings.Clear(); suggestionsReady = false; status = "";
+                }
             }
             EditorGUILayout.EndHorizontal();
 
@@ -75,6 +85,8 @@ namespace NyaForge.UnityBridge.Editor
             if (avatarRoot != previousRoot)
             {
                 boneBindings.Clear();
+                suggestedBindings.Clear();
+                suggestionsReady = false;
                 binding = FindBindingForPackage();
             }
             managedOnly = EditorGUILayout.ToggleLeft("管理対象だけを更新する（既存が無ければ停止）", managedOnly);
@@ -91,6 +103,22 @@ namespace NyaForge.UnityBridge.Editor
                 EditorGUILayout.HelpBox("保存済み割当は別の衣装です。既存管理objectを置き換える前に、正しいpackageを選んでください。", MessageType.Warning);
 
             EditorGUILayout.LabelField("Stable bone bindings", EditorStyles.boldLabel);
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("候補を生成（名前・階層）")) BuildBindingSuggestions();
+            using (new EditorGUI.DisabledScope(!suggestionsReady || suggestedBindings.Count == 0))
+            {
+                if (GUILayout.Button("候補を割当に反映")) ApplyBindingSuggestions();
+            }
+            EditorGUILayout.EndHorizontal();
+            if (suggestionsReady)
+            {
+                int total = package.Skeleton.Bones.Count;
+                int unresolved = total - suggestedBindings.Count;
+                string summary = suggestedBindings.Count + "/" + total + " 本を一意候補として検出";
+                if (suggestionAmbiguous > 0) summary += "、" + suggestionAmbiguous + " 本は候補が曖昧";
+                if (unresolved > 0) summary += "、" + unresolved + " 本は未検出";
+                EditorGUILayout.HelpBox(summary + "。反映後も保存・適用前に全割当を確認してください。", MessageType.Info);
+            }
             boneScroll = EditorGUILayout.BeginScrollView(boneScroll, GUILayout.MinHeight(210));
             foreach (var bone in package.Skeleton.Bones)
             {
@@ -138,6 +166,8 @@ namespace NyaForge.UnityBridge.Editor
             {
                 package = SkinnedClothingPackage.Read(manifestPath);
                 boneBindings.Clear();
+                suggestedBindings.Clear();
+                suggestionsReady = false;
                 binding = FindBindingForPackage();
                 status = "読み込みました。stable boneを手動対応してください。";
                 statusType = MessageType.Info;
@@ -194,6 +224,89 @@ namespace NyaForge.UnityBridge.Editor
                 statusType = MessageType.Info;
             }
             catch (Exception error) { SetError("割当を読み込めませんでした: ", error); }
+        }
+
+        void BuildBindingSuggestions()
+        {
+            suggestedBindings.Clear();
+            suggestionAmbiguous = 0;
+            suggestionsReady = false;
+            if (package == null || avatarRoot == null)
+            {
+                status = "packageとavatar rootを先に指定してください。";
+                statusType = MessageType.Warning;
+                return;
+            }
+
+            var transforms = avatarRoot.GetComponentsInChildren<Transform>(true);
+            var byName = transforms
+                .GroupBy(transform => transform.name, StringComparer.Ordinal)
+                .ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
+            foreach (var bone in package.Skeleton.Bones)
+            {
+                Transform[] candidates = FindPathCandidates(avatarRoot, bone);
+                if (candidates.Length == 0)
+                    byName.TryGetValue(bone.Name, out candidates);
+                if (candidates == null || candidates.Length == 0) continue;
+                if (candidates.Length == 1) suggestedBindings[bone.BoneId] = candidates[0];
+                else suggestionAmbiguous++;
+            }
+            suggestionsReady = true;
+            status = "一意に確認できる候補だけを生成しました。反映前に一覧を確認してください。";
+            statusType = MessageType.Info;
+        }
+
+        void ApplyBindingSuggestions()
+        {
+            if (!suggestionsReady) return;
+            foreach (var pair in suggestedBindings)
+                if (!boneBindings.ContainsKey(pair.Key)) boneBindings[pair.Key] = pair.Value;
+            status = "確認済み候補を割当に反映しました。未割当のBoneIdは手動で確認してください。";
+            statusType = MessageType.Info;
+        }
+
+        Transform[] FindPathCandidates(Transform root, BoneDefinition bone)
+        {
+            string expectedPath = BonePath(package.Skeleton, bone.BoneId);
+            if (string.IsNullOrEmpty(expectedPath)) return Array.Empty<Transform>();
+            return root.GetComponentsInChildren<Transform>(true)
+                .Where(transform =>
+                {
+                    string actualPath = PathFromRoot(root, transform);
+                    return actualPath == expectedPath || actualPath.EndsWith("/" + expectedPath, StringComparison.Ordinal);
+                })
+                .ToArray();
+        }
+
+        static string BonePath(SkeletonDefinition skeleton, string boneId)
+        {
+            var names = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            string current = boneId;
+            while (!string.IsNullOrEmpty(current) && seen.Add(current))
+            {
+                BoneDefinition bone;
+                if (!skeleton.ById.TryGetValue(current, out bone)) return "";
+                names.Add(bone.Name);
+                current = bone.ParentBoneId;
+            }
+            names.Reverse();
+            return string.Join("/", names.ToArray());
+        }
+
+        static string PathFromRoot(Transform root, Transform transform)
+        {
+            var names = new List<string>();
+            var current = transform;
+            while (current != null)
+            {
+                names.Add(current.name);
+                if (current == root) break;
+                current = current.parent;
+            }
+            if (current != root) return "";
+            names.Reverse();
+            return string.Join("/", names.ToArray());
         }
 
         void InspectPackage()

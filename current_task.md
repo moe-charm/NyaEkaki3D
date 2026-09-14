@@ -2817,3 +2817,9 @@ Windows v1の実装順を次のように固定する。
 3. **その後の実機受入**：候補承認後に実カフで適用し、avatar rootの移動・回転・scale、衣装A→B更新、削除・Undo、normal／MR／alpha／UV0の見た目を一周する。最後にVRChat Build & Testで表示・貫通・PhysBonesを確認する。
 
 今回のEditorWindow操作はpackage読込とroot指定までの部分受入であり、171本の割当、実衣装の全周見た目、VRChat内表示を合格とは扱わない。自動fixtureの507 Core passとBridge passも、この手動受入の代替にはしない。
+
+# 2026-09-14 stable BoneId候補表示の実装
+
+受け取りGUIのstable bone欄へ、`候補を生成（名前・階層）` と `候補を割当に反映` を追加した。packageのBoneIdとavatar配下Transformについて、まず親子名から作った階層pathの一意一致を探し、見つからない場合だけTransform名の一意一致を候補にする。候補は一意なものだけを別辞書へ保持し、ユーザーが反映ボタンを押すまで現在の割当を変更しない。重複・欠落は件数を表示し、全割当が揃わない限り従来どおり保存・適用を有効化しない。これにより、名前だけの無確認自動装着を避けつつ、171本の初回割当を確認付きで短縮できる。
+
+`NyaForge.UnityBridge.Editor` のソース構文はUnity Editor projectへ反映する対象として確認し、既存Core回帰は **507 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-91513ffd9c2644168de5332754722304`）。候補表示の実Unity画面反映と171本一括割当後の適用は、Editorの再import後に手動受入する。現時点で実packageの読込・Avatar root指定までは確認済みだが、実アバター全周の見た目・貫通・VRChat内表示は未受入である。
