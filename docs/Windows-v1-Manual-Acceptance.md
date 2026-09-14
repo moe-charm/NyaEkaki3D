@@ -1,6 +1,6 @@
 # Nya Ekaki 3D Windows v1 手動受入チェック
 
-この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/BoneSubsetV5/NyaForge.exe`（コード `b55f42c`）。Authoring suiteの自動navigation／Save As・保存状態・再開・viewport確認は50回反復し、`Artifacts/Navigation-Repeated-PerformanceV39-official-50.json`へ記録した。実RadDollV3一周はBoneSubsetV3のprivate候補で確認した。証跡は`Artifacts/Authoring-20260914-152725-f668eee74c7f41a08712e014c37c2619/report.json`、`Artifacts/BridgeReceiver-20260914-153001-201-d4c23163fb89454a8c9ad0bcfaf411a9/bridge-report.json`。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
+この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/BoneSubsetV12/NyaForge.exe`（コード `574a446`、記録更新 `d378d1f`）。自動navigation／Save As・保存状態・再開・viewport確認は既存の反復回帰へ記録している。最新の実RadDollV3一周はPlayer `Artifacts/Authoring-20260914-162657-a70cc1bb101f4a5fa8e96daab0da2a74/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-162928-637-f529cc4f3f884898bcdf51c5d6fca329/bridge-report.json`。再実行入口は `Tools\\Test-NyaForgeRealClothing.ps1 -ModelPath <private VRM> -BuildName BoneSubsetV12`。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
 
 ## 1. 実EditorWindow（Windows）
 
