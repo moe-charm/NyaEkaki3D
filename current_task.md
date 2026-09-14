@@ -3670,3 +3670,14 @@ Windows ExplorerでGLB／VRMを選んだ直後に、モデル取込欄の候補�
 - 実ウィンドウ確認: 新Playerの制作画面とモデル取込欄（path／node／mesh／skin／取込操作）は表示確認済み。Explorer選択から自動候補確認までの一連は、複数ウィンドウ環境でpickerの対象が安定しなかったため、手動受入PASSとは扱わず残す。
 
 この変更で空の制作projectでも、ファイルを選んだ後に候補確認を探す必要がなくなる。自動回帰はコード・Player経路の証拠であり、DPI 150/200%、日本語IME、実EditorWindowでの実衣装fit・貫通・全周見た目、移動／回転／scale済みavatar、Unity更新／削除Undo、VRChat Build & Test／クライアント表示の受入とは分ける。private素材とSDKは公開ツリーへ追加していない。
+
+# 2026-09-15 UNITY-UI-01: 衣装package受け取り操作の到達性
+
+Unity 2022.3.22f1の実EditorWindowで、衣装package読込・avatar root指定・stable BoneId欄の表示までは確認できた一方、最小サイズのウィンドウでは骨割当一覧の固定スクロール領域が下部の保存／診断／適用／削除ボタンを押し出していた。`UnityBridge/Editor/SkinnedClothingPackageWindow.cs`へウィンドウ全体の縦スクロールを追加し、コンパクトなレイアウトでも下部操作へ到達できるようにした。privateの隔離Unity probeへ同じソースを反映し、再コンパイル後にスクロールバーと下部ボタン（現在の割当を保存、保存済み割当を読み込む、事前診断、衣装を作成／更新、管理対象の衣装を削除）を実ウィンドウで表示確認した。
+
+- Core回帰: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ab60a155d14a463095bdefdd7bbc23a9`）
+- Unity Bridge回帰: **PASS**（Unity 2022.3.22f1、`Artifacts/BridgeReceiver-20260915-022438-250-13608a0b35c948fba8dc01a7dda74729/bridge-report.json`）
+- 実EditorWindow: package読込、avatar root指定、2本のstable BoneId欄、全体スクロール、下部操作の表示を確認。今回のsynthetic packageでは再コンパイル後に割当がリセットされたため、実衣装の適用結果・見た目・貫通・更新／削除Undoは未受入。
+- 公開境界: privateのRadDollV3素材、Unity SDK、probe sceneは公開ツリーへ追加していない。privateコピーは`private/`のignore対象。
+
+残りの手動受入は、実RadDollV3衣装を使った全周fit・weight・材質、移動／回転／scale済みavatarへの適用、更新／削除Undo、VRChat Build & Testである。今回の修正はUI操作到達性を解決するもので、これらの実機受入を代替しない。

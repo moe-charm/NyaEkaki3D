@@ -22,6 +22,7 @@ namespace NyaForge.UnityBridge.Editor
         NyaForgeSkinnedClothingBinding binding;
         readonly Dictionary<string, Transform> boneBindings = new Dictionary<string, Transform>(StringComparer.Ordinal);
         readonly Dictionary<string, Transform> suggestedBindings = new Dictionary<string, Transform>(StringComparer.Ordinal);
+        Vector2 windowScroll;
         Vector2 boneScroll;
         bool managedOnly;
         bool suggestionsReady;
@@ -37,6 +38,11 @@ namespace NyaForge.UnityBridge.Editor
 
         void OnGUI()
         {
+            // The package details and explicit binding controls are taller than
+            // the minimum EditorWindow size. Keep the whole workflow reachable
+            // on compact layouts instead of clipping the save/inspect/apply
+            // buttons below the fold.
+            windowScroll = EditorGUILayout.BeginScrollView(windowScroll);
             EditorGUILayout.LabelField("NyaForge skinned clothing", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox("衣装packageを検証し、avatar rootとstable BoneIdを明示対応してから適用します。名前による自動対応は行いません。", MessageType.Info);
 
@@ -71,6 +77,7 @@ namespace NyaForge.UnityBridge.Editor
             if (package == null)
             {
                 ShowStatus();
+                EditorGUILayout.EndScrollView();
                 return;
             }
 
@@ -158,6 +165,7 @@ namespace NyaForge.UnityBridge.Editor
             if (!validation.IsValid)
                 EditorGUILayout.HelpBox("割当を保存／適用できません: " + validation.Message, MessageType.Warning);
             ShowStatus();
+            EditorGUILayout.EndScrollView();
         }
 
         void LoadPackage()
