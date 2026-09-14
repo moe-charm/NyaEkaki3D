@@ -84,12 +84,11 @@ namespace NyaForge.UnityRuntime
             root.style.position = Position.Absolute;
             root.style.left = root.style.top = 0;
             root.style.right = root.style.bottom = 0;
-            // PanelSettings.scale enlarges both layout pixels and their
-            // rendered output. On a per-monitor-DPI window the panel's
-            // drawable surface is already smaller than Screen.width, so a
-            // full-width child would be enlarged a second time and clip the
-            // controls column. Reserve one more scale factor for the actual
-            // workbench while keeping injected panel-space probes at 1:1.
+            // PanelSettings.scale enlarges layout pixels to the physical
+            // drawable surface. Reserve the corresponding logical width once
+            // for the actual workbench; dividing by the DPI factor twice
+            // leaves an avoidable blank strip and makes the controls tiny.
+            // Injected panel-space probes stay at 1:1.
             bool injectedUiProbe = Environment.GetCommandLineArgs().Any(a => a == "--authoring-check-output" || a == "--navigation-check");
             bool dynamicDpiBounds = !injectedUiProbe && Screen.dpi > 96f;
             Action refreshDpiBounds = () =>
@@ -98,8 +97,8 @@ namespace NyaForge.UnityRuntime
                 float dpiScale = Mathf.Clamp(Screen.dpi / 96f, 1f, 2f);
                 root.style.right = StyleKeyword.Auto;
                 root.style.bottom = StyleKeyword.Auto;
-                root.style.width = Screen.width / (dpiScale * dpiScale);
-                root.style.height = Screen.height / (dpiScale * dpiScale);
+                root.style.width = Screen.width / dpiScale;
+                root.style.height = Screen.height / dpiScale;
             };
             refreshDpiBounds();
             root.style.flexGrow = 1;

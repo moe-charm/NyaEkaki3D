@@ -53,3 +53,13 @@ dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-resto
 ```
 
 Player／Bridge／実モデルの結果は`current_task.md`へ対象build、artifact、検証範囲を記録する。証跡の存在だけで見た目や販売品質を合格扱いしない。
+
+## 忘れない開発手順
+
+作業を始める前に、対象リポジトリが`Z:\TextureVoice_local\git\NyaForge`で、branchが`main`、remoteが`https://github.com/moe-charm/NyaEkaki3D.git`であることを確認する。別のcheckoutや`private/`の素材へ変更を広げない。
+
+実装した内容と未完了の受入条件は、同じ作業単位で`current_task.md`へ追記する。Core／Player／Bridgeの自動結果、実マウスでの画面確認、実アバターやVRChatの確認は別の証跡として書き、前者を後者の合格へ読み替えない。
+
+区切りがついたら、まず`git diff --check`、`git status --short`、対象テストを実行する。公開commitの前に`git ls-files private`が空であることと、`Builds/`・`Artifacts/`などの生成物が追跡対象でないことを確認する。commit後は`git rev-parse HEAD`と`git ls-remote origin refs/heads/main`を照合し、push結果を`current_task.md`へ記録する。
+
+ユーザーが実行した操作や目視確認を、こちらの自動検証結果として補わない。未確認の項目は「未受入」と書いたまま、次の具体的な手動手順を残す。

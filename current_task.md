@@ -2989,3 +2989,9 @@ Unity **2022.3.22f1** Bridgeを再実行し、適用・hash／sidecar・ownershi
 # 2026-09-14 全mesh取込の二重読込除去
 
 全mesh command-line検証で、inventory確認後に同じVRMを`ImportAllModelInstances`が再読込・再parseしていた経路を修正した。既に読み込んだbytesと`GlbDocument`を再利用する内部overloadを追加し、通常GUIの単一読込契約も維持した。`Builds/BoneSubsetV5/NyaForge.exe`のビルドは成功し、private実RadDollV3 VRMのPlayer **93 checks PASS**、衣装skeleton **2 bones**、Unity **2022.3.22f1** Bridge **PASS**を確認した。証跡はPlayer `Artifacts/Authoring-20260914-152725-f668eee74c7f41a08712e014c37c2619/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-153001-201-d4c23163fb89454a8c9ad0bcfaf411a9/bridge-report.json`。二重読込を除いた同一条件のheap比較は未実施のため、軽量性の数値合格とは扱わない。
+
+# 2026-09-14 開発手順の常設記録とWindows DPI表示確認
+
+忘れやすい開発手順を`AGENTS.md`へ常設した。対象リポジトリ・branch・remoteを作業開始時に確認し、実装と未完了の受入条件を`current_task.md`へ記録する。Core／Player／Bridgeの自動結果、実マウスの画面確認、実アバター・VRChat確認を別証跡として扱い、公開commit前には`private/`・`Builds/`・`Artifacts/`などの境界を確認する。区切りごとに`git diff --check`、対象テスト、commit後の`git ls-remote origin refs/heads/main`を確認する。
+
+`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.cs`のWindows DPI bounds計算を、PanelSettingsのscaleに対して一度だけ論理幅・高さへ変換するよう修正した。`Builds/DpiFixV1/NyaForge.exe`をUnity **6000.4.3f1**でビルドし、Windowsネイティブ`@oai/sky`の最大化ウィンドウ（2560x1440）で制作画面を確認した。右側の操作パネルと広いviewportがウィンドウ全体に配置され、ボタンとラベルが読める状態になった。今回のDpiFixV1画面は空プロジェクトでのレイアウト確認であり、RadDollV3のモデル表示・実マウスでの衣装操作・実アバター全周・VRChat内表示の合格とは扱わない。既存V16のRadDollV3取込証跡は別記録として維持する。
