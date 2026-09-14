@@ -2805,3 +2805,15 @@ Windows v1の次の完了ゲートは、機能追加ではなく実環境の一�
 # 2026-09-14 実Unity Editorのavatar変換観察（部分受入）
 
 privateの `PhysBonesSdkProbe-20260914` をUnity **2022.3.22f1**で開き、実RadDollV3の子階層にある `RadDollV3 Cuff Probe` を確認した。Inspectorには `Skinned Mesh Renderer`、root bone `lower_arm.L (Transform)`、`Nya Forge Skinned Clothing Managed`、stable ObjectId／State Hash／GLB・skeleton・binding hashが表示された。avatar rootのPosition Xを一時的に2、Rotation Yを45、Scaleを1.5へ変更した後も、カフはavatar階層の管理objectとして残り、カフ自身のlocal Position/Rotationは0、local Scaleは1のままだった。最後にavatar rootをPosition 0、Rotation 0、Scale 1へ戻した。これは親子関係とlocal placementの部分観察であり、実アバター全周の貫通・見た目、衣装A→B更新、削除Undo、VRChat内表示を合格とする証拠ではない。
+
+# 2026-09-14 実EditorWindow package受入の次タスク
+
+Unity **2022.3.22f1**の実EditorWindowで、実カフpackage `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ManualAcceptance-Cuff3-20260914\exports\clothing-20260914-042448-0333be\skinned-clothing.nyaforge.json`をWindowsのファイル選択から読み込み、package検証後に `RaddollV3 (Transform)` をAvatar rootへ指定できることを確認した。画面には **264 vertices / 256 triangles、171 bones** と表示され、stable BoneIdの割当欄が生成された。保存済み割当がない場合は警告が表示され、現状のGUIでは171本を明示的に1本ずつ割り当てない限り、診断・適用ボタンは有効にならない。これは安全な明示対応としては正しいが、実アバターでの初回作業量が大きいというUX上の課題を確認したもの。シーンは保存していない。
+
+Windows v1の実装順を次のように固定する。
+
+1. **受入を止めない最小作業**：まず既存の手動割当経路を、少数骨のカフfixtureで `保存→事前診断→適用→更新→削除→Undo` まで完了させる。実アバター全171本の完全割当は、候補UIなしでは手作業の受入対象にしない。
+2. **次のUX実装**：package skeletonのstable BoneIdに対し、avatar配下のTransformから「名前・階層が一意に一致する候補」を表示する。候補はプレビューとして提示し、ユーザーの **一括承認** 後にだけ割当へ反映する。曖昧・欠落・avatar root外は未割当のまま残し、名前だけで無確認に適用しない。
+3. **その後の実機受入**：候補承認後に実カフで適用し、avatar rootの移動・回転・scale、衣装A→B更新、削除・Undo、normal／MR／alpha／UV0の見た目を一周する。最後にVRChat Build & Testで表示・貫通・PhysBonesを確認する。
+
+今回のEditorWindow操作はpackage読込とroot指定までの部分受入であり、171本の割当、実衣装の全周見た目、VRChat内表示を合格とは扱わない。自動fixtureの507 Core passとBridge passも、この手動受入の代替にはしない。
