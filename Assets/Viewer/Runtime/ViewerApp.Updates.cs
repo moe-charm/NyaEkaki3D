@@ -129,7 +129,7 @@ namespace Viewer.Runtime
             if (pointer.buildTarget != "StandaloneWindows64") throw new ContractException("PACK_TARGET_MISMATCH", "Windows用の更新ではありません。");
             bool IsId(string value) => value != null && Regex.IsMatch(value, @"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,159}$");
             if (!IsId(pointer.packId) || !IsId(pointer.revision)) throw new ContractException("ID_INVALID", "更新案内の識別情報が不正です。");
-            if (pointer.manifestSha256 == null || !Regex.IsMatch(pointer.manifestSha256, "^[a-f0-9]{64}$"))
+            if (pointer.manifestSha256 == null || !Regex.IsMatch(pointer.manifestSha256, "^[a-fA-F0-9]{64}$"))
                 throw new ContractException("HASH_INVALID", "更新案内の確認情報が不正です。");
             string manifestPath = JsonFiles.PackChild(Path.GetDirectoryName(Path.GetFullPath(path)), pointer.manifestPath);
             var verified = PackStore.Verify(manifestPath, token, pointer.manifestSha256);

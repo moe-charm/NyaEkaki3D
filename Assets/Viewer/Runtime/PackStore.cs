@@ -20,7 +20,11 @@ namespace Viewer.Runtime
             path = System.IO.Path.GetFullPath(path);
             if (!File.Exists(path)) throw new ContractException("PACK_INCOMPLETE", "パックが見つかりません。");
             var manifest = JsonFiles.Read<PackManifest>(path, out string hash);
-            if (expectedHash != null && hash != expectedHash) throw new ContractException("PACK_HASH_MISMATCH", "保存時のパックと一致しません。");
+            // SHA-256 hex is case-insensitive. Normalize the comparison so a
+            // pointer written by another tool cannot be rejected solely for
+            // using upper-case hexadecimal characters.
+            if (expectedHash != null && !string.Equals(hash, expectedHash, StringComparison.OrdinalIgnoreCase))
+                throw new ContractException("PACK_HASH_MISMATCH", "保存時のパックと一致しません。");
             Validation.Manifest(manifest, token);
             var directory = System.IO.Path.GetDirectoryName(path);
             foreach (var b in manifest.bundles)

@@ -3530,3 +3530,9 @@ V43でprivate一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge
 private `PhysBonesSdkProbe-20260914` を Unity **2022.3.22f1** で再実行し、`private/PhysBonesSdkProbe-20260914/sdk-probe-report-latest.json` の `status: verified`、Unity probe `passed` を確認した。実SDKの `VRCPhysBone` runtime type解決、root／endpoint／exclusions／branches／colliders／limits／interaction／parameter capability、target packageの非変更preflight、stable BoneId mappingによる実コンポーネント生成・設定が全て通っている。Unity側の一時artifactは `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-69ac3623abad428aa554d5fca4beec03/report.json` と同probeの `unity.log` に出力された。
 
 これはSDK型解決・コンポーネント生成・安定骨対応の証拠であり、実RadDollV3全sceneの衣装適用、EditorWindowの実マウス操作、全周の見た目・貫通、Build & Test、VRChatクライアント内表示の合格とは扱わない。private project／SDK DLL／avatar素材／ログは公開ツリーへ追加していない。`docs/Windows-v1-Environment.md`にも同じ境界を追記した。
+
+# 2026-09-14 FORMAT: ポインターSHA-256表記の互換性
+
+Viewerのポインター検証で、SHA-256の16進表記を大文字・小文字のどちらでも受け付けるようにした。`PackStore.Verify`の実体hash比較と`VerifyUpdatePointer`の形式検査を同じcase-insensitive契約へ揃え、別ツールが大文字で書いた`manifestSha256`でも、パス・実体・pack／revision一致が通れば開けるようにした。ポインターのroot脱出や実体欠損を緩めた変更ではない。
+
+Coreは **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-b632a3e57fec4c28968a1d4c69d9e1b3`）。`Builds/Windows/NyaForge.exe`もUnity **6000.4.3f1**で再ビルド成功（`Logs/build-player-20260914-230023-236.log`）。`Tools/Test-NyaForgePackPointer.ps1`は公開fixtureの通常表記と、一時コピーで`manifestSha256`を大文字化したポインターの両方で`status: passed`を確認した。大文字化fixtureは`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PointerCase-bb79689a0ce04236bf3185c7954411a3`に作成した一時検証用で、公開ツリーへ追加していない。
