@@ -55,6 +55,11 @@ namespace NyaForge.UnityRuntime
                 Execute(AuthoringOperation.AddNode(attachment));
                 Refresh();
                 Check(attachmentTarget.choices.Count == 2 && attachmentBone.choices.Count == 1, "Attachment GUI did not expose the resolved targets and BoneId");
+                var targetChoice = attachmentTarget.choices[attachmentTargetIds.IndexOf(targetObjectId)];
+                Check(targetChoice.Contains(ObjectDisplayName(FindObject(targetObjectId)), StringComparison.Ordinal),
+                    "Attachment target choice did not expose the target display name");
+                Check(attachmentTarget.tooltip.Contains(targetObjectId, StringComparison.Ordinal),
+                    "Attachment target tooltip did not retain the complete object identity");
                 string secondTargetLabel = attachmentTarget.choices[1];
                 attachmentTarget.value = secondTargetLabel;
                 Check(attachmentTarget.value == secondTargetLabel, "Attachment GUI did not accept the second target choice");

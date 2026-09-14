@@ -115,7 +115,7 @@ namespace NyaForge.UnityRuntime
             }
             var targets = workspace.Document.Objects.Where(item => item.ObjectId != workspace.Document.ActiveObjectId && item.Graph != null).ToArray();
             attachmentTargetIds.AddRange(targets.Select(item => item.ObjectId));
-            var targetLabels = targets.Select(item => "graph · " + item.ObjectId.Substring(0, Math.Min(8, item.ObjectId.Length))).ToList();
+            var targetLabels = targets.Select(AttachmentTargetLabel).ToList();
             if (targetLabels.Count == 0) targetLabels.Add("対象なし");
             attachmentTarget.choices = targetLabels;
             var poseSource = workspace.Document.ActiveObject.Graph.Nodes.Values.FirstOrDefault(item => item.TypeId == BuiltinNodes.PoseSource);
@@ -124,6 +124,9 @@ namespace NyaForge.UnityRuntime
             if (targetIndex < 0) targetIndex = 0;
             attachmentTarget.SetValueWithoutNotify(targetLabels[targetIndex]);
             var target = targetIndex < targets.Length ? targets[targetIndex] : null;
+            attachmentTarget.tooltip = target == null
+                ? "装着先avatarを選択してください。対象が複数ある場合は表示名と役割で照合できます。"
+                : ObjectDisplayDetails(target) + "\n内部ID: " + target.ObjectId;
             var session = RigFor(target);
             var skeleton = session == null || target == null ? null : TryResolveSkeleton(session, target.Graph);
             if (skeleton != null)
@@ -135,6 +138,12 @@ namespace NyaForge.UnityRuntime
             int boneIndex = node == null ? -1 : attachmentBoneIds.IndexOf(node.AttachmentBoneId);
             if (boneIndex < 0) boneIndex = 0;
             attachmentBone.SetValueWithoutNotify(attachmentBone.choices[boneIndex]);
+            if (skeleton != null && boneIndex >= 0 && boneIndex < skeleton.Bones.Count)
+            {
+                var selectedBone = skeleton.Bones[boneIndex];
+                attachmentBone.tooltip = selectedBone.Name + "\nstable BoneId: " + selectedBone.BoneId;
+            }
+            else attachmentBone.tooltip = "装着先avatarの骨格を読み込むと、stable BoneIdを選択できます。";
             if (node != null)
             {
                 attachmentOffsetX.SetValueWithoutNotify(node.AttachmentOffset.X * 1000f);
@@ -168,8 +177,22 @@ namespace NyaForge.UnityRuntime
             accessoryUseSelectedVertices.SetEnabled(editNode != null && workspace.Preview.IsComplete && selection.Count > 0);
             if (node == null) attachmentStatus.text = "装着: 未設定。対象avatarとBoneIdを選んでください。";
             else if (diagnosticFor(node, target) != "") attachmentStatus.text = "装着: " + diagnosticFor(node, target);
-            else attachmentStatus.text = "装着: " + node.AttachmentBoneId.Substring(0, 8) + "へ固定 · 保存対象";
+            else
+            {
+                var selected = skeleton?.Bones.FirstOrDefault(bone => bone.BoneId == node.AttachmentBoneId);
+                string boneName = selected == null ? "BoneId " + node.AttachmentBoneId.Substring(0, 8) : selected.Name;
+                attachmentStatus.text = "装着: " + boneName + "へ固定 · 保存対象";
+            }
             RefreshAccessoryFitSummary();
+        }
+
+        string AttachmentTargetLabel(AuthoringObject item)
+        {
+            if (item == null) return "対象なし";
+            string id = item.ObjectId ?? "";
+            string shortId = id.Length > 8 ? id.Substring(0, 8) : id;
+            string role = item.IsStaticProfile ? "static" : "avatar graph";
+            return ObjectDisplayName(item) + " · " + role + " · " + shortId;
         }
 
         void RefreshAccessoryFitSummary()
