@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15L: V15起動・終了反復回帰
+
+`Tools/Test-NyaForgeNavigationRepeated.ps1 -BuildName BoneSubsetV15 -Count 2`を実行し、Playerの起動、制作画面遷移、保存状態・再開・viewport確認、終了を2/2 PASSした。集約結果は`Artifacts/Navigation-Repeated-BoneSubsetV15-20260914-164524.json`。これは自動fixtureの反復回帰であり、実EditorWindowのマウス・IME・DPI・Explorer操作やVRChat内表示を完了扱いしない。
+
 ## 2026-09-14 NF-V1-15K: V15実衣装・Bridge一周回帰
 
 `Builds/BoneSubsetV15/NyaForge.exe`でprivate RadDollV3 VRMを全mesh取込し、native Save/Open、GLB／VRM1出力、衣装skin package生成、Unity **2022.3.22f1** Bridge受け取りまで再実行した。Player **PASS**（`Artifacts/Authoring-20260914-163956-a954ad2ebd584429a1312af59fa90445/report.json`）、Bridge **PASS**（`Artifacts/BridgeReceiver-20260914-164225-353-2bea67b245064ca0aae2b871ec4bb30c/bridge-report.json`）。衣装packageは同Player artifact内の`imported-accessory-skin-project/exports/clothing-20260914-074202-53164a/skinned-clothing.nyaforge.json`に生成され、skeleton sidecarは2 bonesだった。これは自動Player／Bridge回帰であり、実EditorWindowのマウス・IME・DPI・Explorer、実アバター全周fit／貫通／見た目、VRChat Build & Test／実機表示は未受入として残す。
