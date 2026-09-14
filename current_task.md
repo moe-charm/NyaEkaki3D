@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10F: imported material encoded bytes共有
+
+同一GLB imageを複数materialが参照する場合に、base-colorの原画像、normal、metallic-roughnessのencoded bytesをmaterialごとに複製していた。公開の `Copy...Bytes()` は防御コピーを維持し、取込内部だけ不変bytesを共有する生成経路を追加した。PaintNodeId、sampler、semantic、原画像の個別node identityは変えない。変更は `c0127d6` に固定した。
+
+Coreは**506 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-d237686a8eb44c19b37839cdd36cc834`）。Unity `6000.4.3f1`のV37 Player build、private RadDollV3候補のSave/Open・VRM1出力もPASS（`Artifacts/Authoring-20260914-102926-0a3520f915df4f3f9de89f75211db3fe/report.json`）。bytes共有による実メモリ削減量は同一条件のheap censusでは未計測で、軽量性の合格とは扱わない。
+
 ## 2026-09-14 NF-V1-10E: 取込base-colorの作業画像デコード共有
 
 同一GLB imageを複数materialが参照する場合、Workbenchが同じbase-colorをmaterialごとにUnity `Texture2D`へデコードし、1024px PaintImageとpreview hashも重複生成していた。1回の取込操作に限った `BaseColorImageIndex` cacheを追加し、解像度・MIME・preview hashを含む不変作業画像を全objectで共有する。PaintNodeId、materialごとのOriginalImage node、原画像bytesの防御コピーは従来どおり個別に保持する。変更は `10b597d` に固定した。
