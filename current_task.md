@@ -3651,7 +3651,7 @@ body候補（object ID先頭`12707472`）を選択し、`選択中を参照と�
 
 # 2026-09-15 STATUS: v1受入前の現在地点
 
-直近のmainは `a176ec9` で、`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore` を再実行し **512 passed / 0 failed** を確認した。Authoring起動probe、空projectの保存・終了・再開、private RadDollV3 VRMの取込→編集→native Save/Open→GLB／VRM出力→衣装package、Unity Bridge受け取りは既存の証拠でPASSを維持している。これは自動回帰・private素材smoke・合成Bridgeの範囲であり、実EditorWindowでの実衣装fit／貫通／見た目、移動・回転・scale済みavatar、VRChat Build & Test／クライアント表示の受入とは分ける。
+直近のmainは `ffb457e` で、`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore` を再実行し **514 passed / 0 failed** を確認した。証跡は `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-72262532d83148babfa65c297e3be973`。Authoring起動probe、空projectの保存・終了・再開、private RadDollV3 VRMの取込→編集→native Save/Open→GLB／VRM出力→衣装package、Unity Bridge受け取りは既存の証拠でPASSを維持している。これは自動回帰・private素材smoke・合成Bridgeの範囲であり、実EditorWindowでの実衣装fit／貫通／見た目、移動・回転・scale済みavatar、VRChat Build & Test／クライアント表示の受入とは分ける。
 
 追加レビューで、既知VRM拡張を認識しただけで完全保持と表示しない契約を再確認した。metaの利用条件、lookAt、firstPerson、expressionの材質・texture binding・制御flagなど、未保持・未解決の意味情報を含む入力は診断を残し、完全VRM出力を成功扱いにしない。`docs/Model-Interchange-Spec.md`にはこの判定と往復検証表が既に反映されている。
 
