@@ -4007,3 +4007,14 @@ source-skin表示と投影のキャッシュ判定は、従来の複数hashを�
 - Player: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Builds\SourceSkinCacheV2\NyaForge.exe`
 - 記録: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Navigation-Repeated-SourceSkinCacheV2-20260915-080734.json`
 - 境界: 20回の起動・終了と基本navigationの安定性のみ。2時間編集、20回の衣装更新、実EditorWindowのDPI／IME、実RadDollV3の全周fit・貫通・材質見た目、Unity／VRChat実機は未受入。
+
+# 2026-09-15 PERF-05: fitサマリーのavatar評価キャッシュ
+
+装着Panelのfit／weight対象サマリーは頂点選択変更のたびに更新されるため、対象avatarのGraphEvaluationを毎回再実行すると大きなavatarほどUI操作の負荷が増える。Graphが不変であることを利用し、対象ObjectIdとGraphインスタンスが同じ間は前回の評価結果を再利用するキャッシュを追加した。Graph操作・対象切替・再読込でGraphインスタンスが変わった場合だけ再評価する。fit計測、保存データ、Undo、出力結果の意味は変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentState.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Attachments.cs`
+- Unity 6000.4.3f1 隔離Windows Player `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Builds\SourceSkinCacheV5\NyaForge.exe`：build成功
+- Authoring自動検証: **88 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-MorphTargetContextV1-src\Artifacts\Authoring-20260915-081829-b889542fdc0e4c0d99823a773e652fb1\report.json`）
+- Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-39b4c52f3ec64ba6a32db0667263a20b`）
+- 境界: 自動回帰と不変Graph評価の再利用確認であり、実EditorWindowのGC/native memory計測、実マウスのDPI／IME、実RadDollV3全周fit・貫通・材質見た目、Unity実SDK、VRChat実機受入は未完了。

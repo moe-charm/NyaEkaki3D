@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using NyaForge.Authoring.Graph;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -26,6 +27,12 @@ namespace NyaForge.UnityRuntime
         readonly List<string> attachmentBoneIds = new List<string>();
         string attachmentTargetChoice;
         string attachmentChoiceOwner;
+        // Fit summary is refreshed for every selection change. Keep the last
+        // immutable target evaluation so hovering/selecting vertices does not
+        // re-run the avatar graph until its graph instance changes.
+        AuthoringGraph accessoryFitSummaryTargetGraph;
+        GraphEvaluation accessoryFitSummaryTargetEvaluation;
+        string accessoryFitSummaryTargetObjectId = "";
         string surfaceFitInspectionObjectId = "";
         string surfaceFitInspectionTargetObjectId = "";
         string surfaceFitInspectionStateHash = "";

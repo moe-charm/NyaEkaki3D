@@ -212,7 +212,17 @@ namespace NyaForge.UnityRuntime
             {
                 if (target?.Graph != null)
                 {
-                    var evaluation = target.EvaluateGraph();
+                    // Selection refreshes call this summary frequently. Graphs
+                    // are immutable, so reuse the last evaluation while the
+                    // selected target still points at the same graph instance.
+                    if (target.ObjectId != accessoryFitSummaryTargetObjectId ||
+                        !ReferenceEquals(target.Graph, accessoryFitSummaryTargetGraph))
+                    {
+                        accessoryFitSummaryTargetObjectId = target.ObjectId;
+                        accessoryFitSummaryTargetGraph = target.Graph;
+                        accessoryFitSummaryTargetEvaluation = target.EvaluateGraph();
+                    }
+                    var evaluation = accessoryFitSummaryTargetEvaluation;
                     var bind = target.Graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);
                     if (bind != null && evaluation.MeshInputs.TryGetValue(bind.NodeId, out var meshValue) && meshValue?.Mesh != null)
                     {
