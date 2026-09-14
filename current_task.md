@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10D: GLB parsed documentのimport間共有
+
+候補選択・全mesh instance取込では、同じGLBをinventory／mesh／skin／source-skinの各入口で再パースしていた。`GlbDocument`を一度生成し、Workbenchの1回の取込操作内でinventoryと各Importerへ共有する内部経路を追加した。JSONの再解析とモデルサイズBINの重複保持を避けつつ、各派生rootは従来どおり個別にcloneする。変更は `3d55e23` に固定した。
+
+Coreは**506 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-f4119b0bf02947908493b7970ecff22a`）。Unity `6000.4.3f1`のV35 Player build、合成Authoring suite、private RadDollV3候補のSave/Open・VRM1出力もPASS（`Artifacts/Authoring-20260914-101619-5fc716ddb52549999a816203c6cbf569/report.json`）。メモリ削減の効果量は同一条件のheap censusでは未計測であり、実候補取込の軽量性は引き続き未達課題として扱う。
+
 ## 2026-09-14 NF-V1-10C: GLB解析中BINの重複コピー削減
 
 GLB読込時、skin importerがskin属性を除いた静的rootを評価する際に、モデルサイズのBINを複製していた。`GlbDocument`へ解析中BINを共有できる生成経路を追加し、`GlbDocumentReader`とskin／source-skinの静的評価で同一不変BINを再利用する。既存の通常生成子は防御コピーを維持する。変更は `66a45b3` に固定した。
