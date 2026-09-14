@@ -389,10 +389,21 @@ namespace NyaForge.Authoring
         {
             byte[] jsonSource = Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None));
             int jsonLength = checked((jsonSource.Length + 3) / 4 * 4); var json = new byte[jsonLength]; Buffer.BlockCopy(jsonSource, 0, json, 0, jsonSource.Length); for (int i = jsonSource.Length; i < json.Length; i++) json[i] = 0x20;
-            using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream))
-            {
-                writer.Write(0x46546c67); writer.Write(2); writer.Write(checked(12 + 8 + json.Length + 8 + bin.Length)); writer.Write(json.Length); writer.Write(0x4e4f534a); writer.Write(json); writer.Write(bin.Length); writer.Write(0x004e4942); writer.Write(bin); return stream.ToArray();
-            }
+            int total = checked(12 + 8 + json.Length + 8 + bin.Length);
+            // The package is a fixed-layout container. Write directly into
+            // the final array instead of growing a MemoryStream and copying
+            // it with ToArray(), which briefly duplicates the whole VRM.
+            var result = new byte[total]; int offset = 0;
+            WriteInt32(result, ref offset, 0x46546c67); WriteInt32(result, ref offset, 2); WriteInt32(result, ref offset, total);
+            WriteInt32(result, ref offset, json.Length); WriteInt32(result, ref offset, 0x4e4f534a); Buffer.BlockCopy(json, 0, result, offset, json.Length); offset += json.Length;
+            WriteInt32(result, ref offset, bin.Length); WriteInt32(result, ref offset, 0x004e4942); Buffer.BlockCopy(bin, 0, result, offset, bin.Length);
+            return result;
+        }
+
+        static void WriteInt32(byte[] destination, ref int offset, int value)
+        {
+            destination[offset++] = (byte)value; destination[offset++] = (byte)(value >> 8);
+            destination[offset++] = (byte)(value >> 16); destination[offset++] = (byte)(value >> 24);
         }
     }
 }

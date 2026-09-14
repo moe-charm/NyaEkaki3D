@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15F: VRMコンテナ再構築の一時コピー削減
+
+`VrmExportService`のGLB/VRMコンテナ組み立てを、`MemoryStream`→`ToArray()`ではなく最終サイズのbyte配列へ直接書く方式へ変更した。ヘッダー、JSON padding、BIN bytesは従来と同じで、VRM metadata・readback契約は変更しない。Coreは**509 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-fda9b85f4189406d89dbf25ead091d9e`）。`Builds/BoneSubsetV12/NyaForge.exe`の実RadDollV3 `-VrmExportOnly` probeは**PASS**（`Artifacts/Authoring-20260914-162319-65cb57e8d0c44013bdb354af1b3ccb54/report.json`）。出力専用の外部2秒サンプリングは約40.5秒、working set peak **2,492.0MB**、private bytes peak **3,205.3MB**（`C:/Users/tomoaki/AppData/Local/Temp/nyaforge-vrm-output-memory-d268cab5b5dd4c98b0e79510f8198560.log`）。前回3,145.5MBとの差はOS／GPU状態を含む単一サンプルでは判定できないため、メモリ改善は未確定として扱う。機能回帰は通ったので、次はVRM1経路をさらに推測で変えず、実EditorWindowの手動保存・再開とVRChat Build & Testを受入する。
+
 ## 2026-09-14 NF-V1-15E: VRM1出力だけの測定入口
 
 VRM1出力のピークを通常GLB／全mesh経路と分けるため、`Tools/Test-NyaForgeAuthoring.ps1 -VrmExportOnly -ImportModel <path>`／`--authoring-vrm-export-only`を追加した。probeは取込後にnative projectを保存・再開し、VRM1 packageを一度だけ出力してから、検証済みの空projectへ戻す。初回実行でclean continuation pathの未作成を検出して修正し、`Builds/BoneSubsetV11/NyaForge.exe`で実RadDollV3を使ったprobeは**PASS**（`Artifacts/Authoring-20260914-161914-1e5a9d01f19c409e8027a262d1a740a4/report.json`）。出力`model.vrm`は**85,585,656 bytes**、外部2秒サンプリングは約40.5秒、working set peak **2,428.9MB**、private bytes peak **3,145.5MB**（`C:/Users/tomoaki/AppData/Local/Temp/nyaforge-vrm-output-memory-393ceeb7e5b5474393daad5f05bdf1d7.log`）。これはVRM1のpackage・readbackと取込・保存再開を含む単一環境の一時ピークで、通常編集のアイドル予算ではない。VRM1は通常操作から分離した任意出力として扱い、次の最適化は`File.ReadAllBytes`とpackage再構築の一時配列を測定点ごとに削減する。
