@@ -3881,3 +3881,17 @@ VRMのmeta利用条件、lookAt、firstPerson、expressionの材質・texture bi
 - 生成衣装package: `.../real-clothing-project/exports/clothing-20260914-202122-651891/skinned-clothing.nyaforge.json`（Neck参照、225 vertices／384 triangles）
 - Unity 2022.3.22f1 Bridge: **PASS**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealClothingBuild-20260915/Artifacts/BridgeReceiver-20260915-053257-308-caa61b915f614de39c09c87f68cac86b/bridge-report.json`）。Unity起動時に掃除されるproject `Temp`をPhysBones fixtureの出力先に使わないよう検証 harness を修正し、実衣装packageの受け取りまで完了した。
 - 未受入: 実EditorWindowのマウスでの衣装作成・全周fit・貫通・材質見た目、avatar移動／回転／scale、Unity実SDKでの適用、VRChat Build & Test／実機表示。
+
+# 2026-09-15 VRM-SEMANTIC-01: VRM出力の完全性境界
+
+VRM1出力は入力側の保持できない意味情報を`sourceDiagnostics`へ記録していたが、呼び出し側が通常の成功と完全保持を混同しやすかった。`VrmExportResult.SourceSemanticsComplete`とreportの`sourceSemanticStatus`／`sourceBlockingDiagnosticCount`を追加し、blocking診断がある出力を`partial`として明示する。APIへ`requireCompleteSourceSemantics`を追加し、厳格指定時は`VRM_SEMANTICS_INCOMPLETE`でstaging作成前に停止する。GUIにも「入力の未保持情報があれば出力を停止」チェックを追加し、既定のpartial出力は制限付き副経路として残した。衣装package／標準GLBの主経路は変更していない。
+
+- 変更: `Assets/NyaForge/Authoring/Persistence/VrmExportService.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.State.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ProjectOutput.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ProjectActions.cs`
+- 仕様同期: `docs/Model-Interchange-Spec.md`
+- Core回帰: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-2c38996cdcc44f35b587cc140d116ddf`）。non-blocking診断は`complete`、blocking診断は`partial`、厳格指定は出力先未作成を確認。
+- 未確認: Unity Player再ビルド、実EditorWindowでのチェック操作、実VRM／VRChat外観。これらは自動Core回帰の合格へ読み替えない。
+
+追試: Unity 6000.4.3f1 Player `VrmSemanticGateV1`を隔離コピーで再ビルドし、通常Authoringを **PASS**（`Artifacts/Authoring-20260915-060411-15f3d71d7eac4de0a7ceb03c1b4508de/report.json`）。private RadDollV3 VRMを入力した実衣装probeも **90 checks PASS**（`Artifacts/Authoring-20260915-060447-b0ce865e46e14666a4c7ec6d3c7472b6/report.json`）、生成packageは同report配下の`real-clothing-project/exports/clothing-20260914-210659-e6f717/skinned-clothing.nyaforge.json`。今回の実衣装probeは合成accessory fixtureを含むため、実EditorWindow操作、全周fit／貫通／材質見た目、Unity実SDK適用、VRChat Build & Test／実機表示は未確認のまま。

@@ -163,7 +163,12 @@ namespace NyaForge.Authoring
         public string Path { get; }
         public string ReportPath { get; }
         public int ObjectCount { get; }
-        internal VrmExportResult(string path, string reportPath, int objectCount) { Path = path; ReportPath = reportPath; ObjectCount = objectCount; }
+        /// <summary>True when the source import has no blocking loss diagnostics.</summary>
+        public bool SourceSemanticsComplete { get; }
+        internal VrmExportResult(string path, string reportPath, int objectCount, bool sourceSemanticsComplete)
+        {
+            Path = path; ReportPath = reportPath; ObjectCount = objectCount; SourceSemanticsComplete = sourceSemanticsComplete;
+        }
     }
 
     /// <summary>Creates a bounded VRM 1.0 package from NyaForge's rest-pose skinned GLB profile.</summary>
@@ -177,7 +182,8 @@ namespace NyaForge.Authoring
             IReadOnlyDictionary<string, SourceAffine> instanceWorldTransforms = null,
             IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMatrices = null,
             IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointLocalTransforms = null,
-            string metadataObjectId = null)
+            string metadataObjectId = null,
+            bool requireCompleteSourceSemantics = false)
         {
             Checks.Require(metadata != null, "VRM_METADATA_REQUIRED", "VRM export metadata is required.");
             if (workspace == null) throw new ArgumentNullException(nameof(workspace));
@@ -194,6 +200,10 @@ namespace NyaForge.Authoring
                 Checks.Require(referenceSkeleton != null, "VRM_SKELETON_REQUIRED", "VRM output requires a skeleton on the humanoid metadata object.");
                 Checks.Require(workspace.Document.Objects.All(item => item.Graph.Nodes.Values.Any(node => node.TypeId == Graph.BuiltinNodes.Skeleton && node.Skeleton != null && node.Skeleton.ContentHash == referenceSkeleton.ContentHash)),
                     "VRM_SKELETON_MISMATCH", "VRM avatar and clothing objects must share the same skeleton hash.");
+                var blockingDiagnostics = ReadBlockingSourceDiagnostics(workspace);
+                Checks.Require(!requireCompleteSourceSemantics || blockingDiagnostics.Count == 0,
+                    "VRM_SEMANTICS_INCOMPLETE",
+                    "VRM source contains semantic data that this profile cannot retain: " + string.Join(", ", blockingDiagnostics.Select(item => item.Code).Distinct(StringComparer.Ordinal)) + ".");
                 Checks.Require(!Directory.Exists(directory) && !File.Exists(directory), "EXPORT_DESTINATION_EXISTS", "Export destination already exists.");
             }
 
@@ -221,6 +231,7 @@ namespace NyaForge.Authoring
                 string outputStateHash;
                 int outputObjectCount;
                 JArray outputDiagnostics;
+                bool sourceSemanticsComplete;
                 lock (workspace.Gate)
                 {
                     // The GLB export is revision-pinned, but packaging and
@@ -233,6 +244,7 @@ namespace NyaForge.Authoring
                     outputStateHash = workspace.Document.StateHash;
                     outputObjectCount = workspace.Document.Objects.Count;
                     outputDiagnostics = ReadSourceDiagnostics(workspace);
+                    sourceSemanticsComplete = CountBlockingSourceDiagnostics(outputDiagnostics) == 0;
                 }
                 Directory.CreateDirectory(staging);
                 string path = System.IO.Path.Combine(staging, FileName); File.WriteAllBytes(path, vrmBytes);
@@ -248,6 +260,8 @@ namespace NyaForge.Authoring
                     ["stateHash"] = outputStateHash,
                     ["vrmHash"] = Checks.Hash(vrmBytes),
                     ["objectCount"] = outputObjectCount,
+                    ["sourceSemanticStatus"] = sourceSemanticsComplete ? "complete" : "partial",
+                    ["sourceBlockingDiagnosticCount"] = CountBlockingSourceDiagnostics(outputDiagnostics),
                     ["metadata"] = new JObject { ["name"] = metadata.Name, ["version"] = metadata.Version, ["authors"] = new JArray(metadata.Authors), ["licenseUrl"] = "other", ["otherLicenseUrl"] = metadata.LicenseUrl, ["humanoidBoneCount"] = metadata.HumanoidNodes.Count, ["expressionCount"] = metadata.Expressions.Count, ["springBone"] = metadata.Springs != null },
                     ["sourceDiagnostics"] = outputDiagnostics,
                     ["validation"] = new JObject { ["glbSceneInventory"] = "passed", ["vrmMetadataReader"] = "passed" },
@@ -256,7 +270,7 @@ namespace NyaForge.Authoring
                 File.WriteAllText(reportPath, report.ToString(Newtonsoft.Json.Formatting.Indented) + "\n", new UTF8Encoding(false));
                 string parent = System.IO.Path.GetDirectoryName(directory); if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent);
                 Directory.Move(staging, directory);
-                return new VrmExportResult(System.IO.Path.Combine(directory, FileName), System.IO.Path.Combine(directory, ReportFileName), workspace.Document.Objects.Count);
+                return new VrmExportResult(System.IO.Path.Combine(directory, FileName), System.IO.Path.Combine(directory, ReportFileName), workspace.Document.Objects.Count, sourceSemanticsComplete);
             }
             catch
             {
@@ -287,6 +301,26 @@ namespace NyaForge.Authoring
                         ["code"] = d.Code, ["path"] = d.Path, ["isBlocking"] = d.IsBlocking, ["message"] = d.Message
                     }))
                 }));
+        }
+
+        static IReadOnlyList<GlbImportDiagnostic> ReadBlockingSourceDiagnostics(AuthoringWorkspace workspace)
+        {
+            var bytes = workspace.Attachments.Read(ProjectAttachments.ImportDiagnostics);
+            if (bytes == null) return Array.Empty<GlbImportDiagnostic>();
+            var graphIds = new HashSet<string>(workspace.Document.Objects.Where(item => item.Graph != null).Select(item => item.Graph.GraphId), StringComparer.Ordinal);
+            return ImportedGlbDiagnosticsCodec.Read(bytes).Values
+                .Where(item => graphIds.Contains(item.GraphId))
+                .SelectMany(item => item.Diagnostics)
+                .Where(item => item.IsBlocking)
+                .ToArray();
+        }
+
+        static int CountBlockingSourceDiagnostics(JArray sourceDiagnostics)
+        {
+            return (sourceDiagnostics ?? new JArray())
+                .OfType<JObject>()
+                .SelectMany(record => (record["diagnostics"] as JArray) ?? new JArray())
+                .Count(diagnostic => diagnostic["isBlocking"]?.Type == JTokenType.Boolean && (bool)diagnostic["isBlocking"]!);
         }
 
         static VrmExportMetadata ResolveAuthoredNodeTokens(VrmExportMetadata source, GlbExportNodeMap map, string objectId)

@@ -607,7 +607,39 @@ internal static partial class Program
             var report = JObject.Parse(File.ReadAllText(result.ReportPath)); Equal("Vrm1Humanoid", (string)report["profile"]!); Equal(Checks.Hash(File.ReadAllBytes(result.Path)), (string)report["vrmHash"]!);
             Equal(1, ((JArray)report["sourceDiagnostics"]!).Count);
             Equal("EXTENSIONS_PARTIAL", (string)report["sourceDiagnostics"]![0]!["diagnostics"]![0]!["code"]!);
+            True(result.SourceSemanticsComplete);
+            Equal("complete", (string)report["sourceSemanticStatus"]!);
+            Equal(0, (int)report["sourceBlockingDiagnosticCount"]!);
             Equal("vrm1", VrmMetadataReader.Read(File.ReadAllBytes(result.Path)).Format);
+        });
+
+        Test("VRM 1 export marks lossy source semantics and strict mode leaves no output", () =>
+        {
+            var mesh = AuthoringFixtures.Panel(1); string boneId = GraphId();
+            var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(boneId, "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
+            string sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), outputId = GraphId();
+            var binding = SkinBinding.Create(mesh, skeleton, Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, boneId, 1f)));
+            var pose = PoseSet.Create(skeleton, new[] { new BonePose(boneId, PoseTransform.FromTranslation(new Vec3())) });
+            var graph = new AuthoringGraph(GraphId(),
+                new[] { GraphNode.Source(sourceId, mesh, new RestTransform(1, new Vec3())), GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding), GraphNode.PoseNode(poseId, pose), GraphNode.SkinDeformNode(deformId), GraphNode.Output(outputId) },
+                new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"), new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"), new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"), new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", outputId, "mesh") }, outputId);
+            var workspace = AuthoringWorkspace.CreateEmpty(); Ok(Execute(workspace, AuthoringOperation.AddGraph(graph)));
+            workspace.SetAttachments(new ProjectAttachments(new Dictionary<string, byte[]>
+            {
+                [ProjectAttachments.ImportDiagnostics] = ImportedGlbDiagnosticsCodec.Write(new[] { new ImportedGlbDiagnostics(graph.GraphId, Checks.Hash(new byte[] { 5, 8, 13 }), 0, 0,
+                    new[] { new GlbImportDiagnostic("MATERIALS_NOT_RETAINED", "materials", true, "material semantics are incomplete") }) })
+            }));
+            var mapping = VrmExportMetadata.RequiredHumanBones.ToDictionary(name => name, _ => 1, StringComparer.Ordinal);
+            var metadata = new VrmExportMetadata("Partial avatar", new[] { "NyaForge" }, "https://example.com/license", mapping);
+            string partialDirectory = Path.Combine(Root, "vrm-export-partial-" + Guid.NewGuid().ToString("N"));
+            var partial = VrmExportService.ExportVrm1(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, partialDirectory, metadata);
+            True(File.Exists(partial.Path)); False(partial.SourceSemanticsComplete);
+            var partialReport = JObject.Parse(File.ReadAllText(partial.ReportPath));
+            Equal("partial", (string)partialReport["sourceSemanticStatus"]!); Equal(1, (int)partialReport["sourceBlockingDiagnosticCount"]!);
+
+            string strictDirectory = Path.Combine(Root, "vrm-export-strict-rejected-" + Guid.NewGuid().ToString("N"));
+            Expect("VRM_SEMANTICS_INCOMPLETE", () => VrmExportService.ExportVrm1(workspace, workspace.InstanceId, workspace.Document.DocumentId, workspace.Document.DocumentRevision, strictDirectory, metadata, requireCompleteSourceSemantics: true));
+            False(Directory.Exists(strictDirectory));
         });
 
         Test("VRM 1 export includes skin-bound clothing objects and maps metadata to the avatar mesh", () =>

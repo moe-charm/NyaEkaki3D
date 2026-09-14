@@ -20,6 +20,7 @@ namespace NyaForge.UnityRuntime
         VisualElement emptyProjectEntryPanel;
         TextField projectPath;
         TextField vrmName, vrmAuthors, vrmLicenseUrl;
+        Toggle vrmRequireCompleteSemantics;
         IntegerField vertexId;
         ScrollView controls;
         GraphCanvas graphCanvas;
