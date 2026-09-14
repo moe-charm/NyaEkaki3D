@@ -52,6 +52,24 @@ internal static partial class Program
             tooMany.AddRange(extra.Select(id => new SkinBinding.VertexWeightInput(0, id, .1f))); Expect("INFLUENCE_LIMIT", () => SkinBinding.Create(mesh, manyBones, tooMany));
         });
 
+        Test("clothing skeleton subset keeps weighted bones and their ancestors", () =>
+        {
+            string root = GraphId(), mid = GraphId(), leaf = GraphId(), unused = GraphId();
+            var skeleton = new SkeletonDefinition(new[] {
+                new BoneDefinition(root, "Root", "", new Vec3(), new Vec3(0, .1f, 0)),
+                new BoneDefinition(mid, "Mid", root, new Vec3(0, .1f, 0), new Vec3(0, .2f, 0)),
+                new BoneDefinition(leaf, "Leaf", mid, new Vec3(0, .2f, 0), new Vec3(0, .3f, 0)),
+                new BoneDefinition(unused, "Unused", "", new Vec3(1, 0, 0), new Vec3(1, .1f, 0))
+            });
+            var mesh = AuthoringFixtures.Panel(1);
+            var binding = SkinBinding.Create(mesh, skeleton,
+                Enumerable.Range(0, mesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, leaf, 1f)));
+            var subset = SkeletonBindingSubset.ForBinding(skeleton, binding);
+            Equal(3, subset.Bones.Count); True(subset.ById.ContainsKey(root)); True(subset.ById.ContainsKey(mid)); True(subset.ById.ContainsKey(leaf));
+            var rebound = binding.RebindToSkeleton(mesh, subset);
+            Equal(subset.ContentHash, rebound.SkeletonHash); Equal(leaf, rebound.Weights[0][0].BoneId);
+        });
+
         Test("rig and morph capacity retain 257 bones, 18 influences and 262 targets", () =>
         {
             var boneIds = Enumerable.Range(0, 257).Select(_ => GraphId()).ToArray();

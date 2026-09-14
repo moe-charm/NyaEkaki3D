@@ -121,6 +121,18 @@ namespace NyaForge.Authoring.Rig
             return validated;
         }
 
+        /// <summary>Rebuilds this binding against a skeleton containing the same weighted BoneIds.</summary>
+        public SkinBinding RebindToSkeleton(MeshData mesh, SkeletonDefinition skeleton)
+        {
+            if (mesh == null) throw new ArgumentNullException("mesh");
+            if (skeleton == null) throw new ArgumentNullException("skeleton");
+            Checks.Require(MeshTopologyHash == mesh.TopologyHash, "SKIN_TOPOLOGY_CHANGED", "Binding belongs to another mesh topology.");
+            foreach (var value in Weights.Values.SelectMany(items => items))
+                Checks.Require(skeleton.ById.ContainsKey(value.BoneId), "BONE_NOT_FOUND", "Weight references an unknown bone.");
+            return Create(mesh, skeleton, Weights.OrderBy(pair => pair.Key)
+                .SelectMany(pair => pair.Value.Select(value => new VertexWeightInput(pair.Key, value.BoneId, value.Weight))));
+        }
+
         public sealed class VertexWeightInput
         {
             public int VertexIndex { get; }

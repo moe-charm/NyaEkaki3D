@@ -2832,3 +2832,12 @@ Unity **2022.3.22f1**のprivateプローブへ最新のEditor/Runtimeソース�
 
 これは実Unity EditorWindowでの候補生成・明示反映の受入であり、169本の自動確定や残り2本の推測割当は行っていない。実衣装の適用、移動・回転・scale済みavatarでの全周見た目・貫通、衣装更新・削除Undo、VRChat Build & Testは引き続き未受入である。
 
+# 2026-09-14 衣装packageの骨サブセット化
+
+レビューで実カフpackageのskeletonが171本（うち `RightEye_HighLight` と `Goggles_2` は受け取りavatarに存在しない）となり、衣装が使わない骨まで初回割当を要求していた。ウェイトに実際に参照されるBoneIdとその祖先だけを残す `SkeletonBindingSubset.ForBinding` を追加し、選択衣装packageのGLB・skeleton sidecar・binding sidecarを同じ縮約骨格から生成するようにした。元の編集用graphと全身avatar骨格は変更しない。
+
+`SkinBinding.RebindToSkeleton` とGLB出力のsubset overloadは、BoneIdでinverse-bind／joint-local行列を再対応させ、元の配列順をsubset順として誤読しない。Coreへ祖先保持・未使用骨除外・binding再構成の回帰を追加し、`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore` は **508 passed / 0 failed**。
+
+残りの受入は、修正版Playerで実カフpackageを再生成して骨数が18本前後（ウェイト参照＋祖先）になること、Unity EditorWindowで候補生成・適用・保存・衣装表示を一周すること。移動／回転／scale済みavatar、衣装A→B更新、UV0・normal・MRの実画素、VRChat Build & Testは別のWindows実機ゲートとして記録する。private probeと既存の旧packageは変更せず、public repositoryにはソースとテストだけを入れる。
+
+上記のPlayerを `Builds/BoneSubsetV1/NyaForge.exe` としてビルドし、`Tools/Test-NyaForgeRealClothing.ps1` を実RadDollV3 VRMで再実行した。Player **93 checks PASS**、Unity Bridge **17 checks PASS**。生成packageは `Artifacts/Authoring-20260914-143044-d7954b6a327f477cad213eae519635fb/imported-accessory-skin-project/exports/clothing-20260914-053257-0a7daa/skinned-clothing.nyaforge.json`、skeleton sidecarは **2 bones**（Child／Root）で、GLB・sidecarの受け取りまで成功した。Unity EditorWindowの手動プローブは旧ライブラリと現行ソースの混在が残り、再起動後もコンパイルエラー表示が残ったため、このターンでは新packageの画面適用を合格扱いしない。実際の移動／回転／scale、衣装更新・削除Undo、UV0・normal・MR画素、VRChat Build & Testは引き続き未受入。

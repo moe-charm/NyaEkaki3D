@@ -85,6 +85,15 @@ namespace NyaForge.Authoring
             long revision, string objectId, string directory, bool extended = false,
             IReadOnlyList<SourceAffine> inverseBindMatrices = null,
             IReadOnlyList<SourceAffine> jointLocalTransforms = null)
+            => ExportSkinnedObject(workspace, instance, document, revision, objectId, directory, extended,
+                inverseBindMatrices, jointLocalTransforms, null, null);
+
+        /// <summary>Writes one skinned object with an explicit skeleton/binding subset for delivery packages.</summary>
+        public static GlbExportResult ExportSkinnedObject(AuthoringWorkspace workspace, string instance, string document,
+            long revision, string objectId, string directory, bool extended,
+            IReadOnlyList<SourceAffine> inverseBindMatrices,
+            IReadOnlyList<SourceAffine> jointLocalTransforms,
+            SkeletonDefinition skeletonOverride, SkinBinding bindingOverride)
         {
             ValidateRequest(workspace, instance, document, revision, directory, new[] { objectId });
             lock (workspace.Gate)
@@ -92,7 +101,8 @@ namespace NyaForge.Authoring
                 var item = workspace.Document.Objects.FirstOrDefault(value => value.ObjectId == objectId);
                 Checks.Require(item != null, "OBJECT_NOT_FOUND", "Skinned clothing export object is not present.");
                 var profile = extended ? GlbExportProfile.SkinnedGeometryExtended : GlbExportProfile.SkinnedGeometry;
-                var skinned = BuildSkinnedObject(item, null, inverseBindMatrices, jointLocalTransforms, profile);
+                var skinned = BuildSkinnedObject(item, null, inverseBindMatrices, jointLocalTransforms, profile,
+                    skeletonOverride, bindingOverride);
                 var sourceDiagnostics = ReadSourceDiagnostics(workspace).Where(pair => pair.Value.GraphId == item.Graph.GraphId)
                     .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
                 var paths = Write(directory, new[] { skinned.Mesh }, new[] { skinned }, profile,
@@ -334,7 +344,8 @@ namespace NyaForge.Authoring
                 .ToDictionary(group => group.Key, group => group.First().OriginalImage, StringComparer.Ordinal);
         }
 
-        static SkinnedObject BuildSkinnedObject(AuthoringObject item, SourceAffine instanceWorldTransform, IReadOnlyList<SourceAffine> inverseBindMatrices, IReadOnlyList<SourceAffine> jointLocalTransforms, GlbExportProfile profile)
+        static SkinnedObject BuildSkinnedObject(AuthoringObject item, SourceAffine instanceWorldTransform, IReadOnlyList<SourceAffine> inverseBindMatrices, IReadOnlyList<SourceAffine> jointLocalTransforms, GlbExportProfile profile,
+            SkeletonDefinition skeletonOverride = null, SkinBinding bindingOverride = null)
         {
             Checks.Require(!item.IsStaticProfile, "GLB_SKIN_PROFILE", "Skinned GLB export requires a graph object.");
             var graph = item.Graph; var evaluation = item.EvaluateGraph();
@@ -345,7 +356,8 @@ namespace NyaForge.Authoring
             var poseNodes = graph.Nodes.Values.Where(node => node.TypeId == BuiltinNodes.Pose && node.Pose != null).ToArray();
             Checks.Require(sourceNodes.Length == 1 && skeletonNodes.Length == 1 && bindingNodes.Length == 1 && poseNodes.Length <= 1,
                 "GLB_SKIN_GRAPH", "Skinned GLB export requires one source, skeleton, skin binding and optional pose.");
-            var source = sourceNodes[0]; var skeleton = skeletonNodes[0].Skeleton;
+            var source = sourceNodes[0]; var sourceSkeleton = skeletonNodes[0].Skeleton;
+            var skeleton = skeletonOverride ?? sourceSkeleton;
             Checks.Require(source.Transform.Scale == 1f && source.Transform.Translation.X == 0f && source.Transform.Translation.Y == 0f && source.Transform.Translation.Z == 0f,
                 "GLB_SKIN_TRANSFORM", "Skinned GLB export requires an identity source transform.");
             var authoredOutput = evaluation.Output.Mesh;
@@ -370,7 +382,8 @@ namespace NyaForge.Authoring
             var morphDeform = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.MorphDeform);
             var weights = morphDeform?.MorphWeights ?? new Dictionary<string, float>(StringComparer.Ordinal);
             Checks.Require(weights.Count == 0 || weights.Values.All(value => value == 0f), "GLB_MORPH_EDIT_UNSUPPORTED", "Skinned GLB export requires morph weights to be zero; bake a posed morph into static GLB or native project export.");
-            var binding = bindingNodes[0].Binding.ValidateFor(authoredOutput, skeleton);
+            var sourceBinding = bindingNodes[0].Binding.ValidateFor(authoredOutput, sourceSkeleton);
+            var binding = (bindingOverride ?? sourceBinding).ValidateFor(authoredOutput, skeleton);
             // This interchange profile writes one JOINTS_0/WEIGHTS_0 set. Do
             // not silently drop fifth-and-later influences while producing a
             // file that claims to preserve the skin.
@@ -378,7 +391,9 @@ namespace NyaForge.Authoring
                 Checks.Require(binding.Weights.Values.All(values => values.Count <= 4),
                     "GLB_SKIN_INFLUENCES", "Skinned GLB export supports at most four influences per vertex; use extended or native export for higher influence counts.");
             MorphSet morphs = morphNode == null ? null : morphNode.Morphs.ValidateFor(source.SourceMesh);
-            var pose = poseNodes.Length == 0 ? DefaultPose(skeleton) : poseNodes[0].Pose.ValidateFor(skeleton);
+            var sourcePose = poseNodes.Length == 0 ? DefaultPose(sourceSkeleton) : poseNodes[0].Pose.ValidateFor(sourceSkeleton);
+            var pose = skeletonOverride == null ? sourcePose : PoseSet.Create(skeleton,
+                skeleton.Bones.Select(bone => new BonePose(bone.BoneId, sourcePose.ByBoneId[bone.BoneId].Transform)));
             foreach (var bone in skeleton.Bones)
             {
                 var value = pose.ByBoneId[bone.BoneId].Transform;
@@ -393,10 +408,20 @@ namespace NyaForge.Authoring
                     Material = evaluation.Output.Material, BaseColor = evaluation.Output.BaseColor, SlotMaterials = evaluation.Output.SlotMaterials,
                     OriginalImagesByPreviewHash = OriginalImages(graph), OriginalImagesByPaintNodeId = OriginalImagesByPaintNode(graph) },
                 Skeleton = skeleton, Binding = binding, Pose = pose
-                , InverseBindMatrices = inverseBindMatrices, JointLocalTransforms = jointLocalTransforms,
-                InverseBindByBone = MatrixMap(skeleton, inverseBindMatrices, "GLB_SKIN_BIND"),
-                JointLocalByBone = MatrixMap(skeleton, jointLocalTransforms, "GLB_SKIN_SKELETON")
+                // Subset exports keep the original matrices only in the
+                // BoneId-keyed maps. The positional arrays belong to the
+                // source skeleton and must not be interpreted as subset order.
+                , InverseBindMatrices = skeletonOverride == null ? inverseBindMatrices : null,
+                JointLocalTransforms = skeletonOverride == null ? jointLocalTransforms : null,
+                InverseBindByBone = RestrictMatrixMap(skeleton, MatrixMap(sourceSkeleton, inverseBindMatrices, "GLB_SKIN_BIND")),
+                JointLocalByBone = RestrictMatrixMap(skeleton, MatrixMap(sourceSkeleton, jointLocalTransforms, "GLB_SKIN_SKELETON"))
             };
+        }
+
+        static IReadOnlyDictionary<string, SourceAffine> RestrictMatrixMap(SkeletonDefinition skeleton, IReadOnlyDictionary<string, SourceAffine> values)
+        {
+            if (values == null) return null;
+            return skeleton.Bones.ToDictionary(bone => bone.BoneId, bone => values[bone.BoneId], StringComparer.Ordinal);
         }
 
         static IReadOnlyDictionary<string, SourceAffine> MatrixMap(SkeletonDefinition skeleton, IReadOnlyList<SourceAffine> values, string code)

@@ -5,6 +5,7 @@ using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Import;
+using NyaForge.Authoring.Rig;
 using NyaForge.Authoring.Simulation;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -251,6 +252,8 @@ namespace NyaForge.UnityRuntime
                 throw new InvalidOperationException("選択衣装へskeletonとskin-bindを先に接続してください。");
             if (!evaluation.SkinBindingOutputs.TryGetValue(bindingNode.NodeId, out var bindingValue) || bindingValue?.Binding == null)
                 throw new InvalidOperationException("選択衣装のskin-bind評価結果を取得できません。");
+            var packageSkeleton = SkeletonBindingSubset.ForBinding(skeletonNode.Skeleton, bindingValue.Binding);
+            var packageBinding = bindingValue.Binding.RebindToSkeleton(evaluation.Output.Mesh, packageSkeleton);
             var inverseMap = SkinnedInverseBindMatrices();
             inverseMap.TryGetValue(item.ObjectId, out var inverseBinds);
             var jointMap = SkinnedJointLocalTransforms();
@@ -265,10 +268,11 @@ namespace NyaForge.UnityRuntime
             try
             {
                 var glb = GlbExportService.ExportSkinnedObject(workspace, workspace.InstanceId, workspace.Document.DocumentId,
-                    workspace.Document.DocumentRevision, item.ObjectId, temporaryGlbDirectory, false, inverseBinds, jointLocals);
+                    workspace.Document.DocumentRevision, item.ObjectId, temporaryGlbDirectory, false, inverseBinds, jointLocals,
+                    packageSkeleton, packageBinding);
                 byte[] glbBytes = File.ReadAllBytes(glb.Path);
                 string manifest = SkinnedClothingPackage.Export(packageDirectory, glbBytes, evaluation.Output.Mesh,
-                    skeletonNode.Skeleton, bindingValue.Binding, workspace.Document.DocumentId, item.ObjectId,
+                    packageSkeleton, packageBinding, workspace.Document.DocumentId, item.ObjectId,
                     item.Graph.GraphId, workspace.Document.StateHash, item.Graph.ContentHash);
                 SetStatus("選択衣装だけのskin packageを書き出しました: " + manifest + " · GLBとBoneId付きsidecarを同梱");
             }
