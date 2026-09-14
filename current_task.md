@@ -3648,3 +3648,11 @@ body候補（object ID先頭`12707472`）を選択し、`選択中を参照と�
 `Builds/EmptyProjectOpenV2/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260915-012701-329.log`）を再ビルドし、`Tools/Test-NyaForgeAuthoringStartup.ps1 -BuildName EmptyProjectOpenV2`を実行。**PASS**（`Artifacts/AuthoringStartup-20260915-012723-a2d03fb9cbb142b78eb619960355b67a/report.json`）で、report生成後のプロセス終了まで確認できた。`emptyProjectReopenVisible=true`、再開ボタン表示、画面サイズ1600×1000、可視ピクセルありを記録した。
 
 同じV2 Playerで通常のAuthoring回帰も実行し、**PASS**（`Artifacts/Authoring-20260915-012802-c6f787147b2d4442b4fd20cb9860d762/report.json`）。既存の保存／再開・頂点編集・材質・衣装package・MCP・出力経路を含むsuiteに影響がないことを確認した。Coreは今回UI／probeのみの変更のため、直近の **512 passed / 0 failed** を継続利用した。
+
+# 2026-09-15 STATUS: v1受入前の現在地点
+
+直近のmainは `a176ec9` で、`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore` を再実行し **512 passed / 0 failed** を確認した。Authoring起動probe、空projectの保存・終了・再開、private RadDollV3 VRMの取込→編集→native Save/Open→GLB／VRM出力→衣装package、Unity Bridge受け取りは既存の証拠でPASSを維持している。これは自動回帰・private素材smoke・合成Bridgeの範囲であり、実EditorWindowでの実衣装fit／貫通／見た目、移動・回転・scale済みavatar、VRChat Build & Test／クライアント表示の受入とは分ける。
+
+追加レビューで、既知VRM拡張を認識しただけで完全保持と表示しない契約を再確認した。metaの利用条件、lookAt、firstPerson、expressionの材質・texture binding・制御flagなど、未保持・未解決の意味情報を含む入力は診断を残し、完全VRM出力を成功扱いにしない。`docs/Model-Interchange-Spec.md`にはこの判定と往復検証表が既に反映されている。
+
+次は、(1) 実RadDollV3 sceneでの衣装一着のEditorWindow操作（fit・surface weight・手修正・全周確認）、(2) Unity側の移動／回転／scale・更新／削除Undo、(3) VRChat Build & Test／クライアント表示、の順に手動受入カードを進める。FBX／BLEND parser、全shader、Quest／macOS、完全VRM互換はこの受入が終わるまでv1の途中へ追加しない。
