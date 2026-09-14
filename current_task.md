@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10H: PerformanceV37実RadDollV3候補の再計測
+
+最新の`Builds/PerformanceV37/NyaForge.exe`へprivateのRadDollV3 VRMを候補1体として渡し、通常のAuthoring suite（candidate選択、EditMesh、native Save/Open、skinned GLB／VRM1出力）を再実行した。Player reportは`passed: true`（`Artifacts/Authoring-20260914-104031-e91e8d0d50d3492a9c88bc42d5331880/report.json`）。外部10秒サンプリングでは実行約110.3秒、working set peak **2,377.9MB**、private bytes peak **3,063.6MB**（`Artifacts/Authoring-Memory-20260914-104031/memory-measurement.json`）だった。
+
+同一候補の過去観測（working set約2,795MB、約260.8秒）より小さい値だが、OS状態・suite内容・サンプリング時点の差を含むため、最適化量の確定比較とは扱わない。全mesh取込、実EditorWindowのマウス／IME／Explorer、実アバター全周fit・貫通ゼロ・見た目、VRChat Build & Test／実機表示は別受入として残す。
+
 ## 2026-09-14 NF-V1-10G: f010146フィードバックの現行HEAD再照合
 
 提示された`f010146`基準のP1 3件／P2 5件を現行`main` **`f3b3d29`**へ再照合した。MCP参照保護、単一object汎用出力、Polygon→skinの疎material slot、Unity BridgeのMR係数、Paint原画像のnode identity、allowlist 1対象、高DPI bounds、fit対象のobject境界はいずれも後続実装と回帰で解消済みで、重複修正は行っていない。詳細は[フィードバック再照合](docs/reviews/2026-09-14-Feedback-f010146-Recheck-f3b3d29.md)へ固定した。
