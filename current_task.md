@@ -3904,3 +3904,18 @@ Viewerの「パックを開く…」でnative制作正本 project.nyaforge.json 
 - current.StandaloneWindows64.jsonをWindowsファイル選択から開き、RadDollV3衣装確認を表示できることを確認。
 - 同じダイアログから project.nyaforge.json を選び、現在のモデルを保持したままコードと案内文が表示されることを確認。
 - 確認範囲はViewer導線とエラー表示。制作画面でのnative project再開、実EditorWindowの衣装作成、VRChat受入は別カード。
+
+# 2026-09-15 UNITY-MANUAL-03: 実RadDollV3衣装packageの受け取り導線
+
+Unity **2022.3.22f1** の隔離 `PhysBonesSdkProbe-20260914` で、現行の実RadDollV3入力由来packageを `NyaForge Clothing` windowへ読み込み、stable bone bindingを実avatarへ明示指定して操作を一周した。
+
+- package: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-RealClothingBuild-20260915\Artifacts\Authoring-20260915-060447-b0ce865e46e14666a4c7ec6d3c7472b6\real-clothing-project\exports\clothing-20260914-210659-e6f717\skinned-clothing.nyaforge.json`
+- 読込表示: `225 vertices · 384 triangles`、`4 bones`、avatar root `RaddollV3 (Transform)`
+- 明示割当: `Chest → Chest`、`Spine → Spine`、`Neck → Neck`、`Hips → Hips`
+- `現在の割当を保存` → stable bone割当をavatar rootへ保存
+- `事前診断（書き込みなし）` → `事前診断OK (sceneへの書き込みなし)`
+- `衣装を作成／更新` → `衣装を適用しました。`
+- 同じpackageで `衣装を作成／更新` を再実行し、更新経路を通過
+- `管理対象の衣装を削除（Undo可）` → `管理対象衣装を削除しました。Undoで元の関連付けへ戻せます。`
+
+実EditorWindowでのpackage読込、Object pickerによる4本の明示割当、保存、書き込み前診断、適用、更新、削除の導線は確認できた。`Ctrl+Z`は送信したが、画面状態から生成衣装の復元を確認できなかったため、Undo復元は未受入として残す。今回の画面は受け取り導線の確認であり、実衣装の全周fit、貫通、pose変形、材質の見た目、avatar移動・回転・scale後の配置、Unity実SDK適用、VRChat Build & Test／実機表示の合格には読み替えない。
