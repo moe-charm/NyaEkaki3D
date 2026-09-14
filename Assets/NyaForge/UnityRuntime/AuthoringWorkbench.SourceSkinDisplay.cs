@@ -59,13 +59,14 @@ namespace NyaForge.UnityRuntime
             if (evaluation == null || graph == null || importedRigSession?.SourceSkin == null || importedRigSession.SourceSkinBinding == null)
                 return null;
             string poseHash = "";
+            bool hasPoseHash = false;
             GraphNode bindingNode = null;
             foreach (var node in graph.Nodes.Values)
             {
                 if (node.TypeId == BuiltinNodes.Pose && node.Pose != null)
                 {
                     string candidate = node.Pose.ContentHash ?? "";
-                    if (poseHash == "" || string.CompareOrdinal(candidate, poseHash) < 0) poseHash = candidate;
+                    if (!hasPoseHash || string.CompareOrdinal(candidate, poseHash) < 0) { poseHash = candidate; hasPoseHash = true; }
                 }
                 if (bindingNode == null && node.TypeId == BuiltinNodes.SkinBind && node.Binding != null) bindingNode = node;
             }
