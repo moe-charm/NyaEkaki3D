@@ -64,7 +64,7 @@ namespace NyaForge.UnityRuntime
                             decoded = new ImportedBaseColorImage(image, sourceWidth, sourceHeight, ImageMime(material));
                             imageCache.Add(sourceImageIndex, decoded);
                         }
-                        original = new GraphOriginalImage(imageId, decoded.SourceWidth, decoded.SourceHeight, decoded.MimeType, material.CopyBaseColorImageBytes(), decoded.PreviewHash);
+                        original = new GraphOriginalImage(imageId, decoded.SourceWidth, decoded.SourceHeight, decoded.MimeType, material.BorrowBaseColorImageBytes(), decoded.PreviewHash, true);
                     }
                     catch (AuthoringException error)
                     {
@@ -140,7 +140,7 @@ namespace NyaForge.UnityRuntime
                 warnings?.Add((source.Semantic == MaterialTextureSemantic.Normal ? "normal" : "metallic-roughness") + " texture reference was not retained because its local image bytes were unavailable.");
                 return null;
             }
-            return new MaterialTextureSlot(source.Semantic, source.CopyImageBytes(), source.MimeType, source.TexCoord, source.NormalScale, source.Sampler);
+            return MaterialTextureSlot.FromSharedBytes(source.Semantic, source.BorrowImageBytes(), source.MimeType, source.TexCoord, source.NormalScale, source.Sampler);
         }
 
         static byte[] ResizeRgba(Color32[] source, int sourceWidth, int sourceHeight, int targetWidth, int targetHeight)

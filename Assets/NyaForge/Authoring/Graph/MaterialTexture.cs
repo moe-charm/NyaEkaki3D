@@ -60,6 +60,12 @@ namespace NyaForge.Authoring.Graph
 
         public MaterialTextureSlot(MaterialTextureSemantic semantic, byte[] encodedBytes, string mimeType,
             int texCoord = 0, float normalScale = 1f, MaterialTextureSampler sampler = null)
+            : this(semantic, encodedBytes, mimeType, texCoord, normalScale, sampler, false)
+        {
+        }
+
+        MaterialTextureSlot(MaterialTextureSemantic semantic, byte[] encodedBytes, string mimeType,
+            int texCoord, float normalScale, MaterialTextureSampler sampler, bool shareBytes)
         {
             Checks.Require(Enum.IsDefined(typeof(MaterialTextureSemantic), semantic), "INVALID_TEXTURE_SLOT", "Texture semantic is unsupported.");
             Checks.Require(encodedBytes != null && encodedBytes.Length > 0 && encodedBytes.Length <= 16 * 1024 * 1024,
@@ -72,7 +78,7 @@ namespace NyaForge.Authoring.Graph
                 Checks.Require(Math.Abs(normalScale - 1f) < 0.000001f, "INVALID_TEXTURE_SLOT", "Only normal textures may specify normalScale.");
             Semantic = semantic; MimeType = mimeType; TexCoord = texCoord; NormalScale = normalScale;
             Sampler = sampler ?? MaterialTextureSampler.Default;
-            this.encodedBytes = (byte[])encodedBytes.Clone();
+            this.encodedBytes = shareBytes ? encodedBytes : (byte[])encodedBytes.Clone();
             using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream, Encoding.UTF8))
             {
                 writer.Write((int)Semantic); writer.Write(TexCoord); writer.Write(Checks.Canonical(NormalScale));
@@ -82,6 +88,15 @@ namespace NyaForge.Authoring.Graph
         }
 
         public byte[] CopyEncodedBytes() { return (byte[])encodedBytes.Clone(); }
+
+        /// <summary>Internal immutable import boundary; callers must use CopyEncodedBytes.</summary>
+        internal byte[] BorrowEncodedBytes() { return encodedBytes; }
+
+        internal static MaterialTextureSlot FromSharedBytes(MaterialTextureSemantic semantic, byte[] encodedBytes, string mimeType,
+            int texCoord = 0, float normalScale = 1f, MaterialTextureSampler sampler = null)
+        {
+            return new MaterialTextureSlot(semantic, encodedBytes, mimeType, texCoord, normalScale, sampler, true);
+        }
     }
 
     /// <summary>Optional normal and metallic-roughness slots attached to a standard material.</summary>

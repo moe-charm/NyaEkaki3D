@@ -36,6 +36,9 @@ namespace NyaForge.Authoring.Import
         }
 
         public byte[] CopyImageBytes() { return imageBytes == null ? null : (byte[])imageBytes.Clone(); }
+
+        /// <summary>Internal immutable import boundary; callers must use CopyImageBytes.</summary>
+        internal byte[] BorrowImageBytes() { return imageBytes; }
     }
 
     /// <summary>One glTF material assignment for an imported submesh.</summary>
@@ -70,6 +73,9 @@ namespace NyaForge.Authoring.Import
         }
 
         public byte[] CopyBaseColorImageBytes() { return baseColorImage == null ? null : (byte[])baseColorImage.Clone(); }
+
+        /// <summary>Internal immutable import boundary; callers must use CopyBaseColorImageBytes.</summary>
+        internal byte[] BorrowBaseColorImageBytes() { return baseColorImage; }
     }
 
     internal static class GlbMaterialSourceReader
