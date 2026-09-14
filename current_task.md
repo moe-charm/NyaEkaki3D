@@ -3615,3 +3615,9 @@ GUI-11の最新V4 Playerでprivateの`RadDollV3_VRM.vrm`を再実行し、実モ
 - Core回帰: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-cf7d142174a94026b93c75ab0564e17b`）
 - Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-002200-90321977e7c84c258db67811cb4b82e3/report.json`）。3つの候補欄の可読性と短い取込アクション文言をPlayer内で検査した。
 - 実ウィンドウ: V4でWindows ExplorerのGLB／VRM picker起動、private RadDollV3 path入力、候補inventory表示、node／mesh／skin縦積みと短いpopup候補を確認済み。新しい短縮ボタンの自動確認は上記Player回帰で行った。
+
+# 2026-09-15 NF-V1-実モデル一周: GUI-12現行ビルド
+
+GUI-12で取込アクション文言を短縮した現行`ImportActionsReadableV1` Playerへ、privateの`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-RealModelSmoke\RadDollV3_VRM.vrm`を再投入した。実モデルの取込→全mesh候補→EditMesh→native Save/Open→GLB／VRM出力→衣装package生成を**PASS**で確認した。Player reportは`Artifacts/Authoring-20260915-002910-f27cf09eb46e40198167d52ef290c0f5/report.json`、生成packageは`Artifacts/Authoring-20260915-002910-f27cf09eb46e40198167d52ef290c0f5/imported-accessory-skin-project/exports/clothing-20260914-153112-404e4b/skinned-clothing.nyaforge.json`、clothing skeleton sidecarは2 bonesだった。生成packageをUnity **2022.3.22f1**の隔離Bridgeへ渡し、manifest／GLB／skeleton／binding hash、stable BoneId、SkinnedMeshRenderer生成、semantic材質変換を含む受け取りも**PASS**（`Artifacts/BridgeReceiver-20260915-003406-911-ef6d444e19814f24b464905a15fe228d/bridge-report.json`）。
+
+これはGUI-12後のprivate実モデル自動Player／Bridge経路の再確認であり、実EditorWindowの全周fit・貫通・材質見た目、移動／回転／scale済みavatar、VRChat Build & Test／クライアント表示、販売品質の合格へは読み替えない。private素材とSDKは公開ツリーへ追加していない。次は手動受入表の実Unity EditorWindow経路とVRChat Build & Testを進める。
