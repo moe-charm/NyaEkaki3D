@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10J: mesh再利用後の実候補メモリ再計測
+
+`PerformanceV38`で同じprivate RadDollV3候補1体のAuthoring suiteを外部10秒サンプリングした。Player reportは**PASS**（`Artifacts/Authoring-20260914-105010-5af979e784ee4540bd0821c031b992e1/report.json`）。実行約110.3秒、working set peak **2,444.9MB**、private bytes peak **3,080.3MB**（`Artifacts/Authoring-Memory-20260914-105010/memory-measurement.json`）だった。
+
+V37の同形式計測（working set 2,377.9MB／private 3,063.6MB）と差が小さく、今回のmesh再利用だけで削減量を確定できない。OS状態とsuite内の一時保持が影響するため、実アバター軽量性の合格にはせず、同一条件のheap censusと全mesh／候補取込の分離を残課題とする。
+
 ## 2026-09-14 NF-V1-10I: source-skin取込のmesh再利用
 
 skinned取込後にsource-skinを復元する際、同じGLB meshを静的rootへ再構築していた。`GlbSourceSkinImporter.ReadDataFromDocument`を追加し、Workbenchは既にデコード済みのdisplay meshへsource-spaceのnode frame・inverse-bind・weightだけを結び付けるようにした。公開`Read` APIのstandalone mesh結果とsource hash／topology検証は維持する。変更は`14547f0`。
