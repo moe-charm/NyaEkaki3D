@@ -2767,3 +2767,15 @@ UiHintFixV1で実RadDollV3を含む一時制作フォルダ `C:\Users\tomoaki\Ap
 派生・装着・weight初期化後に同フォルダへGUI保存し、`project.nyaforge.json` を外部確認した。native schema 4、project objects 12、documentRevision 10、activeObjectIdは派生衣装、attachments 3を確認した。さらに「Unity用に書き出す」を実行し、`exports\bake-20260914-035504-b621c8\project.nyaforge.json` を生成した。出力manifestもschema 4 / 12 objects / revision 10で、native受け渡し経路が成立している。
 
 これは実モデルでのカフ作成、stable BoneId装着、skin衣装派生、骨近傍weight初期化、native Save、Unity向けnative exportのWindowsマウス受入である。カフの実手首位置への頂点調整、複数poseでの追従、貫通、実Unity/VRChat内の見た目・PhysBones、別DPIでの操作、GLB/VRM最終商品出力は引き続き別受入境界とする。
+
+# 2026-09-14 選択衣装skin packageのattachment干渉修正
+
+同じnative作品に、元の小物Polygon（BoneId装着メタデータを保持）と、そこから派生したskin衣装を共存させた場合、従来のGLB検査が作品全体を走査していたため、派生衣装だけを選択した「選択衣装をskin packageで出力」まで停止していた。`GlbExportService.ValidateRequest`へ明示的な出力対象IDを渡し、attachment検査を選択対象へ限定した。全体出力、またはattachmentを含む選択対象は、従来どおり`GLB_ATTACHMENT_METADATA_UNSUPPORTED`で停止する。選択衣装のallowlistは重複・空・古いIDも検査するため、別objectの装着情報を黙って落とさない。
+
+Coreへ、rigid attachmentを持つobjectと通常のskinned clothing objectを同一workspaceへ置き、後者だけを`ExportSkinnedObject`へ渡す回帰を追加した。GLB生成、objectCount=1、元attachment objectの保持を確認。
+
+Coreは **507 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0806745367db4fcc9c5b7e854322ece2`）。Unity **6000.4.3f1** Windows Player `Builds/ClothingPackageV3/NyaForge.exe` のビルドも成功（`Logs/build-player-20260914-130401-609.log`、`NYAFORGE_PLAYER_OK`）。
+
+実RadDollV3＋手首カフでは、旧Playerで元Polygonの装着、skin派生、骨近傍weight初期化、native Save/Open、Unity用native exportまで確認済み。旧Playerでのskin package出力は今回の修正前検査により停止したため、新Playerで派生衣装だけを選択したskin package出力と、`clothing.glb`／skeleton・binding sidecarの存在確認を次の手動受入に残す。全身surface fitは手首カフ用途では距離超過で停止する仕様で、ボーン装着の位置合わせを優先する。
+
+追試として同じCore suiteを再実行し、**507 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ad2cc5d370a54feca797fdafbea6fdef`）を確認した。

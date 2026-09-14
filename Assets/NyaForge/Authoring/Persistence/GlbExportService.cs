@@ -58,7 +58,7 @@ namespace NyaForge.Authoring
         public static GlbExportResult ExportStaticWithOverrides(AuthoringWorkspace workspace, string instance, string document, long revision, string directory,
             IReadOnlyDictionary<string, GraphMeshValue> meshOverrides, IReadOnlyCollection<string> objectIds)
         {
-            ValidateRequest(workspace, instance, document, revision, directory);
+            ValidateRequest(workspace, instance, document, revision, directory, objectIds);
             lock (workspace.Gate)
             {
                 var selected = SelectObjects(workspace.Document, objectIds);
@@ -86,7 +86,7 @@ namespace NyaForge.Authoring
             IReadOnlyList<SourceAffine> inverseBindMatrices = null,
             IReadOnlyList<SourceAffine> jointLocalTransforms = null)
         {
-            ValidateRequest(workspace, instance, document, revision, directory);
+            ValidateRequest(workspace, instance, document, revision, directory, new[] { objectId });
             lock (workspace.Gate)
             {
                 var item = workspace.Document.Objects.FirstOrDefault(value => value.ObjectId == objectId);
@@ -131,7 +131,7 @@ namespace NyaForge.Authoring
 
         static GlbExportResult ExportSkinnedCore(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, GlbExportProfile profile, Func<AuthoringObject, SourceAffine> transformResolver, bool singleTransformMode, IReadOnlyDictionary<string, SourceAffine> transformMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointTransformMap = null, IReadOnlyCollection<string> objectIds = null)
         {
-            ValidateRequest(workspace, instance, document, revision, directory);
+            ValidateRequest(workspace, instance, document, revision, directory, objectIds);
             lock (workspace.Gate)
             {
                 Checks.Require(!singleTransformMode || !workspace.Document.Objects.Any() || transformResolver(workspace.Document.Objects[0]) == null || workspace.Document.Objects.Count == 1,
@@ -184,7 +184,7 @@ namespace NyaForge.Authoring
 
         static GlbExportResult ExportSkinnedExtendedCore(AuthoringWorkspace workspace, string instance, string document, long revision, string directory, Func<AuthoringObject, SourceAffine> transformResolver, bool singleTransformMode, IReadOnlyDictionary<string, SourceAffine> transformMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> inverseBindMap = null, IReadOnlyDictionary<string, IReadOnlyList<SourceAffine>> jointTransformMap = null, IReadOnlyCollection<string> objectIds = null)
         {
-            ValidateRequest(workspace, instance, document, revision, directory);
+            ValidateRequest(workspace, instance, document, revision, directory, objectIds);
             lock (workspace.Gate)
             {
                 Checks.Require(!singleTransformMode || !workspace.Document.Objects.Any() || transformResolver(workspace.Document.Objects[0]) == null || workspace.Document.Objects.Count == 1,
@@ -232,7 +232,8 @@ namespace NyaForge.Authoring
             return result;
         }
 
-        static void ValidateRequest(AuthoringWorkspace workspace, string instance, string document, long revision, string directory)
+        static void ValidateRequest(AuthoringWorkspace workspace, string instance, string document, long revision, string directory,
+            IReadOnlyCollection<string> objectIds = null)
         {
             if (workspace == null) throw new ArgumentNullException(nameof(workspace));
             lock (workspace.Gate)
@@ -243,7 +244,8 @@ namespace NyaForge.Authoring
                 Checks.Require(workspace.Document.DocumentRevision == revision, "REVISION_CONFLICT", "Document changed before export.");
                 Checks.Require(!workspace.Document.IsEmpty, "NO_EXPORTABLE_OBJECT", "Add a mesh before exporting.");
                 Checks.Require(workspace.Preview.IsComplete && !workspace.Preview.IsStale, "GRAPH_INCOMPLETE", "Export requires complete current evaluation.");
-                Checks.Require(!workspace.Document.Objects.Any(item => !item.IsStaticProfile && item.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.Attachment)),
+                var selected = SelectObjects(workspace.Document, objectIds);
+                Checks.Require(!selected.Any(item => !item.IsStaticProfile && item.Graph.Nodes.Values.Any(node => node.TypeId == BuiltinNodes.Attachment)),
                     "GLB_ATTACHMENT_METADATA_UNSUPPORTED", "Standard GLB does not preserve object attachment metadata; use native project export.");
                 Checks.Require(!Directory.Exists(directory) && !File.Exists(directory), "EXPORT_DESTINATION_EXISTS", "Export destination already exists.");
             }

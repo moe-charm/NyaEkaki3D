@@ -120,6 +120,38 @@ internal static partial class Program
             True(!Directory.Exists(directory));
         });
 
+        Test("selected skinned clothing export ignores an unrelated rigid attachment object", () =>
+        {
+            string planeId = GraphId(), attachmentId = GraphId(), outputId = GraphId();
+            var attachedGraph = new AuthoringGraph(GraphId(), new[] {
+                GraphNode.Plane(planeId),
+                GraphNode.AttachmentNode(attachmentId, GraphId(), GraphId(), Checks.Hash(new byte[] { 9, 2, 6 }), new Vec3()),
+                GraphNode.Output(outputId) },
+                new[] { new GraphEdge(planeId, "mesh", outputId, "mesh") }, outputId);
+            var clothingMesh = PrimitiveGeometry.Plane(.2f, .1f);
+            string rootId = GraphId(), sourceId = GraphId(), skeletonId = GraphId(), bindId = GraphId(), poseId = GraphId(), deformId = GraphId(), clothingOutputId = GraphId();
+            var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(rootId, "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
+            var binding = SkinBinding.Create(clothingMesh, skeleton, Enumerable.Range(0, clothingMesh.VertexCount).Select(i => new SkinBinding.VertexWeightInput(i, rootId, 1f)));
+            var clothingGraph = new AuthoringGraph(GraphId(), new[] {
+                GraphNode.Source(sourceId, clothingMesh, new RestTransform(1, new Vec3())),
+                GraphNode.SkeletonNode(skeletonId, skeleton), GraphNode.SkinBindNode(bindId, binding),
+                GraphNode.PoseNode(poseId, PoseSet.Create(skeleton, new[] { new BonePose(rootId, PoseTransform.FromTranslation(new Vec3())) })),
+                GraphNode.SkinDeformNode(deformId), GraphNode.Output(clothingOutputId) },
+                new[] { new GraphEdge(sourceId, "mesh", bindId, "mesh"), new GraphEdge(skeletonId, "skeleton", bindId, "skeleton"),
+                    new GraphEdge(skeletonId, "skeleton", poseId, "skeleton"), new GraphEdge(sourceId, "mesh", deformId, "mesh"),
+                    new GraphEdge(skeletonId, "skeleton", deformId, "skeleton"), new GraphEdge(bindId, "binding", deformId, "binding"),
+                    new GraphEdge(poseId, "pose", deformId, "pose"), new GraphEdge(deformId, "mesh", clothingOutputId, "mesh") }, clothingOutputId);
+            var workspace = AuthoringWorkspace.CreateEmpty();
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(attachedGraph)));
+            string attachedObjectId = workspace.Document.ActiveObjectId;
+            Ok(Execute(workspace, AuthoringOperation.AddGraph(clothingGraph)));
+            string clothingObjectId = workspace.Document.ActiveObjectId;
+            string directory = Path.Combine(Root, "glb-selected-clothing-with-attachment-" + Guid.NewGuid().ToString("N"));
+            var result = GlbExportService.ExportSkinnedObject(workspace, workspace.InstanceId, workspace.Document.DocumentId,
+                workspace.Document.DocumentRevision, clothingObjectId, directory);
+            True(File.Exists(result.Path)); Equal(1, result.ObjectCount); True(workspace.Document.Objects.Any(item => item.ObjectId == attachedObjectId));
+        });
+
         Test("standard skinned GLB export roundtrips skeleton and weights", () =>
         {
             var mesh = AuthoringFixtures.Panel(1);
