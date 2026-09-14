@@ -3646,3 +3646,5 @@ body候補（object ID先頭`12707472`）を選択し、`選択中を参照と�
 起動probeの終了時に`Application.Quit`が通常の未保存確認へ入り、reportはPASSでも外部スクリプトがタイムアウトしていた。probe側で`allowQuit`を有効にしてから終了するよう修正し、検証結果とプロセス終了の契約を揃える。
 
 `Builds/EmptyProjectOpenV2/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260915-012701-329.log`）を再ビルドし、`Tools/Test-NyaForgeAuthoringStartup.ps1 -BuildName EmptyProjectOpenV2`を実行。**PASS**（`Artifacts/AuthoringStartup-20260915-012723-a2d03fb9cbb142b78eb619960355b67a/report.json`）で、report生成後のプロセス終了まで確認できた。`emptyProjectReopenVisible=true`、再開ボタン表示、画面サイズ1600×1000、可視ピクセルありを記録した。
+
+同じV2 Playerで通常のAuthoring回帰も実行し、**PASS**（`Artifacts/Authoring-20260915-012802-c6f787147b2d4442b4fd20cb9860d762/report.json`）。既存の保存／再開・頂点編集・材質・衣装package・MCP・出力経路を含むsuiteに影響がないことを確認した。Coreは今回UI／probeのみの変更のため、直近の **512 passed / 0 failed** を継続利用した。
