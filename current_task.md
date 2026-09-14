@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15P: V16 status修正後の実衣装一周
+
+status footerの折返し修正を含む`Builds/BoneSubsetV16/NyaForge.exe`で、private RadDollV3 VRMの全mesh取込、native Save/Open、GLB／VRM1出力、衣装skin package生成、Unity **2022.3.22f1** Bridge受け取りを再実行した。Player **PASS**（`Artifacts/Authoring-20260914-165304-a4fdb279b679471d99fcba5733339b17/report.json`）、Bridge **PASS**（`Artifacts/BridgeReceiver-20260914-165530-393-cb754fbf3e254af482bb0fecda21ca22/bridge-report.json`）。これは自動Player／Bridge回帰であり、実EditorWindowのマウス・IME・DPI・Explorer、実アバター全周fit／貫通／見た目、VRChat Build & Test／実機表示は未受入として残す。
+
 ## 2026-09-14 NF-V1-15O: status footerの狭幅折返し
 
 診断statusをprobeだけ一行・hiddenにしていた分岐を廃止し、実EditorWindowと自動probeの双方で折返し・表示するようにした。これにより800×600の長い取込診断も画面内で読める。`Builds/BoneSubsetV16/NyaForge.exe`のprivate RadDollV3 `-ImportOnly` probeは**PASS**（`Artifacts/Authoring-20260914-165134-a0c1b46b609043d4a29373c9c2342aeb/report.json`）。画像`import-only.png`で、statusが2行に折り返され、右側controlsのクイック導線とスクロールを維持することを確認した。Coreは直前の**509 passed / 0 failed**を正とする。実EditorWindowのマウス・IME・DPI・Explorer受入、実アバター全周fit／貫通／見た目、VRChat Build & Test／実機表示は未受入として残す。

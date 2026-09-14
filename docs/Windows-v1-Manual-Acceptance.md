@@ -1,6 +1,6 @@
 # Nya Ekaki 3D Windows v1 手動受入チェック
 
-この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/BoneSubsetV16/NyaForge.exe`（コード `0aa12d5`、記録更新 `current_task.md` NF-V1-15O）。自動navigation／Save As・保存状態・再開・viewport確認は既存の反復回帰へ記録している。最新の実RadDollV3取込probeは `Artifacts/Authoring-20260914-165134-a0c1b46b609043d4a29373c9c2342aeb/report.json`、衣装一周はPlayer `Artifacts/Authoring-20260914-163956-a954ad2ebd584429a1312af59fa90445/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-164225-353-2bea67b245064ca0aae2b871ec4bb30c/bridge-report.json`。再実行入口は `Tools\\Test-NyaForgeAuthoring.ps1 -BuildName BoneSubsetV16 -ImportOnly -ImportModel <private VRM>` または `Tools\\Test-NyaForgeRealClothing.ps1 -ModelPath <private VRM> -BuildName BoneSubsetV16`。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
+この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/BoneSubsetV16/NyaForge.exe`（コード `0aa12d5`、記録更新 `current_task.md` NF-V1-15P）。自動navigation／Save As・保存状態・再開・viewport確認は既存の反復回帰へ記録している。最新の実RadDollV3取込probeは `Artifacts/Authoring-20260914-165134-a0c1b46b609043d4a29373c9c2342aeb/report.json`、衣装一周はPlayer `Artifacts/Authoring-20260914-165304-a4fdb279b679471d99fcba5733339b17/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-165530-393-cb754fbf3e254af482bb0fecda21ca22/bridge-report.json`。再実行入口は `Tools\\Test-NyaForgeAuthoring.ps1 -BuildName BoneSubsetV16 -ImportOnly -ImportModel <private VRM>` または `Tools\\Test-NyaForgeRealClothing.ps1 -ModelPath <private VRM> -BuildName BoneSubsetV16`。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
 
 ## 1. 実EditorWindow（Windows）
 
