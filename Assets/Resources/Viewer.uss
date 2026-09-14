@@ -80,3 +80,11 @@ TextField { min-height: 34px; }
 .mcp-panel .unity-base-text-field__input { min-width: 0; width: 100%; }
 .mcp-action { width: 100%; min-width: 0; max-width: 100%; height: auto; min-height: 44px; white-space: normal; }
 .mcp-help { white-space: normal; overflow: visible; min-width: 0; }
+
+/* Model import choices are semantic fields, not compact index controls. Keep
+   the meaning label above a full-width value so node/resource names remain
+   readable in the Windows authoring sidebar. */
+#authoring-controls .model-import-choice { width: 100%; min-width: 0; flex-grow: 1; flex-shrink: 1; flex-direction: column; margin-top: 5px; margin-bottom: 5px; }
+#authoring-controls .model-import-choice .unity-base-field__label { width: 100%; min-width: 0; margin-right: 0; white-space: normal; }
+#authoring-controls .model-import-choice .unity-base-popup-field__input { width: 100%; min-width: 0; flex-shrink: 1; }
+#authoring-controls .model-import-choice .unity-base-popup-field__text { height: auto; min-height: 34px; white-space: normal; overflow: visible; text-overflow: clip; }

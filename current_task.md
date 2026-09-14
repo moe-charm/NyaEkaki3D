@@ -3586,3 +3586,16 @@ Viewerの設定パネルへ`pack-source-info`を追加し、現在の入口が�
 Computer UseのWindows用`@oai/sky`で`Builds/FinalCandidateV1/NyaForge.exe`を一意に選択し、実ウィンドウを操作した。Viewerから「制作へ」へ移動し、空の制作projectで「基本形状を追加」→リング形状作成→viewport上の頂点クリック選択→ホイール拡大→ドラッグ回転→Undoを一周した。選択頂点のハイライト、形状表示、回転後の見え方、Undo後の空状態、右側Panelのスクロールを目視確認した。終了時の未保存確認は勝手に破棄せずキャンセルし、検証用Playerはプロセスを停止した。
 
 このprobeは実マウス相当の基本導線を確認したものだが、ファイルExplorer選択、日本語IME、DPI 150/200%、実RadDollV3のfit・貫通・材質・全周、移動／回転／scale済みavatar、VRChat Build & Testは未受入のまま残る。自動Player／BridgeのPASSや空projectの目視を、実モデル・販売品質の合格へ読み替えない。
+
+# 2026-09-15 GUI-11: GLB／VRM候補選択欄の可読性
+
+実ウィンドウのモデル取込で、候補欄が右パネル内の横並びになり、node・mesh・skinの値が短く切れていた。候補欄を`node（配置）`／`mesh（形状）`／`skin（骨・weight）`として縦積みにし、パネル幅いっぱいへ配置した。popupの候補文字列はnode index・mesh index・skin indexと短い名前に絞り、候補確認ステータスには完全名、primitive数、共有状況、source hashを残す。長い名前でUnityが横スクロールを出さないよう、一定長を超える表示名は候補欄だけ省略する。取込処理、保存形式、MCP wire、mesh／skinの選択値は変更していない。
+
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ImportSelection.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Import.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.VrmImportVerification.cs`, `Assets/Resources/Viewer.uss`
+- Quickstart／手動受入: `docs/Authoring-Quickstart.md`, `docs/Windows-v1-Manual-Acceptance.md`
+- Player build: `Builds/ImportSelectionReadableV4/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260914-235920-065.log`）
+- Core回帰: **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-be90eb5c2cfc4f598be7c2b9dde24d07`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-000402-5128c527f5ba429ab8e58d25081dd5f0/report.json`）。候補inventory、mesh／skin／node選択、複数rig sessionに加え、3欄の可読性class／縦積みをPlayer内で検査した。初回180秒実行はタイムアウトしたため、600秒上限で再実行してPASSを確認した。
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260915-000338-fe0d939135f84eb696b695aff57ff506/report.json`）。標準Viewer起動、pack読込、確認セット導線、pointer→manifest表示を確認した。
+- 実ウィンドウ目視: `@oai/sky`でV2を起動し、候補確認後の3欄を確認。ラベルは全幅で読め、選択値は2行へ折り返せた。V3でのpopup最終目視はファイルpicker座標が安定せず完走できなかったため、V4では短いindex／名前／m-s表記と横スクロール抑制を自動回帰で確認した。実モデルはprivateの合成smoke VRMを使ったため、全身の見た目・fit・貫通受入とは扱わない。
+- 残り: DPI 150/200%、日本語IME、長い実パス、実RadDollV3全周fit・貫通・材質、Unity／VRChat実機は手動受入表へ残る。

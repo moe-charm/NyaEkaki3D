@@ -34,12 +34,12 @@ namespace NyaForge.UnityRuntime
             modelImportSkinIndex.style.display = DisplayStyle.None;
             modelImportInstanceIndex.style.display = DisplayStyle.None;
             parent.Add(modelImportInstanceIndex); parent.Add(modelImportMeshIndex); parent.Add(modelImportSkinIndex);
-            modelImportInstanceChoice = new DropdownField("node instance", new List<string> { "候補を確認してください" }, 0) { name = "model-import-instance-choice" };
-            modelImportMeshChoice = new DropdownField("mesh resource", new List<string> { "候補を確認してください" }, 0) { name = "model-import-mesh-choice" };
-            modelImportSkinChoice = new DropdownField("skin resource", new List<string> { "候補を確認してください" }, 0) { name = "model-import-skin-choice" };
-            modelImportInstanceChoice.tooltip = "node instanceを選ぶと、そのmesh・skin・配置を使います。先頭を選ぶと下のresource指定を使います。";
-            modelImportMeshChoice.tooltip = "取り込むmesh resource。候補を確認してから選びます。";
-            modelImportSkinChoice.tooltip = "取り込むskin resource。node instanceを選んだ場合は自動で決まります。";
+            modelImportInstanceChoice = new DropdownField("node（配置）", new List<string> { "候補を確認してください" }, 0) { name = "model-import-instance-choice" };
+            modelImportMeshChoice = new DropdownField("mesh（形状）", new List<string> { "候補を確認してください" }, 0) { name = "model-import-mesh-choice" };
+            modelImportSkinChoice = new DropdownField("skin（骨・weight）", new List<string> { "候補を確認してください" }, 0) { name = "model-import-skin-choice" };
+            ConfigureModelImportChoice(modelImportInstanceChoice, "node（配置）を選ぶと、そのmesh・skin・配置を一組で取り込みます。先頭のresource指定では下の欄を選びます。");
+            ConfigureModelImportChoice(modelImportMeshChoice, "取り込むmesh（形状）を選びます。node（配置）を選ぶと自動で切り替わります。");
+            ConfigureModelImportChoice(modelImportSkinChoice, "取り込むskin（骨・weight）を選びます。skinなしの小物は「skinなし」のままにします。");
             parent.Add(modelImportInstanceChoice); parent.Add(modelImportMeshChoice); parent.Add(modelImportSkinChoice);
             parent.Add(Button("候補を確認", () => Try(() => InspectModelSelection(modelImportPath.value)), "model-import-inspect"));
             modelImportMeshIndex.RegisterValueChangedCallback(_ => ClearModelImportSelectionStatus());
@@ -63,6 +63,47 @@ namespace NyaForge.UnityRuntime
                     modelImportSkinIndex.SetValueWithoutNotify(ParseChoiceIndex(change.newValue));
                 ClearModelImportSelectionStatus();
             });
+        }
+
+        static void ConfigureModelImportChoice(DropdownField choice, string tooltip)
+        {
+            if (choice == null) return;
+            choice.tooltip = tooltip;
+            choice.AddToClassList("model-import-choice");
+            // Put the label above the value. The previous horizontal layout
+            // left only a narrow sliver for long node and mesh names on a
+            // normal 1069px Windows window.
+            choice.style.flexDirection = FlexDirection.Column;
+            choice.style.width = Length.Percent(100);
+            choice.style.minWidth = 0;
+            choice.style.flexShrink = 1;
+            choice.style.flexGrow = 1;
+            choice.style.marginTop = 5;
+            choice.style.marginBottom = 5;
+            var label = choice.Q<Label>(className: "unity-base-field__label");
+            if (label != null)
+            {
+                label.style.width = Length.Percent(100);
+                label.style.minWidth = 0;
+                label.style.whiteSpace = WhiteSpace.Normal;
+                label.style.marginRight = 0;
+            }
+            var input = choice.Q<VisualElement>(className: "unity-base-popup-field__input");
+            if (input != null)
+            {
+                input.style.width = Length.Percent(100);
+                input.style.minWidth = 0;
+                input.style.flexShrink = 1;
+            }
+            var selected = choice.Q<Label>(className: "unity-base-popup-field__text");
+            if (selected != null)
+            {
+                selected.style.whiteSpace = WhiteSpace.Normal;
+                selected.style.overflow = Overflow.Visible;
+                selected.style.textOverflow = TextOverflow.Clip;
+                selected.style.height = StyleKeyword.Auto;
+                selected.style.minHeight = 34;
+            }
         }
 
         void ClearModelImportSelectionStatus()
@@ -106,8 +147,11 @@ namespace NyaForge.UnityRuntime
             {
                 modelImportMeshChoice.choices = inventory.Meshes.Select(mesh =>
                 {
-                    var references = inventory.SharedResources.Mesh(mesh.MeshIndex);
-                    return "mesh " + mesh.MeshIndex + " · " + mesh.Name + " · " + mesh.PrimitiveCount + " primitive" + (references != null && references.IsShared ? " · shared " + references.NodeIndices.Count : "");
+                    // Keep the popup itself compact. The full name, primitive
+                    // count, sharing, and source hash remain in the status
+                    // line after inspection; putting all of that in the
+                    // choice makes Unity add a horizontal scrollbar.
+                    return "mesh " + mesh.MeshIndex + " · " + CompactImportName(mesh.Name);
                 }).ToList();
                 if (modelImportMeshChoice.choices.Count == 0) modelImportMeshChoice.choices.Add("mesh候補なし");
                 modelImportMeshChoice.index = Math.Max(0, Math.Min(SelectedModelMeshIndex, modelImportMeshChoice.choices.Count - 1));
@@ -122,7 +166,7 @@ namespace NyaForge.UnityRuntime
             {
                 var choices = new List<string> { "resourceを指定（nodeなし）" };
                 choices.AddRange(inventory.Instances.Select((instance, index) =>
-                    "node " + index + " · " + instance.Name + " → mesh " + instance.MeshIndex + (instance.SkinIndex.HasValue ? " · skin " + instance.SkinIndex.Value : " · skinなし")));
+                    "node " + index + " · " + CompactImportName(instance.Name) + " · m" + instance.MeshIndex + (instance.SkinIndex.HasValue ? "/s" + instance.SkinIndex.Value : "/static")));
                 modelImportInstanceChoice.choices = choices;
                 modelImportInstanceChoice.index = SelectedModelInstanceIndex < 0 ? 0 : Math.Min(SelectedModelInstanceIndex + 1, choices.Count - 1);
             }
@@ -135,6 +179,13 @@ namespace NyaForge.UnityRuntime
             if (separator < 0) return 0;
             string value = end < 0 ? choice.Substring(separator + 1) : choice.Substring(separator + 1, end - separator - 1);
             return int.TryParse(value, out var index) ? index : 0;
+        }
+
+        static string CompactImportName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return "(unnamed)";
+            const int maxCharacters = 18;
+            return name.Length <= maxCharacters ? name : name.Substring(0, maxCharacters - 1) + "…";
         }
     }
 }

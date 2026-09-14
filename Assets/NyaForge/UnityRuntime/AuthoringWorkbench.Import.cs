@@ -49,7 +49,10 @@ namespace NyaForge.UnityRuntime
             BuildImportedRigStatus(modelImportPanel);
             BuildModelImportDiagnostics(modelImportPanel);
             modelImportPanel.Add(Button("GLB / VRMを選ぶ", () => { ShowModelImportPanel(); if (!modelPickerOpen) StartCoroutine(PickModel()); }, "model-import-browse"));
-            modelImportPath = new TextField("ファイルパス") { name = "model-import-path" }; modelImportPath.style.flexDirection = FlexDirection.Column; modelImportPanel.Add(modelImportPath);
+            modelImportPath = new TextField("ファイルパス") { name = "model-import-path" }; modelImportPath.style.flexDirection = FlexDirection.Column;
+            modelImportPath.tooltip = "選択したGLB／VRMの完全パス";
+            modelImportPath.RegisterValueChangedCallback(change => modelImportPath.tooltip = string.IsNullOrWhiteSpace(change.newValue) ? "選択したGLB／VRMの完全パス" : change.newValue);
+            modelImportPanel.Add(modelImportPath);
             BuildModelImportSelection(modelImportPanel);
             modelImportPanel.Add(Button("このGLB / VRMをgraph objectへ取り込む", () => Try(() => ImportModel(modelImportPath.value)), "model-import-apply"));
             modelImportPanel.Add(Button("このファイルの全mesh instanceを取り込む", () => Try(() => ImportAllModelInstances(modelImportPath.value)), "model-import-all"));
@@ -264,6 +267,7 @@ namespace NyaForge.UnityRuntime
                 if (string.IsNullOrEmpty(picker.Result)) yield break;
                 if (!ReferenceEquals(previous, workspace) || state != workspace.Document.StateHash) { SetStatus("選択中に作品が変わったため、GLB取り込みを取り消しました。"); yield break; }
                 modelImportPath.SetValueWithoutNotify(picker.Result);
+                modelImportPath.tooltip = picker.Result;
             }
             finally { modelPickerOpen = false; }
 #else
