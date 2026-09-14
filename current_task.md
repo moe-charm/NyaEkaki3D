@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10A: GLB画像payload共有と再計測
+
+同一glTF imageを複数submeshが参照する場合、取込時に材質ごとのencoded bytesを複製しないよう、`GlbMaterialSourceReader`へimage index単位のpayload cacheを追加した。`CopyBaseColorImageBytes`／`CopyImageBytes`は従来どおり防御コピーを返すため、公開境界と保存内容は変わらない。Coreは**506 passed / 0 failed**、V33 Player buildとAuthoring、Unity 2022.3.22f1 Bridgeを再確認した。
+
+private RadDollV3 VRMを候補1体だけ取り込む実行は**PASS**（`Artifacts/Authoring-20260914-095159-7b4c491446fb4a24816b410612d16466/report.json`）。外部10秒サンプリングの観測値は`sampledWorkingSetPeakMB=2795`、終了時2393MB、約260.8秒（`Artifacts/Authoring-20260914-095159-7b4c491446fb4a24816b410612d16466/memory-measurement.json`）。これは同一画像共有の効果を断定するheap計測ではなく、全mesh約3.6GB・通常fixture foreground約577MBとも条件が異なる。実アバター取込の軽量性は引き続き改善対象とする。
+
 ## 2026-09-14 NF-V1-09Z: 実VRM候補1体の軽量性計測
 
 privateのRadDollV3 VRMを全mesh展開なしで`Builds/PerformanceV32/NyaForge.exe`へ渡し、通常の候補選択・編集・Save/Open・VRM1出力を含むAuthoring suiteを**PASS**（`Artifacts/Authoring-20260914-094416-ef09767da6c846e4977c622e1a4bd85b/report.json`）。実行時間は約261秒、取込中のプロセスworking setピークは約2.6GBだった。全mesh一括の約3.6GBより低いが、通常fixtureのforeground約577MBとは条件が違うため、実アバター取込の軽量性は未達として扱う。今後は画像デコードの解放、取込中の一時メッシュ保持、実アバター候補選択だけの計測を分離して改善する。

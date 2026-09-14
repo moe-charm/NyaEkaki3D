@@ -27,7 +27,10 @@ namespace NyaForge.Authoring.Import
         {
             Semantic = semantic; TextureIndex = textureIndex; ImageIndex = imageIndex; TexCoord = texCoord;
             NormalScale = normalScale; MimeType = mimeType ?? ""; Sampler = sampler ?? MaterialTextureSampler.Default;
-            this.imageBytes = imageBytes == null ? null : (byte[])imageBytes.Clone();
+            // The reader owns immutable image payloads and may share them
+            // between materials that reference the same glTF image. Public
+            // CopyImageBytes still returns a defensive copy.
+            this.imageBytes = imageBytes;
             Checks.Require(TextureIndex >= 0 && ImageIndex >= 0 && (TexCoord == 0 || TexCoord == 1), "INVALID_IMPORT", "GLB semantic texture reference is invalid.");
             Checks.Require(!HasImageBytes || MimeType == "image/png" || MimeType == "image/jpeg", "UNSUPPORTED_FORMAT", "Only PNG and JPEG semantic texture images are supported.");
         }
@@ -58,7 +61,11 @@ namespace NyaForge.Authoring.Import
             Checks.Require(baseColorImageMimeType != null && baseColorImageMimeType.Length <= 128, "INVALID_IMPORT", "GLB image mime type is invalid.");
             Checks.Require(baseColorImage == null || baseColorImage.Length > 0 && baseColorImage.Length <= 16 * 1024 * 1024, "IMAGE_BUDGET_EXCEEDED", "Embedded GLB image exceeds the 16 MiB image budget.");
             SubmeshIndex = submeshIndex; SourceMaterialIndex = sourceMaterialIndex; Name = name; Parameters = parameters; HasTextureReferences = hasTextureReferences;
-            BaseColorImageIndex = baseColorImageIndex; BaseColorImageMimeType = baseColorImageMimeType; this.baseColorImage = baseColorImage == null ? null : (byte[])baseColorImage.Clone();
+            BaseColorImageIndex = baseColorImageIndex; BaseColorImageMimeType = baseColorImageMimeType;
+            // Image bytes are immutable after import and are shared by the
+            // per-submesh material records. CopyBaseColorImageBytes remains
+            // the defensive public boundary.
+            this.baseColorImage = baseColorImage;
             NormalTexture = normalTexture; MetallicRoughnessTexture = metallicRoughnessTexture;
         }
 
@@ -67,12 +74,23 @@ namespace NyaForge.Authoring.Import
 
     internal static class GlbMaterialSourceReader
     {
+        sealed class ImagePayload
+        {
+            internal readonly byte[] Bytes;
+            internal readonly string MimeType;
+            internal ImagePayload(byte[] bytes, string mimeType) { Bytes = bytes; MimeType = mimeType ?? ""; }
+        }
+
         internal static IReadOnlyList<GlbMaterialSource> Read(JObject root, JObject mesh, IReadOnlyList<int> materialIndices, byte[] bin, JArray views, string sourceDirectory = null)
         {
             var materials = root["materials"] as JArray;
             if (materials == null || materials.Count == 0 || materialIndices == null || materialIndices.Count == 0)
                 return Array.AsReadOnly(Array.Empty<GlbMaterialSource>());
             var result = new List<GlbMaterialSource>();
+            // A VRM commonly assigns one large texture to many submeshes.
+            // Cache the bounded encoded payload by glTF image index so each
+            // material record does not retain another copy of the same bytes.
+            var imageCache = new Dictionary<int, ImagePayload>();
             for (int submesh = 0; submesh < materialIndices.Count; submesh++)
             {
                 int sourceIndex = materialIndices[submesh];
@@ -80,12 +98,12 @@ namespace NyaForge.Authoring.Import
                 Checks.Require(sourceIndex < materials.Count, "INVALID_IMPORT", "GLB primitive material reference is out of range.");
                 var token = materials[sourceIndex] as JObject;
                 Checks.Require(token != null, "INVALID_IMPORT", "GLB material is invalid.");
-                result.Add(Parse(submesh, sourceIndex, token, root, bin, views, sourceDirectory));
+                result.Add(Parse(submesh, sourceIndex, token, root, bin, views, sourceDirectory, imageCache));
             }
             return new ReadOnlyCollection<GlbMaterialSource>(result);
         }
 
-        static GlbMaterialSource Parse(int submeshIndex, int sourceIndex, JObject token, JObject root, byte[] bin, JArray views, string sourceDirectory)
+        static GlbMaterialSource Parse(int submeshIndex, int sourceIndex, JObject token, JObject root, byte[] bin, JArray views, string sourceDirectory, Dictionary<int, ImagePayload> imageCache)
         {
             string name = token["name"]?.Type == JTokenType.String ? (string)token["name"] : "Material " + sourceIndex.ToString(CultureInfo.InvariantCulture);
             Checks.Require(name.Length <= 256, "INVALID_IMPORT", "GLB material name is too long.");
@@ -107,14 +125,14 @@ namespace NyaForge.Authoring.Import
             float cutoff = Number(token["alphaCutoff"], .5f, "alphaCutoff");
             bool textures = pbr?["baseColorTexture"] != null || pbr?["metallicRoughnessTexture"] != null || token["normalTexture"] != null || token["occlusionTexture"] != null || token["emissiveTexture"] != null;
             int imageIndex; string imageMimeType; byte[] imageBytes;
-            ReadBaseColorImage(root, pbr?["baseColorTexture"] as JObject, bin, views, sourceDirectory, out imageIndex, out imageMimeType, out imageBytes);
-            var normal = ReadSemanticTexture(root, token["normalTexture"] as JObject, bin, views, sourceDirectory, MaterialTextureSemantic.Normal);
-            var metallicRoughness = ReadSemanticTexture(root, pbr?["metallicRoughnessTexture"] as JObject, bin, views, sourceDirectory, MaterialTextureSemantic.MetallicRoughness);
+            ReadBaseColorImage(root, pbr?["baseColorTexture"] as JObject, bin, views, sourceDirectory, imageCache, out imageIndex, out imageMimeType, out imageBytes);
+            var normal = ReadSemanticTexture(root, token["normalTexture"] as JObject, bin, views, sourceDirectory, MaterialTextureSemantic.Normal, imageCache);
+            var metallicRoughness = ReadSemanticTexture(root, pbr?["metallicRoughnessTexture"] as JObject, bin, views, sourceDirectory, MaterialTextureSemantic.MetallicRoughness, imageCache);
             return new GlbMaterialSource(submeshIndex, sourceIndex, name,
                 new MaterialParameters(new Vec4(baseColor[0], baseColor[1], baseColor[2], baseColor[3]), metallic, roughness, new Vec3(emission[0], emission[1], emission[2]), alpha, cutoff), textures, imageIndex, imageMimeType, imageBytes, normal, metallicRoughness);
         }
 
-        static GlbTextureImage ReadSemanticTexture(JObject root, JObject reference, byte[] bin, JArray views, string sourceDirectory, MaterialTextureSemantic semantic)
+        static GlbTextureImage ReadSemanticTexture(JObject root, JObject reference, byte[] bin, JArray views, string sourceDirectory, MaterialTextureSemantic semantic, Dictionary<int, ImagePayload> imageCache)
         {
             if (reference == null) return null;
             var textures = root["textures"] as JArray; var images = root["images"] as JArray;
@@ -127,7 +145,7 @@ namespace NyaForge.Authoring.Import
             var image = images[imageIndex] as JObject; Checks.Require(image != null, "INVALID_IMPORT", "GLB semantic image is invalid.");
             string mime = image["mimeType"]?.Type == JTokenType.String ? (string)image["mimeType"] : "";
             string label = semantic == MaterialTextureSemantic.Normal ? "normal" : "metallic-roughness";
-            byte[] bytes = ReadImageBytes(image, bin, views, sourceDirectory, ref mime, label);
+            byte[] bytes = ReadImageBytes(imageIndex, image, bin, views, sourceDirectory, ref mime, label, imageCache);
             int texCoord = reference["texCoord"] == null ? 0 : Integer(reference["texCoord"], "texture texCoord");
             Checks.Require(texCoord == 0, "UNSUPPORTED_UV_SET", "Semantic textures using TEXCOORD_1 are not supported in Windows v1.");
             float normalScale = semantic == MaterialTextureSemantic.Normal ? Number(reference["scale"], 1f, "normal scale", 8f) : 1f;
@@ -148,14 +166,22 @@ namespace NyaForge.Authoring.Import
             return new MaterialTextureSampler(wrapS, wrapT, min, mag);
         }
 
-        static byte[] ReadImageBytes(JObject image, byte[] bin, JArray views, string sourceDirectory, ref string mimeType, string label)
+        static byte[] ReadImageBytes(int imageIndex, JObject image, byte[] bin, JArray views, string sourceDirectory, ref string mimeType, string label, Dictionary<int, ImagePayload> imageCache)
         {
+            if (imageCache != null && imageCache.TryGetValue(imageIndex, out var cached))
+            {
+                if (string.IsNullOrWhiteSpace(mimeType)) mimeType = cached.MimeType;
+                return cached.Bytes;
+            }
+            byte[] result;
             if (image["bufferView"] == null)
             {
                 var uriToken = image["uri"];
                 if (uriToken == null) return null;
                 Checks.Require(uriToken.Type == JTokenType.String && !string.IsNullOrWhiteSpace((string)uriToken), "INVALID_IMPORT", "GLB " + label + " image URI is invalid.");
-                return ReadExternalImage(sourceDirectory, (string)uriToken, ref mimeType, label);
+                result = ReadExternalImage(sourceDirectory, (string)uriToken, ref mimeType, label);
+                if (imageCache != null) imageCache[imageIndex] = new ImagePayload(result, mimeType);
+                return result;
             }
             Checks.Require(image["bufferView"].Type == JTokenType.Integer, "INVALID_IMPORT", "GLB " + label + " image bufferView is invalid.");
             int viewIndex = (int)image["bufferView"]; Checks.Require(viewIndex >= 0 && viewIndex < views.Count, "INVALID_IMPORT", "GLB " + label + " image bufferView is out of range.");
@@ -164,10 +190,12 @@ namespace NyaForge.Authoring.Import
             int length = Integer(view["byteLength"], "image byteLength");
             Checks.Require(offset >= 0 && length > 0 && length <= 16 * 1024 * 1024 && (long)offset + length <= bin.Length, "IMAGE_BUDGET_EXCEEDED", "GLB " + label + " image exceeds the image budget or BIN chunk.");
             Checks.Require(mimeType == "image/png" || mimeType == "image/jpeg", "UNSUPPORTED_FORMAT", "Only PNG and JPEG " + label + " images are supported.");
-            var bytes = new byte[length]; Buffer.BlockCopy(bin, offset, bytes, 0, length); return bytes;
+            result = new byte[length]; Buffer.BlockCopy(bin, offset, result, 0, length);
+            if (imageCache != null) imageCache[imageIndex] = new ImagePayload(result, mimeType);
+            return result;
         }
 
-        static void ReadBaseColorImage(JObject root, JObject textureReference, byte[] bin, JArray views, string sourceDirectory, out int imageIndex, out string mimeType, out byte[] bytes)
+        static void ReadBaseColorImage(JObject root, JObject textureReference, byte[] bin, JArray views, string sourceDirectory, Dictionary<int, ImagePayload> imageCache, out int imageIndex, out string mimeType, out byte[] bytes)
         {
             imageIndex = -1; mimeType = ""; bytes = null;
             if (textureReference == null) return;
@@ -186,7 +214,7 @@ namespace NyaForge.Authoring.Import
                 var uriToken = image["uri"];
                 if (uriToken == null) return;
                 Checks.Require(uriToken.Type == JTokenType.String && !string.IsNullOrWhiteSpace((string)uriToken), "INVALID_IMPORT", "GLB external image URI is invalid.");
-                bytes = ReadExternalImage(sourceDirectory, (string)uriToken, ref mimeType, "base color");
+                bytes = ReadImageBytes(imageIndex, image, bin, views, sourceDirectory, ref mimeType, "base color", imageCache);
                 return;
             }
             Checks.Require(image["bufferView"].Type == JTokenType.Integer, "INVALID_IMPORT", "GLB image bufferView is invalid.");
@@ -195,7 +223,7 @@ namespace NyaForge.Authoring.Import
             int offset = view["byteOffset"] == null ? 0 : Integer(view["byteOffset"], "image byteOffset");
             int length = Integer(view["byteLength"], "image byteLength");
             Checks.Require(offset >= 0 && length > 0 && length <= 16 * 1024 * 1024 && (long)offset + length <= bin.Length, "IMAGE_BUDGET_EXCEEDED", "Embedded GLB image exceeds the image budget or BIN chunk.");
-            bytes = new byte[length]; Buffer.BlockCopy(bin, offset, bytes, 0, length);
+            bytes = ReadImageBytes(imageIndex, image, bin, views, sourceDirectory, ref mimeType, "base color", imageCache);
         }
 
         static byte[] ReadExternalImage(string sourceDirectory, string uri, ref string mimeType, string label)
