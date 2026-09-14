@@ -225,10 +225,10 @@ namespace NyaForge.UnityRuntime
             confirmRow = new VisualElement { name = "authoring-confirm" }; confirmRow.style.display = DisplayStyle.None; side.Add(confirmRow);
             status = new Label { name = "authoring-status" }; status.AddToClassList("status");
             // Allow diagnostics to wrap on narrow DPI-scaled windows so the
-            // status text is not silently clipped. The viewport recalculates
-            // its camera when the footer height changes.
-            status.style.whiteSpace = injectedUiProbe ? WhiteSpace.NoWrap : WhiteSpace.Normal;
-            status.style.overflow = injectedUiProbe ? Overflow.Hidden : Overflow.Visible;
+            // complete status is readable without relying on a tooltip. The
+            // viewport recalculates its camera when the footer height changes.
+            status.style.whiteSpace = WhiteSpace.Normal;
+            status.style.overflow = Overflow.Visible;
             status.style.minHeight = 34;
             root.Add(status);
 
