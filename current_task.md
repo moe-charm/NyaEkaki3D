@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10E: 取込base-colorの作業画像デコード共有
+
+同一GLB imageを複数materialが参照する場合、Workbenchが同じbase-colorをmaterialごとにUnity `Texture2D`へデコードし、1024px PaintImageとpreview hashも重複生成していた。1回の取込操作に限った `BaseColorImageIndex` cacheを追加し、解像度・MIME・preview hashを含む不変作業画像を全objectで共有する。PaintNodeId、materialごとのOriginalImage node、原画像bytesの防御コピーは従来どおり個別に保持する。変更は `10b597d` に固定した。
+
+Coreは**506 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-c1156bd0e3ae447a97c9b7a7ab0fed3d`）。Unity `6000.4.3f1`のV36 Player build、private RadDollV3候補のSave/Open・VRM1出力もPASS（`Artifacts/Authoring-20260914-102351-8397aec61c644137ae1ae3f8652f7510/report.json`）。作業画像の共有による実メモリ削減量は同一条件のheap censusでは未計測であり、実候補取込の軽量性は継続課題として扱う。
+
 ## 2026-09-14 NF-V1-10D: GLB parsed documentのimport間共有
 
 候補選択・全mesh instance取込では、同じGLBをinventory／mesh／skin／source-skinの各入口で再パースしていた。`GlbDocument`を一度生成し、Workbenchの1回の取込操作内でinventoryと各Importerへ共有する内部経路を追加した。JSONの再解析とモデルサイズBINの重複保持を避けつつ、各派生rootは従来どおり個別にcloneする。変更は `3d55e23` に固定した。
