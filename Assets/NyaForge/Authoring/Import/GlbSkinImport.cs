@@ -115,7 +115,7 @@ namespace NyaForge.Authoring.Import
                 var attributes = primitive["attributes"] as JObject; Checks.Require(attributes != null, "INVALID_IMPORT", "GLB primitive attributes are required.");
                 foreach (var property in attributes.Properties().Where(p => p.Name.StartsWith("JOINTS_", StringComparison.Ordinal) || p.Name.StartsWith("WEIGHTS_", StringComparison.Ordinal)).ToArray()) property.Remove();
             }
-            var baseSource = GlbImporter.ReadDocument(new GlbDocument(staticRoot, document.Bin, document.SourceHash), meshIndex, null, sourceDirectory);
+            var baseSource = GlbImporter.ReadDocument(new GlbDocument(staticRoot, document.Bin, document.SourceHash, false), meshIndex, null, sourceDirectory);
             var rawWeights = new List<SkinBinding.VertexWeightInput>(); int vertexOffset = 0;
             for (int p = 0; p < primitives.Count; p++)
             {

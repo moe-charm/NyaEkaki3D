@@ -13,9 +13,19 @@ namespace NyaForge.Authoring.Import
         public string SourceHash { get; }
 
         internal GlbDocument(JObject root, byte[] bin, string sourceHash)
+            : this(root, bin, sourceHash, true)
+        {
+        }
+
+        /// <summary>
+        /// Creates a parsed document.  The BIN chunk is immutable for the
+        /// lifetime of an import, so adapters that only replace the JSON root
+        /// can share it instead of allocating another model-sized byte array.
+        /// </summary>
+        internal GlbDocument(JObject root, byte[] bin, string sourceHash, bool cloneBin)
         {
             Checks.Require(root != null && bin != null, "INVALID_IMPORT", "GLB document payload is required.");
-            Checks.HashText(sourceHash); Root = root; Bin = (byte[])bin.Clone(); SourceHash = sourceHash;
+            Checks.HashText(sourceHash); Root = root; Bin = cloneBin ? (byte[])bin.Clone() : bin; SourceHash = sourceHash;
         }
     }
 
@@ -51,7 +61,7 @@ namespace NyaForge.Authoring.Import
                     }
                     Checks.Require(jsonBytes != null && bin != null, "INVALID_IMPORT", "GLB requires JSON and BIN chunks.");
                     var root = JObject.Parse(new UTF8Encoding(false, true).GetString(jsonBytes));
-                    return new GlbDocument(root, bin, sourceHash);
+                    return new GlbDocument(root, bin, sourceHash, false);
                 }
             }
             catch (EndOfStreamException e) { throw new AuthoringException("INVALID_IMPORT", e.Message); }
