@@ -49,10 +49,49 @@ namespace NyaForge.UnityRuntime
             }
         }
 
+        readonly struct SourceSkinProjectionCacheKey : IEquatable<SourceSkinProjectionCacheKey>
+        {
+            readonly string previewNodeId;
+            readonly string stageHash;
+            readonly string finalHash;
+            readonly bool showFinalResult;
+
+            internal SourceSkinProjectionCacheKey(string previewNodeId, string stageHash, string finalHash, bool showFinalResult)
+            {
+                this.previewNodeId = previewNodeId ?? "";
+                this.stageHash = stageHash ?? "";
+                this.finalHash = finalHash ?? "";
+                this.showFinalResult = showFinalResult;
+            }
+
+            public bool Equals(SourceSkinProjectionCacheKey other)
+            {
+                return showFinalResult == other.showFinalResult
+                    && string.Equals(previewNodeId, other.previewNodeId, StringComparison.Ordinal)
+                    && string.Equals(stageHash, other.stageHash, StringComparison.Ordinal)
+                    && string.Equals(finalHash, other.finalHash, StringComparison.Ordinal);
+            }
+
+            public override bool Equals(object obj) { return obj is SourceSkinProjectionCacheKey other && Equals(other); }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int hash = 17;
+                    hash = hash * 31 + previewNodeId.GetHashCode();
+                    hash = hash * 31 + stageHash.GetHashCode();
+                    hash = hash * 31 + finalHash.GetHashCode();
+                    return hash * 31 + (showFinalResult ? 1 : 0);
+                }
+            }
+        }
+
         SourceSkinDisplayCacheKey sourceSkinDisplayKey;
         bool hasSourceSkinDisplayKey;
         GraphMeshValue sourceSkinDisplayValue;
-        string sourceSkinProjectionKey;
+        SourceSkinProjectionCacheKey sourceSkinProjectionKey;
+        bool hasSourceSkinProjectionKey;
 
         GraphMeshValue SourceSkinDisplayValue(GraphEvaluation evaluation, AuthoringGraph graph)
         {
@@ -90,24 +129,25 @@ namespace NyaForge.UnityRuntime
         {
             if (!IsGraph || workspace?.Preview?.Evaluation == null)
             {
-                hasSourceSkinDisplayKey = false; sourceSkinProjectionKey = ""; sourceSkinDisplayValue = null; return;
+                hasSourceSkinDisplayKey = false; hasSourceSkinProjectionKey = false; sourceSkinDisplayValue = null; return;
             }
             var graph = workspace.Document.ActiveObject.Graph;
             var final = SourceSkinDisplayValue();
             if (final == null)
             {
-                if (sourceSkinProjectionKey != "")
+                if (hasSourceSkinProjectionKey)
                 {
-                    sourceSkinProjectionKey = "";
+                    hasSourceSkinProjectionKey = false;
                     using (var prepared = projection.PrepareGraph(workspace.Document, workspace.Preview)) prepared.Commit();
                 }
                 return;
             }
             GraphMeshValue stage = null;
             if (projection.PreviewNodeId != "") workspace.Preview.Evaluation.MeshOutputs.TryGetValue(projection.PreviewNodeId, out stage);
-            string key = projection.PreviewNodeId + ":" + (stage?.SnapshotHash ?? "") + ":" + final.SnapshotHash + ":" + projection.ShowFinalResult;
-            if (key == sourceSkinProjectionKey) return;
+            var key = new SourceSkinProjectionCacheKey(projection.PreviewNodeId, stage?.SnapshotHash, final.SnapshotHash, projection.ShowFinalResult);
+            if (hasSourceSkinProjectionKey && key.Equals(sourceSkinProjectionKey)) return;
             sourceSkinProjectionKey = key;
+            hasSourceSkinProjectionKey = true;
             using (var prepared = projection.PrepareGraphValue(workspace.Document, stage ?? final, stage == null ? null : projection.ShowFinalResult ? final : null)) prepared.Commit();
         }
 

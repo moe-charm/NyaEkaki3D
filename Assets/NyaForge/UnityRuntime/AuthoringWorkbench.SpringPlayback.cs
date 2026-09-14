@@ -115,7 +115,7 @@ namespace NyaForge.UnityRuntime
             // The authored evaluation hash is unchanged by transient playback, so
             // invalidate this projection key explicitly when the rendered mesh is
             // replaced by the normal graph result.
-            sourceSkinProjectionKey = "";
+            hasSourceSkinProjectionKey = false;
             if (restore && hadPreview && workspace != null)
                 using (var prepared = projection.PrepareGraph(workspace.Document, workspace.Preview)) prepared.Commit();
             if (restore && workspace != null) RefreshSourceSkinDisplayProjection();
