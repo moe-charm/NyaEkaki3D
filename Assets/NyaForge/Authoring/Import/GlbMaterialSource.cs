@@ -78,16 +78,29 @@ namespace NyaForge.Authoring.Import
         internal byte[] BorrowBaseColorImageBytes() { return baseColorImage; }
     }
 
-    internal static class GlbMaterialSourceReader
+    /// <summary>
+    /// Per-import immutable image payload cache. A multi-instance import may
+    /// visit the same glTF image through several mesh resources; sharing the
+    /// encoded bytes avoids one copy per resource while keeping the public
+    /// material API defensive.
+    /// </summary>
+    internal sealed class GlbImportImageCache
     {
-        sealed class ImagePayload
+        internal sealed class Payload
         {
             internal readonly byte[] Bytes;
             internal readonly string MimeType;
-            internal ImagePayload(byte[] bytes, string mimeType) { Bytes = bytes; MimeType = mimeType ?? ""; }
+            internal Payload(byte[] bytes, string mimeType) { Bytes = bytes; MimeType = mimeType ?? ""; }
         }
 
-        internal static IReadOnlyList<GlbMaterialSource> Read(JObject root, JObject mesh, IReadOnlyList<int> materialIndices, byte[] bin, JArray views, string sourceDirectory = null)
+        readonly Dictionary<int, Payload> values = new Dictionary<int, Payload>();
+        internal bool TryGetValue(int imageIndex, out Payload payload) => values.TryGetValue(imageIndex, out payload);
+        internal void Add(int imageIndex, byte[] bytes, string mimeType) => values.Add(imageIndex, new Payload(bytes, mimeType));
+    }
+
+    internal static class GlbMaterialSourceReader
+    {
+        internal static IReadOnlyList<GlbMaterialSource> Read(JObject root, JObject mesh, IReadOnlyList<int> materialIndices, byte[] bin, JArray views, string sourceDirectory = null, GlbImportImageCache sharedImageCache = null)
         {
             var materials = root["materials"] as JArray;
             if (materials == null || materials.Count == 0 || materialIndices == null || materialIndices.Count == 0)
@@ -96,7 +109,7 @@ namespace NyaForge.Authoring.Import
             // A VRM commonly assigns one large texture to many submeshes.
             // Cache the bounded encoded payload by glTF image index so each
             // material record does not retain another copy of the same bytes.
-            var imageCache = new Dictionary<int, ImagePayload>();
+            var imageCache = sharedImageCache ?? new GlbImportImageCache();
             for (int submesh = 0; submesh < materialIndices.Count; submesh++)
             {
                 int sourceIndex = materialIndices[submesh];
@@ -109,7 +122,7 @@ namespace NyaForge.Authoring.Import
             return new ReadOnlyCollection<GlbMaterialSource>(result);
         }
 
-        static GlbMaterialSource Parse(int submeshIndex, int sourceIndex, JObject token, JObject root, byte[] bin, JArray views, string sourceDirectory, Dictionary<int, ImagePayload> imageCache)
+        static GlbMaterialSource Parse(int submeshIndex, int sourceIndex, JObject token, JObject root, byte[] bin, JArray views, string sourceDirectory, GlbImportImageCache imageCache)
         {
             string name = token["name"]?.Type == JTokenType.String ? (string)token["name"] : "Material " + sourceIndex.ToString(CultureInfo.InvariantCulture);
             Checks.Require(name.Length <= 256, "INVALID_IMPORT", "GLB material name is too long.");
@@ -138,7 +151,7 @@ namespace NyaForge.Authoring.Import
                 new MaterialParameters(new Vec4(baseColor[0], baseColor[1], baseColor[2], baseColor[3]), metallic, roughness, new Vec3(emission[0], emission[1], emission[2]), alpha, cutoff), textures, imageIndex, imageMimeType, imageBytes, normal, metallicRoughness);
         }
 
-        static GlbTextureImage ReadSemanticTexture(JObject root, JObject reference, byte[] bin, JArray views, string sourceDirectory, MaterialTextureSemantic semantic, Dictionary<int, ImagePayload> imageCache)
+        static GlbTextureImage ReadSemanticTexture(JObject root, JObject reference, byte[] bin, JArray views, string sourceDirectory, MaterialTextureSemantic semantic, GlbImportImageCache imageCache)
         {
             if (reference == null) return null;
             var textures = root["textures"] as JArray; var images = root["images"] as JArray;
@@ -172,7 +185,7 @@ namespace NyaForge.Authoring.Import
             return new MaterialTextureSampler(wrapS, wrapT, min, mag);
         }
 
-        static byte[] ReadImageBytes(int imageIndex, JObject image, byte[] bin, JArray views, string sourceDirectory, ref string mimeType, string label, Dictionary<int, ImagePayload> imageCache)
+        static byte[] ReadImageBytes(int imageIndex, JObject image, byte[] bin, JArray views, string sourceDirectory, ref string mimeType, string label, GlbImportImageCache imageCache)
         {
             if (imageCache != null && imageCache.TryGetValue(imageIndex, out var cached))
             {
@@ -186,7 +199,7 @@ namespace NyaForge.Authoring.Import
                 if (uriToken == null) return null;
                 Checks.Require(uriToken.Type == JTokenType.String && !string.IsNullOrWhiteSpace((string)uriToken), "INVALID_IMPORT", "GLB " + label + " image URI is invalid.");
                 result = ReadExternalImage(sourceDirectory, (string)uriToken, ref mimeType, label);
-                if (imageCache != null) imageCache[imageIndex] = new ImagePayload(result, mimeType);
+                if (imageCache != null) imageCache.Add(imageIndex, result, mimeType);
                 return result;
             }
             Checks.Require(image["bufferView"].Type == JTokenType.Integer, "INVALID_IMPORT", "GLB " + label + " image bufferView is invalid.");
@@ -197,11 +210,11 @@ namespace NyaForge.Authoring.Import
             Checks.Require(offset >= 0 && length > 0 && length <= 16 * 1024 * 1024 && (long)offset + length <= bin.Length, "IMAGE_BUDGET_EXCEEDED", "GLB " + label + " image exceeds the image budget or BIN chunk.");
             Checks.Require(mimeType == "image/png" || mimeType == "image/jpeg", "UNSUPPORTED_FORMAT", "Only PNG and JPEG " + label + " images are supported.");
             result = new byte[length]; Buffer.BlockCopy(bin, offset, result, 0, length);
-            if (imageCache != null) imageCache[imageIndex] = new ImagePayload(result, mimeType);
+            if (imageCache != null) imageCache.Add(imageIndex, result, mimeType);
             return result;
         }
 
-        static void ReadBaseColorImage(JObject root, JObject textureReference, byte[] bin, JArray views, string sourceDirectory, Dictionary<int, ImagePayload> imageCache, out int imageIndex, out string mimeType, out byte[] bytes)
+        static void ReadBaseColorImage(JObject root, JObject textureReference, byte[] bin, JArray views, string sourceDirectory, GlbImportImageCache imageCache, out int imageIndex, out string mimeType, out byte[] bytes)
         {
             imageIndex = -1; mimeType = ""; bytes = null;
             if (textureReference == null) return;

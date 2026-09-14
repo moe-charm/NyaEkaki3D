@@ -153,6 +153,28 @@ internal static partial class Program
             var imported = GlbImporter.Read(BuildGlbContainer(Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), combinedBin));
             Equal(1, imported.Materials.Count); var material = imported.Materials[0]; True(material.HasTextureReferences); True(material.HasEmbeddedBaseColorImage); Equal(0, material.BaseColorImageIndex); Equal("image/png", material.BaseColorImageMimeType); True(image.SequenceEqual(material.CopyBaseColorImageBytes()));
         });
+        Test("GLB material image cache shares immutable payload across mesh resources", () =>
+        {
+            var source = BuildGlb(); var root = JObject.Parse(ReadJsonChunk(source)); var bin = ReadBinChunk(source);
+            var image = PaintPng.Encode(new PaintImage(2, 1, new Rgba32(40, 120, 220, 255))); int offset = bin.Length;
+            var combinedBin = bin.Concat(image).ToArray();
+            ((JObject)((JArray)root["buffers"]!)[0]!)!["byteLength"] = combinedBin.Length;
+            ((JArray)root["bufferViews"]!).Add(new JObject { ["buffer"] = 0, ["byteOffset"] = offset, ["byteLength"] = image.Length });
+            root["images"] = new JArray(new JObject { ["bufferView"] = 3, ["mimeType"] = "image/png" });
+            root["textures"] = new JArray(new JObject { ["source"] = 0 });
+            root["materials"] = new JArray(new JObject { ["pbrMetallicRoughness"] = new JObject { ["baseColorTexture"] = new JObject { ["index"] = 0 } } });
+            var meshes = (JArray)root["meshes"]!; var second = (JObject)meshes[0]!.DeepClone();
+            ((JObject)((JArray)second["primitives"]!)[0]!)!["material"] = 0; meshes.Add(second);
+            ((JObject)((JArray)((JObject)meshes[0]!)!["primitives"]!)[0]!)!["material"] = 0;
+            root["nodes"] = new JArray(new JObject { ["mesh"] = 0 }, new JObject { ["mesh"] = 1 });
+            var bytes = BuildGlbContainer(Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), combinedBin);
+            var document = GlbDocumentReader.Read(bytes); var cache = new GlbImportImageCache();
+            var first = GlbImporter.ReadDocument(document, 0, null, null, cache);
+            var secondImported = GlbImporter.ReadDocument(document, 1, null, null, cache);
+            True(first.Materials.Count == 1 && secondImported.Materials.Count == 1);
+            True(ReferenceEquals(first.Materials[0].BorrowBaseColorImageBytes(), secondImported.Materials[0].BorrowBaseColorImageBytes()));
+            True(image.SequenceEqual(secondImported.Materials[0].CopyBaseColorImageBytes()));
+        });
         Test("GLB importer resolves a safe local external base color image", () =>
         {
             string directory = Dir("external-image"); string imagePath = Path.Combine(directory, "textures", "red.png"); Directory.CreateDirectory(Path.GetDirectoryName(imagePath));

@@ -2880,3 +2880,9 @@ Unity **2022.3.22f1** Bridgeを再実行し、適用・hash／sidecar・ownershi
 # 2026-09-14 候補resolver変更後のCore再確認
 
 `SkinnedClothingPackageWindow`の候補resolver共通化後にCoreを再実行し、**508 passed / 0 failed**を確認した。artifactは`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-c0eae62745d14c7faab0ce1fadd318b4`。骨・skin・材質・UV0制限・衣装package・保存再開・Undo/Redoを含む既存回帰に変化はない。Unity Bridgeの候補resolver回帰は`Artifacts/BridgeReceiver-20260914-151117-020-6bdd730b5d17449e91066b33a45a9816/bridge-report.json`でPASS済み。実EditorWindowの手動適用、実アバター全周の貫通・見た目、VRChat Build & Testは未受入である。
+
+# 2026-09-14 multi-instance画像payload共有の実モデル再確認
+
+全mesh instance取込時に同じglTF imageがmeshごとに複製されないよう、1回の取込操作で使う`GlbImportImageCache`を追加した。公開APIの画像bytesは従来どおり防御コピーのまま、内部の不変encoded payloadだけをmesh間で共有する。Coreへ2つのmesh resourceが同一画像bytesを参照する回帰を追加し、**509 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-0c1f59d41e1c41e4935cdf02239d9274`）。
+
+`Builds/BoneSubsetV4/NyaForge.exe`でprivate実RadDollV3 VRMを再実行し、Player **93 checks PASS**、衣装skeleton **2 bones**、Unity **2022.3.22f1** Bridge PASSを確認した。証跡はPlayer `Artifacts/Authoring-20260914-151706-7104cbc828634b7b908141762f6a7604/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-151939-562-a960367cb1c14d8a82878419d6aa0dda/bridge-report.json`。今回の共有は取込時の一時重複を減らす設計で、実モデルのheap削減量は同一条件の再計測が必要なため、軽量性の最終合格とは扱わない。

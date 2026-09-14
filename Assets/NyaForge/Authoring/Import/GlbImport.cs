@@ -73,22 +73,25 @@ namespace NyaForge.Authoring.Import
             => ReadDocument(document, meshIndex, null, null);
 
         internal static ImportedMeshSource ReadDocument(GlbDocument document, int meshIndex, SourceAffine instanceWorld)
-            => ReadDocument(document, meshIndex, instanceWorld, null);
+            => ReadDocument(document, meshIndex, instanceWorld, null, null);
+
+        internal static ImportedMeshSource ReadDocument(GlbDocument document, int meshIndex, SourceAffine instanceWorld, string sourceDirectory, GlbImportImageCache imageCache)
+            => ReadDocument(document, meshIndex, instanceWorld, sourceDirectory, false, imageCache);
 
         internal static ImportedMeshSource ReadDocument(GlbDocument document, int meshIndex, SourceAffine instanceWorld, string sourceDirectory)
-            => ReadDocument(document, meshIndex, instanceWorld, sourceDirectory, false);
+            => ReadDocument(document, meshIndex, instanceWorld, sourceDirectory, false, null);
 
         /// <summary>Reads geometry from a skinned primitive while ignoring its skin attributes.</summary>
-        internal static ImportedMeshSource ReadDocumentWithoutSkin(GlbDocument document, int meshIndex, string sourceDirectory = null)
-            => ReadDocument(document, meshIndex, null, sourceDirectory, true);
+        internal static ImportedMeshSource ReadDocumentWithoutSkin(GlbDocument document, int meshIndex, string sourceDirectory = null, GlbImportImageCache imageCache = null)
+            => ReadDocument(document, meshIndex, null, sourceDirectory, true, imageCache);
 
-        static ImportedMeshSource ReadDocument(GlbDocument document, int meshIndex, SourceAffine instanceWorld, string sourceDirectory, bool allowSkinAttributes)
+        static ImportedMeshSource ReadDocument(GlbDocument document, int meshIndex, SourceAffine instanceWorld, string sourceDirectory, bool allowSkinAttributes, GlbImportImageCache imageCache = null)
         {
             Checks.Require(document != null, "INVALID_IMPORT", "GLB document is required.");
-            return Parse(document.Root, document.Bin, document.SourceHash, meshIndex, instanceWorld, sourceDirectory, allowSkinAttributes);
+            return Parse(document.Root, document.Bin, document.SourceHash, meshIndex, instanceWorld, sourceDirectory, allowSkinAttributes, imageCache);
         }
 
-        static ImportedMeshSource Parse(JObject root, byte[] bin, string sourceHash, int meshIndex, SourceAffine instanceWorld, string sourceDirectory, bool allowSkinAttributes = false)
+        static ImportedMeshSource Parse(JObject root, byte[] bin, string sourceHash, int meshIndex, SourceAffine instanceWorld, string sourceDirectory, bool allowSkinAttributes = false, GlbImportImageCache imageCache = null)
         {
             Checks.Require((string)root["asset"]?["version"] == "2.0", "UNSUPPORTED_FORMAT", "GLB asset version must be 2.0.");
             GlbImportDiagnostics.RequireSupportedRequiredExtensions(root);
@@ -126,7 +129,7 @@ namespace NyaForge.Authoring.Import
                 mesh = transformed.Mesh; morphs = transformed.Morphs;
             }
             var diagnostics = GlbImportDiagnostics.ForMesh(root, meshToken);
-            var materials = GlbMaterialSourceReader.Read(root, meshToken, parts.Select(part => part.MaterialIndex).ToArray(), bin, views, sourceDirectory);
+            var materials = GlbMaterialSourceReader.Read(root, meshToken, parts.Select(part => part.MaterialIndex).ToArray(), bin, views, sourceDirectory, imageCache);
             var warnings = new List<string> { "Imported as " + parts.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " static triangle primitive(s); original glTF scene hierarchy, unsupported texture/image resources and skin bindings are not retained. Basic PBR material factors and supported local/embedded base-color images are retained when a primitive material is present." };
             warnings.AddRange(GlbImportDiagnostics.WarningText(diagnostics));
             if (instanceWorld != null) warnings.Add("Selected node instance world transform was applied to mesh positions, normals, tangents and POSITION morph deltas.");

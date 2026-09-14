@@ -86,12 +86,12 @@ namespace NyaForge.Authoring.Import
             return Parse(GlbDocumentReader.Read(bytes), meshIndex, skinIndex, instanceWorldTransform, sourceDirectory);
         }
 
-        internal static ImportedSkinnedMeshSource ReadFromDocument(GlbDocument document, int meshIndex, int skinIndex, string sourceDirectory, SourceAffine instanceWorldTransform = null)
+        internal static ImportedSkinnedMeshSource ReadFromDocument(GlbDocument document, int meshIndex, int skinIndex, string sourceDirectory, SourceAffine instanceWorldTransform = null, GlbImportImageCache imageCache = null)
         {
-            return Parse(document, meshIndex, skinIndex, instanceWorldTransform, sourceDirectory);
+            return Parse(document, meshIndex, skinIndex, instanceWorldTransform, sourceDirectory, imageCache);
         }
 
-        static ImportedSkinnedMeshSource Parse(GlbDocument document, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null, string sourceDirectory = null)
+        static ImportedSkinnedMeshSource Parse(GlbDocument document, int meshIndex, int skinIndex, SourceAffine instanceWorldTransform = null, string sourceDirectory = null, GlbImportImageCache imageCache = null)
         {
             var root = document.Root;
             GlbImportDiagnostics.RequireSupportedRequiredExtensions(root);
@@ -113,7 +113,7 @@ namespace NyaForge.Authoring.Import
             // Reuse the static geometry adapter while ignoring skin attributes
             // directly; cloning the complete JSON root would retain a second
             // copy of a large multi-mesh scene for no semantic benefit.
-            var baseSource = GlbImporter.ReadDocumentWithoutSkin(document, meshIndex, sourceDirectory);
+            var baseSource = GlbImporter.ReadDocumentWithoutSkin(document, meshIndex, sourceDirectory, imageCache);
             var rawWeights = new List<SkinBinding.VertexWeightInput>(); int vertexOffset = 0;
             for (int p = 0; p < primitives.Count; p++)
             {
