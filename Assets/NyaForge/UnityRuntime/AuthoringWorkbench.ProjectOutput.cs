@@ -13,7 +13,10 @@ namespace NyaForge.UnityRuntime
         /// </summary>
         void BuildProjectOutputPanel(VisualElement parent)
         {
-            projectOutputPanel = new Foldout { text = "3  保存とUnityへの受け渡し", value = true, name = "project-output" };
+            // Saving remains available in the command bar. Expand this longer
+            // delivery panel when the user enters the review/output mode;
+            // automated acceptance keeps it open for stable control probes.
+            projectOutputPanel = new Foldout { text = "3  保存とUnityへの受け渡し", value = IsAutomatedUiVerification, name = "project-output" };
             var panel = projectOutputPanel;
             projectLabel = new Label(); panel.Add(projectLabel);
             projectPath = new TextField("制作フォルダ") { name = "authoring-project-path" };

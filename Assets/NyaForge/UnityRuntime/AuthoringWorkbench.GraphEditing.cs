@@ -23,7 +23,11 @@ namespace NyaForge.UnityRuntime
             // first-time user and the existing pointer-based acceptance
             // harness. The developer-only template group below remains
             // collapsed so test fixtures do not dominate the production path.
-            graphDetailsPanel = new Foldout { text = "ノード・編集段（詳細）", value = true, name = "graph-details" };
+            // Start the normal authoring path with the focused shape panel and
+            // work-mode navigator. Low-level graph controls remain available
+            // on demand; the verification harness keeps them open for stable
+            // pointer probes.
+            graphDetailsPanel = new Foldout { text = "ノード・編集段（詳細）", value = IsAutomatedUiVerification, name = "graph-details" };
             var graphPanel = graphDetailsPanel;
             graphPanel.Add(new Label("基本形状を追加した後、処理段やノードを細かく確認できます。通常の作業では開かなくても編集できます。"));
             graphPanel.Add(Button("Planeグラフから始める", CreatePlaneGraph, "graph-create-plane"));

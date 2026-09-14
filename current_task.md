@@ -3547,3 +3547,12 @@ Coreは **512 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForg
 - Player build: `Builds/ShapeCatalogV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260914-230415-390.log`）
 - Authoring回帰: **PASS**（`Artifacts/Authoring-20260914-230444-491be0a412804e78b3c87e15cc904153/report.json`）。チョーカー／カフの既存生成、頂点編集、Save/Open、Bake、作業モード導線を確認した。
 - 実EditorWindowのマウスによる形状選択・実RadDollV3への適用・全周見た目／貫通・VRChat内表示は未受入のまま残る。
+
+# 2026-09-14 GUI-09: 詳細Panelの初期展開を整理
+
+通常の制作画面では、`ノード・編集段（詳細）` と `保存とUnityへの受け渡し` を初期折りたたみに変更した。保存は上部command barから直ちに使え、詳細ノード・出力項目は作業モード `形状編集`／`確認・出力` から必要なときだけ開く。`--authoring-check-output`／`--navigation-check-output`では従来どおりPanelを展開し、既存のpointer検証IDを維持する。形状カタログと同様に、ユーザー導線と検証compatibilityを分離した。
+
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.GraphEditing.cs`, `AuthoringWorkbench.ProjectOutput.cs`
+- Player回帰で通常起動の初期画面と自動検証Panelの両方を確認する。
+
+`Builds/GuiNavigationV1/NyaForge.exe`（Unity **6000.4.3f1**、`Logs/build-player-20260914-230734-279.log`）をビルドし、Authoring **PASS**（`Artifacts/Authoring-20260914-230756-7f2f146bcf804aecb7f17c81e522da0e/report.json`）とNavigation **PASS**（`Artifacts/Navigation-20260914-230823-1546d7fc3b0c494da2e18505ad0c3453/report.json`）を確認した。自動検証はcompatibility分岐で詳細Panelを展開するため、通常起動時の折りたたみ状態はコード設定による確認として、実マウスのDPI／IME／長い名称と合わせて手動受入へ残す。
