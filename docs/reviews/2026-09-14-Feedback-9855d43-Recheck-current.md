@@ -1,6 +1,6 @@
 # 9855d43フィードバックの実装反映確認（2026-09-14）
 
-提示された`9855d43`基準のP1 3件／P2 5件を、現行作業ツリーへ反映した。今回はレビュー記録だけでなく、再現条件に対応する実装と回帰を追加している。
+提示された`9855d43`基準のP1 3件／P2 5件を、現行`main` **`b9c51e6`**へ反映した。今回はレビュー記録だけでなく、再現条件に対応する実装と回帰を追加している。
 
 | 指摘 | 対応 | 根拠 |
 |---|---|---|
@@ -17,7 +17,7 @@
 
 - Core: **506 passed / 0 failed**。sparse slotの2 slot／未使用slot、Paint node identity、既存GLB・skin・材質回帰を含む。artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-37236934d9df42168eda9df79fc396e2`。
 - Windows Player build: **PASS**。Unity `6000.4.3f1`、`Builds/PerformanceV31/NyaForge.exe`および追加MCP回帰を含む`Builds/PerformanceV32/NyaForge.exe`。
-- Authoring report: V31の自動suiteは`report.json`で`passed: true`（`Artifacts/Authoring-20260914-092150-9326992d985d426caff41384cb0d926b/report.json`）。検証終了後のPlayer終了待ちがタイムアウトしたため、ランナーの終了コードはPASS扱いにしていない。V32の再実行は終了待ち時間内にreport生成まで到達せず、追加回帰の実行完了は未確認。
+- Authoring report: V32の自動suiteが**PASS**（`Artifacts/Authoring-20260914-093140-fec1bbea16b44bd0808b154884ce3989/report.json`、1600×1000）。このsuite内のmulti-object検証で、衣装から保護アバターへ切り替えるMCP batchを拒否し、geometry hash不変を確認した。V31にもreport `passed: true`は生成されたが、終了待ちが長くなったため、最終証跡はV32へ統一した。
 - Unity Bridge: **PASS**。Unity `2022.3.22f1`でsemantic normal/MR、材質・複数材質・clothing packageを確認。`Artifacts/BridgeReceiver-20260914-092607-762-920be59b4a4e4816aaf92bbb8b5a0ce7/bridge-report.json`、`Artifacts/BridgeReceiver-20260914-092641-820-eeded8a4b26943ad8593f58cb6d595f1/bridge-report.json`。
 
 実EditorWindowのマウス／IME／Explorer操作、実アバター全周fit・貫通ゼロ・見た目、VRChat Build & Test／実機表示は未受入。`private/`のアバター・SDK素材は公開ツリーへ追加していない。

@@ -4,7 +4,7 @@
 
 MCP batchの参照保護、generic single-object出力の保護漏れ、sparse material slot、Unity Bridge MR係数、Paint originalのnode identity、allowlist 1対象、高DPI bounds、fit対象のobject境界を実装した。詳細と未受入境界は[実装反映確認](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-current.md)へ固定した。
 
-Coreは**506 passed / 0 failed**。Unity PlayerはV32までビルド成功し、BridgeはUnity 2022.3.22f1でsemantic textureとclothing packageをPASS。V31 Authoring reportは`passed: true`を生成したが、検証後のPlayer終了待ちがタイムアウトしたため、ランナー完了とは分けて記録する。V32で追加したMCP batch回帰は、Player suiteのreport生成まで未確認。次はV32を単独で十分な終了待ちで再実行し、MCP batch保護の実行証跡を確定する。
+Coreは**506 passed / 0 failed**。Unity PlayerはV32までビルド成功し、BridgeはUnity 2022.3.22f1でsemantic textureとclothing packageをPASS。V32 Authoring suiteも**PASS**（`Artifacts/Authoring-20260914-093140-fec1bbea16b44bd0808b154884ce3989/report.json`）。multi-object検証内のMCP batch回帰で、衣装から保護アバターへ切り替える編集を拒否し、geometry hash不変を確認した。
 
 ## 2026-09-14 NF-V1-09W: 9855d43衣装・材質フィードバックの現行HEAD再照合
 
