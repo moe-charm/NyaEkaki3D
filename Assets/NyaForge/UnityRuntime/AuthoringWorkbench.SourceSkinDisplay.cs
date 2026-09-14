@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Graph;
 using NyaForge.Authoring.Import;
@@ -59,9 +58,17 @@ namespace NyaForge.UnityRuntime
         {
             if (evaluation == null || graph == null || importedRigSession?.SourceSkin == null || importedRigSession.SourceSkinBinding == null)
                 return null;
-            string poseHash = graph.Nodes.Values.Where(node => node.TypeId == BuiltinNodes.Pose && node.Pose != null)
-                .Select(node => node.Pose.ContentHash).OrderBy(hash => hash, StringComparer.Ordinal).FirstOrDefault() ?? "";
-            var bindingNode = graph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);
+            string poseHash = "";
+            GraphNode bindingNode = null;
+            foreach (var node in graph.Nodes.Values)
+            {
+                if (node.TypeId == BuiltinNodes.Pose && node.Pose != null)
+                {
+                    string candidate = node.Pose.ContentHash ?? "";
+                    if (poseHash == "" || string.CompareOrdinal(candidate, poseHash) < 0) poseHash = candidate;
+                }
+                if (bindingNode == null && node.TypeId == BuiltinNodes.SkinBind && node.Binding != null) bindingNode = node;
+            }
             var currentBinding = bindingNode != null && evaluation.SkinBindingOutputs.TryGetValue(bindingNode.NodeId, out var bindingValue) ? bindingValue.Binding : bindingNode?.Binding;
             string bindingKey = currentBinding?.ContentHash ?? "";
             var key = new SourceSkinDisplayCacheKey(graph.GraphId, evaluation.Output?.SnapshotHash, poseHash, importedRigSession.SourceHash, bindingKey);
