@@ -8,6 +8,8 @@ V30〜V31では頂点選択変更の部分refresh境界を`AuthoringWorkbench.Se
 
 **実装済みの機能が多いことを、GUIが制作に使いやすいことの証明にしない。** 以下の従来計画と回帰結果は維持し、最新の着手順は[current_task](../current_task.md)冒頭とGUI計画を優先する。Unity／VRChat・長時間・別Windowsの未受入条件を削除しない。
 
+最新追記（2026-09-15、main `91a4a01`）: private RadDollV3 VRMを入力に、既存のチョーカー生成・Neckへの明示skin-bind・native Save/Open・衣装package出力をWindows Playerで94 checks PASSし、同packageをUnity 2022.3.22f1 Bridgeへ渡す検証もPASSした。実EditorWindowでの頂点編集・fit・貫通・見た目、実SDK／VRChat Build & Test・実機表示は引き続き外部受入として残す。検証 harness はUnity起動時に掃除されるproject `Temp`をPhysBones fixtureの出力先に使わない。
+
 ## 従来計画・検証記録
 
 更新: 2026-09-14。検証対象コード: `main`（Player `Builds/BoneSubsetV16`まで確認済み。検証時点のcommitはcurrent_taskへ記録）。持込提案の基準 `8c1bd7a` から、衣装package・材質・ownership marker・複数package管理・semantic texture preview・納品対象allowlist・base-color原画像sourceのnative保持・検査公開・未編集時の原画像出力まで実装が進んでいる。`f010146`フィードバックの現行HEAD再照合（[現行再照合](reviews/2026-09-14-Feedback-f010146-Recheck-5f90cb9.md)）とPerformanceV37〜V39の実RadDollV3再計測、V39の50回反復起動回帰は[current_task](../current_task.md)へ記録した。source-skin取込では既存display meshの再利用とJSON scene clone削減を実装し、V39で回帰した。直近Core artifactは `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ef359b1c35f74f23b4e08fd5cea3bf74`、実衣装Player reportは `Artifacts/Authoring-20260914-165304-a4fdb279b679471d99fcba5733339b17/report.json`、Unity Bridge reportは `Artifacts/BridgeReceiver-20260914-165530-393-cb754fbf3e254af482bb0fecda21ca22/bridge-report.json`。
