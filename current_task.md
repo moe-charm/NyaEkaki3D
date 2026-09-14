@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15I: モデル取込のクイック導線
+
+右側controlsの「1 制作プロジェクト」直下へ`モデルを開く…`を追加し、押下時にGLB／VRM取込foldoutを展開してWindows Explorer pickerを起動するようにした。既存の詳細候補選択・ファイルパス入力・全mesh取込は維持する。`Builds/BoneSubsetV14/NyaForge.exe`のRadDollV3 `-ImportOnly` probeは**PASS**（`Artifacts/Authoring-20260914-163414-6780f993e81841d4a7c78e0513591ba0/report.json`）。capture画像でクイックボタン、全身Frame、選択点、status footer、スクロールcontrolsの同時表示を確認した。これは自動UI captureであり、実EditorWindowのマウス・IME・DPI受入は未完了として残す。
+
 ## 2026-09-14 NF-V1-15H: モデル取込後の自動Frame
 
 GLB／VRM取込後に更新済みprojectionのboundsで`Frame()`を実行するよう、単一mesh・skin・全mesh instanceの3経路を揃えた。従来は空projectのカメラ原点／距離が残り、実モデルのスクリーンショットで上半身が見切れる場合があった。`Builds/BoneSubsetV13/NyaForge.exe`のRadDollV3 `-ImportOnly` probeは**PASS**（`Artifacts/Authoring-20260914-163203-98d80848e51940ca9d9170d1c62e2715/report.json`）。生成画像 `import-only.png`で全身mesh・選択点・右側controls・status footerが同時に確認できる。これは自動captureによる表示証跡で、実EditorWindowのマウス・IME・DPI受入やVRChat内の見た目確認を完了扱いしない。

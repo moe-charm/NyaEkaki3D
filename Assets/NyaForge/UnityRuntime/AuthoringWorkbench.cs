@@ -152,6 +152,11 @@ namespace NyaForge.UnityRuntime
             BuildMcp(side);
             side.Add(new Label("1  制作プロジェクト"));
             side.Add(Button("新しい空プロジェクト", () => ConfirmReplace(() => ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null)), "new-project"));
+            side.Add(Button("モデルを開く…", () =>
+            {
+                if (modelImportPanel != null) modelImportPanel.value = true;
+                if (!modelPickerOpen) StartCoroutine(PickModel());
+            }, "authoring-open-model"));
             side.Add(new Label("プレートを追加するか、下の「Planeグラフから始める」で形を作れます。"));
             var fixtures = Row(side);
             fixtures.Add(Button("プレート追加 ×1", () => AddSample(1), "fixture-1"));
