@@ -50,6 +50,22 @@ internal static partial class Program
             string corruptHash=Checks.Hash(invalid);Storage.WriteBlob(directory,corruptHash,invalid);
             manifest=JObject.Parse(text);manifest["materialHash"]=corruptHash;File.WriteAllText(path,manifest.ToString());Expect("INVALID_BLOB",()=>MaterialBakeStore.Read(path));
         });
+        Test("material Bake uses compact blob names when a Windows path is long", () =>
+        {
+            var f = MaterialFixture();
+            var graph = f.graph.ReplaceNode(GraphNode.StandardMaterial(f.material, MaterialParameters.Default));
+            var workspace = AuthoringWorkspace.CreateEmpty();
+            var commands = new AuthoringCommandService(workspace);
+            Ok(commands.Execute(workspace.NewCommand(AuthoringOperation.AddGraph(graph))));
+            string directory = Path.Combine(Root, new string('p', 130), "long-material-export");
+            string path = MaterialBakeStore.Export(directory, workspace);
+            var blobFiles = Directory.GetFiles(Path.Combine(directory, "blobs"));
+            True(blobFiles.Any(file => !Path.GetFileName(file).StartsWith(workspace.Preview.Output.Mesh.ContentHash, StringComparison.Ordinal)));
+            True(Directory.GetFiles(directory, "*.png").Any(file => !Path.GetFileName(file).StartsWith(workspace.Preview.Output.BaseColor.ImageHash, StringComparison.Ordinal)));
+            var read = MaterialBakeStore.Read(path);
+            Equal(workspace.Preview.Output.Mesh.ContentHash, read.Geometry.Mesh.ContentHash);
+            Equal(MaterialParameters.Default.ContentHash, read.Material.ContentHash);
+        });
         Test("material Bake rejects unassigned or incomplete output without creating export directory",()=>
         {
             var workspace=AuthoringWorkspace.CreateEmpty();var commands=new AuthoringCommandService(workspace);var f=PaintFixture();

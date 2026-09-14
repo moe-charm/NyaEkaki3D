@@ -15,7 +15,7 @@ namespace NyaForge.Authoring.Evidence
             {
                 // The capture manifest is the publication point. Prior content is never replaced.
                 Publish(Path.Combine(directory,capture.Snapshot.SnapshotId+".evidence.json"),metadata);
-                foreach(var image in capture.Images) Publish(Path.Combine(directory,image.PngHash+".png"),image.CopyPng());
+                foreach(var image in capture.Images) Publish(Storage.HashFilePath(directory,image.PngHash,".png",true),image.CopyPng());
                 Publish(path,manifest);
             }
             return path;

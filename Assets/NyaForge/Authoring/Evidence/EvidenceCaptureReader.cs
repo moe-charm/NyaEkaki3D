@@ -44,13 +44,14 @@ namespace NyaForge.Authoring.Evidence
             foreach(var entry in r["images"])
             {
                 Shape(entry,"index file sha256 renderProfile width height camera backgroundRgba lighting");Require(Integer(entry["index"])==images.Count);
-                string hash=Text(entry["sha256"]);Checks.HashText(hash);string file=Text(entry["file"]);Require(file==hash+".png");
+                string hash=Text(entry["sha256"]);Checks.HashText(hash);string file=Text(entry["file"]);
+                Require(file==hash+".png" || file==Storage.CompactHashName(hash)+".png");
                 Require(Text(entry["renderProfile"])=="authoring-surface-orthographic-v1" && Text(entry["lighting"])=="authoring-surface-view-shading-v1");
                 Require(entry["backgroundRgba"] is JArray && entry["backgroundRgba"].Count()==4);
                 var background=new[]{.04f,.06f,.08f,1f};for(int i=0;i<4;i++) Require(Float(entry["backgroundRgba"][i])==background[i]);
                 var camera=entry["camera"];Shape(camera,"projection position target up size near far");Require(Text(camera["projection"])=="orthographic");
                 var view=new EvidenceView(Integer(entry["width"]),Integer(entry["height"]),Point(camera["position"]),Point(camera["target"]),Point(camera["up"]),Float(camera["size"]),Float(camera["near"]),Float(camera["far"]));
-                byte[] png=Storage.ReadBounded(Path.Combine(directory,file),PaintPngInput.MaxFileBytes);
+                byte[] png=Storage.ReadBounded(Storage.HashFilePath(directory,hash,".png",false),PaintPngInput.MaxFileBytes);
                 Checks.Require(Checks.Hash(png)==hash,"HASH_MISMATCH","Capture PNG hash differs.");var input=PaintPngInput.Read(png);Require(input.Width==view.Width && input.Height==view.Height);
                 images.Add(new EvidenceCaptureImageRecord(view,hash,png));
             }

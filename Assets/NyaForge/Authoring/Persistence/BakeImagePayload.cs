@@ -23,7 +23,7 @@ namespace NyaForge.Authoring
             var encoded=PaintImageCodec.Write(image);var png=PaintPng.Encode(image);
             Checks.Require(Checks.Hash(encoded)==ImageHash && Checks.Hash(png)==PngHash,"HASH_MISMATCH","Export image changed before writing.");
             Storage.WriteBlob(directory,ImageHash,encoded);
-            string path=Path.Combine(directory,PngHash+".png");
+            string path=Storage.HashFilePath(directory,PngHash,".png",true);
             if(File.Exists(path)) Checks.Require(Checks.Hash(Storage.ReadBounded(path,AuthoringLimits.MaxBlobBytes))==PngHash,"HASH_MISMATCH","Existing PNG was modified.");
             else Storage.AtomicWrite(path,png,false);
         }
@@ -34,7 +34,7 @@ namespace NyaForge.Authoring
             Checks.Require(mesh.Uv0.Count==mesh.VertexCount,"UV_MISSING","Textured mesh requires UV0.");
             var image=PaintImageCodec.Read(Storage.ReadBlob(directory,ImageHash));
             Checks.Require(image.Width==Width && image.Height==Height,"HASH_MISMATCH","Image dimensions differ from manifest.");
-            var png=Storage.ReadBounded(Path.Combine(directory,PngHash+".png"),AuthoringLimits.MaxBlobBytes);
+            var png=Storage.ReadBounded(Storage.HashFilePath(directory,PngHash,".png",false),AuthoringLimits.MaxBlobBytes);
             Checks.Require(Checks.Hash(png)==PngHash && Checks.Hash(PaintPng.Encode(image))==PngHash,"HASH_MISMATCH","PNG differs from retained image pixels or encoding profile.");
             return (image,png);
         }

@@ -3774,3 +3774,19 @@ GUI-17で生成した実package（`Artifacts/Authoring-20260915-030639-db3f07ec1
 `候補を生成（名前・階層）`ではpackage側の `Child`／`Root` と実avatarのstable identityが一致せず、`0/2本を一意候補として検出`となった。推測割当は行わず、Unity object pickerから `Child → Neck (Transform)`、`Root → Hips (Transform)`を手動指定できることを確認した。これは候補生成と明示割当のUI・identity境界の受入である。
 
 packageはsynthetic 3頂点のため、割当保存・事前診断・衣装適用後の実RadDollV3全周見た目・貫通・pose変形の合格材料にはしない。実衣装packageでの候補／手動割当→保存→診断→適用→更新／削除UndoとVRChat Build & Testは未受入のまま残す。作業中のUnity projectは別instanceによるロックを避けるため閉じていない。
+
+# 2026-09-15 FIX-01: Windows長いパスのハッシュ資産出力
+
+深い開発フォルダでMaterial／Paint／Evidenceの画像やmesh blobを書き出すと、SHA-256全文をファイル名へ使う経路がWindowsの従来パス長境界を越え、`DirectoryNotFoundException`になる問題を切り分けた。`Storage.HashFilePath`を追加し、通常の短いパスでは従来の全文hash名を維持し、240文字を超える場合だけ先頭8文字と末尾8文字をつないだ決定的な短縮名へ切り替えるようにした。manifestの完全hashと読み込み時の内容hash検証は維持し、既存の全文hashファイルも優先して読める。Material bake、Paint PNG、Evidence captureの書き込み・読み込みを同じヘルパーへ統一した。
+
+- 変更: `Assets/NyaForge/Authoring/Persistence/Storage.cs`
+- 変更: `Assets/NyaForge/Authoring/Persistence/BakeImagePayload.cs`
+- 変更: `Assets/NyaForge/Authoring/Persistence/PaintPngExport.cs`
+- 変更: `Assets/NyaForge/Authoring/Evidence/EvidenceCaptureStore.cs`
+- 変更: `Assets/NyaForge/Authoring/Evidence/EvidenceCaptureReader.cs`
+- 回帰: 長い保存先でcompact blob／PNG名を確認するMaterial bakeテストを追加
+- Core: **513 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-98b931281c0046ea8816e17a4c1ed7e2`）
+- Windows Player: 一時コピーを`C:\Users\tomoaki\AppData\Local\Temp\NyaEkaki3D-build-20260915-033127`へ作成してビルド・再実行。通常のMaterial／Paint PNG／Surface出力は通過し、長いパス由来の失敗は解消した。`report.json`は既存の検証ハーネスであるsave-failure故障注入（期待された`DirectoryNotFoundException`）と`Viewport restoration differs`で`passed=false`のため、Player全体PASSや実UI／Unity／VRChat受入へは読み替えない。
+- 公開境界: 一時Player、private素材、生成Artifactsは公開ツリーへ追加していない。`private/`追跡除外を維持する。
+
+次は、長いパスを含む実RadDollV3の衣装packageを作成し、Unity受け取り・更新／削除Undo・移動／回転／scale後の表示を手動確認する。実衣装のskin-bind／fit／貫通とVRChat Build & Testは引き続き未受入。

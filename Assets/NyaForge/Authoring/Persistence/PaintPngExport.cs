@@ -47,7 +47,7 @@ namespace NyaForge.Authoring
                 byte[] json = Storage.JsonBytes(manifest);
                 using (Storage.Lock(directory))
                 {
-                    string path = Path.Combine(directory,manifest.PngHash+".png");
+                    string path = Storage.HashFilePath(directory,manifest.PngHash,".png",true);
                     if (File.Exists(path))
                         Checks.Require(Checks.Hash(Storage.ReadBounded(path,AuthoringLimits.MaxBlobBytes)) == manifest.PngHash,"HASH_MISMATCH","Existing PNG was modified.");
                     else Storage.AtomicWrite(path,png,false);

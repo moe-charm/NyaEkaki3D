@@ -10,6 +10,12 @@ namespace NyaForge.Authoring
 {
     internal static class Storage
     {
+        // Unity's Windows runtime can still hit the legacy MAX_PATH boundary
+        // even when the project directory itself is valid. Keep the normal
+        // hash-named blob layout for short paths, but use a compact deterministic
+        // filename before the full path becomes unsafe. The manifest continues
+        // to carry the complete SHA-256 identity.
+        const int WindowsPathSafetyLimit = 240;
         internal const string Profile = "static-triangles-uniform-v1";
         internal const string Coordinates = "unity-y-up-left-handed";
         internal static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
@@ -109,14 +115,42 @@ namespace NyaForge.Authoring
         internal static void WriteBlob(string directory, string hash, byte[] bytes)
         {
             Checks.HashText(hash); Checks.Require(bytes.Length <= AuthoringLimits.MaxBlobBytes && Checks.Hash(bytes) == hash,"INVALID_BLOB","Blob hash or length is invalid.");
-            string blobs = Path.Combine(directory,"blobs"); Directory.CreateDirectory(blobs); string path = Path.Combine(blobs,hash + ".bin");
+            string blobs = Path.Combine(directory,"blobs"); Directory.CreateDirectory(blobs); string path = BlobPathForWrite(directory,hash);
             if (File.Exists(path)) { ReadBlob(directory,hash); return; }
             AtomicWrite(path,bytes,false); ReadBlob(directory,hash);
         }
         internal static byte[] ReadBlob(string directory, string hash)
         {
-            Checks.HashText(hash); var bytes = ReadBounded(Path.Combine(directory,"blobs",hash + ".bin"),AuthoringLimits.MaxBlobBytes);
+            Checks.HashText(hash); string path = BlobPathForRead(directory,hash); var bytes = ReadBounded(path,AuthoringLimits.MaxBlobBytes);
             Checks.Require(Checks.Hash(bytes) == hash,"HASH_MISMATCH","Blob content does not match its name."); return bytes;
+        }
+        static string BlobPathForWrite(string directory, string hash)
+        {
+            string blobs = Path.Combine(directory,"blobs");
+            return HashFilePath(blobs,hash,".bin",true);
+        }
+        static string BlobPathForRead(string directory, string hash)
+        {
+            string blobs = Path.Combine(directory,"blobs");
+            return HashFilePath(blobs,hash,".bin",false);
+        }
+        internal static string HashFilePath(string directory, string hash, string extension, bool forWrite)
+        {
+            Checks.HashText(hash); Checks.Require(!string.IsNullOrEmpty(extension) && extension[0] == '.' && extension.IndexOfAny(new[] {'\\','/'}) < 0,"INVALID_PATH","Invalid hash file extension.");
+            string canonical = Path.Combine(directory,hash + extension);
+            string compact = Path.Combine(directory,CompactHashName(hash) + extension);
+            if (File.Exists(canonical) || File.Exists(compact)) return File.Exists(canonical) ? canonical : compact;
+            if (canonical.Length <= WindowsPathSafetyLimit) return canonical;
+            if (forWrite) return compact;
+            // Preserve the normal missing-file exception and path for callers.
+            return canonical;
+        }
+        internal static string CompactHashName(string hash)
+        {
+            // Eight hex characters from each end keep the complete hash in the
+            // manifest while making an accidental filename collision detectable
+            // by the full hash check below.
+            Checks.HashText(hash); return hash.Substring(0,8) + "-" + hash.Substring(hash.Length - 8,8);
         }
         internal static void AtomicWrite(string path, byte[] bytes, bool replace)
         {
