@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10K: skinned GLBのJSON clone削減
+
+`GlbSkinImporter`とstandalone source-skin importerが、skin属性を除くためscene全体のJSONをcloneしていた。`GlbImporter.ReadDocumentWithoutSkin`を追加し、skin属性を読み飛ばして同じ`GlbDocument`を直接geometry adapterへ渡すようにした。source-skinの公開standalone API、skin属性の拒否境界、source hash／topology検証は維持する。変更は`b089516`。
+
+Coreは**506 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-c90656d376a84674ae330e925abfac94`）。Unity `6000.4.3f1`のV39 Player build（`Logs/build-player-20260914-105352-527.log`）、private RadDollV3候補のAuthoring suite（`Artifacts/Authoring-20260914-105632-c29fb14ef55248f59fb7031eacb10b89/report.json`）、Unity `2022.3.22f1` Bridge（`Artifacts/BridgeReceiver-20260914-105609-762-5a5c6609661c42bbb0c8e34e2f8d3b00/bridge-report.json`）はいずれも**PASS**。同条件の外部10秒サンプリングは約110.3秒、working set peak **2,470.5MB**、private bytes peak **3,075.5MB**（`Artifacts/Authoring-Memory-20260914-105632/memory-measurement.json`）で、V37〜V39間の削減量は確定できない。実EditorWindow操作、全周fit／貫通・見た目、VRChat Build & Test／実機表示、別Windows環境は未受入として残す。
+
 ## 2026-09-14 NF-V1-10J: mesh再利用後の実候補メモリ再計測
 
 `PerformanceV38`で同じprivate RadDollV3候補1体のAuthoring suiteを外部10秒サンプリングした。Player reportは**PASS**（`Artifacts/Authoring-20260914-105010-5af979e784ee4540bd0821c031b992e1/report.json`）。実行約110.3秒、working set peak **2,444.9MB**、private bytes peak **3,080.3MB**（`Artifacts/Authoring-Memory-20260914-105010/memory-measurement.json`）だった。
