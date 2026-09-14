@@ -3790,3 +3790,24 @@ packageはsynthetic 3頂点のため、割当保存・事前診断・衣装適�
 - 公開境界: 一時Player、private素材、生成Artifactsは公開ツリーへ追加していない。`private/`追跡除外を維持する。
 
 次は、長いパスを含む実RadDollV3の衣装packageを作成し、Unity受け取り・更新／削除Undo・移動／回転／scale後の表示を手動確認する。実衣装のskin-bind／fit／貫通とVRChat Build & Testは引き続き未受入。
+
+# 2026-09-15 FIX-02: 深い出力先のatomic stagingとPlayer回帰の再成立
+
+FIX-01でblob／PNGのhash名を短縮しても、GLB・複数object・衣装packageのstaging directoryへ出力先名とGUIDを連結する経路が、深いWindowsパスでatomic temporary fileの上限を越えていた。`Storage.StagingDirectory`を追加し、destinationの兄弟へ短い`.nf-<tag>-<8hex>` staging directoryを作ってから同一volume内で公開するようにした。GLB、MultiObject、SkinnedClothingPackageの各writerへ接続した。故障注入側も`Storage.HashFilePath`を使い、短縮blob名でもsave failure guardが同じ実体をロックするようにした。
+
+Surface viewport検証は、Ready通知前の古いboundsを復元後の値と比較していたため、UI Toolkitの再flowで誤検知していた。Ready後のlayoutを待ち、復元後は現在のviewportが利用可能でcamera targetが現行textureを指すことを確認する検証へ整理した。
+
+- 変更: `Assets/NyaForge/Authoring/Persistence/Storage.cs`
+- 変更: `Assets/NyaForge/Authoring/Persistence/GlbExportService.cs`
+- 変更: `Assets/NyaForge/Authoring/Persistence/MultiObjectExportService.cs`
+- 変更: `Assets/NyaForge/Authoring/Persistence/SkinnedClothingPackage.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.SaveFailureVerification.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.SurfaceViewportVerification.cs`
+- 回帰追加: 深い保存先でMultiObject packageを公開し、各object manifestを再読込。衣装packageでも深い保存先を使用。
+- Core: **514 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-ca68a186c8e04458a4d1574d70b38637`）
+- Windows Player Authoring: **PASS**（一時build `C:\Users\tomoaki\AppData\Local\Temp\NyaEkaki3D-build-20260915-033127\Builds\Windows-DeepStage6\NyaForge.exe`、report `Artifacts/Authoring-20260915-040344-c9aab4d3e43842ea80aeffb100a0c8d5/report.json`）
+- Real Clothing script: **PASS**。実RadDollV3 VRMを入力にした取込と、衣装workflow／package生成をPlayerで実行し、`Clothing skeleton: 2 bones`を確認。Unity **2022.3.22f1** Bridgeのpackage受け取りもPASS（`Artifacts/BridgeReceiver-20260915-040652-218-600e0951e948479f9f4c5fb708952365/bridge-report.json`）。
+- 境界: このReal Clothing scriptは実avatar入力＋合成accessory fixtureによる自動回帰であり、実EditorWindowでの実衣装全周fit／貫通／見た目、avatar移動・回転・scale、更新／削除Undo、VRChat Build & Testを代替しない。
+- 公開境界: private素材、Unity project、temporary Player、Artifactsはpublic treeへ追加していない。`git ls-files private`は空。
+
+次は、このpackageを開いているUnity EditorWindowへ読み込み、実avatar rootへ候補／明示BoneId割当→適用→更新／削除Undoを実操作で一周する。その後、通常poseとVRChat Build & Testを確認する。

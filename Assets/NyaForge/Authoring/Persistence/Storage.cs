@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -151,6 +152,21 @@ namespace NyaForge.Authoring
             // manifest while making an accidental filename collision detectable
             // by the full hash check below.
             Checks.HashText(hash); return hash.Substring(0,8) + "-" + hash.Substring(hash.Length - 8,8);
+        }
+        internal static string StagingDirectory(string destination, string prefix)
+        {
+            Checks.Require(!string.IsNullOrWhiteSpace(destination) && !string.IsNullOrWhiteSpace(prefix), "INVALID_PATH", "A staging destination is required.");
+            string fullDestination = Path.GetFullPath(destination);
+            string parent = Path.GetDirectoryName(fullDestination);
+            if (string.IsNullOrEmpty(parent)) parent = Directory.GetCurrentDirectory();
+            // The staging name is deliberately short: files written inside it
+            // still need room for atomic temporary names under deep artifacts.
+            string tag = new string(prefix.Where(char.IsLetterOrDigit).Take(4).ToArray());
+            if (string.IsNullOrEmpty(tag)) tag = "stage";
+            string candidate;
+            do { candidate = Path.Combine(parent, ".nf-" + tag + "-" + Guid.NewGuid().ToString("N").Substring(0, 8)); }
+            while (Directory.Exists(candidate) || File.Exists(candidate));
+            return candidate;
         }
         internal static void AtomicWrite(string path, byte[] bytes, bool replace)
         {

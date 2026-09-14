@@ -92,7 +92,7 @@ namespace NyaForge.Authoring
                 Checks.Require(!ProjectExportService.RequiresNativeProjectExport(workspace.Document), "ATTACHMENT_NATIVE_EXPORT_REQUIRED", "This document contains metadata that requires a native project export.");
                 Checks.Require(!Directory.Exists(directory) && !File.Exists(directory), "EXPORT_DESTINATION_EXISTS", "Export destination already exists.");
 
-                string staging = directory + ".staging-" + Guid.NewGuid().ToString("N");
+                string staging = Storage.StagingDirectory(directory, "multi");
                 try
                 {
                     Directory.CreateDirectory(staging);

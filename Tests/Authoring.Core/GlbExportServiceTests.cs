@@ -50,7 +50,7 @@ internal static partial class Program
             var glb = GlbExportService.ExportSkinnedObject(workspace, workspace.InstanceId, workspace.Document.DocumentId,
                 workspace.Document.DocumentRevision, workspace.Document.ActiveObjectId, glbDirectory);
             var evaluation = workspace.Document.ActiveObject.EvaluateGraph();
-            string packageDirectory = Path.Combine(Root, "clothing-package-" + Guid.NewGuid().ToString("N"));
+            string packageDirectory = Path.Combine(Root, new string('q', 90), "clothing-package-" + Guid.NewGuid().ToString("N"));
             string manifest = SkinnedClothingPackage.Export(packageDirectory, File.ReadAllBytes(glb.Path), evaluation.Output.Mesh,
                 skeleton, binding, workspace.Document.DocumentId, workspace.Document.ActiveObjectId, graph.GraphId,
                 workspace.Document.StateHash, graph.ContentHash);

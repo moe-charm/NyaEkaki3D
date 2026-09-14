@@ -28,7 +28,10 @@ namespace NyaForge.UnityRuntime
                 var metadata = VerificationMetadata("new");
                 workspace.SetAttachments(metadata);
                 string blobs = Path.Combine(directory, "blobs"); Directory.CreateDirectory(blobs);
-                using (var locked = new FileStream(Path.Combine(blobs, metadata.Hashes[sidecar] + ".bin"), FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                // Use the same canonical/compact path policy as the writer so
+                // the failure injection remains valid for deep Windows paths.
+                string lockedPath = Storage.HashFilePath(blobs, metadata.Hashes[sidecar], ".bin", true);
+                using (var locked = new FileStream(lockedPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 {
                     var bytes = metadata.Read(sidecar); locked.Write(bytes, 0, bytes.Length); locked.Flush(true);
                     Check(!TrySaveForExit(), "Failed sidecar save allowed exit");

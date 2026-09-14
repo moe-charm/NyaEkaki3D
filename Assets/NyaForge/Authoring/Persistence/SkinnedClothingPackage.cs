@@ -87,7 +87,7 @@ namespace NyaForge.Authoring
                 VertexCount = mesh.VertexCount, TriangleCount = mesh.TriangleCount
             };
             Checks.Require(!Directory.Exists(directory) && !File.Exists(directory), "EXPORT_DESTINATION_EXISTS", "Clothing package destination already exists.");
-            string staging = directory + ".staging-" + Guid.NewGuid().ToString("N");
+            string staging = Storage.StagingDirectory(directory, "clothing");
             try
             {
                 Directory.CreateDirectory(staging);

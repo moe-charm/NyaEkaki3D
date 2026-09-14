@@ -44,5 +44,18 @@ internal static partial class Program
                 workspace.Document.DocumentRevision, Path.Combine(Root, "multi-export-allowlist-stale-" + System.Guid.NewGuid().ToString("N")),
                 new[] { allowed[0], System.Guid.NewGuid().ToString("D") }));
         });
+
+        Test("multi-object export keeps staging outside a deep Windows destination", () =>
+        {
+            var workspace = AuthoringWorkspace.CreateEmpty("deep multi export");
+            string firstPlane, firstEdit; Ok(Execute(workspace, AuthoringOperation.AddGraph(PlaneGraph(out firstPlane, out firstEdit))));
+            string secondPlane, secondEdit; Ok(Execute(workspace, AuthoringOperation.AddGraph(PlaneGraph(out secondPlane, out secondEdit))));
+            string directory = Path.Combine(Root, new string('m', 90), "multi-export-deep-" + System.Guid.NewGuid().ToString("N"));
+            var result = MultiObjectExportService.Export(workspace, workspace.InstanceId, workspace.Document.DocumentId,
+                workspace.Document.DocumentRevision, directory);
+            var package = MultiObjectExportService.Read(result.ManifestPath);
+            Equal(2, package.Objects.Count);
+            True(package.Objects.All(item => File.Exists(item.ManifestPath)));
+        });
     }
 }

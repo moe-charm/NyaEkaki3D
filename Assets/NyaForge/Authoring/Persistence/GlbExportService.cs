@@ -441,7 +441,10 @@ namespace NyaForge.Authoring
             Checks.Require(objects != null && objects.Length > 0, "NO_EXPORTABLE_OBJECT", "No mesh objects were provided.");
             if (profile == GlbExportProfile.SkinnedGeometry || profile == GlbExportProfile.SkinnedGeometryExtended)
                 Checks.Require(skinned != null && skinned.Length == objects.Length, "GLB_SKIN_OBJECT_COUNT", "Each skinned mesh must have a matching binding.");
-            string staging = directory + ".staging-" + Guid.NewGuid().ToString("N");
+            // Keep the atomic staging directory beside the destination. Adding
+            // a GUID suffix to a deep destination itself can cross Windows'
+            // legacy path limit before the final files are written.
+            string staging = Storage.StagingDirectory(directory, "glb");
             try
             {
                 Directory.CreateDirectory(staging);
