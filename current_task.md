@@ -8,6 +8,10 @@
 
 `Tools/Test-NyaForgeNavigationRepeated.ps1 -BuildName BoneSubsetV16 -Count 2`を実行し、Playerの起動、制作画面遷移、保存状態・再開、viewport確認、終了を**2/2 PASS**した。集約結果は`Artifacts/Navigation-Repeated-BoneSubsetV16-20260914-170330.json`。これは自動fixtureの反復回帰であり、実EditorWindowのマウス・IME・DPI・Explorer操作やVRChat内表示の受入とは分けて扱う。
 
+## 2026-09-14 NF-V1-15T: V16受入証跡の整合性監査
+
+V16の実衣装Player report（93 checks、`passed=true`）、Unity Bridge report（16 checks、`status=passed`）、起動・保存再開反復（`passed=true`）の3証跡が現行作業ツリーに存在することを確認した。対象はそれぞれ`Artifacts/Authoring-20260914-165304-a4fdb279b679471d99fcba5733339b17/report.json`、`Artifacts/BridgeReceiver-20260914-165530-393-cb754fbf3e254af482bb0fecda21ca22/bridge-report.json`、`Artifacts/Navigation-Repeated-BoneSubsetV16-20260914-170330.json`。証跡の存在とPASSは自動検査の結果であり、実EditorWindowのマウス・IME・DPI・Explorer、実アバター全周fit／貫通／見た目、VRChat Build & Test／実機表示の手動受入とは分けて扱う。
+
 ## 2026-09-14 NF-V1-15Q: Authoring起動スクリプト
 
 `Tools/Start-NyaForgeAuthoring.ps1`を追加し、既定の`Builds/BoneSubsetV16/NyaForge.exe`を`--authoring true`で起動できるようにした。`-BuildName`で別候補を選べ、`-PrintOnly`でパスだけを検査できる。V16に対する`-PrintOnly`は**PASS**し、最新手動受入表・クイックスタートから同じ入口へ誘導する。入力モデルやprivateデータは扱わず、公開ツリーへコピーしない。
