@@ -40,3 +40,9 @@
 ## 使い方
 
 このmanifestのPASSはCore／Player／合成Bridge／private SDK probeの範囲だけを示す。実Unity avatar、実VRChat、他者視点、出荷候補の判定へ自動的に読み替えない。private probeで型解決は済んだため、次は同じfixtureとcommit hashを使った実RadDollV3 sceneのNF-V1-02A/02B受入へ進む。
+
+## 2026-09-14 最新probe再確認
+
+現行ソース `main` `50ccd35` と標準候補 `Builds/Windows/NyaForge.exe` に対して、private `PhysBonesSdkProbe-20260914` を Unity `2022.3.22f1` で再実行した。`private/PhysBonesSdkProbe-20260914/sdk-probe-report-latest.json` は `status: verified`、Unity probe は `passed` で、実SDKの `VRCPhysBone` 型解決、root／endpoint／exclusions／branches／colliders／limits／interaction／parameter の能力確認、target package の非変更preflight、stable BoneId mappingを使った実コンポーネント生成・設定を確認している。
+
+この結果はSDK接続と生成経路の確認であり、実RadDollV3全sceneの衣装適用、実EditorWindowのマウス操作、全周の見た目・貫通、Build & Test、VRChatクライアント内表示の受入とは分けて扱う。private project、SDK DLL、avatar素材、生成ログは公開リポジトリへ追加しない。

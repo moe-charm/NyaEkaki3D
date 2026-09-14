@@ -3524,3 +3524,9 @@ V43でprivate一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge
 - 残り: ポインター欠損・実体欠損・hash不一致をGUIで診断する手動受入
 
 ポインターの実体対応を確認する`Tools/Test-NyaForgePackPointer.ps1`を追加した。相対manifest pathのroot脱出、必須欄／Windows target、実体欠損、SHA-256、packId／revision一致を検証し、検証済みの絶対パスとrevisionをJSONで返す。GUIのエラー表示と、ポインター欠損・実体欠損・hash不一致の手動受入は残る。
+
+# 2026-09-14 NF-V1-02A: Unity実VRChat PhysBones SDK probe再確認
+
+private `PhysBonesSdkProbe-20260914` を Unity **2022.3.22f1** で再実行し、`private/PhysBonesSdkProbe-20260914/sdk-probe-report-latest.json` の `status: verified`、Unity probe `passed` を確認した。実SDKの `VRCPhysBone` runtime type解決、root／endpoint／exclusions／branches／colliders／limits／interaction／parameter capability、target packageの非変更preflight、stable BoneId mappingによる実コンポーネント生成・設定が全て通っている。Unity側の一時artifactは `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-PhysBonesSdkProbe-69ac3623abad428aa554d5fca4beec03/report.json` と同probeの `unity.log` に出力された。
+
+これはSDK型解決・コンポーネント生成・安定骨対応の証拠であり、実RadDollV3全sceneの衣装適用、EditorWindowの実マウス操作、全周の見た目・貫通、Build & Test、VRChatクライアント内表示の合格とは扱わない。private project／SDK DLL／avatar素材／ログは公開ツリーへ追加していない。`docs/Windows-v1-Environment.md`にも同じ境界を追記した。

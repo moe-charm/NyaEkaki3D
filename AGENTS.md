@@ -34,7 +34,7 @@ Windows用Computer Useでターミナルを操作してはいけない。PowerSh
 
 ## 手動受入の入口
 
-現行のWindows候補は`Builds/BoneSubsetV16/NyaForge.exe`。起動ヘルパーは次のコマンドで実行できる。
+現行のWindows候補は`Builds/Windows/NyaForge.exe`。起動ヘルパーは次のコマンドで実行できる。
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File "Tools/Start-NyaForgeAuthoring.ps1" -Wait
