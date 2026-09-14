@@ -46,12 +46,14 @@ namespace NyaForge.UnityRuntime
             while (objectSelectionPanel.childCount > 4) objectSelectionPanel.RemoveAt(4);
             if (workspace == null || workspace.Document.IsEmpty)
             {
+                ClearFitSelectionForObjectChange("");
                 referenceProtectionToggle.SetValueWithoutNotify(false); referenceProtectionToggle.SetEnabled(false);
                 deliveryAllowlistToggle.SetValueWithoutNotify(false); deliveryAllowlistToggle.SetEnabled(false);
                 objectSelectionPanel.Add(new Label("制作対象はまだありません。"));
                 return;
             }
             string activeId = workspace.Document.ActiveObjectId;
+            ClearFitSelectionForObjectChange(activeId);
             referenceProtectionToggle.SetValueWithoutNotify(referenceProtectedObjectIds.Contains(activeId));
             referenceProtectionToggle.SetEnabled(!string.IsNullOrEmpty(activeId));
             deliveryAllowlistToggle.SetValueWithoutNotify(deliveryAllowedObjectIds.Contains(activeId));
@@ -69,6 +71,26 @@ namespace NyaForge.UnityRuntime
                 button.SetEnabled(id != workspace.Document.ActiveObjectId);
                 objectSelectionPanel.Add(button);
             }
+        }
+
+        string fitSelectionOwnerObjectId = "";
+        void ClearFitSelectionForObjectChange(string activeId)
+        {
+            if (fitSelectionOwnerObjectId == activeId) return;
+            fitSelectionOwnerObjectId = activeId ?? "";
+            selectedAvatarSurfaceTriangles.Clear();
+            surfaceFitInspectionObjectId = "";
+            surfaceFitInspectionTargetObjectId = "";
+            surfaceFitInspectionStateHash = "";
+            surfaceFitInspectionRevision = -1;
+            surfaceFitInspectionTriangleIds = null;
+            surfaceFitInspectionVertexIds = null;
+            surfaceFitInspectionBehindSurfaceVertexIds = null;
+            // These fields are object-domain specific. Keeping their numeric
+            // IDs after switching from clothing A to B can silently apply the
+            // same index to an unrelated mesh.
+            accessorySurfaceTriangleIds?.SetValueWithoutNotify("");
+            accessoryClothingVertexIds?.SetValueWithoutNotify("");
         }
     }
 }

@@ -348,7 +348,11 @@ internal static partial class Program
             var after = GraphEvaluator.Evaluate(materialized.Graph);
             True(after.IsComplete && after.Output.SlotMaterials.Count == 2);
             Equal(2, after.Output.SlotMaterials.Count);
-            True(after.Output.SlotMaterials.ContainsKey(3) && after.Output.SlotMaterials.ContainsKey(9));
+            // The editable polygon graph keeps authored sparse IDs (3,9), but
+            // a MeshSource skin derivative has no polygon render map. Its
+            // assignment is therefore canonicalized to dense submesh slots.
+            True(before.Output.SlotMaterials.ContainsKey(3) && before.Output.SlotMaterials.ContainsKey(9));
+            True(after.Output.SlotMaterials.ContainsKey(0) && after.Output.SlotMaterials.ContainsKey(1));
             var workspace = AuthoringWorkspace.CreateEmpty();
             Ok(Execute(workspace, AuthoringOperation.AddGraph(materialized.Graph)));
             Equal(2, workspace.Preview.Output.SlotMaterials.Count);
@@ -361,6 +365,35 @@ internal static partial class Program
             Equal(2, imported.Mesh.Submeshes.Count);
             True(imported.Materials.Any(material => material.Parameters.BaseColor.X > .9f && material.Parameters.BaseColor.Z < .1f));
             True(imported.Materials.Any(material => material.Parameters.BaseColor.Z > .9f && material.Parameters.BaseColor.X < .1f));
+
+            // A declared slot may be unused by the current polygon. The
+            // derivative must drop that unused key and still export the
+            // remaining authored slot (9) as dense submesh 0.
+            string oneSource = GraphId(), oneEdit = GraphId(), oneRed = GraphId(), oneBlue = GraphId(), oneAssignment = GraphId(), oneOutput = GraphId();
+            var onePolygon = new PolygonMesh(basePolygon.DomainId, basePolygon.Vertices.Values,
+                new[] { new CageFace(baseFace.Id, 9, baseFace.Corners) });
+            var oneGraph = new AuthoringGraph(GraphId(), new[] {
+                GraphNode.Polygon(oneSource, onePolygon, new RestTransform(1, new Vec3())), GraphNode.PolygonEdit(oneEdit),
+                GraphNode.StandardMaterial(oneRed, new MaterialParameters(new Vec4(1, 0, 0, 1), 0, 1, new Vec3())),
+                GraphNode.StandardMaterial(oneBlue, new MaterialParameters(new Vec4(0, 0, 1, 1), 0, 1, new Vec3())),
+                GraphNode.AssignMaterials(oneAssignment, new[] { 3, 9 }), GraphNode.Output(oneOutput)
+            }, new[] {
+                new GraphEdge(oneSource, "mesh", oneEdit, "mesh"), new GraphEdge(oneEdit, "mesh", oneAssignment, "mesh"),
+                new GraphEdge(oneRed, "material", oneAssignment, GraphNode.MaterialSlotPort(3)),
+                new GraphEdge(oneBlue, "material", oneAssignment, GraphNode.MaterialSlotPort(9)),
+                new GraphEdge(oneAssignment, "mesh", oneOutput, "mesh")
+            }, oneOutput);
+            var oneMaterialized = AccessorySkinMaterializer.Materialize(oneGraph, skeleton, skeleton.Bones[0].BoneId, derivedGraphId: GraphId());
+            var oneWorkspace = AuthoringWorkspace.CreateEmpty(); Ok(Execute(oneWorkspace, AuthoringOperation.AddGraph(oneMaterialized.Graph)));
+            Equal(1, oneWorkspace.Preview.Output.Mesh.Submeshes.Count);
+            Equal(1, oneWorkspace.Preview.Output.SlotMaterials.Count);
+            True(oneWorkspace.Preview.Output.SlotMaterials.ContainsKey(0));
+            string oneDirectory = System.IO.Path.Combine(Root, "polygon-materialized-single-sparse-glb-" + Guid.NewGuid().ToString("N"));
+            var oneExported = GlbExportService.ExportSkinned(oneWorkspace, oneWorkspace.InstanceId, oneWorkspace.Document.DocumentId,
+                oneWorkspace.Document.DocumentRevision, oneDirectory);
+            var oneImported = GlbSkinImporter.Read(System.IO.File.ReadAllBytes(oneExported.Path));
+            Equal(1, oneImported.Mesh.Submeshes.Count); Equal(1, oneImported.Materials.Count);
+            True(oneImported.Materials[0].Parameters.BaseColor.Z > .9f);
         });
 
         Test("accessory skin binding refuses a rigid attachment conflict", () =>

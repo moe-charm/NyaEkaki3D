@@ -261,12 +261,17 @@ namespace NyaForge.UnityBridge.Editor
                     }
                     if (source?.MetallicRoughnessTexture != null && source.MetallicRoughnessTexture.HasImageBytes)
                     {
-                        var texture = DecodeMetallicRoughness(source.MetallicRoughnessTexture.CopyImageBytes(), source.MetallicRoughnessTexture.MimeType, source.MetallicRoughnessTexture.Sampler, material.name + " MetallicRoughness");
+                        // Standard shader's map is already converted to
+                        // metallic (R) and smoothness (A). Bake the glTF
+                        // scalar factors into that owned texture so the
+                        // receiver does not depend on shader-specific map
+                        // multiplication semantics.
+                        var texture = DecodeMetallicRoughness(source.MetallicRoughnessTexture.CopyImageBytes(), source.MetallicRoughnessTexture.MimeType, source.MetallicRoughnessTexture.Sampler, material.name + " MetallicRoughness", parameters.Metallic, parameters.Roughness);
                         if (material.HasProperty("_MetallicGlossMap")) material.SetTexture("_MetallicGlossMap", texture);
-                        // Unity's Standard shader multiplies the map channels
-                        // by these scalar factors. Preserve the glTF factors
-                        // instead of forcing metallic to one when a map exists.
-                        if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", parameters.Metallic);
+                        // The factors are now represented in the texture.
+                        if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", 1f);
+                        if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", 1f);
+                        if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 1f);
                         material.EnableKeyword("_METALLICGLOSSMAP");
                     }
                     if (parameters.Emission.X > 0f || parameters.Emission.Y > 0f || parameters.Emission.Z > 0f)
@@ -312,14 +317,14 @@ namespace NyaForge.UnityBridge.Editor
             return texture;
         }
 
-        static Texture2D DecodeMetallicRoughness(byte[] bytes, string mimeType, MaterialTextureSampler sampler, string name)
+        static Texture2D DecodeMetallicRoughness(byte[] bytes, string mimeType, MaterialTextureSampler sampler, string name, float metallicFactor, float roughnessFactor)
         {
             var texture = DecodeSemanticTexture(bytes, mimeType, sampler, name, true);
             var pixels = texture.GetPixels32();
             for (int i = 0; i < pixels.Length; i++)
             {
-                byte metallic = pixels[i].b;
-                byte smoothness = (byte)(255 - pixels[i].g);
+                byte metallic = (byte)Mathf.Clamp(Mathf.RoundToInt(pixels[i].b * metallicFactor), 0, 255);
+                byte smoothness = (byte)Mathf.Clamp(Mathf.RoundToInt(255f - pixels[i].g * roughnessFactor), 0, 255);
                 pixels[i] = new Color32(metallic, 0, 0, smoothness);
             }
             texture.SetPixels32(pixels); texture.Apply(false, false); return texture;

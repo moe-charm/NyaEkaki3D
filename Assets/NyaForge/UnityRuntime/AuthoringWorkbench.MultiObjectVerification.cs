@@ -60,6 +60,17 @@ namespace NyaForge.UnityRuntime
                 Check(!referenceProtectedObjectIds.Contains(objectIds[0]) && !referenceProtectionToggle.value, "Reference protection was not restored after Undo");
                 Execute(AuthoringOperation.Redo());
                 Check(referenceProtectedObjectIds.Contains(objectIds[0]) && referenceProtectionToggle.value, "Reference protection was not restored after Redo");
+                // Protection must also cover a single MCP batch that starts on
+                // an allowed clothing object and selects the protected avatar
+                // before the mutating operation.
+                Execute(AuthoringOperation.SelectObject(objectIds[1]));
+                var batchBefore = GraphEvaluator.Evaluate(workspace.Document.Objects.Single(item => item.ObjectId == objectIds[0]).Graph).Output.Mesh.ContentHash;
+                var protectedBatch = workspace.NewCommand(AuthoringOperation.SelectObject(objectIds[0]),
+                    AuthoringOperation.TranslateVertices(new[] { 0 }, new NyaForge.Authoring.Vec3(1, 0, 0)));
+                var protectedBatchResult = ExecuteMcpCommand(protectedBatch);
+                var batchAfter = GraphEvaluator.Evaluate(workspace.Document.Objects.Single(item => item.ObjectId == objectIds[0]).Graph).Output.Mesh.ContentHash;
+                Check(!protectedBatchResult.Success && protectedBatchResult.Code == "REFERENCE_PROTECTED" && batchBefore == batchAfter,
+                    "MCP batch selected a protected reference object and still mutated it");
                 // Generic GLB delivery enumerates every graph object. A
                 // protected reference avatar must stop that path before a
                 // destination folder is created; the clothing-only package is

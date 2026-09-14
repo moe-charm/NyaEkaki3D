@@ -40,13 +40,30 @@ namespace NyaForge.UnityRuntime
 
         bool ReferenceProtectionBlocks(IEnumerable<AuthoringOperation> operations)
         {
-            if (workspace == null || workspace.Document.IsEmpty || !referenceProtectedObjectIds.Contains(workspace.Document.ActiveObjectId)) return false;
+            if (workspace == null || workspace.Document.IsEmpty) return false;
+            // A single MCP batch may select a different object before editing
+            // it.  Checking only Document.ActiveObjectId at the start lets a
+            // batch enter through an unprotected clothing object and then
+            // mutate a protected avatar.  Resolve the simulated active object
+            // in operation order so every mutating operation is guarded.
+            string activeObjectId = workspace.Document.ActiveObjectId;
             foreach (var operation in operations ?? Array.Empty<AuthoringOperation>())
             {
                 if (operation == null) continue;
                 // Object selection and history remain available so the user can
                 // leave the protected avatar or undo an earlier edit.
-                if (operation.Kind != "object.select" && operation.Kind != "history.undo" && operation.Kind != "history.redo") return true;
+                if (operation.Kind == "object.select")
+                {
+                    activeObjectId = operation.NewObjectId;
+                    continue;
+                }
+                if (operation.Kind == "object.add_graph" || operation.Kind == "object.add_mesh")
+                {
+                    activeObjectId = operation.NewObjectId;
+                    continue;
+                }
+                if (operation.Kind != "history.undo" && operation.Kind != "history.redo" &&
+                    referenceProtectedObjectIds.Contains(activeObjectId)) return true;
             }
             return false;
         }

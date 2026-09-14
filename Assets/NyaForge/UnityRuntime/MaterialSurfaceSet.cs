@@ -21,8 +21,12 @@ namespace NyaForge.UnityRuntime
             {
                 if(multiple)
                 {
-                    var slots=value.PolygonRendering?.MaterialSlotMap ?? Enumerable.Range(0,count).ToArray();
-                    if(slots.Count!=count) throw new InvalidOperationException("Material slot map differs from submesh count.");
+                    // Skin derivatives use a MeshSource and therefore do not
+                    // carry PolygonRenderMesh metadata. In that case the
+                    // ordered authored keys are the canonical submesh map.
+                    var slots=value.PolygonRendering?.MaterialSlotMap?.ToArray() ??
+                        (value.SlotMaterials.Keys.OrderBy(slot=>slot).ToArray());
+                    if(slots.Length!=count) throw new InvalidOperationException("Material slot map differs from submesh count.");
                     Materials=new Material[count];
                     for(int i=0;i<count;i++)
                     {

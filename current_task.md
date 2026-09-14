@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09X: 9855d43衣装・材質フィードバックの実装反映
+
+MCP batchの参照保護、generic single-object出力の保護漏れ、sparse material slot、Unity Bridge MR係数、Paint originalのnode identity、allowlist 1対象、高DPI bounds、fit対象のobject境界を実装した。詳細と未受入境界は[実装反映確認](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-current.md)へ固定した。
+
+Coreは**506 passed / 0 failed**。Unity PlayerはV32までビルド成功し、BridgeはUnity 2022.3.22f1でsemantic textureとclothing packageをPASS。V31 Authoring reportは`passed: true`を生成したが、検証後のPlayer終了待ちがタイムアウトしたため、ランナー完了とは分けて記録する。V32で追加したMCP batch回帰は、Player suiteのreport生成まで未確認。次はV32を単独で十分な終了待ちで再実行し、MCP batch保護の実行証跡を確定する。
+
 ## 2026-09-14 NF-V1-09W: 9855d43衣装・材質フィードバックの現行HEAD再照合
 
 提示された`9855d43`基準のP1 3件／P2 5件を、現行HEAD `734ecb4`へ再照合した。avatar移動後の座標、衣装更新時のownership、UV1の明示拒否、sparse material slot、MR係数、Cuff winding、sampler variant、適用前・削除後の割当読込はいずれも後続実装と回帰で解消済みで、本番コードの重複修正は行っていない。詳細は[現行HEAD再照合](docs/reviews/2026-09-14-Feedback-9855d43-Recheck-734ecb4.md)へ固定した。

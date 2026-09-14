@@ -263,10 +263,18 @@ namespace NyaForge.Authoring
             public IReadOnlyDictionary<int, MaterialSlotBinding> SlotMaterials;
             /// <summary>Imported source images keyed by the unchanged Paint preview hash.</summary>
             public IReadOnlyDictionary<string, GraphOriginalImage> OriginalImagesByPreviewHash;
+            /// <summary>Imported source images keyed by their owning Paint node.</summary>
+            public IReadOnlyDictionary<string, GraphOriginalImage> OriginalImagesByPaintNodeId;
 
             public GraphOriginalImage OriginalFor(GraphImageValue image)
             {
-                if (image == null || OriginalImagesByPreviewHash == null || string.IsNullOrEmpty(image.ImageHash)) return null;
+                if (image == null) return null;
+                // Node identity is authoritative. Two Paint nodes may contain
+                // identical preview pixels while owning different original
+                // source files; preview-only lookup can swap those sources.
+                if (!string.IsNullOrEmpty(image.PaintNodeId) && OriginalImagesByPaintNodeId != null &&
+                    OriginalImagesByPaintNodeId.TryGetValue(image.PaintNodeId, out var owned)) return owned;
+                if (OriginalImagesByPreviewHash == null || string.IsNullOrEmpty(image.ImageHash)) return null;
                 return OriginalImagesByPreviewHash.TryGetValue(image.ImageHash, out var source) ? source : null;
             }
         }
@@ -300,7 +308,7 @@ namespace NyaForge.Authoring
             var output = meshOverride ?? evaluation.Output;
             Checks.Require(output.Mesh != null, "GRAPH_INCOMPLETE", "Static GLB export requires a complete renderable graph.");
             return new MeshObject { Mesh = output.Mesh, Transform = output.Transform, Name = item.ObjectId,
-                GraphId = item.Graph?.GraphId, OriginalImagesByPreviewHash = OriginalImages(item.Graph),
+                GraphId = item.Graph?.GraphId, OriginalImagesByPreviewHash = OriginalImages(item.Graph), OriginalImagesByPaintNodeId = OriginalImagesByPaintNode(item.Graph),
                 Material = output.Material, BaseColor = output.BaseColor, SlotMaterials = output.SlotMaterials };
         }
 
@@ -310,6 +318,16 @@ namespace NyaForge.Authoring
             return graph.Nodes.Values.Where(node => node.TypeId == BuiltinNodes.OriginalImage && node.OriginalImage != null &&
                     !string.IsNullOrEmpty(node.OriginalImage.PreviewImageHash))
                 .GroupBy(node => node.OriginalImage.PreviewImageHash, StringComparer.Ordinal)
+                .Where(group => group.Select(node => node.OriginalImage.ContentHash).Distinct(StringComparer.Ordinal).Count() == 1)
+                .ToDictionary(group => group.Key, group => group.First().OriginalImage, StringComparer.Ordinal);
+        }
+
+        static IReadOnlyDictionary<string, GraphOriginalImage> OriginalImagesByPaintNode(AuthoringGraph graph)
+        {
+            if (graph == null) return null;
+            return graph.Nodes.Values.Where(node => node.TypeId == BuiltinNodes.OriginalImage && node.OriginalImage != null &&
+                    !string.IsNullOrEmpty(node.OriginalImage.PaintNodeId))
+                .GroupBy(node => node.OriginalImage.PaintNodeId, StringComparer.Ordinal)
                 .Where(group => group.Select(node => node.OriginalImage.ContentHash).Distinct(StringComparer.Ordinal).Count() == 1)
                 .ToDictionary(group => group.Key, group => group.First().OriginalImage, StringComparer.Ordinal);
         }
@@ -371,7 +389,7 @@ namespace NyaForge.Authoring
             {
                 Mesh = new MeshObject { Mesh = authoredOutput, Transform = evaluation.Output.Transform, Morphs = morphs, MorphWeights = weights, Name = item.ObjectId, GraphId = graph.GraphId, Affine = instanceWorldTransform,
                     Material = evaluation.Output.Material, BaseColor = evaluation.Output.BaseColor, SlotMaterials = evaluation.Output.SlotMaterials,
-                    OriginalImagesByPreviewHash = OriginalImages(graph) },
+                    OriginalImagesByPreviewHash = OriginalImages(graph), OriginalImagesByPaintNodeId = OriginalImagesByPaintNode(graph) },
                 Skeleton = skeleton, Binding = binding, Pose = pose
                 , InverseBindMatrices = inverseBindMatrices, JointLocalTransforms = jointLocalTransforms,
                 InverseBindByBone = MatrixMap(skeleton, inverseBindMatrices, "GLB_SKIN_BIND"),
@@ -709,7 +727,7 @@ namespace NyaForge.Authoring
                         var authoredSlot = authoredSlots[submesh];
                         meshObject.SlotMaterials.TryGetValue(authoredSlot, out var binding);
                         primitiveTemplates.Add(BuildSlotPrimitive(binary, views, accessors, mesh, mesh.Submeshes[submesh],
-                            binding?.Material, materialRegistry, currentSkinned, profile, meshObject.Morphs, meshObject.OriginalImagesByPreviewHash));
+                            binding?.Material, materialRegistry, currentSkinned, profile, meshObject.Morphs, meshObject.OriginalImagesByPreviewHash, meshObject.OriginalImagesByPaintNodeId));
                     }
                 }
                 else
@@ -755,7 +773,8 @@ namespace NyaForge.Authoring
         static JObject BuildSlotPrimitive(BinaryBuffer binary, JArray views, JArray accessors, MeshData mesh,
             int[] sourceIndices, GraphMaterialValue material, MaterialRegistry materialRegistry,
             GlbExportService.SkinnedObject skinned, GlbExportProfile profile, MorphSet morphs,
-            IReadOnlyDictionary<string, GraphOriginalImage> originalImages)
+            IReadOnlyDictionary<string, GraphOriginalImage> originalImages,
+            IReadOnlyDictionary<string, GraphOriginalImage> originalImagesByPaintNodeId = null)
         {
             var remap = new Dictionary<int, int>(); var sourceVertices = new List<int>(); var indices = new int[sourceIndices.Length];
             for (int i = 0; i < sourceIndices.Length; i++)
@@ -780,7 +799,10 @@ namespace NyaForge.Authoring
             }
             var primitive = new JObject { ["attributes"] = attrs, ["indices"] = AddIndices(binary, views, accessors, indices), ["mode"] = 4 };
             GraphOriginalImage original = null;
-            if (material?.BaseColor != null && originalImages != null)
+            if (material?.BaseColor != null && originalImagesByPaintNodeId != null &&
+                !string.IsNullOrEmpty(material.BaseColor.PaintNodeId))
+                originalImagesByPaintNodeId.TryGetValue(material.BaseColor.PaintNodeId, out original);
+            if (original == null && material?.BaseColor != null && originalImages != null)
                 originalImages.TryGetValue(material.BaseColor.ImageHash, out original);
             int materialIndex = materialRegistry.Get(material, null, original); if (materialIndex >= 0) primitive["material"] = materialIndex;
             if (morphs != null)

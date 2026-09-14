@@ -47,6 +47,27 @@ namespace NyaForge.Authoring
             }
         }
 
+        /// <summary>Exports one explicitly selected object from a multi-object document.</summary>
+        public static ProjectExportResult ExportObject(AuthoringWorkspace workspace, string instance, string document,
+            long revision, string objectId, string directory)
+        {
+            if (workspace == null) throw new ArgumentNullException(nameof(workspace));
+            Checks.Id(objectId);
+            lock (workspace.Gate)
+            {
+                Checks.Require(workspace.InstanceId == instance, "STALE_INSTANCE", "Export targets another instance.");
+                Checks.Require(workspace.Document.DocumentId == document, "DOCUMENT_CHANGED", "Export targets another document.");
+                Checks.Require(workspace.Document.DocumentRevision == revision, "REVISION_CONFLICT", "Document changed before export.");
+                var item = workspace.Document.Objects.FirstOrDefault(candidate => candidate.ObjectId == objectId);
+                Checks.Require(item != null, "OBJECT_NOT_FOUND", "The selected delivery object is not in this document.");
+                var singleDocument = new AuthoringDocument(workspace.Document.DocumentId, workspace.Document.Name,
+                    workspace.Document.DocumentRevision, new[] { item }, item.ObjectId, false);
+                var singleWorkspace = new AuthoringWorkspace(singleDocument);
+                return Export(singleWorkspace, singleWorkspace.InstanceId, singleDocument.DocumentId,
+                    singleDocument.DocumentRevision, directory);
+            }
+        }
+
         /// <summary>Returns true when a standard Bake cannot preserve the graph's typed metadata.</summary>
         public static bool RequiresNativeProjectExport(AuthoringDocument document)
         {

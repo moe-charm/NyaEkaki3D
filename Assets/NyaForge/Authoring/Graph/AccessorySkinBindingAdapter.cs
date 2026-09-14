@@ -83,10 +83,27 @@ namespace NyaForge.Authoring.Graph
                 editValue.Polygon, editValue.PolygonRendering);
             var materializedEdit = GraphNode.Edit(edit.NodeId, true, null, sourceValue.SnapshotHash, sourceValue.DomainId);
             var sourceMarker = GraphNode.DerivedSourceNode(Guid.NewGuid().ToString("D"), polygonGraph.GraphId, GraphContentIdentity.Hash(polygonGraph));
+            // A MeshSource does not carry PolygonRenderMesh metadata.  Keep the
+            // skin derivative self-contained by canonicalizing authored sparse
+            // material keys (for example 3,9) to the dense submesh order that
+            // the materialized MeshSource actually owns.  The original polygon
+            // graph remains untouched and retains its authored slot IDs.
+            var renderedSlots = editValue.PolygonRendering?.MaterialSlotMap?.Distinct().ToArray();
+            var assignment = polygonGraph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.AssignMaterials);
+            if (renderedSlots == null && assignment != null)
+                renderedSlots = assignment.MaterialSlots.Take(materializedMesh.Submeshes.Count).ToArray();
+            var denseByAuthored = renderedSlots == null ? null : renderedSlots
+                .Select((slot, index) => new { slot, index })
+                .ToDictionary(value => value.slot, value => value.index);
+            if (denseByAuthored != null)
+                Checks.Require(denseByAuthored.Count == materializedMesh.Submeshes.Count,
+                    "MATERIAL_SLOT_MISMATCH", "Materialized submeshes and authored material slots differ.");
             var nodes = polygonGraph.Nodes.Values.Where(node => !bakeAttachmentTransform.HasValue || node.TypeId != BuiltinNodes.Attachment).Select(node =>
             {
                 if (node.NodeId == source.NodeId) return materializedSource;
                 if (node.NodeId == edit.NodeId) return materializedEdit;
+                if (node.NodeId == assignment?.NodeId && denseByAuthored != null)
+                    return GraphNode.AssignMaterials(node.NodeId, Enumerable.Range(0, materializedMesh.Submeshes.Count));
                 // A polygon-bound paint image has the same UV layout in the
                 // rendered mesh. Clearing its polygon domain makes it an
                 // immutable imported image while retaining every pixel.
@@ -100,7 +117,27 @@ namespace NyaForge.Authoring.Graph
                 Checks.Require(node.TypeId != BuiltinNodes.LayeredPaint, "POLYGON_MATERIALIZE_UNSUPPORTED", "Layered paint needs an explicit image rebinding step before materialization.");
                 return node;
             }).Concat(new[] { sourceMarker }).ToArray();
-            var derived = new AuthoringGraph(derivedGraphId, nodes, polygonGraph.Edges, polygonGraph.OutputNodeId);
+            var attachmentId = attachments.Length == 0 ? "" : attachments[0].NodeId;
+            var edges = polygonGraph.Edges.Where(edge => !bakeAttachmentTransform.HasValue ||
+                (edge.FromNode != attachmentId && edge.ToNode != attachmentId))
+                .Select(edge =>
+                {
+                    if (assignment != null && denseByAuthored != null && edge.ToNode == assignment.NodeId &&
+                        edge.ToPort.StartsWith("material-", StringComparison.Ordinal))
+                    {
+                        if (int.TryParse(edge.ToPort.Substring("material-".Length), out var authored))
+                        {
+                            if (denseByAuthored.TryGetValue(authored, out var dense))
+                                return new GraphEdge(edge.FromNode, edge.FromPort, edge.ToNode, GraphNode.MaterialSlotPort(dense));
+                            // An assignment may declare a slot that no current
+                            // polygon face uses. The dense derivative drops that
+                            // unused port along with its material edge.
+                            return null;
+                        }
+                    }
+                    return edge;
+                }).Where(edge => edge != null).ToArray();
+            var derived = new AuthoringGraph(derivedGraphId, nodes, edges, polygonGraph.OutputNodeId);
             var derivedEvaluation = GraphEvaluator.Evaluate(derived);
             Checks.Require(derivedEvaluation.IsComplete && derivedEvaluation.Output != null && derivedEvaluation.Output.Mesh != null,
                 "POLYGON_MATERIALIZE_INCOMPLETE", "The materialized appearance graph could not be evaluated.");

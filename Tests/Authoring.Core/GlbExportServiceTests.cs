@@ -445,6 +445,19 @@ internal static partial class Program
             var jpegMaterial = GlbImporter.Read(jpegGlb).Materials.Single();
             Equal("image/jpeg", jpegMaterial.BaseColorImageMimeType);
             True(jpegBytes.SequenceEqual(jpegMaterial.CopyBaseColorImageBytes()));
+
+            // Preview pixels are not an ownership key: two Paint nodes can be
+            // identical while pointing at different retained originals.
+            var paintBId = GraphId();
+            var samePreviewB = new GraphImageValue(preview, "", "fixture-domain", paintBId);
+            var sourceBBytes = PaintPng.Encode(new PaintImage(3, 1, new Rgba32(200, 20, 30, 255)));
+            var sourceB = new GraphOriginalImage(paintBId, 3, 1, "image/png", sourceBBytes, samePreviewB.ImageHash);
+            var identityGlb = GlbWriter.Build(new[] { new GlbExportService.MeshObject {
+                Mesh = mesh, Material = new GraphMaterialValue(MaterialParameters.Default, samePreviewB), Name = "original-node-identity",
+                OriginalImagesByPreviewHash = new Dictionary<string, GraphOriginalImage> { [samePreviewB.ImageHash] = source },
+                OriginalImagesByPaintNodeId = new Dictionary<string, GraphOriginalImage> { [paintBId] = sourceB }
+            } }, null, GlbExportProfile.StaticGeometry);
+            True(sourceBBytes.SequenceEqual(GlbImporter.Read(identityGlb).Materials.Single().CopyBaseColorImageBytes()));
         });
 
         Test("GLB export preserves semantic normal and metallic-roughness images", () =>

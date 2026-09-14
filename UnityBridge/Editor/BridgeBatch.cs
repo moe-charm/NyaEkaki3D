@@ -266,11 +266,14 @@ namespace NyaForge.UnityBridge.Editor
                 Require(material.GetTexture("_MetallicGlossMap") != null, "Semantic metallic-roughness texture was not assigned to the receiver material.");
                 Near(material.GetFloat("_BumpScale"), .7f, "Semantic normal scale");
                 var converted = ((Texture2D)material.GetTexture("_MetallicGlossMap")).GetPixel(0, 0);
-                Near(converted.r, 200f / 255f, "Metallic-roughness metallic channel conversion");
-                Near(converted.a, 191f / 255f, "Metallic-roughness roughness-to-smoothness conversion");
+                // The receiver bakes glTF scalar factors into its converted
+                // Standard-shader texture and keeps shader scalar properties
+                // neutral to avoid depending on shader multiplication details.
+                Near(converted.r, 20f / 255f, "Metallic-roughness metallic channel conversion");
+                Near(converted.a, 204f / 255f, "Metallic-roughness roughness-to-smoothness conversion");
                 var semanticPackage = SkinnedClothingPackage.Read(manifest);
                 if (semanticPackage.Materials.Any(source => source != null && source.MetallicRoughnessTexture != null))
-                    Near(material.GetFloat("_Metallic"), semanticPackage.Materials.First(source => source != null && source.MetallicRoughnessTexture != null).Parameters.Metallic,
+                    Near(material.GetFloat("_Metallic"), 1f,
                         "Metallic-roughness scalar factor");
                 checks.Add("Semantic normal/MR package maps and glTF-to-Unity channel conversion passed.");
             }

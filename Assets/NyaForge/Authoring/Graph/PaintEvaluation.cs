@@ -8,8 +8,10 @@ namespace NyaForge.Authoring.Graph
         public string UvHash { get; }
         public string MeshDomain { get; }
         public string ImageHash { get; }
-        internal GraphImageValue(PaintImage image,string uvHash,string meshDomain)
-        { Image=image;UvHash=uvHash;MeshDomain=meshDomain;ImageHash=Checks.Hash(PaintImageCodec.Write(image)); }
+        /// <summary>Stable graph Paint node that produced this image.</summary>
+        public string PaintNodeId { get; }
+        internal GraphImageValue(PaintImage image,string uvHash,string meshDomain,string paintNodeId = "")
+        { Image=image;UvHash=uvHash;MeshDomain=meshDomain;PaintNodeId=paintNodeId ?? "";ImageHash=Checks.Hash(PaintImageCodec.Write(image)); }
     }
 
     internal static class PaintEvaluation
@@ -23,7 +25,7 @@ namespace NyaForge.Authoring.Graph
             if (input.Polygon == null)
             {
                 Checks.Require(node.PaintImage != null && node.PaintUvHash == "" && node.ExpectedDomain == "", "UV_MISSING", "Paint requires polygon UVs.");
-                return new GraphImageValue(node.PaintImage, "", input.DomainId);
+                return new GraphImageValue(node.PaintImage, "", input.DomainId, node.NodeId);
             }
             string uvHash=PaintUvBinding.Hash(input.Polygon);
             if(node.PaintImage != null)
@@ -31,7 +33,7 @@ namespace NyaForge.Authoring.Graph
                 Checks.Require(node.ExpectedDomain == input.DomainId,"PAINT_UV_CHANGED","Paint belongs to another mesh domain; old image is retained.");
                 PaintUvBinding.RequireMatch(node.PaintUvHash,input.Polygon);
             }
-            return new GraphImageValue(node.PaintImage ?? new PaintImage(node.PaintWidth,node.PaintHeight,new Rgba32(255,255,255)),uvHash,input.DomainId);
+            return new GraphImageValue(node.PaintImage ?? new PaintImage(node.PaintWidth,node.PaintHeight,new Rgba32(255,255,255)),uvHash,input.DomainId,node.NodeId);
         }
         internal static GraphMeshValue Bind(GraphMeshValue mesh,GraphImageValue image)
         {

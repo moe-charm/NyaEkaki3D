@@ -91,17 +91,27 @@ namespace NyaForge.UnityRuntime
             // controls column. Reserve one more scale factor for the actual
             // workbench while keeping injected panel-space probes at 1:1.
             bool injectedUiProbe = Environment.GetCommandLineArgs().Any(a => a == "--authoring-check-output" || a == "--navigation-check");
-            if (!injectedUiProbe && Screen.dpi > 96f)
+            bool dynamicDpiBounds = !injectedUiProbe && Screen.dpi > 96f;
+            Action refreshDpiBounds = () =>
             {
+                if (!dynamicDpiBounds || root == null) return;
                 float dpiScale = Mathf.Clamp(Screen.dpi / 96f, 1f, 2f);
                 root.style.right = StyleKeyword.Auto;
                 root.style.bottom = StyleKeyword.Auto;
                 root.style.width = Screen.width / (dpiScale * dpiScale);
                 root.style.height = Screen.height / (dpiScale * dpiScale);
-            }
+            };
+            refreshDpiBounds();
             root.style.flexGrow = 1;
             root.style.minHeight = 0;
             parent.Add(root);
+            if (dynamicDpiBounds)
+            {
+                // Screen dimensions can change after the workbench is opened
+                // (window resize or monitor move). Recompute the logical bounds
+                // instead of leaving the initial DPI-sized rectangle fixed.
+                parent.RegisterCallback<GeometryChangedEvent>(_ => refreshDpiBounds());
+            }
             var top = Row(root);
             top.style.backgroundColor = new Color(.09f, .14f, .18f);
             top.Add(new Label("NyaForge  /  制作プレビュー") { name = "authoring-title" });
