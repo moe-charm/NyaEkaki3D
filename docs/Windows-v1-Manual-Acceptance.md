@@ -102,3 +102,9 @@ PhysBones target package受け取り画面にも、stable bone一覧とcollider 
 - [ ] VRChat SDK実環境でPhysBones適用結果を確認
 
 Core／Bridgeの自動回帰はコード変更後に再実行する。実SDK・実avatarの見た目とVRChat受入は別カードとして残す。
+
+# 2026-09-15 MANUAL-04: 実RadDollV3 VRMの候補確認と単一skin取込
+
+`Builds/GuiModelAutoInspectV1/NyaForge.exe`をWindows native `@oai/sky`で操作し、Explorerからprivateの`Z:\TextureVoice_local\git\RadDollV3-clothing\private\viewer-data\packs\avatar-raddollv3-local\RadDollV3_VRM.vrm`を選択した。自動候補確認後、`選択候補を取り込む`を実行し、status `GLB skinを取り込みました。mesh 0・skin 0・mesh 0・bone 171・weight 2990・morphなし`を確認した。取込診断には`MATERIALS_NOT_RETAINED`、`EXTENSIONS_PARTIAL`、材質画像の注意1件が表示された。
+
+これは実Explorer選択・候補確認・単一skin取込の手動受入PASSである。viewportで対象メッシュが表示されたことも確認した。材質保持・全mesh取込・実衣装編集・fit／貫通・保存再開・Unity適用・VRChat表示は別受入として未完了のまま残す。private素材と生成物は公開ツリーへ追加していない。
