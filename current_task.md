@@ -3003,3 +3003,7 @@ Unity **2022.3.22f1** Bridgeを再実行し、適用・hash／sidecar・ownershi
 # 2026-09-14 Unity 2022.3受け取りprobeのAPI互換修正
 
 受け取り用のUnity **2022.3.22f1**で`ViewerApp.RevisionAcceptance`だけがUnity 6の`FindObjectsByType<T>(FindObjectsInactive)` overloadを直接参照していたため、private probeがSafe Modeへ入っていた。両バージョンにある`FindObjectsOfType<T>(true)`へ置き換え、Unity 6000.4.3f1の`Builds/UnityCompatV1/NyaForge.exe`を再ビルドした。private `PhysBonesSdkProbe-20260914`へ同ソースを反映して再起動し、コンパイルエラーなしで`RadDollV3ClothingProbe` sceneが通常起動することを確認した（Unity Editor画面でRadDollV3階層とモデルを表示）。これは受け取り環境のcompile／scene起動互換性の確認であり、衣装の実EditorWindow適用、全周の見た目・貫通、VRChat Build & Testの合格とは扱わない。
+
+# 2026-09-14 Computer Useの操作経路をAGENTSへ固定
+
+ネイティブWindows画面をブラウザ用`cua`で確認して`apps: []`と誤判定しないよう、`AGENTS.md`に操作経路の選択基準を明文化した。NyaForge・Unity・ファイルダイアログは`mcp__node_repl__js`の`@oai/sky`、Webページは`mcp__cua_repl`を使う。`@oai/sky`操作は対象windowを再取得してから実行し、クリック・入力・ドラッグの直後に新しいwindow stateを取得する。この記録は手動操作の再現手順であり、NyaForgeの自動テストやVRChat実機受入の結果ではない。

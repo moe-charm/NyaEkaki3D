@@ -4,6 +4,8 @@
 
 NyaForgeはWindowsネイティブアプリなので、実ウィンドウの確認・クリック・ドラッグには`mcp__node_repl__js`からWindows用の`@oai/sky`経路を使う。ブラウザ用の`cua`だけを見て`apps: []`と判断しない。
 
+操作経路を迷ったら、対象がNyaForge・Unity・ファイルダイアログなどのWindowsネイティブ画面なら`@oai/sky`、Webページやブラウザ内タブなら`mcp__cua_repl`を選ぶ。ネイティブ画面を操作できないと報告する前に、`@oai/sky`を初期化して`sky.list_windows()`で対象を再確認する。`apps: []`はその接続で列挙されなかったという結果であり、Windows操作機能が存在しない根拠にはしない。
+
 新しい`node_repl`セッションでは、最初に一度だけ次を実行する。
 
 ```js
