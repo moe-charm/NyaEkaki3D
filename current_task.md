@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10B: f010146フィードバックの現行HEAD再照合
+
+提示された `f010146` 基準のP1 3件／P2 5件を、現行 `main` **`403078b`**へ再照合した。MCP batchの参照保護、単一object汎用出力の保護検査、疎なmaterial slot、Unity Bridge MR係数、Paint原画像のnode identity、納品対象allowlist、高DPI bounds、fit対象のobject境界はいずれも後続実装と回帰で解消済みで、本番コードの重複修正は行っていない。詳細は[フィードバック再照合](docs/reviews/2026-09-14-Feedback-f010146-Recheck-403078b.md)へ固定した。
+
+Coreは**506 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-1b2721932b4e4843bac3ce68ab912291`）。V33 PlayerのAuthoring／実RadDollV3候補Save/Open・VRM1出力、Unity 2022.3.22f1 Bridgeのsemantic texture／clothing package受け取りもPASSを維持する。残る受入境界は実EditorWindowのマウス／IME／Explorer、実アバター全周fit・貫通・見た目、VRChat Build & Test／実機表示であり、実候補取込の約2.8GB観測working setと約260.8秒も軽量化課題として残す。
+
 ## 2026-09-14 NF-V1-10A: GLB画像payload共有と再計測
 
 同一glTF imageを複数submeshが参照する場合、取込時に材質ごとのencoded bytesを複製しないよう、`GlbMaterialSourceReader`へimage index単位のpayload cacheを追加した。`CopyBaseColorImageBytes`／`CopyImageBytes`は従来どおり防御コピーを返すため、公開境界と保存内容は変わらない。Coreは**506 passed / 0 failed**、V33 Player buildとAuthoring、Unity 2022.3.22f1 Bridgeを再確認した。
