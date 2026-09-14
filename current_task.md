@@ -2757,3 +2757,13 @@ Unity **6000.4.3f1**で `Builds/UiHintFixV1/NyaForge.exe` を再ビルドし、8
 頂点ID 0をID指定で選択し、X座標欄の編集を確定して「選択頂点を移動」を実行した。ステータスは「編集を反映しました。元に戻す・やり直すで確認できます。」となり、未保存変更表示が出た。続けて「元に戻す」「やり直す」を各1回実行し、操作後も同じEditMesh表示と編集履歴UIを維持した。最後に「保存」を実行し、Player.logの `保存しました: C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ManualAcceptance-20260914` と `project.nyaforge.json` の更新を確認した。
 
 これは実モデルを対象にしたWindowsマウス経路の再開後編集・Undo/Redo・保存確認であり、UiHintFixV1のAuthoring suite **PASS**（`Artifacts/Authoring-20260914-122339-7eac5517b3cd47bfb423b6a1cbf287a7/report.json`）を補完する。頂点座標の数値差分を外部比較したものではなく、実アバターの全周fit、衣装の貫通、VRChat内の表示・PhysBones挙動、異なるDPIでの操作は引き続き別受入境界とする。
+
+# 2026-09-14 実RadDollV3上の手首カフ装着・派生・native出力
+
+UiHintFixV1で実RadDollV3を含む一時制作フォルダ `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ManualAcceptance-Cuff3-20260914` を開き、GUIの「手首カフ形状を追加」を実行した。追加直後のPolygonEditは264頂点 / 256△で、native保存・再読込後もカフのprimitive objectを保持した。
+
+再読込後、装着パネルでアバター対象と `handrole.R` のstable BoneIdを指定し、「この小物を装着」を実行した。ステータスは「小物をstable BoneIdへ装着しました」となり、続けて「Polygon造形をskin衣装へ派生」「自動weight初期化（骨近傍）」を実行した。派生後は新しい衣装objectが選択され、metricsは264頂点 / 256△。手首カフを全身avatar表面へ投影するfit測定は、頂点が設定距離を超えるため停止した。これは手首ボーン装着の用途で全身fitを無理に適用しないための確認で、fitによる形状変更は行っていない。
+
+派生・装着・weight初期化後に同フォルダへGUI保存し、`project.nyaforge.json` を外部確認した。native schema 4、project objects 12、documentRevision 10、activeObjectIdは派生衣装、attachments 3を確認した。さらに「Unity用に書き出す」を実行し、`exports\bake-20260914-035504-b621c8\project.nyaforge.json` を生成した。出力manifestもschema 4 / 12 objects / revision 10で、native受け渡し経路が成立している。
+
+これは実モデルでのカフ作成、stable BoneId装着、skin衣装派生、骨近傍weight初期化、native Save、Unity向けnative exportのWindowsマウス受入である。カフの実手首位置への頂点調整、複数poseでの追従、貫通、実Unity/VRChat内の見た目・PhysBones、別DPIでの操作、GLB/VRM最終商品出力は引き続き別受入境界とする。
