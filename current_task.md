@@ -3878,5 +3878,5 @@ VRMのmeta利用条件、lookAt、firstPerson、expressionの材質・texture bi
 - 実RadDollV3 Player: **94 checks PASS**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealClothingBuild-20260915/Artifacts/Authoring-20260915-051810-399f508dbc4b452a95f5118f7a7fedad/report.json`）
 - 最終ソース反映後の再確認（Player `RealClothingV4`）も **PASS**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealClothingBuild-20260915/Artifacts/Authoring-20260915-052708-da52b52ea1b94ae0ac34864a972177e2/report.json`）。
 - 生成衣装package: `.../real-clothing-project/exports/clothing-20260914-202122-651891/skinned-clothing.nyaforge.json`（Neck参照、225 vertices／384 triangles）
-- Unity 2022.3.22f1 Bridge: 既存PhysBones reflection fixtureがUnityの`Temp`一時出力先を作る前に書き込み、**受け取り全体は未完了**。衣装package自体の生成とPlayer側検証はPASSで、このBridge失敗を衣装データの不一致とは扱わない。
+- Unity 2022.3.22f1 Bridge: **PASS**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-RealClothingBuild-20260915/Artifacts/BridgeReceiver-20260915-053257-308-caa61b915f614de39c09c87f68cac86b/bridge-report.json`）。Unity起動時に掃除されるproject `Temp`をPhysBones fixtureの出力先に使わないよう検証 harness を修正し、実衣装packageの受け取りまで完了した。
 - 未受入: 実EditorWindowのマウスでの衣装作成・全周fit・貫通・材質見た目、avatar移動／回転／scale、Unity実SDKでの適用、VRChat Build & Test／実機表示。

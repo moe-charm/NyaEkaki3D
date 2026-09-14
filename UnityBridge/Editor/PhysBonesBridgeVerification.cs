@@ -133,7 +133,11 @@ namespace NyaForge.UnityBridge.Editor
                 var nonComponent = VrcPhysBonesReflectionResolver.Resolve(typeof(string).AssemblyQualifiedName);
                 Require(!nonComponent.IsResolved && nonComponent.Diagnostic.Contains("not a Unity Component"), "Reflection resolver accepted a non-Component type.");
                 Require(VrcPhysBonesReflectionBackend.TryCreate(out backend, "verification-sdk", fixtureType), "Reflection PhysBones backend did not find the shape-compatible fixture type.");
-                string packageDirectory = Path.Combine("Temp", "NyaForgePhysBonesBridgePackage-" + Guid.NewGuid().ToString("N"));
+                // Unity may clear the project Temp directory during batch startup;
+                // keep this generated probe package beside the project instead.
+                string packageDirectory = Path.Combine(Directory.GetParent(Application.dataPath).FullName,
+                    "NyaForgePhysBonesBridgePackage-" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(packageDirectory);
                 string manifest = PhysBonesTargetPackage.Export(packageDirectory, profile, skeleton, fixtureType);
                 var package = PhysBonesTargetPackage.Read(manifest);
                 Require(package.ComponentTypeName == fixtureType, "PhysBones target package did not retain the explicit component type name.");
