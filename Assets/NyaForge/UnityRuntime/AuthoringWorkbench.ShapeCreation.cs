@@ -13,6 +13,7 @@ namespace NyaForge.UnityRuntime
         IntegerField shapeSegments;
         Label shapeCreationHelp;
         Button shapeCreateButton;
+        string shapePresetDefaultsId;
 
         /// <summary>Human-facing entry point for the reusable primitive generators.</summary>
         void BuildShapeCreationPanel(VisualElement parent)
@@ -59,12 +60,20 @@ namespace NyaForge.UnityRuntime
         {
             if (shapePresetChoice == null) return;
             var preset = SelectedShapePreset();
-            shapePrimarySize.SetValueWithoutNotify(preset.PrimaryDefault);
-            shapeSecondarySize.SetValueWithoutNotify(preset.SecondaryDefault);
-            shapeThickness.SetValueWithoutNotify(preset.ThicknessDefault);
+            // Refresh runs after commands, selection changes and project
+            // reopen. Do not overwrite dimensions the user has already typed;
+            // defaults belong to the first display and to an explicit preset
+            // change only.
+            if (!string.Equals(shapePresetDefaultsId, preset.Id, StringComparison.Ordinal))
+            {
+                shapePrimarySize.SetValueWithoutNotify(preset.PrimaryDefault);
+                shapeSecondarySize.SetValueWithoutNotify(preset.SecondaryDefault);
+                shapeThickness.SetValueWithoutNotify(preset.ThicknessDefault);
+                shapeSegments.SetValueWithoutNotify(preset.SegmentDefault);
+                shapePresetDefaultsId = preset.Id;
+            }
             shapeSecondarySize.label = preset.SecondaryLabel;
             shapeThickness.style.display = preset.HasThickness ? DisplayStyle.Flex : DisplayStyle.None;
-            shapeSegments.SetValueWithoutNotify(preset.SegmentDefault);
             shapeCreationHelp.text = preset.HelpText;
             bool available = workspace != null && (workspace.Document.IsEmpty || IsGraph);
             shapeCreateButton?.SetEnabled(available);

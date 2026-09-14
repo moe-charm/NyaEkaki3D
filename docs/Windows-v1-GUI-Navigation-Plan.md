@@ -1,6 +1,6 @@
 # Nya Ekaki 3D — Windows v1 GUI導線整理
 
-更新: 2026-09-14。状態: **GUI-01〜07の第一段、GUI-03表示名metadata第一段とMCP更新経路、MOD-01〜04の第一段、MOD-05のSession／SelectionContext第一段、Lifecycle・Layout・RefreshState・Execution・PersistenceRefresh・RefreshPipeline・UiElements・Viewport・ViewportInput・ViewportInteraction・SelectionRefresh・対象一覧差分更新の共通責務分離を実装。GUI-05の作業モードポインタ回帰を追加。最終分割・実操作受入は未完了**。
+更新: 2026-09-14。状態: **GUI-01〜07の第一段、GUI-03表示名metadata第一段とMCP更新経路、MOD-01〜04の第一段、MOD-05のSession／SelectionContext第一段、Lifecycle・Layout・RefreshState・Execution・PersistenceRefresh・RefreshPipeline・UiElements・Viewport・ViewportInput・ViewportInteraction・SelectionRefresh・対象一覧差分更新の共通責務分離を実装。GUI-05の作業モードポインタ回帰とGUI-04の寸法入力保持回帰を追加。最終分割・実操作受入は未完了**。
 
 ユーザー提供の制作パネル画像と現行作業ツリーを照合した。今回の範囲は導線設計であり、実マウス操作・新ビルドの受入結果ではない。[設計v2 §13](NyaForge-Authoring-Design2.md#13-人間用ワークスペースとノード画面)の「中央3D、左object一覧、右parameter、下部node」をWindows v1の既存機能へ具体化する。新しい編集エンジンや全面的な保存形式変更を先行させない。
 

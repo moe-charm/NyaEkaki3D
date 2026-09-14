@@ -3919,3 +3919,14 @@ Unity **2022.3.22f1** の隔離 `PhysBonesSdkProbe-20260914` で、現行の実R
 - `管理対象の衣装を削除（Undo可）` → `管理対象衣装を削除しました。Undoで元の関連付けへ戻せます。`
 
 実EditorWindowでのpackage読込、Object pickerによる4本の明示割当、保存、書き込み前診断、適用、更新、削除の導線は確認できた。`Ctrl+Z`は送信したが、画面状態から生成衣装の復元を確認できなかったため、Undo復元は未受入として残す。今回の画面は受け取り導線の確認であり、実衣装の全周fit、貫通、pose変形、材質の見た目、avatar移動・回転・scale後の配置、Unity実SDK適用、VRChat Build & Test／実機表示の合格には読み替えない。
+
+# 2026-09-15 GUI-04: 基本形状寸法の入力保持
+
+基本形状パネルの表示更新が、入力済みの寸法を既定値へ戻してしまう不具合を修正した。`Refresh` はコマンド実行・対象切替・保存／再開後にも走るため、入力欄は現在のプリセットIDが変わったときだけ既定値を設定し、それ以外の更新では利用者の値を保持する。プリセットを明示的に切り替えた場合は、選択した種類の既定寸法へ戻る。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ShapeCreation.cs`
+- 回帰: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ShapeCreationVerification.cs`（寸法保持、プリセット既定値、再Refreshを同じUI状態で確認）
+- Unity 6000.4.3f1 隔離Windows Player `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ShapeInputsV2-src\Builds\ShapeInputsV2\NyaForge.exe`：build成功
+- Authoring自動検証: **87 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ShapeInputsV2-src\Artifacts\Authoring-20260915-063948-4b3e0d858ae1425dbf999c7859b1c3d5\report.json`）。追加項目 `shape creation inputs: custom dimensions survive refresh and preset changes restore only the selected preset defaults` を確認。
+- Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-effb6d4787db4461b3aaff3339cc6704`）
+- 境界: Player自動UI回帰であり、実マウスのDPI別表示、実RadDollV3への全周fit／貫通／材質見た目、Unity実SDK、VRChat実機受入は完了扱いにしない。
