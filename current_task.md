@@ -2735,3 +2735,17 @@ Windows用Computer Useで、`Builds/PerformanceV39/NyaForge.exe`を実際に起�
 - 「身体だけ表示」でCollarを非表示にし、「パック既定の表示に戻す」で復帰
 
 読み込み後は`NyaForge synthetic fixture`が表示され、パーツ表示のチェック状態とステータス「調整しました」を画面で確認できた。これは実マウス経路が動くことの受入であり、実RadDollV3の読み込み、頂点編集、保存・再開、実DPI差、VRChat内表示は別の手動受入として継続する。Windows native Computer Useは、ブラウザ用Cuaとは別の操作経路を使用する。
+
+# 2026-09-14 実RadDollV3のGUI保存・再開チェック
+
+一時作業フォルダ `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-ManualAcceptance-20260914` を使い、Windows native Computer Useで実VRMを制作画面へ取り込んだ。候補確認には `mesh 0 (Bag.baked, 1 primitive) · skins 10 instances 10` が表示され、全mesh instance取込後は **10 objects**、取込骨対応 **171 bone / humanoid 29** を確認した。private素材と一時保存物はpublic repositoryへ追加していない。
+
+同フォルダへGUIの「保存」を実行し、続けて同じ制作画面の「開く」を実行した。画面ステータスは「制作状態を開きました」となり、`project.nyaforge.json` と `blobs` が生成された。保存後のCore再評価では、10個すべてのgraph objectが `complete=True / out=True / diag=0` で、保存データのgraph破損は確認されなかった。
+
+ただし、開き直し直後のviewportには「グラフの評価が未完了です」が残った。metricsには2307頂点 / 2609△が表示されるため、現時点では保存失敗と断定せず、**投影表示または警告ラベル更新の不一致**を次の調査対象とする。実マウスでの頂点選択・移動・Undo/Redo、GLB/VRM出力後の再読込、実Unity/VRChat内の見た目、DPI差は未受入である。
+
+# 2026-09-14 評価警告ラベルの表示修正
+
+`GeometryChangedEvent`が、viewport幅が通常のときに評価結果を無視してempty hintを常時表示していた。これを、狭いviewportでは非表示、通常幅では現在の`DisplayedGraphValue().Mesh`が未解決のときだけ表示する条件へ修正した。これにより、実GUIでEditMeshへ切り替えた後の頂点移動・Undo/Redoでも、正常なgraphを「評価未完了」と誤表示しない。
+
+Unity **6000.4.3f1**で `Builds/UiHintFixV1/NyaForge.exe` を再ビルドし、800x600 Authoring suite **PASS**（`Artifacts/Authoring-20260914-122339-7eac5517b3cd47bfb423b6a1cbf287a7/report.json`）。実RadDollV3の保存・再開後のCore評価は前項のとおり全10 graphがcompleteであり、修正後Playerの実RadDollV3再取込→EditMesh→頂点編集→Undo/Redoの手動再確認を次の受入に残す。

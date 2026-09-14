@@ -237,7 +237,15 @@ namespace NyaForge.UnityRuntime
                 if (width > 0 && height > 0)
                 {
                     bool narrow = width < 180f;
-                    emptyHint.style.display = narrow ? DisplayStyle.None : DisplayStyle.Flex;
+                    // Geometry changes must not overwrite the visibility that
+                    // Refresh computed from the current graph result.  Doing
+                    // so made a valid imported graph look unevaluated after
+                    // an edit or Undo/Redo.  A narrow viewport still hides
+                    // the hint to preserve the editing surface.
+                    if (narrow)
+                        emptyHint.style.display = DisplayStyle.None;
+                    else
+                        emptyHint.style.display = DisplayedGraphValue()?.Mesh == null ? DisplayStyle.Flex : DisplayStyle.None;
                     if (!narrow)
                     {
                         emptyHint.style.fontSize = Mathf.Clamp(width / 18f, 14f, 22f);
