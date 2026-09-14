@@ -113,7 +113,7 @@ namespace NyaForge.UnityBridge.Editor
             if (suggestionsReady)
             {
                 int total = package.Skeleton.Bones.Count;
-                int unresolved = total - suggestedBindings.Count;
+                int unresolved = total - suggestedBindings.Count - suggestionAmbiguous;
                 string summary = suggestedBindings.Count + "/" + total + " 本を一意候補として検出";
                 if (suggestionAmbiguous > 0) summary += "、" + suggestionAmbiguous + " 本は候補が曖昧";
                 if (unresolved > 0) summary += "、" + unresolved + " 本は未検出";
