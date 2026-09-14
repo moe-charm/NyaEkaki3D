@@ -2999,3 +2999,7 @@ Unity **2022.3.22f1** Bridgeを再実行し、適用・hash／sidecar・ownershi
 # 2026-09-14 BoneSubsetV5実RadDollV3一周再確認
 
 `Builds/BoneSubsetV5/NyaForge.exe`でprivateの`RadDollV3_VRM.vrm`を再実行した。Playerは **93 checks PASS**、衣装skeleton sidecarは **2 bones**。Unity **2022.3.22f1** Bridgeは **16 checks / status passed**で、manifest・GLB・skeleton・bindingのhash、stable BoneId、hierarchy候補、ApplyPackageによるscene生成、更新・削除Undo、semantic normal／MR channel変換を確認した。Player証跡は`Artifacts/Authoring-20260914-174539-796a31b3f43e4ef7b93aabdab939eaff/report.json`、Bridge証跡は`Artifacts/BridgeReceiver-20260914-174815-172-2d6ee338b1084d9899b9b08abc8fc44f/bridge-report.json`、package manifestは`Artifacts/Authoring-20260914-174539-796a31b3f43e4ef7b93aabdab939eaff/imported-accessory-skin-project/exports/clothing-20260914-084752-eaeadb/skinned-clothing.nyaforge.json`にある。これは自動Player／Bridgeの再確認であり、実EditorWindowのマウスによる全周見た目・貫通、移動／回転／scale済み実avatar、VRChat Build & Testの合格とは扱わない。
+
+# 2026-09-14 Unity 2022.3受け取りprobeのAPI互換修正
+
+受け取り用のUnity **2022.3.22f1**で`ViewerApp.RevisionAcceptance`だけがUnity 6の`FindObjectsByType<T>(FindObjectsInactive)` overloadを直接参照していたため、private probeがSafe Modeへ入っていた。両バージョンにある`FindObjectsOfType<T>(true)`へ置き換え、Unity 6000.4.3f1の`Builds/UnityCompatV1/NyaForge.exe`を再ビルドした。private `PhysBonesSdkProbe-20260914`へ同ソースを反映して再起動し、コンパイルエラーなしで`RadDollV3ClothingProbe` sceneが通常起動することを確認した（Unity Editor画面でRadDollV3階層とモデルを表示）。これは受け取り環境のcompile／scene起動互換性の確認であり、衣装の実EditorWindow適用、全周の見た目・貫通、VRChat Build & Testの合格とは扱わない。

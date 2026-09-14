@@ -294,11 +294,15 @@ namespace Viewer.Runtime
                 ["activePackBundles"] = Active.Bundles.Count,
                 ["avatarRenderers"] = Active.Avatar.Renderers.Count,
                 ["avatarDistinctMaterials"] = Active.Avatar.Renderers.Values.SelectMany(renderer => renderer.sharedMaterials).Distinct().Count(),
-                ["sceneRenderers"] = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include).Length,
+                // Unity 2022.3 does not expose FindObjectsByType<T> with the
+                // FindObjectsInactive overload. The includeInactive overload
+                // is available in both Unity 2022 LTS and Unity 6 and keeps
+                // this resource-count probe semantically equivalent.
+                ["sceneRenderers"] = UnityEngine.Object.FindObjectsOfType<Renderer>(true).Length,
                 ["allLoadedRenderers"] = Resources.FindObjectsOfTypeAll<Renderer>().Length,
                 ["allLoadedMaterials"] = Resources.FindObjectsOfTypeAll<Material>().Length,
                 ["allLoadedGameObjects"] = Resources.FindObjectsOfTypeAll<GameObject>().Length,
-                ["scenePreviewAvatars"] = UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include).Count(t => t.name == "PreviewAvatar")
+                ["scenePreviewAvatars"] = UnityEngine.Object.FindObjectsOfType<Transform>(true).Count(t => t.name == "PreviewAvatar")
             };
         }
 
