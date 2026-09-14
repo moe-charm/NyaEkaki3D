@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10P: 現行HEADテストスイープ
+
+現行`main`のCore実行を再確認し、**506 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0b8c393ba49c4ce0bb3704fc653b7d63`）だった。MCP transport suiteもnamed-pipe／stdio／capture metadataの**PASS**、WindowsPicker suiteもnative cancelと日本語・空白・アポストロフィ pathの**2/2 PASS**を確認した。これは.NET／Windows APIの自動検証であり、実EditorWindowの長時間・実VRChat受入を満たすものではない。
+
 ## 2026-09-14 NF-V1-10O: Unity Bridgeクラッシュ復旧回帰
 
 現行`PerformanceV39` Authoring出力をUnity **2022.3.22f1** Bridgeへ渡し、更新中断後の再起動復旧をmaterials／prefab／receiptの3フェーズで実行した。**3/3 PASS**。証跡は`Artifacts/BridgeReceiver-20260914-111256-925-9234a6641f3d4f29bbd894aea206d112`内の`materials-recovery.json`、`prefab-recovery.json`、`receipt-recovery.json`。これは受け取り側のcheckpoint復旧回帰であり、実VRChat Build & Testや実EditorWindowの手動受入を満たすものではない。
