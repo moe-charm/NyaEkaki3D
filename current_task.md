@@ -3944,6 +3944,8 @@ Unity **2022.3.22f1** の隔離 `PhysBonesSdkProbe-20260914` で、現行の実R
 - Authoring自動検証: **87 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-OutputScopeV1-src\Artifacts\Authoring-20260915-070416-cd479b7b1e18458095f3debc9e23a699\report.json`）
 - 境界: 出力対象の表示と自動UI回帰の確認であり、実マウスのDPI／IME／長い名称、実RadDollV3全周fit・貫通・材質、Unity実SDK、VRChat実機受入は未完了のまま。
 
+追試: 複数objectのPlayer回帰で、参照bodyを保護した状態の「参照保護 1件」と、衣装objectだけをallowlist指定した状態の「指定 1 object」への表示切替を確認した。`OutputScopeV2` は **87 checks PASS**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-OutputScopeV1-src\Artifacts\Authoring-20260915-070747-d2c1b5aba6cc4875a9fb861c79ba3d45\report.json`）。
+
 # 2026-09-15 GUI-05: 制作正本ファイルの表示
 
 保存・再開用のnative制作状態が、入力した制作フォルダのどこにあるか画面だけでは分かりにくかったため、保存欄の直下へ `project.nyaforge.json` のフルパスを表示するラベルを追加した。フォルダ欄の保存方式とExplorer選択は変更していない。長いパスは1行表示でレイアウトを押し広げず、ラベルのツールチップに実体パス全体を入れる。

@@ -78,6 +78,7 @@ namespace NyaForge.UnityRuntime
                 var protectedBefore = GraphEvaluator.Evaluate(workspace.Document.ActiveObject.Graph).Output.Mesh.ContentHash;
                 referenceProtectionToggle.value = true;
                 Check(referenceProtectionToggle.value && referenceProtectedObjectIds.Contains(objectIds[0]), "Reference protection toggle did not register the active object");
+                Check(projectOutputScopeLabel != null && projectOutputScopeLabel.text.Contains("参照保護 1件"), "Output scope summary did not show the protected reference object");
                 Execute(AuthoringOperation.Undo());
                 Check(!referenceProtectedObjectIds.Contains(objectIds[0]) && !referenceProtectionToggle.value, "Reference protection was not restored after Undo");
                 Execute(AuthoringOperation.Redo());
@@ -102,6 +103,7 @@ namespace NyaForge.UnityRuntime
                     "Generic GLB export included a protected reference object or created a destination");
                 Execute(AuthoringOperation.SelectObject(objectIds[1]));
                 deliveryAllowlistToggle.value = true;
+                Check(projectOutputScopeLabel != null && projectOutputScopeLabel.text.Contains("指定 1 object"), "Output scope summary did not switch to the explicit allowlist");
                 ExportGlbStatic();
                 Check(deliveryAllowedObjectIds.Contains(objectIds[1]) && !deliveryAllowedObjectIds.Contains(objectIds[0]) &&
                     Directory.Exists(Path.Combine(directory, "exports")) && status.text.Contains("標準GLB"),
