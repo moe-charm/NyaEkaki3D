@@ -2852,3 +2852,9 @@ Coreは **508 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForg
 
 `docs/Windows-v1-Manual-Acceptance.md`をBoneSubsetV2へ更新し、古い171本packageを使わず、候補生成→一覧確認→候補反映→未検出骨の手動確定という受け取り手順を明記した。実Unity EditorWindowの全周見た目・貫通、衣装A→B更新・削除Undo、normal／MR／UV0の実画素、VRChat Build & Testはまだ別の手動受入ゲートである。private probeの旧package／SDK混在はpublic repositoryへ取り込まない。
 
+
+# 2026-09-14 実衣装受入スクリプトの骨sidecar検査
+
+`Tools/Test-NyaForgeRealClothing.ps1`へ、Bridgeへ渡す前の`skeleton.nyaforge.bin`ヘッダー（NYRS、version 1、1〜256本）検査と骨数表示を追加した。古いpackageを誤って受入へ進めず、実モデル一周のログだけで必要骨数を確認できる。既存のmanifest／GLB／binding hash検査とUnity Bridge検証はそのまま維持する。
+
+追加の実行結果: 骨sidecar検査を含む`Test-NyaForgeRealClothing.ps1`を再実行し、`Clothing skeleton: 2 bones`、Player PASS、Unity Bridge PASSを確認した。最新artifactは`Artifacts/Authoring-20260914-145454-d4fa2141c07c4d34b81bb68cd2bf2cca`、receiverは`Artifacts/BridgeReceiver-20260914-145739-335-6c3bd4bb63f54291946d18b73ac6d7bd`。

@@ -36,6 +36,20 @@ $packageManifests = @(Get-ChildItem -LiteralPath $checkRoot -Recurse -File -Filt
 if ($packageManifests.Count -ne 1) {
     throw "Expected exactly one clothing package manifest under $checkRoot; found $($packageManifests.Count)."
 }
+$packageDirectory = $packageManifests[0].Directory.FullName
+$skeletonPath = Join-Path $packageDirectory 'skeleton.nyaforge.bin'
+if (-not (Test-Path -LiteralPath $skeletonPath -PathType Leaf)) {
+    throw "Clothing package skeleton sidecar is missing: $skeletonPath"
+}
+$skeletonBytes = [IO.File]::ReadAllBytes($skeletonPath)
+if ($skeletonBytes.Length -lt 12) { throw 'Clothing package skeleton sidecar is truncated.' }
+$skeletonMagic = [BitConverter]::ToInt32($skeletonBytes, 0)
+$skeletonVersion = [BitConverter]::ToInt32($skeletonBytes, 4)
+$skeletonBoneCount = [BitConverter]::ToInt32($skeletonBytes, 8)
+if ($skeletonMagic -ne 0x5359524e -or $skeletonVersion -ne 1 -or $skeletonBoneCount -lt 1 -or $skeletonBoneCount -gt 256) {
+    throw "Clothing package skeleton sidecar header is invalid (magic=$skeletonMagic version=$skeletonVersion bones=$skeletonBoneCount)."
+}
+Write-Output "Clothing skeleton: $skeletonBoneCount bones"
 $bridgeArgs = @{
     PlayerCheckDirectory = $checkRoot
     ClothingPackageManifest = $packageManifests[0].FullName
