@@ -12,12 +12,15 @@ namespace NyaForge.Authoring.Rig
             if (skeleton == null) throw new ArgumentNullException("skeleton");
             if (binding == null) throw new ArgumentNullException("binding");
             var required = new HashSet<string>(binding.Weights.Values.SelectMany(values => values).Select(value => value.BoneId), StringComparer.Ordinal);
-            var pending = required.ToArray();
-            for (int i = 0; i < pending.Length; i++)
+            Checks.Require(required.Count > 0, "UNWEIGHTED_VERTEX", "A clothing binding must reference at least one bone.");
+            var pending = new Queue<string>(required);
+            while (pending.Count > 0)
             {
-                var bone = skeleton.ById[pending[i]];
+                string boneId = pending.Dequeue();
+                BoneDefinition bone;
+                Checks.Require(skeleton.ById.TryGetValue(boneId, out bone), "BONE_NOT_FOUND", "Clothing binding references an unknown bone.");
                 if (!string.IsNullOrEmpty(bone.ParentBoneId) && required.Add(bone.ParentBoneId))
-                    pending = pending.Concat(new[] { bone.ParentBoneId }).ToArray();
+                    pending.Enqueue(bone.ParentBoneId);
             }
             if (required.Count == skeleton.Bones.Count) return skeleton;
             return new SkeletonDefinition(skeleton.Bones.Where(bone => required.Contains(bone.BoneId)));

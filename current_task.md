@@ -2838,6 +2838,17 @@ Unity **2022.3.22f1**のprivateプローブへ最新のEditor/Runtimeソース�
 
 `SkinBinding.RebindToSkeleton` とGLB出力のsubset overloadは、BoneIdでinverse-bind／joint-local行列を再対応させ、元の配列順をsubset順として誤読しない。Coreへ祖先保持・未使用骨除外・binding再構成の回帰を追加し、`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore` は **508 passed / 0 failed**。
 
-残りの受入は、修正版Playerで実カフpackageを再生成して骨数が18本前後（ウェイト参照＋祖先）になること、Unity EditorWindowで候補生成・適用・保存・衣装表示を一周すること。移動／回転／scale済みavatar、衣装A→B更新、UV0・normal・MRの実画素、VRChat Build & Testは別のWindows実機ゲートとして記録する。private probeと既存の旧packageは変更せず、public repositoryにはソースとテストだけを入れる。
+残りの受入は、修正版Playerで実カフpackageを再生成して骨数がウェイト参照＋祖先の必要本数になること、Unity EditorWindowで候補生成・適用・保存・衣装表示を一周すること。移動／回転／scale済みavatar、衣装A→B更新、UV0・normal・MRの実画素、VRChat Build & Testは別のWindows実機ゲートとして記録する。private probeと既存の旧packageは変更せず、public repositoryにはソースとテストだけを入れる。
 
 上記のPlayerを `Builds/BoneSubsetV1/NyaForge.exe` としてビルドし、`Tools/Test-NyaForgeRealClothing.ps1` を実RadDollV3 VRMで再実行した。Player **93 checks PASS**、Unity Bridge **17 checks PASS**。生成packageは `Artifacts/Authoring-20260914-143044-d7954b6a327f477cad213eae519635fb/imported-accessory-skin-project/exports/clothing-20260914-053257-0a7daa/skinned-clothing.nyaforge.json`、skeleton sidecarは **2 bones**（Child／Root）で、GLB・sidecarの受け取りまで成功した。Unity EditorWindowの手動プローブは旧ライブラリと現行ソースの混在が残り、再起動後もコンパイルエラー表示が残ったため、このターンでは新packageの画面適用を合格扱いしない。実際の移動／回転／scale、衣装更新・削除Undo、UV0・normal・MR画素、VRChat Build & Testは引き続き未受入。
+
+# 2026-09-14 骨サブセット診断の安全化と実モデル再確認
+
+`SkeletonBindingSubset.ForBinding`が不正なBoneIdを受けた場合、辞書の内部例外ではなく`BONE_NOT_FOUND`として停止するようにし、親骨をキューで辿る実装へ整理した。欠損BoneIdの回帰を`Tests/Authoring.Core/RigTests.cs`へ追加した。
+
+Coreは **508 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-e57c356acde5482787b244e40832be3c`）。`Builds/BoneSubsetV2/NyaForge.exe`（commit `6ffac33`）のWindows Player buildも成功（`Logs/build-player-20260914-144859-507.log`）。
+
+実RadDollV3 VRMで`Tools/Test-NyaForgeRealClothing.ps1`を再実行し、Player **93 checks PASS**、Unity **2022.3.22f1 Bridge PASS**を確認した。生成packageは`Artifacts/Authoring-20260914-144919-e0c7f7e6a61743a9a458df71ece8c34b/imported-accessory-skin-project/exports/clothing-20260914-055133-bd4246/skinned-clothing.nyaforge.json`、skeleton sidecarは **2 bones / 201 bytes**だった。package GLB・skeleton・bindingのhash検証とBridge受け渡しまで成功している。
+
+`docs/Windows-v1-Manual-Acceptance.md`をBoneSubsetV2へ更新し、古い171本packageを使わず、候補生成→一覧確認→候補反映→未検出骨の手動確定という受け取り手順を明記した。実Unity EditorWindowの全周見た目・貫通、衣装A→B更新・削除Undo、normal／MR／UV0の実画素、VRChat Build & Testはまだ別の手動受入ゲートである。private probeの旧package／SDK混在はpublic repositoryへ取り込まない。
+

@@ -1,6 +1,6 @@
 # Nya Ekaki 3D Windows v1 手動受入チェック
 
-この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/PerformanceV39/NyaForge.exe`（コード `d5b7666`）。Authoring suiteの自動navigation／Save As・保存状態・再開・viewport確認は50回反復し、`Artifacts/Navigation-Repeated-PerformanceV39-official-50.json`へ記録した。実RadDollV3一周はV39のprivate候補で確認した。証跡は`Artifacts/Authoring-20260914-083803-8d33406704a64fa58853d2c5220bdfb6/authoring.png`、`Artifacts/Authoring-20260914-081548-c6b6d08ca3f84bef9b44a8614b4fcc8c/authoring.png`、`Artifacts/Authoring-20260914-082145-4f42a375b1224914af0782043c15f279/report.json`。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
+この文書は、自動fixtureの合格を実アプリ・実アバター・VRChatの受入へ読み替えないための記録用チェック表。対象candidateは `Builds/BoneSubsetV2/NyaForge.exe`（コード `6ffac33`）。Authoring suiteの自動navigation／Save As・保存状態・再開・viewport確認は50回反復し、`Artifacts/Navigation-Repeated-PerformanceV39-official-50.json`へ記録した。実RadDollV3一周はBoneSubsetV2のprivate候補で確認した。証跡は`Artifacts/Authoring-20260914-144919-e0c7f7e6a61743a9a458df71ece8c34b/report.json`、`Artifacts/BridgeReceiver-20260914-145156-951-bd5f2ffccba34e759d69c588c9f332e4/bridge-report.json`。入力モデルは公開ツリーへコピーせず、privateの作業場所から読み込む。
 
 ## 1. 実EditorWindow（Windows）
 
@@ -21,6 +21,8 @@
 7. 肩上げ、肘曲げ、前屈、着座相当のposeで、袖・襟・裾・胸周りの交差とweight崩れを確認する。
 8. native Save → アプリを閉じる → Explorerから再Openし、形状・材質・weight・参照保護・対象allowlistが一致することを確認する。
 9. 選択衣装だけのskinned packageを出力し、manifestのobjectId／mesh hash／skeleton hashを記録する。
+   - 新規packageでは、実際にweightが参照する骨と祖先だけがskeleton sidecarへ入る。古いpackageで171本など不要な骨が残っている場合は、最新Playerで再出力する。
+   - Unity受け取りでは `候補を生成（名前・階層）` → 候補一覧を確認 → `候補を割当に反映` の順に進め、曖昧・未検出のBoneIdは手動で確定する。
 10. base-colorが取込時に縮小された場合、原画像サイズ・作業画像サイズ・MIME・hashをinspectionで確認する。Paintを編集しない状態ではGLB内の画像bytesが原画像と一致し、編集後はbounded previewへ切り替わることを確認する。
 
 ## 3. Unity受け取り

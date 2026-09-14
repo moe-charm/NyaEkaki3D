@@ -68,6 +68,8 @@ internal static partial class Program
             Equal(3, subset.Bones.Count); True(subset.ById.ContainsKey(root)); True(subset.ById.ContainsKey(mid)); True(subset.ById.ContainsKey(leaf));
             var rebound = binding.RebindToSkeleton(mesh, subset);
             Equal(subset.ContentHash, rebound.SkeletonHash); Equal(leaf, rebound.Weights[0][0].BoneId);
+            var incomplete = new SkeletonDefinition(new[] { new BoneDefinition(root, "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
+            Expect("BONE_NOT_FOUND", () => SkeletonBindingSubset.ForBinding(incomplete, binding));
         });
 
         Test("rig and morph capacity retain 257 bones, 18 influences and 262 targets", () =>
