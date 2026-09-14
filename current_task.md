@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-09Z: 実VRM候補1体の軽量性計測
+
+privateのRadDollV3 VRMを全mesh展開なしで`Builds/PerformanceV32/NyaForge.exe`へ渡し、通常の候補選択・編集・Save/Open・VRM1出力を含むAuthoring suiteを**PASS**（`Artifacts/Authoring-20260914-094416-ef09767da6c846e4977c622e1a4bd85b/report.json`）。実行時間は約261秒、取込中のプロセスworking setピークは約2.6GBだった。全mesh一括の約3.6GBより低いが、通常fixtureのforeground約577MBとは条件が違うため、実アバター取込の軽量性は未達として扱う。今後は画像デコードの解放、取込中の一時メッシュ保持、実アバター候補選択だけの計測を分離して改善する。
+
 ## 2026-09-14 NF-V1-09Y: V32実RadDollV3衣装受け取り一周
 
 privateの実RadDollV3 VRMを`Builds/PerformanceV32/NyaForge.exe`へ渡し、候補選択・全mesh instance取込・EditMesh頂点編集・native Save/Open・標準skinned GLB／VRM1出力・衣装package生成を完了した。Player reportは**PASS**（`Artifacts/Authoring-20260914-093718-1b9d2bfe1e5342c6a06903bac1a19a5e/report.json`）。生成した衣装packageをUnity **2022.3.22f1** Bridgeへ渡し、BoneId map、avatar rootのtranslation／rotation／scale、StateHash更新、削除Undo、複数package所有、semantic normal／MRを含む受け取りを**PASS**（`Artifacts/BridgeReceiver-20260914-094245-655-c52b91eeb00f41db81d0c4b31a63f72b/bridge-report.json`）。
