@@ -47,6 +47,8 @@ namespace NyaForge.UnityRuntime
                 var accessory = workspace.Document.ActiveObject;
                 Check(root.Q<Foldout>("object-attachment") != null && root.Q<DropdownField>("object-attachment-target") != null && root.Q<DropdownField>("object-attachment-bone") != null,
                     "Attachment GUI controls were not built");
+                Check(root.Q<Label>("object-attachment-guide") != null && root.Q<Foldout>("object-attachment-help") != null && !root.Q<Foldout>("object-attachment-help").value,
+                    "Attachment GUI did not expose the compact guide and collapsed detailed help");
                 var attachment = GraphNode.AttachmentNode(Guid.NewGuid().ToString("D"), targetObjectId, boneId, skeleton.ContentHash, new Vec3());
                 Execute(AuthoringOperation.AddNode(attachment));
                 Refresh();

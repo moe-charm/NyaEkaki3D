@@ -3723,3 +3723,13 @@ Core／Bridgeの自動回帰はコード変更後に再実行する。実SDK・�
 保存先`Z:\TextureVoice_local\git\RadDollV3-clothing\private\viewer-data\packs\manual-real-model-choker-20260915`へ`保存`を実行し、status `保存しました`と保存済み表示を確認した。同じ画面で`開く`を実行し、status `制作状態を開きました。ここから新しい履歴を始めます。`、リングの再表示、`保存済み`表示を確認した。
 
 これは実RadDollV3のExplorer取込→全mesh→基本形状追加→対象切替→単独表示→頂点選択／移動→native Save/Openの手動受入PASSである。材質の見た目、衣装skin-bind／fit／貫通、Unity受け取り、VRChat Build & Testは別受入として未完了のまま残す。private素材と制作データは公開ツリーへ追加していない。
+# 2026-09-15 GUI-16: 装着パネルの手順表示と詳細説明の折りたたみ
+
+装着・骨パネルは長い技術説明が操作欄の後ろに続き、初めて使うと「どの順番で何を押すか」が分かりにくかった。`AuthoringWorkbench.AttachmentUi.cs`を整理し、上部に「対象avatar／BoneId／剛体装着またはskin-bind／fit・weight／保存」の短い手順を常設した。剛体小物、衣装skin-bind、fit・weightの区切りラベルも追加し、詳細説明は既定で閉じた`操作説明（詳細）`Foldoutへ移した。装着対象・BoneId・offset・各操作の保存形式と処理経路は変更していない。
+
+- 接続変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentUi.cs`
+- 回帰補強: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentVerification.cs`（短い手順と詳細Foldoutの存在・既定折りたたみを確認）
+- Player build: `Builds/AttachmentGuideV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-025358-136.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-025420-2e4f70571a01471089c95ba5991aff88/report.json`、装着・skin-bind・fit・weight・保存/再読込を含む）
+- Core: **512 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0efac60471e445408f5f3411e2e2f6dd`）
+- 未受入: 実マウスでのDPI／IME／長い名称、実RadDollV3全周fit・貫通・見た目、VRChat内表示。自動Player回帰をこれらの手動受入へ読み替えない。
