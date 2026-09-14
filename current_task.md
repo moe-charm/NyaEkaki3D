@@ -1,5 +1,9 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15V: WindowsネイティブCUAで実モデル取込
+
+`mcp__node_repl__js`から`@oai/sky`を初期化し、`Builds/BoneSubsetV16/NyaForge.exe`の制作画面を実操作した。`モデルを開く…`でprivate RadDollV3 VRMをWindowsファイル選択から指定し、`候補を確認`→`このGLB / VRMをgraph objectへ取り込む`まで完了。画面statusは`mesh 0 / skin 0 / bone 171 / weight 2990 / morphなし`で、診断として`MATERIALS_NOT_RETAINED`、`EXTENSIONS_PARTIAL`、材質画像の注意1件を表示した。これはネイティブファイル選択と取込経路の実操作証拠であり、見た目の品質、全周fit・貫通、VRChat内表示の手動受入とは分けて扱う。private入力自体は公開ツリーへ追加していない。
+
 ## 2026-09-14 NF-V1-15U: Computer Use運用メモの固定
 
 リポジトリ直下に`AGENTS.md`を追加し、Windowsネイティブ操作ではブラウザ用`cua`ではなく`@oai/sky`を初期化して`list_apps`／`list_windows`から対象windowを選ぶ手順を固定した。操作後のstate再取得、ターミナル操作との分離、V16起動入口、public/private境界、Core回帰コマンドも記録した。以後、`apps: []`だけでネイティブ操作不可と判断せず、Windows用経路を先に確認する。

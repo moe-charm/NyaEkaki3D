@@ -2,7 +2,7 @@
 
 ## Windows Computer Use
 
-NyaForgeはWindowsネイティブアプリなので、実ウィンドウの確認・クリック・ドラッグにはWindows用の`@oai/sky`経路を使う。ブラウザ用の`cua`だけを見て`apps: []`と判断しない。
+NyaForgeはWindowsネイティブアプリなので、実ウィンドウの確認・クリック・ドラッグには`mcp__node_repl__js`からWindows用の`@oai/sky`経路を使う。ブラウザ用の`cua`だけを見て`apps: []`と判断しない。
 
 新しい`node_repl`セッションでは、最初に一度だけ次を実行する。
 
