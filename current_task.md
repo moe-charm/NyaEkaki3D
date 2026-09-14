@@ -3811,3 +3811,14 @@ Surface viewport検証は、Ready通知前の古いboundsを復元後の値と�
 - 公開境界: private素材、Unity project、temporary Player、Artifactsはpublic treeへ追加していない。`git ls-files private`は空。
 
 次は、このpackageを開いているUnity EditorWindowへ読み込み、実avatar rootへ候補／明示BoneId割当→適用→更新／削除Undoを実操作で一周する。その後、通常poseとVRChat Build & Testを確認する。
+
+# 2026-09-15 UNITY-MANUAL-02: 現行衣装packageの明示BoneId割当
+
+Unity **2022.3.22f1** の隔離 `PhysBonesSdkProbe-20260914` に、FIX-02で生成した衣装manifestを `NyaForge Clothing` windowから読み込んだ。manifest／`3 vertices · 1 triangles`／`2 bones`／`RaddollV3 (Transform)` の表示を確認した。
+
+package側のstable binding名（`Child`／`Root`）は実avatarのstable identityと一致せず、自動候補に頼れない状態だった。Unity object pickerで `Child → Neck (Transform)`、`Root → Hips (Transform)` を明示指定できることを確認した。割当保存と事前診断のUIボタンまで到達したが、適用結果の見た目はこのsynthetic packageでは評価対象にしない。
+
+- package: `C:/Users/tomoaki/AppData/Local/Temp/NyaEkaki3D-build-20260915-033127/Artifacts/Authoring-20260915-040417-ddf3fcbad8094156a88a93760db5dbd5/imported-accessory-skin-project/exports/clothing-20260914-190628-429e91/skinned-clothing.nyaforge.json`
+- avatar root: `RaddollV3 (Transform)`
+- 手動割当: `Child → Neck`、`Root → Hips`
+- 境界: 合成3頂点packageのUI到達性・明示割当のみ。実RadDollV3衣装の全周fit／貫通／pose変形、更新／削除Undo、VRChat Build & Testは未受入。
