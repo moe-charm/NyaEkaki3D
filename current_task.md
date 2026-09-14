@@ -3513,6 +3513,8 @@ V43でprivate一時RadDollV3 VRM（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge
 最新ソースを標準起動先へ反映するため、`Builds/Windows/NyaForge.exe`をV43相当のソースから再ビルドし、`Tools/Start-NyaForgeAuthoring.ps1`の既定BuildNameを`Windows`へ揃えた。個別の検証版は`-BuildName GuiModularV43`のように分離して保持する。
 
 標準起動先`Builds/Windows/NyaForge.exe`でもNavigation回帰を再実行し、**PASS**を確認した。証拠は`Artifacts/Navigation-20260914-224954-eeccbc168d4a4534ab30a3a351d92f9b/report.json`。これは既定バイナリの起動・パック読込・確認セット導線の自動確認で、実マウスのDPI／IME／長い名称は手動受入へ残す。
+
+標準起動先`Builds/Windows/NyaForge.exe`でAuthoring全回帰も再実行し、**PASS**を確認した。証拠は`Artifacts/Authoring-20260914-225318-2809f7ddf6ae40c1a94ecd7ba2e8b021/report.json`。検証版V43と同じソース経路で、保存・再開・頂点編集・材質・衣装package・MCP・出力の自動チェックを通過している。
 # 2026-09-14 FORMAT: ポインターと実体の運用方針
 
 確認パックは小さな`current.<buildTarget>.json`ポインターと、revision配下のmanifest／blob実体を併用する。ポインターは現在採用revision・相対manifest path・hashを示す入口として共有・切替に使い、制作正本やバックアップの代わりにはしない。実体manifestはポインターなしでも直接開ける。Authoring作品は`project.nyaforge.json`、`blobs/`、許可されたattachmentを一組で保存する。READMEとQuickstartへこの境界を記載した。
