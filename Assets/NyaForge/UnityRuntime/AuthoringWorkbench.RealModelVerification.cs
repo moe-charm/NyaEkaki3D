@@ -124,6 +124,17 @@ namespace NyaForge.UnityRuntime
             Check(workspace.Evaluate().TriangleCount > 0, "Import-only probe published an empty mesh.");
         }
 
+        void VerifyCommandLineGlbOutputOnly(string path, string output, List<string> checks)
+        {
+            VerifyCommandLineModelImportOnly(path);
+            string directory = Path.Combine(output, "glb-output-only");
+            var result = GlbExportService.ExportSkinnedWithTransforms(workspace, workspace.InstanceId,
+                workspace.Document.DocumentId, workspace.Document.DocumentRevision, directory,
+                SkinnedNodeTransformsForExport(), SkinnedInverseBindMatrices(), SkinnedJointLocalTransforms());
+            Check(File.Exists(result.Path), "GLB-output-only probe did not create a standard skinned GLB.");
+            Check(File.Exists(result.ReportPath), "GLB-output-only probe did not create an export report.");
+        }
+
         void VerifyCommandLineAllModelImport(string path, string output, List<string> checks)
         {
             path = Path.GetFullPath(path);

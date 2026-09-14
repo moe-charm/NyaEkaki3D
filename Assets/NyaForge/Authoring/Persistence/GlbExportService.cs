@@ -549,6 +549,11 @@ namespace NyaForge.Authoring
         {
             readonly MemoryStream stream = new MemoryStream();
             public int Offset { get { return checked((int)stream.Length); } }
+            // Report the padded payload size without materializing a second
+            // copy of the complete BIN chunk. BuildMany only needs the size
+            // for glTF's buffers.byteLength field; calling ToArray() there
+            // briefly doubled the largest export allocation.
+            public int Length { get { return checked((int)(stream.Length + (4 - (stream.Length % 4)) % 4)); } }
             public int Write(Action<BinaryWriter> action)
             {
                 Align(); int start = Offset; using (var writer = new BinaryWriter(stream, System.Text.Encoding.UTF8, true)) action(writer); return start;
@@ -784,7 +789,7 @@ namespace NyaForge.Authoring
                 else ApplyTransform(node, item.Transform);
                 nodes.Add(node); sceneNodes.Add(meshNode); meshNodeMap[meshObject.Name] = meshNode;
             }
-            var root = new JObject { ["asset"] = new JObject { ["version"] = "2.0", ["generator"] = "NyaForge" }, ["scene"] = 0, ["scenes"] = new JArray(new JObject { ["nodes"] = sceneNodes }), ["nodes"] = nodes, ["meshes"] = meshes, ["buffers"] = new JArray(new JObject { ["byteLength"] = binary.ToArray().Length }), ["bufferViews"] = views, ["accessors"] = accessors };
+            var root = new JObject { ["asset"] = new JObject { ["version"] = "2.0", ["generator"] = "NyaForge" }, ["scene"] = 0, ["scenes"] = new JArray(new JObject { ["nodes"] = sceneNodes }), ["nodes"] = nodes, ["meshes"] = meshes, ["buffers"] = new JArray(new JObject { ["byteLength"] = binary.Length }), ["bufferViews"] = views, ["accessors"] = accessors };
             if (skins.Count > 0) root["skins"] = skins;
             if (materials.Count > 0) root["materials"] = materials;
             if (images.Count > 0) { root["images"] = images; root["textures"] = textures; }

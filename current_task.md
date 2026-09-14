@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-15C: GLB出力段階のピーク切り分け
+
+取込だけのピークと、GLBを書き出す段階のピークを分けて確認できるよう、`Tools/Test-NyaForgeAuthoring.ps1 -GlbExportOnly -ImportModel <path>`／`--authoring-glb-output-only`を追加した。`Builds/BoneSubsetV8/NyaForge.exe`でRadDollV3の実VRMを使った出力専用probeは**PASS**（`Artifacts/Authoring-20260914-160515-aab20b7118514c97bbcb254908f724fb/report.json`、画像 `glb-output-only.png`）。外部2秒サンプリングは約22.3秒、working set peak **1,668.1MB**、private bytes peak **2,286.6MB**、ログは`C:/Users/tomoaki/AppData/Local/Temp/nyaforge-glb-output-memory-dd2b510f8f1445fea90edb7cc40ec703.log`。同じ実モデルのImportOnly（約1,081.3／1,527.8MB）との差から、GLB出力経路だけで一時的に約0.6〜0.8GBが増えることを確認した。これは単一環境・短時間サンプリングで、軽量性の合格判定やEditorWindowのアイドル予算ではない。
+
+追加で、`GlbExportService`のBIN長取得時に`binary.ToArray()`を呼ばず、パディング後の長さだけを返すようにした。GLB内容・`buffers.byteLength`は維持し、最大BINの不要な一時コピーを1回減らす狙い。修正後にV8を再buildし、同じ出力専用probeは**PASS**（`Artifacts/Authoring-20260914-160934-9dcdc9c9c8b3411c9890e02dc00ba2f5/report.json`）。外部2秒サンプリングは約22.3秒、working set peak **1,653.7MB**、private bytes peak **2,238.2MB**（`C:/Users/tomoaki/AppData/Local/Temp/nyaforge-glb-output-memory-3f1fddfa27624fd88a1a82396e806f9a.log`）で、修正前の同条件観測1,668.1／2,286.6MBから約14／48MB低下した。ただしOS状態とサンプリング間隔を含む短時間観測なので、一般的な改善保証とは扱わない。VRM1の`File.ReadAllBytes`／package再構築は別の測定点として扱う。実EditorWindowの長時間操作、別Windows環境、VRChat Build & Test／実機表示は未受入。
+
 ## 2026-09-14 NF-V1-15B: 大規模morph取込の一時オブジェクト削減
 
 GLBのmorph取込で、各頂点を一度`MorphDelta`オブジェクトへ展開してから辞書へ変換していた経路を、疎な`Dictionary<int, Vec3>`へ直接構築する内部経路へ変更した。公開API、保存形式、表情の頂点値・順序・hash契約は維持する。Coreは**509 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-a2c480428d624c4e8812c217bfdabe0d`）。`Builds/BoneSubsetV7/NyaForge.exe`でRadDollV3実衣装一周とUnity **2022.3.22f1** Bridge受け取りもPASS（Player `Artifacts/Authoring-20260914-155811-a5784b1b066d4d14958dba0b50d843ba/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-160042-912-f7f11707dd1f4b529a62bc3500e36b83/bridge-report.json`）。

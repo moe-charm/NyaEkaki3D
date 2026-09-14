@@ -47,6 +47,7 @@ namespace NyaForge.UnityRuntime
             int modelImportIndex = Array.IndexOf(arguments, "--authoring-import-model");
             int modelImportAllIndex = Array.IndexOf(arguments, "--authoring-import-all-model");
             bool importOnly = Array.IndexOf(arguments, "--authoring-import-only") >= 0;
+            bool glbOutputOnly = Array.IndexOf(arguments, "--authoring-glb-output-only") >= 0;
             bool vrmExport = Array.IndexOf(arguments, "--authoring-vrm-export") >= 0;
             int reopenIndex = Array.IndexOf(arguments, "--authoring-reopen-project");
             if (reopenIndex >= 0 && reopenIndex + 1 < arguments.Length)
@@ -94,16 +95,18 @@ namespace NyaForge.UnityRuntime
                 Check(workspace.Document.IsEmpty && workspace.Document.DocumentId == emptyId && !HasUnsaved, "Empty save/reopen failed");
                 if (modelImportIndex >= 0 && modelImportIndex + 1 < arguments.Length)
                 {
-                    if (importOnly)
+                    if (glbOutputOnly)
+                        VerifyCommandLineGlbOutputOnly(arguments[modelImportIndex + 1], output, checks);
+                    else if (importOnly)
                         VerifyCommandLineModelImportOnly(arguments[modelImportIndex + 1]);
                     else
                         VerifyCommandLineModelImport(arguments[modelImportIndex + 1], output, checks);
                 }
-                if (!importOnly && vrmExport && modelImportIndex >= 0)
+                if (!importOnly && !glbOutputOnly && vrmExport && modelImportIndex >= 0)
                     VerifyCommandLineVrmExport(output, checks);
-                if (!importOnly && modelImportAllIndex >= 0 && modelImportAllIndex + 1 < arguments.Length)
+                if (!importOnly && !glbOutputOnly && modelImportAllIndex >= 0 && modelImportAllIndex + 1 < arguments.Length)
                     VerifyCommandLineAllModelImport(arguments[modelImportAllIndex + 1], output, checks);
-                if (!importOnly)
+                if (!importOnly && !glbOutputOnly)
                 {
                     AddSample(1);
                     Check(!workspace.Document.IsEmpty && workspace.CanUndo && projection.Points.Length > 0, "Sample did not use the command path");
@@ -121,18 +124,20 @@ namespace NyaForge.UnityRuntime
                 }
             }
             catch (Exception e) { failure = e.ToString(); Debug.LogException(e); }
-            if (importOnly)
+            if (importOnly || glbOutputOnly)
             {
-                string importScreenshot = Path.Combine(output, "import-only.png");
-                yield return WorkbenchCapture.Write(GetComponent<UnityEngine.UIElements.UIDocument>(), camera, importScreenshot,
+                string probeScreenshot = Path.Combine(output, glbOutputOnly ? "glb-output-only.png" : "import-only.png");
+                yield return WorkbenchCapture.Write(GetComponent<UnityEngine.UIElements.UIDocument>(), camera, probeScreenshot,
                     error => { if (error != null) failure = (failure ?? "") + "\n" + error; });
-                checks.Add("import-only probe: selected model published without export or all-mesh verification");
+                checks.Add(glbOutputOnly
+                    ? "GLB-output-only probe: selected model published and standard skinned GLB written without VRM or all-mesh verification"
+                    : "import-only probe: selected model published without export or all-mesh verification");
                 var importReport = new VerificationReport
                 {
                     passed = failure == null, failure = failure, unityVersion = Application.unityVersion,
                     graphicsDevice = SystemInfo.graphicsDeviceName, checks = checks.ToArray(),
                     bakeManifests = Array.Empty<string>(), graphBakeManifests = Array.Empty<string>(),
-                    screenshot = importScreenshot, width = Screen.width, height = Screen.height,
+                    screenshot = probeScreenshot, width = Screen.width, height = Screen.height,
                     triangles = workspace?.Evaluate()?.TriangleCount ?? 0
                 };
                 File.WriteAllText(Path.Combine(output, "report.json"), JsonUtility.ToJson(importReport, true));
