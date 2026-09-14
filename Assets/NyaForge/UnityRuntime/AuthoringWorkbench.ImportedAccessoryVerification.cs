@@ -216,7 +216,17 @@ namespace NyaForge.UnityRuntime
                 Check(clothingPackage.ObjectId == accessoryObjectId && clothingPackage.DocumentId == workspace.Document.DocumentId &&
                     clothingPackage.StateHash == workspace.Document.StateHash && clothingPackage.Mesh.TopologyHash == clothingMesh.TopologyHash,
                     "Selected clothing package did not pin the active object, document and mesh topology");
-                checks.Add("selected skin-bound accessory exports a self-contained clothing package with stable object/document hashes");
+                var authoredClothingGraph = workspace.Document.ActiveObject.Graph;
+                var authoredClothingSkeleton = authoredClothingGraph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.Skeleton)?.Skeleton;
+                var authoredClothingBinding = authoredClothingGraph.Nodes.Values.FirstOrDefault(node => node.TypeId == BuiltinNodes.SkinBind)?.Binding;
+                Check(authoredClothingSkeleton != null && authoredClothingBinding != null,
+                    "Selected clothing graph lost its authored skeleton or binding before package verification");
+                var expectedPackageSkeleton = SkeletonBindingSubset.ForBinding(authoredClothingSkeleton, authoredClothingBinding);
+                Check(clothingPackage.Skeleton.ContentHash == expectedPackageSkeleton.ContentHash &&
+                    clothingPackage.Skeleton.Bones.Count == expectedPackageSkeleton.Bones.Count &&
+                    clothingPackage.Binding.SkeletonHash == clothingPackage.Skeleton.ContentHash,
+                    "Selected clothing package did not retain exactly the weighted bones and their ancestors");
+                checks.Add("selected skin-bound accessory exports a self-contained clothing package with stable object/document hashes and a weighted-bone skeleton subset");
                 string skinExport = ProjectExportService.Export(workspace, workspace.InstanceId, workspace.Document.DocumentId,
                     workspace.Document.DocumentRevision, Path.Combine(skinProject, "exports", "native-skin")).ManifestPath;
                 Check(File.Exists(skinExport), "Skin-bound accessory native export was not published");

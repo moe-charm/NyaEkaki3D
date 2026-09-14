@@ -2858,3 +2858,9 @@ Coreは **508 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForg
 `Tools/Test-NyaForgeRealClothing.ps1`へ、Bridgeへ渡す前の`skeleton.nyaforge.bin`ヘッダー（NYRS、version 1、1〜256本）検査と骨数表示を追加した。古いpackageを誤って受入へ進めず、実モデル一周のログだけで必要骨数を確認できる。既存のmanifest／GLB／binding hash検査とUnity Bridge検証はそのまま維持する。
 
 追加の実行結果: 骨sidecar検査を含む`Test-NyaForgeRealClothing.ps1`を再実行し、`Clothing skeleton: 2 bones`、Player PASS、Unity Bridge PASSを確認した。最新artifactは`Artifacts/Authoring-20260914-145454-d4fa2141c07c4d34b81bb68cd2bf2cca`、receiverは`Artifacts/BridgeReceiver-20260914-145739-335-6c3bd4bb63f54291946d18b73ac6d7bd`。
+
+# 2026-09-14 Player衣装package subset受入を強化
+
+Authoring suiteの実衣装package検査へ、現在の衣装graphから`SkeletonBindingSubset.ForBinding`を再計算し、package側skeleton hash・骨数・binding skeleton hashが一致することを追加した。これで不要骨の削減が実Player経路でも回帰する。
+
+`Builds/BoneSubsetV3/NyaForge.exe`（build log `Logs/build-player-20260914-150122-506.log`）で実RadDollV3を再実行し、Player **93 checks PASS**。subset検査を含むcheck文字列を`Artifacts/Authoring-20260914-150145-eb5a4a651a244b0b9eee01b6106f4918/report.json`へ記録した。`Clothing skeleton: 2 bones`の事前検査後、Unity **2022.3.22f1 Bridge**もPASS（`Artifacts/BridgeReceiver-20260914-150422-168-20bf09b7f9aa48b2aa7d96cb52c872a0/bridge-report.json`）。
