@@ -2886,3 +2886,7 @@ Unity **2022.3.22f1** Bridgeを再実行し、適用・hash／sidecar・ownershi
 全mesh instance取込時に同じglTF imageがmeshごとに複製されないよう、1回の取込操作で使う`GlbImportImageCache`を追加した。公開APIの画像bytesは従来どおり防御コピーのまま、内部の不変encoded payloadだけをmesh間で共有する。Coreへ2つのmesh resourceが同一画像bytesを参照する回帰を追加し、**509 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-0c1f59d41e1c41e4935cdf02239d9274`）。
 
 `Builds/BoneSubsetV4/NyaForge.exe`でprivate実RadDollV3 VRMを再実行し、Player **93 checks PASS**、衣装skeleton **2 bones**、Unity **2022.3.22f1** Bridge PASSを確認した。証跡はPlayer `Artifacts/Authoring-20260914-151706-7104cbc828634b7b908141762f6a7604/report.json`、Bridge `Artifacts/BridgeReceiver-20260914-151939-562-a960367cb1c14d8a82878419d6aa0dda/bridge-report.json`。今回の共有は取込時の一時重複を減らす設計で、実モデルのheap削減量は同一条件の再計測が必要なため、軽量性の最終合格とは扱わない。
+
+# 2026-09-14 画像payload共有後の実メモリ再計測
+
+`Builds/BoneSubsetV4/NyaForge.exe`でprivate RadDollV3 VRMの全mesh取込＋Save/Open／GLB／VRM1／衣装package suiteを外部サンプリングした。Playerは`Artifacts/Authoring-20260914-152215-d7a276d57e324107b92aed4695ce22e8/report.json`でPASSしたが、working set peak **3,667MB**、private bytes peak **4,492.3MB**（30 samples）だった。前回の観測値と条件・OS状態が完全一致しないため共有キャッシュの削減量は断定せず、全mesh一括取込の軽量性は未達として扱う。通常の1候補編集を全mesh経路から分離すること、取込中のgraph／Unity評価キャッシュを段階化することを次の性能課題にする。public repositoryへprivate素材は追加していない。
