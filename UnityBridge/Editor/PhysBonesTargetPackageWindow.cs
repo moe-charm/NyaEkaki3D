@@ -23,6 +23,7 @@ namespace NyaForge.UnityBridge.Editor
         readonly Dictionary<string, Transform> boneBindings = new Dictionary<string, Transform>(StringComparer.Ordinal);
         readonly Dictionary<int, List<Component>> colliderBindings = new Dictionary<int, List<Component>>();
         bool managedOnly;
+        Vector2 windowScroll;
         Vector2 boneScroll;
         string status = "";
         MessageType statusType = MessageType.Info;
@@ -35,6 +36,7 @@ namespace NyaForge.UnityBridge.Editor
 
         void OnGUI()
         {
+            windowScroll = EditorGUILayout.BeginScrollView(windowScroll);
             EditorGUILayout.LabelField("NyaForge PhysBones target", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox("target packageを読み込み、avatar rootとstable BoneIdを明示対応してからSDK componentへ適用します。名前による自動対応は行いません。", MessageType.Info);
 
@@ -64,6 +66,7 @@ namespace NyaForge.UnityBridge.Editor
             if (package == null)
             {
                 if (!string.IsNullOrEmpty(status)) EditorGUILayout.HelpBox(status, statusType);
+                EditorGUILayout.EndScrollView();
                 return;
             }
 
@@ -146,6 +149,7 @@ namespace NyaForge.UnityBridge.Editor
             }
             if (!ready) EditorGUILayout.HelpBox("割当を保存／適用できません: " + validation.Summary, MessageType.Warning);
             if (!string.IsNullOrEmpty(status)) EditorGUILayout.HelpBox(status, statusType);
+            EditorGUILayout.EndScrollView();
         }
 
         IEnumerable<BoneDefinition> RequiredBones()

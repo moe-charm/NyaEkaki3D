@@ -92,3 +92,13 @@ Unity 2022.3.22f1の最小サイズ相当の衣装受け取りウィンドウで
 - [ ] avatar移動／回転／scale、更新／削除Undo、VRChat Build & Test
 
 今回の実ウィンドウ確認はsynthetic packageのUI到達性に限定する。実衣装の見た目やVRChat受入へは読み替えない。
+
+# 2026-09-15 UNITY-UI-02: PhysBones受け取り操作の到達性
+
+PhysBones target package受け取り画面にも、stable bone一覧とcollider group欄が下部の保存／診断／適用操作を押し出す可能性があった。`UnityBridge/Editor/PhysBonesTargetPackageWindow.cs`へウィンドウ全体の縦スクロールを追加し、最小サイズでもpackage検証、割当保存／読込、事前診断、component作成／更新へ到達できる構造に揃えた。骨一覧内部の既存スクロールは維持している。
+
+- [x] EditorWindowコードへ全体スクロールを追加
+- [ ] Unity実EditorWindowで実packageを読み込み、collider groupを含む下部操作を目視確認
+- [ ] VRChat SDK実環境でPhysBones適用結果を確認
+
+Core／Bridgeの自動回帰はコード変更後に再実行する。実SDK・実avatarの見た目とVRChat受入は別カードとして残す。

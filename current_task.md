@@ -3681,3 +3681,13 @@ Unity 2022.3.22f1の実EditorWindowで、衣装package読込・avatar root指定
 - 公開境界: privateのRadDollV3素材、Unity SDK、probe sceneは公開ツリーへ追加していない。privateコピーは`private/`のignore対象。
 
 残りの手動受入は、実RadDollV3衣装を使った全周fit・weight・材質、移動／回転／scale済みavatarへの適用、更新／削除Undo、VRChat Build & Testである。今回の修正はUI操作到達性を解決するもので、これらの実機受入を代替しない。
+
+# 2026-09-15 UNITY-UI-02: PhysBones受け取り操作の到達性
+
+PhysBones target package受け取り画面にも、stable bone一覧とcollider group欄が下部の保存／診断／適用操作を押し出す可能性があった。`UnityBridge/Editor/PhysBonesTargetPackageWindow.cs`へウィンドウ全体の縦スクロールを追加し、最小サイズでもpackage検証、割当保存／読込、事前診断、component作成／更新へ到達できる構造に揃えた。骨一覧内部の既存スクロールは維持している。
+
+- [x] EditorWindowコードへ全体スクロールを追加
+- [ ] Unity実EditorWindowで実packageを読み込み、collider groupを含む下部操作を目視確認
+- [ ] VRChat SDK実環境でPhysBones適用結果を確認
+
+Core／Bridgeの自動回帰はコード変更後に再実行する。実SDK・実avatarの見た目とVRChat受入は別カードとして残す。
