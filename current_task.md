@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10Q: V39実RadDollV3衣装package一周
+
+privateのRadDollV3 VRM候補を`PerformanceV39`へ渡し、全mesh取込、EditMesh、native Save/Open、GLB／VRM出力、衣装package生成、Unity **2022.3.22f1** Bridge適用まで実行した。Authoring **93 checks PASS**（`Artifacts/Authoring-20260914-111811-e062516475844dda86104aef8211faf1/report.json`）、Bridge **16 checks PASS**（`Artifacts/BridgeReceiver-20260914-112041-541-fa47513ae1124c099583c27acb0c6530/bridge-report.json`）。packageは同Authoring artifact内の`imported-accessory-skin-project/exports/clothing-20260914-022018-bbcb57/skinned-clothing.nyaforge.json`へ生成された。
+
+これは実ファイルの自動受け渡し・保存再開・receiver smokeであり、実EditorWindowの手動fit、全周の貫通ゼロ・見た目、VRChat Build & Test／実機表示、長時間編集を完了扱いしない。
+
 ## 2026-09-14 NF-V1-10P: 現行HEADテストスイープ
 
 現行`main`のCore実行を再確認し、**506 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-0b8c393ba49c4ce0bb3704fc653b7d63`）だった。MCP transport suiteもnamed-pipe／stdio／capture metadataの**PASS**、WindowsPicker suiteもnative cancelと日本語・空白・アポストロフィ pathの**2/2 PASS**を確認した。これは.NET／Windows APIの自動検証であり、実EditorWindowの長時間・実VRChat受入を満たすものではない。
