@@ -1,5 +1,11 @@
 # Nya Ekaki 3D — 現在のタスク（2026-09-14 再計画）
 
+## 2026-09-14 NF-V1-10I: source-skin取込のmesh再利用
+
+skinned取込後にsource-skinを復元する際、同じGLB meshを静的rootへ再構築していた。`GlbSourceSkinImporter.ReadDataFromDocument`を追加し、Workbenchは既にデコード済みのdisplay meshへsource-spaceのnode frame・inverse-bind・weightだけを結び付けるようにした。公開`Read` APIのstandalone mesh結果とsource hash／topology検証は維持する。変更は`14547f0`。
+
+Coreは**506 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-ac41363e3e0c41728afe928dd505f6b1`）。Unity `6000.4.3f1`のV38 Player build（`Logs/build-player-20260914-104618-659.log`）とprivate RadDollV3候補のAuthoring suiteも**PASS**（`Artifacts/Authoring-20260914-104641-a5d1513fa5e2484fa4d6143cd7f8e167/report.json`）。Unity `2022.3.22f1` Bridge受け取りも**PASS**（`Artifacts/BridgeReceiver-20260914-104842-320-b4c07288801d4f50ae982b048a01b452/bridge-report.json`）。実アバターの同一条件heap比較、実EditorWindow操作、全周fit／貫通・見た目、VRChat実機は未受入として残す。
+
 ## 2026-09-14 NF-V1-10H: PerformanceV37実RadDollV3候補の再計測
 
 最新の`Builds/PerformanceV37/NyaForge.exe`へprivateのRadDollV3 VRMを候補1体として渡し、通常のAuthoring suite（candidate選択、EditMesh、native Save/Open、skinned GLB／VRM1出力）を再実行した。Player reportは`passed: true`（`Artifacts/Authoring-20260914-104031-e91e8d0d50d3492a9c88bc42d5331880/report.json`）。外部10秒サンプリングでは実行約110.3秒、working set peak **2,377.9MB**、private bytes peak **3,063.6MB**（`Artifacts/Authoring-Memory-20260914-104031/memory-measurement.json`）だった。
