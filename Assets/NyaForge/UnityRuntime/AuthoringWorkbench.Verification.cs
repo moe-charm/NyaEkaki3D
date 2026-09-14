@@ -243,6 +243,7 @@ namespace NyaForge.UnityRuntime
                 VerifyPhysBonesTargetStatus(output, checks);
                 VerifyGraphExports(output, checks, graphExports);
                 VerifyWorkModeNavigation(checks);
+                VerifyMorphTargetIdentity(checks);
                 VerifyShapeCreationInputs(checks);
                 VerifyStateOwnership(checks);
                 TopologyVerification.Verify(output, checks);
