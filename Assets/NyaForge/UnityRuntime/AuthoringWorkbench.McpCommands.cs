@@ -64,13 +64,9 @@ namespace NyaForge.UnityRuntime
                 (command.Operations[0].Kind == "history.undo" || command.Operations[0].Kind == "history.redo"))
             {
                 // Metadata attachments are restored by the command history too.
-                // Re-read the graph-keyed VRM rig/expression/Spring tables before
-                // the common refresh so the active graph and subsequent VRM
-                // export never keep a stale session from the pre-Undo state.
-                RefreshImportedVrmSessionsFromWorkspace();
-                RefreshSecondaryMotionAttachmentFromWorkspace();
-                RefreshReferenceProtectionFromWorkspace();
-                RefreshDeliveryAllowlistFromWorkspace();
+                // Rebuild every attachment-backed cache before the common
+                // refresh so MCP has the same state as the GUI path.
+                RefreshMetadataFromWorkspace();
             }
             selection.RemoveWhere(i=>i<0 || i>=projection.Points.Length);selectionContext.NotifyChanged();projection.Select(selection);Refresh();
             return result;

@@ -4136,3 +4136,15 @@ MCPの`history.undo`／`history.redo`後に、workspaceのattachment bytesだけ
 - Windows Player build: `Builds/McpMetadataRefreshV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-095556-250.log`）
 - Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-095625-9d47e2d3351543b0a7c11dbce13cdf07/report.json`）
 - 境界: MCP実sidecarからのVRM表情／Spring Undo/Redo目視、実EditorWindowのDPI／IME、実VRChat SDK／実機表示は別受入として未完了。
+
+# 2026-09-15 MOD-06: attachment metadata同期境界の共通化
+
+GUIとMCPの履歴処理で個別に並んでいたrig／VRM expression／Spring／参照保護／納品対象の再読込を、`AuthoringWorkbench.MetadataRefresh.cs`の`RefreshMetadataFromWorkspace`へ集約した。Undo/Redoでdocumentとattachmentが同時に戻るとき、両経路が同じ順序でインメモリキャッシュを再構築してからPanel更新・VRM出力へ進む。保存形式、MCP wire、attachment codec、編集commandの意味は変更していない。コードマップにも責務を追記した。
+
+- 追加: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.MetadataRefresh.cs`（`.meta`を含む）
+- 接続: `AuthoringWorkbench.Execution.cs`, `AuthoringWorkbench.McpCommands.cs`
+- 設計記録: `docs/Authoring-Code-Map.md`
+- Player build: `Builds/MetadataBoundaryV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-100143-693.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-100209-925f3381c011428da8ec7ebbddb9edc6/report.json`）
+- Core: 直近 **515 passed / 0 failed**（MetadataRefreshはUnityRuntimeのみ）
+- 境界: 実VRM expression／Springを外部MCPでUndo/Redoする目視、実EditorWindowのDPI／IME、実Unity SDK／VRChat実機は別受入として未完了。
