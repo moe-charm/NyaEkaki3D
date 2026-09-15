@@ -4159,3 +4159,13 @@ GUIとMCPの履歴処理で個別に並んでいたrig／VRM expression／Spring
 - clothing package: `Artifacts/Authoring-20260915-100811-909ac0e8d1c1407b9e393541fdbb9372/real-clothing-project/exports/clothing-20260915-010955-4556a5/skinned-clothing.nyaforge.json`
 - 実行ログには、衣装派生・保存・`skinned-clothing.nyaforge.json`出力・`NYAFORGE_AUTHORING_CHECK PASS`を確認した。
 - 境界: 自動Playerでの実モデル経路確認であり、実EditorWindowのDPI／IME／Explorer全周fit・貫通・材質見た目、Unity／VRChat実機、販売品質の合格には読み替えない。private素材・生成物は公開ツリーへ追加していない。
+
+# 2026-09-15 MANUAL-12: 現行Playerでの実Explorer取込・形状追加・保存
+
+`Builds/ManualCurrentV1/NyaForge.exe`を`@oai/sky`で起動し、制作画面を最大化して実操作した。上部の`モデルを追加`からWindowsのファイルダイアログを開き、privateの`RadDollV3_VRM.vrm`を選択してEnterで確定した。候補欄でmesh 0／skin 0を確認し、`選択候補を取り込む`をクリックするとviewportにモデルが表示され、statusにmesh 0・bone 171・weight 2990と診断が出た。続けて`基本形状を追加`から既定のリング（チョーカー）を追加し、viewportに編集可能なリングと対象モデルを表示した。上部の`保存`を実行し、statusにAppData配下の制作フォルダへの保存完了が表示された。`ビューアーに戻る`→`制作へ`の画面遷移でも保存済み状態と対象表示が維持され、終了時に未保存確認は出なかった。最後にPlayerを閉じ、残留ウィンドウがないことを確認した。
+
+- Player: `Builds/ManualCurrentV1/NyaForge.exe`（Unity 6000.4.3f1）
+- 手動確認: **PASS**（実Explorer選択、候補確定、skin取込、基本形状追加、保存、Viewer／Authoring遷移、終了）
+- 確認できた表示: 最大化時の取込欄・寸法入力・頂点編集・Rig／Morph／出力の作業欄を右controlsで確認。長い説明文はパネル内で折返し、横方向の切れは見られなかった。
+- 未確認: DPI 150/200%、IME入力、全周fit・貫通・材質見た目、Unity／VRChat実機、実package受け取り。自動Player／Bridgeの合格や今回の手動保存を販売品質へ読み替えない。
+- private素材・手動制作データ・生成Playerは公開ツリーへ追加していない。
