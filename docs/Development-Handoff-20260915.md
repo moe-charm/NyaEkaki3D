@@ -20,8 +20,8 @@
 
 ## 検証済み証跡
 
-- Core: **520 passed / 0 failed**（sparse POSITION／weight／inverse-bind回帰を含む）
-  - `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-0f02391e33fb4f5e9f86beb0585aff09`
+- Core: **521 passed / 0 failed**（sparse POSITION／weight／inverse-bindと、疎skinned GLBのwriter→再取込往復を含む）
+  - `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-772c519cc41044cc9adeeffc87677e83`
 - Player build: Unity **6000.4.3f1**
   - `Builds/SparseMatrixV1/NyaForge.exe`
   - `Logs/build-player-20260915-175918-288.log`

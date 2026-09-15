@@ -1,3 +1,11 @@
+# 2026-09-15 I04-A-SPARSE-02: sparse skinned GLBの出力・再取込往復を回帰化
+
+疎`WEIGHTS_0`を含むGLBを`GlbSkinImporter`で読み、実際の出力writerへ渡してから再び`GlbSkinImporter`で読み戻す回帰を追加した。頂点数・三角形数・全頂点座標と、骨名対応のウェイト値を比較し、疎入力がdense出力へ materialize された後も意味が変わらないことを固定した。
+
+- 変更: `Tests/Authoring.Core/GlbExportServiceTests.cs`
+- Core: **521 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-772c519cc41044cc9adeeffc87677e83`）
+- 境界: 合成疎fixtureのwriter往復を確認したもの。実RadDollV3の入力が疎形式であることや、Unity Editor／VRChat実機の表示・負荷は示さない。
+
 # 2026-09-15 REAL-CLOTHING-SPARSE-01: 疎accessor対応後の実RadDollV3一周を確認
 
 環境移行前の停止確認として、最新の`SparseMatrixV1` Playerへ実RadDollV3 VRMを渡し、実モデル取込から衣装作成・編集・保存／再読込・標準skinned GLB／衣装package出力までを一周した。検証スクリプトは **PASS** で終了し、疎accessor対応後も実素材のauthoring経路が壊れていないことを確認した。

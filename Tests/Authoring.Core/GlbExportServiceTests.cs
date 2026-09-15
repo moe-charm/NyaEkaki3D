@@ -188,6 +188,48 @@ internal static partial class Program
             Near(2f, retainedSkin.InverseBindMatrices[0].TransformVector(new Vec3(1, 0, 0)).X);
         });
 
+        Test("sparse skinned GLB import survives authored export and reimport", () =>
+        {
+            // The fixture stores the second vertex's WEIGHTS_0 row as a
+            // sparse replacement.  Import it through the same public path a
+            // Workbench project uses, then send the materialized authored
+            // values through the interchange writer and read them back.
+            var sourceBytes = BuildSparseWeightGlb();
+            var imported = GlbSkinImporter.Read(sourceBytes);
+            var pose = PoseSet.Create(imported.Skeleton,
+                imported.Skeleton.Bones.Select(bone => new BonePose(
+                    bone.BoneId, PoseTransform.FromTranslation(bone.Head))));
+            var skinned = new GlbExportService.SkinnedObject
+            {
+                Mesh = new GlbExportService.MeshObject { Mesh = imported.Mesh, Morphs = imported.Morphs, Name = "sparse-roundtrip" },
+                Skeleton = imported.Skeleton,
+                Binding = imported.Binding,
+                Pose = pose
+            };
+            var exported = GlbWriter.Build(new[] { skinned.Mesh }, skinned, GlbExportProfile.SkinnedGeometry);
+            var roundtrip = GlbSkinImporter.Read(exported);
+            Equal(imported.Mesh.VertexCount, roundtrip.Mesh.VertexCount);
+            Equal(imported.Mesh.TriangleCount, roundtrip.Mesh.TriangleCount);
+            for (int i = 0; i < imported.Mesh.VertexCount; i++)
+            {
+                Near(imported.Mesh.Positions[i].X, roundtrip.Mesh.Positions[i].X);
+                Near(imported.Mesh.Positions[i].Y, roundtrip.Mesh.Positions[i].Y);
+                Near(imported.Mesh.Positions[i].Z, roundtrip.Mesh.Positions[i].Z);
+            }
+            var expected = imported.Binding.Weights[1]
+                .Select(weight => new { Name = imported.Skeleton.ById[weight.BoneId].Name, weight.Weight })
+                .OrderBy(weight => weight.Name, StringComparer.Ordinal).ToArray();
+            var actual = roundtrip.Binding.Weights[1]
+                .Select(weight => new { Name = roundtrip.Skeleton.ById[weight.BoneId].Name, weight.Weight })
+                .OrderBy(weight => weight.Name, StringComparer.Ordinal).ToArray();
+            Equal(expected.Length, actual.Length);
+            for (int i = 0; i < expected.Length; i++)
+            {
+                Equal(expected[i].Name, actual[i].Name);
+                Near(expected[i].Weight, actual[i].Weight);
+            }
+        });
+
         Test("multi-mesh skinned GLB export shares one skeleton", () =>
         {
             var skeleton = new SkeletonDefinition(new[] { new BoneDefinition(GraphId(), "Root", "", new Vec3(), new Vec3(0, .1f, 0)) });
