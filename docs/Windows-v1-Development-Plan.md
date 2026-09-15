@@ -130,3 +130,7 @@ Paintと表示textureで同じ解像度・更新頻度を必要とするかを09
 2026-09-15追記: 空projectの`モデルを開く…`は、Foldoutの表示値だけでなく表示ゲートを解除する共通処理へ統一した。ファイル選択後は候補欄のレイアウト確定を待って右controlsを追従させる。実ウィンドウで候補欄が到達可能になることを確認したが、実RadDollV3の取込・fit・材質・Unity／VRChat受入は別カードとして残す（詳細は[current_task](../current_task.md) GUI-16）。
 
 2026-09-15追記: 最新実RadDollV3自動一周のPlayer reportは95 checks PASS、生成skinned clothing packageをUnity 2022.3.22f1 Bridgeへ渡した受け取り検証は16 checks PASS。座標変換・BoneId割当・更新／削除Undo・材質チャンネルまで自動経路を確認した。実EditorWindowの全周fit・貫通・材質見た目、VRChat実機は引き続き外部受入E03〜E08で確認する（詳細は[current_task](../current_task.md) REAL-CLOTHING-09）。
+
+# 2026-09-15 WINDOWS-CANDIDATE-01追記: 標準候補の現行化
+
+`Builds/Windows/NyaForge.exe`を現行mainで再ビルドし、標準起動先を古い候補から更新した。Core **515 passed / 0 failed**、Authoring startup PASS、Navigation PASS、private RadDollV3の取込→全mesh→チョーカー／頂点編集→skin-bind→native Save/Open→GLB／VRM1→衣装packageが **97 checks PASS**、Unity 2022.3.22f1 Bridgeが **16 checks PASS**。詳細なartifactと検証境界は`current_task.md`の`WINDOWS-CANDIDATE-01`へ記録した。実EditorWindowのDPI／IME、全周fit・貫通・材質見た目、VRChat Build & Test／実機表示は引き続き外部受入として残す。
