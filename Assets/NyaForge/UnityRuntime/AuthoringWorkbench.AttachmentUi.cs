@@ -57,6 +57,7 @@ namespace NyaForge.UnityRuntime
             attachmentPanel.Add(accessoryFitSummary);
             accessoryFitOffsetMm = Number(attachmentPanel, "avatar表面からのfit offset (mm)", 2, "object-surface-fit-offset-mm");
             accessoryFitMaxDistanceMm = Number(attachmentPanel, "surface fit最大距離 (mm)", 50, "object-surface-fit-max-distance-mm");
+            accessorySurfaceRegionRadiusMm = Number(attachmentPanel, "Bone近傍面の選択半径 (mm)", 60, "object-surface-region-radius-mm");
             accessorySurfaceTriangleIds = new TextField("avatar面ID（カンマ区切り・空欄=全て）") { name = "object-surface-triangle-ids" };
             accessorySurfaceTriangleIds.tooltip = "avatarのrest meshを三角形の通し番号で限定します。面IDはsubmesh順に0から数え、空欄なら全三角形を対象にします。fitとweightで同じ領域を使います。";
             attachmentPanel.Add(accessorySurfaceTriangleIds);
@@ -66,6 +67,9 @@ namespace NyaForge.UnityRuntime
             attachmentPanel.Add(accessorySurfacePickMode);
             accessoryClearSurfaceSelection = Button("avatar面領域を解除（全三角形）", ClearSurfaceTriangleSelection, "object-surface-clear-selection");
             attachmentPanel.Add(accessoryClearSurfaceSelection);
+            accessorySelectBoneRegion = Button("選択BoneId近傍の面を自動選択", SelectBoneSurfaceRegion, "object-surface-select-bone-region");
+            accessorySelectBoneRegion.tooltip = "選択中のBoneIdのrest骨segmentから指定半径以内のavatar面を選びます。fit／weightへ共通適用されます。";
+            attachmentPanel.Add(accessorySelectBoneRegion);
             accessoryClothingVertexIds = new TextField("衣装頂点ID（カンマ区切り・空欄=全て）") { name = "object-surface-clothing-vertex-ids" };
             accessoryClothingVertexIds.tooltip = "衣装EditMeshの頂点IDを限定します。空欄なら全頂点を対象にし、指定時は未選択頂点の位置・weightを保持します。";
             attachmentPanel.Add(accessoryClothingVertexIds);
@@ -77,7 +81,7 @@ namespace NyaForge.UnityRuntime
             accessoryPoseCopy = Button("avatarの現在poseを衣装へコピー", CopyAvatarPose, "object-skin-pose-copy");
             attachmentPanel.Add(attachmentApply); attachmentPanel.Add(attachmentRemove); attachmentPanel.Add(accessorySkinBind); attachmentPanel.Add(accessoryPolygonMaterialize); attachmentPanel.Add(accessoryAutoWeight); attachmentPanel.Add(accessorySurfaceWeight); attachmentPanel.Add(accessorySurfaceFit); attachmentPanel.Add(accessorySurfaceInspect); attachmentPanel.Add(accessoryPoseCopy);
             var helpPanel = new Foldout { text = "操作説明（詳細）", value = false, name = "object-attachment-help" };
-            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。Polygon造形をskin衣装へ派生すると、元のPolygon graphを残したまま編集結果をMeshSourceへ確定し、新しい衣装objectを作成します。自動weight初期化（骨近傍）はrest骨segmentへの距離から最大4本を選ぶ簡易初期値です。avatar表面が評価できる場合は、表面上の最近三角形から既存avatar weightを補間するavatar表面方式を推奨します。avatar面IDを指定するとfitとweightの対象面を同じ領域へ限定できます。衣装頂点IDを指定すると未選択頂点の位置・weightを保持できます。空欄は全てを対象にします。どちらも必ず動作確認・Rig panelで手修正してください。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。fit状態の測定では最近面の法線に対する裏側候補も表示しますが、交差や貫通ゼロを保証する検査ではありません。");
+            var help = new Label("明示したstable BoneIdへ剛体追従します。衣装skin-bindは選択avatarの骨格をコピーし、全頂点をRootへ初期化してRig panelでweight paintできます。Polygon造形をskin衣装へ派生すると、元のPolygon graphを残したまま編集結果をMeshSourceへ確定し、新しい衣装objectを作成します。自動weight初期化（骨近傍）はrest骨segmentへの距離から最大4本を選ぶ簡易初期値です。avatar面が評価できる場合は、表面上の最近三角形から既存avatar weightを補間するavatar表面方式を推奨します。Bone近傍面の自動選択は名前に依存せず、選択中BoneIdと半径からfit／weightの領域を作ります。avatar面IDを指定するとfitとweightの対象面を同じ領域へ限定できます。衣装頂点IDを指定すると未選択頂点の位置・weightを保持できます。空欄は全てを対象にします。どちらも必ず動作確認・Rig panelで手修正してください。skin-bind後はavatarの現在poseをボタンで衣装へコピーして保存できます。名前で推測せず、装着offsetは基準姿勢のbone localメートルで保存します。fit状態の測定では最近面の法線に対する裏側候補も表示しますが、交差や貫通ゼロを保証する検査ではありません。");
             help.style.whiteSpace = WhiteSpace.Normal; helpPanel.Add(help); attachmentPanel.Add(helpPanel);
             parent.Add(attachmentPanel);
         }

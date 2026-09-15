@@ -1,3 +1,23 @@
+# 2026-09-15 FIT-REGION-BONE-02: 実RadDollV3で自動面領域の一周を確認
+
+新しいBoneId基準面領域ボタンを検証用Playerにも接続し、実RadDollV3のチョーカー工程でNeckのstable BoneIdを選択した状態から半径60mmのavatar面を抽出できることを確認した。抽出面IDは既存のfit／表面weight共通入力へ渡り、衣装の明示Neck skin-bind、native Save/Open、GLB／VRM1、衣装package、Unity Bridgeの後続を壊さなかった。
+
+- Player `Builds/BoneRegionV2/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-161851-358.log`）
+- Core **517 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-27f877339ce54ea79701ba6f73ba2bb9`）
+- 実モデル Player **PASS 98 checks**（`Artifacts/Authoring-20260915-161920-14bc733c80f74858a4172454a1680771/report.json`）
+- Unity Bridge **PASS 16 checks**（`Artifacts/BridgeReceiver-20260915-162235-598-5851bc45ea8f48da9a27a73858cd1be6/bridge-report.json`）
+- 未完了: 自動抽出した範囲でfitを適用した外観、50mm以内・裏側候補0、正面／背面／左右・pose、実EditorWindow／VRChat受入。自動抽出は候補領域の作成であり、交差ゼロの証明ではない。
+
+# 2026-09-15 FIT-REGION-BONE-01: BoneId基準のavatar面領域自動選択
+
+チョーカーのfit範囲を実画面で手選択する際、首と衣装の重なりでavatar面クリックが安定しなかったため、選択中のstable BoneIdと半径からavatar rest meshの三角形領域を抽出する共通機能を追加した。骨名（Neckなど）をハードコードせず、Head・Tailのbone segmentから頂点または面中心が半径内に入る面をsubmesh順のflattened triangle IDで選ぶ。選択結果は既存のfit／表面weightへ同じ面IDで渡し、オレンジoverlay・要約・再計測要求も更新する。半径はmm入力（既定60mm）で、空領域や不正値は文書を変更せずエラー表示する。
+
+- 変更: `Assets/NyaForge/Authoring/Geometry/MeshSurfaceRegion.cs`、`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentUi.cs`、`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Attachments.cs`、`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentState.cs`
+- 回帰: `Tests/Authoring.Core/MeshSurfaceRegionTests.cs`（affine transform、flattened submesh ID、半径検証）を追加。Core **517 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-27f877339ce54ea79701ba6f73ba2bb9`）
+- Player: `Builds/BoneRegionV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-160621-128.log`）ビルド成功。
+- 実モデル一周: private RadDollV3で取込→頂点編集→Save/Open→GLB／VRM1→衣装package→Unity Bridgeを再実行。Player **PASS**（97 checks、`Artifacts/Authoring-20260915-160706-32f3d479cb07459da38df458e783ba91/report.json`）、Bridge **PASS**（16 checks、`Artifacts/BridgeReceiver-20260915-161250-743-c9ef8dc4cf47482d8b833e60ce6533da/bridge-report.json`）。
+- 未完了: 実画面でNeck半径を調整し50mm以内・裏側候補0を達成すること、正面／背面／左右・poseでの貫通確認、DPI／IME／長いパス、実Unity Editor／VRChat受入。自動領域抽出は面候補を作る補助であり、交差ゼロを保証しない。
+
 # 2026-09-15 ドキュメント同期: VRM意味情報診断とWindows v1残件
 
 # 2026-09-15 現行Windows候補のnative保存状態再開

@@ -73,6 +73,16 @@ namespace NyaForge.UnityRuntime
             var clothing = workspace.Document.ActiveObject;
             Check(clothing != null && clothing.ObjectId != avatarObjectId && clothing.Graph != null,
                 "Real clothing probe did not publish the skin clothing graph.");
+            // Exercise the same generic region selector exposed by the GUI.
+            // It is intentionally BoneId-based; the production path must not
+            // depend on a hard-coded "Neck" name.
+            accessorySurfaceRegionRadiusMm.SetValueWithoutNotify(60);
+            RefreshAttachmentControls();
+            SelectBoneSurfaceRegion();
+            var selectedSurfaceTriangles = SurfaceTriangleSelection()?.ToArray() ?? Array.Empty<int>();
+            Check(selectedSurfaceTriangles.Length > 0,
+                "Real clothing probe did not select avatar faces near the chosen BoneId.");
+            checks.Add("stable BoneId-based avatar surface region selection feeds fit and weight");
             var evaluation = clothing.EvaluateGraph();
             var edit = clothing.Graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.EditMesh);
             var bind = clothing.Graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);

@@ -104,6 +104,7 @@ internal static partial class Program
         RunSurfaceStrokeSamplerTests();
         RunSurfaceScreenCoverageTests();
         RunSurfaceCameraSnapshotTests();
+        RunMeshSurfaceRegionTests();
         RunSurfacePreparationQueueTests();
         RunMaterialGraphTests();
         RunMaterialBakeTests();

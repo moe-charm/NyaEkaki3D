@@ -111,7 +111,7 @@ namespace NyaForge.UnityRuntime
             {
                 attachmentStatus.text = "装着: graph objectを選択してください。";
                 RefreshAccessoryFitSummary();
-                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryPolygonMaterialize.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessorySurfaceInspect.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); accessoryUseSelectedVertices.SetEnabled(false); accessorySurfacePickMode.SetEnabled(false); accessoryClearSurfaceSelection.SetEnabled(false); return;
+                attachmentApply.SetEnabled(false); attachmentRemove.SetEnabled(false); accessorySkinBind.SetEnabled(false); accessoryPolygonMaterialize.SetEnabled(false); accessoryAutoWeight.SetEnabled(false); accessorySurfaceWeight.SetEnabled(false); accessorySurfaceFit.SetEnabled(false); accessorySurfaceInspect.SetEnabled(false); accessoryPoseCopy.SetEnabled(false); accessoryUseSelectedVertices.SetEnabled(false); accessorySurfacePickMode.SetEnabled(false); accessoryClearSurfaceSelection.SetEnabled(false); accessorySelectBoneRegion.SetEnabled(false); return;
             }
             var targets = workspace.Document.Objects.Where(item => item.ObjectId != workspace.Document.ActiveObjectId && item.Graph != null).ToArray();
             attachmentTargetIds.AddRange(targets.Select(item => item.ObjectId));
@@ -170,6 +170,7 @@ namespace NyaForge.UnityRuntime
             accessorySurfaceInspect.SetEnabled(canSurfaceFit);
             accessorySurfacePickMode.SetEnabled(canSurfaceFit);
             accessoryClearSurfaceSelection.SetEnabled(canSurfaceFit && !string.IsNullOrWhiteSpace(accessorySurfaceTriangleIds.value));
+            accessorySelectBoneRegion.SetEnabled(canSurfaceFit && skeleton != null && attachmentBoneIds.Count > 0);
             bool hasSkinPose = workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.SkinBind) &&
                 workspace.Document.ActiveObject.Graph.Nodes.Values.Any(item => item.TypeId == BuiltinNodes.Pose);
             accessoryPoseCopy.SetEnabled(target != null && skeleton != null && hasSkinPose);
@@ -471,6 +472,43 @@ namespace NyaForge.UnityRuntime
             RefreshAvatarSurfaceSelection();
             RefreshAccessoryFitSummary();
             SetStatus("avatar面領域を解除しました。fit／weightは全三角形を対象にします。");
+        }
+
+        void SelectBoneSurfaceRegion()
+        {
+            Try(() =>
+            {
+                int targetIndex = attachmentTarget.index;
+                if (targetIndex < 0 || targetIndex >= attachmentTargetIds.Count)
+                    throw new InvalidOperationException("面を選ぶavatarを指定してください。");
+                int boneIndex = attachmentBone.index;
+                if (boneIndex < 0 || boneIndex >= attachmentBoneIds.Count)
+                    throw new InvalidOperationException("面領域の基準にするBoneIdを選んでください。");
+                if (accessorySurfaceRegionRadiusMm == null || accessorySurfaceRegionRadiusMm.value <= 0f)
+                    throw new InvalidOperationException("Bone近傍面の選択半径は0より大きくしてください。");
+                var avatar = FindObject(attachmentTargetIds[targetIndex]);
+                var session = RigFor(avatar);
+                var skeleton = session == null || avatar == null ? null : TryResolveSkeleton(session, avatar.Graph);
+                if (skeleton == null || boneIndex >= skeleton.Bones.Count)
+                    throw new InvalidOperationException("選択avatarのskeletonを取得できません。");
+                var bind = avatar.Graph.Nodes.Values.SingleOrDefault(item => item.TypeId == BuiltinNodes.SkinBind && item.Binding != null);
+                if (bind == null) throw new InvalidOperationException("avatarへ有効なSkinBindがありません。");
+                var evaluation = EvaluateAttachmentTarget(avatar);
+                if (!evaluation.MeshInputs.TryGetValue(bind.NodeId, out var meshValue) || meshValue?.Mesh == null)
+                    throw new InvalidOperationException("avatarのrest mesh評価結果を取得できません。");
+                var bone = skeleton.Bones[boneIndex];
+                var triangleIds = MeshSurfaceRegion.SelectTrianglesNearBone(meshValue.Mesh, meshValue.Transform,
+                    bone.Head, bone.Tail, accessorySurfaceRegionRadiusMm.value / 1000f);
+                if (triangleIds.Length == 0)
+                    throw new InvalidOperationException("指定半径内にavatar面が見つかりません。半径を少し広げてください。");
+                selectedAvatarSurfaceTriangles.Clear();
+                foreach (var id in triangleIds) selectedAvatarSurfaceTriangles.Add(id);
+                accessorySurfaceTriangleIds.SetValueWithoutNotify(string.Join(",", triangleIds));
+                RefreshAvatarSurfaceSelection();
+                RefreshAccessoryFitSummary();
+                SetStatus(bone.Name + "近傍のavatar面を自動選択しました（" + triangleIds.Length.ToString(CultureInfo.InvariantCulture) + "面、半径 " +
+                    accessorySurfaceRegionRadiusMm.value.ToString("0.###", CultureInfo.InvariantCulture) + " mm）。fit／weightへ共通適用されます。");
+            });
         }
 
         bool SurfaceTrianglePickingActive => accessorySurfacePickMode != null && accessorySurfacePickMode.value && accessorySurfacePickMode.enabledSelf;

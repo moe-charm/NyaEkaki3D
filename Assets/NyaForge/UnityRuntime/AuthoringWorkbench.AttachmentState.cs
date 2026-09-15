@@ -17,12 +17,12 @@ namespace NyaForge.UnityRuntime
         DropdownField attachmentTarget;
         DropdownField attachmentBone;
         FloatField attachmentOffsetX, attachmentOffsetY, attachmentOffsetZ;
-        FloatField accessoryFitOffsetMm, accessoryFitMaxDistanceMm;
+        FloatField accessoryFitOffsetMm, accessoryFitMaxDistanceMm, accessorySurfaceRegionRadiusMm;
         TextField accessorySurfaceTriangleIds;
         TextField accessoryClothingVertexIds;
         Toggle accessorySurfacePickMode;
         readonly HashSet<int> selectedAvatarSurfaceTriangles = new HashSet<int>();
-        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPolygonMaterialize, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessorySurfaceInspect, accessoryPoseCopy, accessoryUseSelectedVertices, accessoryClearSurfaceSelection;
+        Button attachmentApply, attachmentRemove, accessorySkinBind, accessoryPolygonMaterialize, accessoryAutoWeight, accessorySurfaceWeight, accessorySurfaceFit, accessorySurfaceInspect, accessoryPoseCopy, accessoryUseSelectedVertices, accessoryClearSurfaceSelection, accessorySelectBoneRegion;
         readonly List<string> attachmentTargetIds = new List<string>();
         readonly List<string> attachmentBoneIds = new List<string>();
         string attachmentTargetChoice;
