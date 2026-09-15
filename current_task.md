@@ -1,5 +1,11 @@
 # 2026-09-15 ドキュメント同期: VRM意味情報診断とWindows v1残件
 
+# 2026-09-15 Windows標準candidate再検証: 実RadDollV3衣装一周
+
+現行main `69bed3d`から`Builds/Windows/NyaForge.exe`を再ビルドし、Core **515 passed / 0 failed**を再実行した。privateの`RadDollV3_VRM.vrm`を入力したPlayer Authoringは、取込・チョーカー生成／頂点編集・native Save/Open・標準skinned GLB／VRM 1.0出力・衣装package生成を含む **PASS**（`Artifacts/Authoring-20260915-111441-965632e9d6274b0badecf62de399d187/report.json`）。生成packageをUnity **2022.3.22f1** Bridgeへ渡した検証も **PASS**（`Artifacts/BridgeReceiver-20260915-111719-445-aa3b076eb92d4dda9afd832b6da6a880/bridge-report.json`）。
+
+これは最新ソースの自動Player／Bridge経路を標準candidateで再確認した証拠であり、実EditorWindowのDPI・IME・長いパス、衣装の全周fit・貫通・材質見た目、VRChat Build & Test／実機表示、未保持VRM意味payloadの完全変換を完了扱いしない。
+
 # 2026-09-15 Windows実画面スモーク: RadDollV3取込とチョーカー追加
 
 `Builds/ManualCurrentV1/NyaForge.exe`をWindowsデスクトップで起動し、実モデルの取込導線を確認した。`private/viewer-data/packs/avatar-raddollv3-local/RadDollV3_VRM.vrm`をファイル選択ダイアログから指定し、「全meshをまとめて取り込む」を実行すると、モデルがビューポートへ表示され、`10 objects`、`171 bone`、`humanoid 29`、`SpringBone 5 chain / 53 joint / 4 collider group`の取込状態が表示された。続けて「基本形状を追加」から種類「リング（チョーカー）」を選び、寸法入力を表示し、「この寸法で形状を追加」を実行できた。追加後は制作対象が未保存の基本形状へ切り替わり、チョーカー調整の案内がステータスへ出た。
