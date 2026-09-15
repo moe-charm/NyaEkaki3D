@@ -18,6 +18,7 @@
 | fit検査の受け渡し型 | `Assets/NyaForge/UnityRuntime/AttachmentSurfaceFitMeasurement.cs` | fit／clearanceの計測結果をUIとMCPへ渡す一時DTO。WorkbenchやDocumentへの参照を持たない |
 | GLB/VRMの取込案内 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Import.cs`, `AuthoringWorkbench.ModelImportGuidance.cs` | 利用者向けの手順説明と既存取込commandの接続。解析処理はImport serviceへ委譲 |
 | 保存と受け渡し | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ProjectOutput.cs` | native保存／開く、Explorer選択、GLB・Unity・衣装package・VRMの操作配置 |
+| 最近の制作を再開 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.RecentProject.cs`, `AuthoringWorkbench.PersistenceRefresh.cs` | 最後に正常保存したnative制作フォルダだけを小さなpointerへ記録し、manifestを検証して再開ボタンへ反映。pointerは便利情報であり、native `project.nyaforge.json`を正本とする |
 | 出力用source-skin変換 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ExportTransforms.cs` | inverse-bind／joint local transformをstable BoneId順へ揃え、GLB／VRM出力へ渡す。保存・出力service自体はUI partialへ複製しない |
 | AI接続 | `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.McpPanel.cs`, `AuthoringWorkbench.Mcp.cs`, `AuthoringWorkbench.McpCommands.cs`, `AuthoringWorkbench.McpObjectLabels.cs` | 接続欄・開始／停止の表示とpipe更新。MCP commandの実装は`McpCommands`等へ分離し、表示名更新は専用metadata serviceへ委譲 |
 | 共有文書とcommand service | `Assets/NyaForge/UnityRuntime/AuthoringWorkbenchSession.cs`, `AuthoringWorkbench.SessionVerification.cs` | live workspace、command service、読み込んだ保存先、保存未完了状態を同じ所有者から管理し、`StateChanged`をコマンドバーへ通知。Player回帰で同一参照を検査し、パネルごとの別履歴を禁止 |

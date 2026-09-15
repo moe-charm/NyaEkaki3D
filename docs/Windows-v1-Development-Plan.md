@@ -134,3 +134,5 @@ Paintと表示textureで同じ解像度・更新頻度を必要とするかを09
 # 2026-09-15 WINDOWS-CANDIDATE-01追記: 標準候補の現行化
 
 `Builds/Windows/NyaForge.exe`を現行mainで再ビルドし、標準起動先を古い候補から更新した。Core **515 passed / 0 failed**、Authoring startup PASS、Navigation PASS、private RadDollV3の取込→全mesh→チョーカー／頂点編集→skin-bind→native Save/Open→GLB／VRM1→衣装packageが **97 checks PASS**、Unity 2022.3.22f1 Bridgeが **16 checks PASS**。詳細なartifactと検証境界は`current_task.md`の`WINDOWS-CANDIDATE-01`へ記録した。実EditorWindowのDPI／IME、全周fit・貫通・材質見た目、VRChat Build & Test／実機表示は引き続き外部受入として残す。
+
+V31では、native保存後の制作フォルダを`Application.persistentDataPath/Authoring/last-project.pointer`へ記録し、manifest検証付きの「最後の制作を再開」を空状態と出力Panelへ追加した。pointerはnative `project.nyaforge.json`を置き換えず、壊れた／古い場合はExplorer選択へ戻る補助情報である。Core 515件、Player Authoring／Navigation、自動pointer生成、Windows native Computer Useによる再開操作を確認した。詳細と未受入境界は`current_task.md`の`UX-RECENT-PROJECT`へ記録する。

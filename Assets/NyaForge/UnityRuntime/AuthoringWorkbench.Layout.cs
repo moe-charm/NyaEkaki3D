@@ -171,6 +171,9 @@ namespace NyaForge.UnityRuntime
             emptyProjectHelp.style.whiteSpace = WhiteSpace.Normal;
             emptyProjectEntryPanel.Add(emptyProjectHelp);
             emptyProjectEntryPanel.Add(Button("保存済み制作を開く…", BrowseProject, "authoring-open-project-empty"));
+            recentProjectButton = Button("最後の制作を再開", ReopenRecentProject, "authoring-open-recent-project");
+            recentProjectButton.tooltip = "直近に正常保存した制作projectを開きます。見つからない場合はExplorerで選んでください。";
+            emptyProjectEntryPanel.Add(recentProjectButton);
             side.Add(emptyProjectEntryPanel);
             var fixturesPanel = new Foldout { text = "開発者向け確認用fixture", value = false, name = "developer-fixtures" };
             fixturesPanel.Add(new Label("通常の制作には使いません。尺度・回帰確認用のプレートです。"));

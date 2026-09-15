@@ -28,7 +28,7 @@ namespace NyaForge.UnityRuntime
         RenderTexture previewTexture;
         FloatField moveX, moveY, moveZ;
         Toggle layer;
-        Button undoButton, redoButton, moveButton;
+        Button undoButton, redoButton, moveButton, recentProjectButton;
         Action close, reopen;
         Camera camera;
         GameObject stage;

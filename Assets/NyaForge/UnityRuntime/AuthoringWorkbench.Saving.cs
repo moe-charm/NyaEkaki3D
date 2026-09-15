@@ -22,6 +22,8 @@ namespace NyaForge.UnityRuntime
                 saveIncomplete = false;
                 Refresh();
                 SetStatus("保存しました: " + directory);
+                RememberRecentProject(directory);
+                RefreshPersistencePanel();
                 return true;
             }
             catch (Exception error)

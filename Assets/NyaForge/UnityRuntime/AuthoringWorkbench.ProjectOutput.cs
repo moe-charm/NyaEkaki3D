@@ -35,6 +35,7 @@ namespace NyaForge.UnityRuntime
             files.Add(Button("保存", SaveProject, "authoring-save"));
             files.Add(Button("開く", () => ConfirmReplace(OpenProject), "authoring-open"));
             files.Add(Button("Explorerで選ぶ…", BrowseProject, "authoring-project-browse"));
+            files.Add(Button("最後の制作を再開", ReopenRecentProject, "authoring-open-recent-project-output"));
             panel.Add(Button("Unity用に書き出す", Export, "authoring-export"));
             panel.Add(Button("標準GLB（表示形状）", ExportGlbStatic, "authoring-export-glb-static"));
             panel.Add(Button("標準GLB（skin/morph保持）", ExportGlbSkinned, "authoring-export-glb-skinned"));

@@ -4273,3 +4273,18 @@ GUIとMCPの履歴処理で個別に並んでいたrig／VRM expression／Spring
 - 確認画像: `C:/Users/tomoaki/AppData/Local/Temp/nya-current-import-candidates.png`, `C:/Users/tomoaki/AppData/Local/Temp/nya-current-manual-imported.png`, `C:/Users/tomoaki/AppData/Local/Temp/nya-current-manual-choker-added.png`, `C:/Users/tomoaki/AppData/Local/Temp/nya-current-manual-saved.png`
 - 保存先表示: `C:/Users/tomoaki/AppData/LocalLow/NyaForge/NyaForge/Authoring/Project-14df807e`
 - 境界: 現行候補での実Explorer／取込／形状追加／保存の確認であり、再起動後の手動再Open、DPI 150/200%、IME、全周fit・貫通・材質見た目、Unity／VRChat実機は未受入。private素材・生成物は公開ツリーへ追加していない。
+
+# 2026-09-15 UX-RECENT-PROJECT: 最後の制作を安全に再開
+
+Windows向けの制作画面に、native保存した制作フォルダを再利用する小さなpointerを追加した。pointerは`Application.persistentDataPath/Authoring/last-project.pointer`へUTF-8で保存し、保存 payloadそのものは複製しない。読み込み時はパス長・文字・存在を検査したうえで`project.nyaforge.json`を`NativeProjectLocator`で検証するため、壊れた／古いpointerは無効としてExplorer選択へ戻せる。正常保存後だけatomic replaceで更新し、pointer書込み失敗は本体保存を失敗扱いにしない。
+
+空の制作状態と制作・出力Panelから`最後の制作を再開`を押せるようにし、未保存確認を通してから既存の`OpenProject`へ接続した。Windows native `@oai/sky`で新Playerを起動し、空状態から右Panelをスクロールしてボタンを押し、未保存変更の確認で`変更を破棄して進む`を選択したところ、保存済みpointerのfixture projectが開き、制作対象・頂点表示・保存済み状態が表示された。Computer Useの再接続後の実操作で再開経路を確認できた。
+
+- 追加: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.RecentProject.cs`（`.meta`を含む）
+- 接続: `AuthoringWorkbench.Layout.cs`, `ProjectOutput.cs`, `PersistenceRefresh.cs`, `Saving.cs`, `State.cs`
+- pointer実体: `C:/Users/tomoaki/AppData/LocalLow/NyaForge/NyaForge/Authoring/last-project.pointer`（自動Authoringでも生成とmanifest存在を確認）
+- Core: **515 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-582ff3af37d44e3dbd8b0ae4e90c29f0`）
+- Windows Player: `Builds/RecentProjectV1/NyaForge.exe`（`Logs/build-player-20260915-121904-471.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-122007-81db73a7e35a4a32b4463bd5a0921eaa/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260915-122404-46e459705ff44a6f94351ace5e5150d6/report.json`）
+- 境界: pointerは再開を便利にする補助情報で、native manifestが正本。実RadDollV3の全周fit・貫通・材質見た目、DPI／IME、Unity／VRChat実機、販売品質は別受入のまま。private素材・生成物は公開ツリーへ追加していない。

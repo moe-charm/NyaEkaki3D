@@ -35,6 +35,7 @@ namespace NyaForge.UnityRuntime
                 }
             }
             RefreshProjectOutputScope();
+            RefreshRecentProjectControls();
         }
     }
 }
