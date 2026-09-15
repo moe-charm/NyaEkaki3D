@@ -4257,3 +4257,10 @@ GUIとMCPの履歴処理で個別に並んでいたrig／VRM expression／Spring
 - 実RadDollV3一周: **97 checks PASS**（`Artifacts/Authoring-20260915-114332-958668cbb20444feab3e93741125c654/report.json`）。取込、全mesh、頂点編集、チョーカー、skin-bind、native Save/Open、GLB／VRM1、衣装packageまで確認。
 - Unity Bridge: **16 checks PASS**（`Artifacts/BridgeReceiver-20260915-114642-479-fa21e65183d946c98306b42cb5cabb02/bridge-report.json`）。移動・回転・scale avatar root、BoneId、更新／削除Undo、normal／MRを確認。
 - 境界: 自動Player／Bridgeの合格は、実EditorWindowのDPI／IME、全周fit・貫通・材質見た目、VRChat Build & Test／実機表示、販売品質の合格には読み替えない。private素材・生成物・Unity SDKは公開ツリーへ追加していない。
+
+# 2026-09-15 WINDOWS-CANDIDATE-02: 現行標準候補の反復起動回帰
+
+現行`Builds/Windows/NyaForge.exe`でNavigationの起動・終了を20回反復し、**20/20 PASS**を確認した。画面サイズは1280×800、各回の個別reportと集約結果を保存している。
+
+- 集約: `Artifacts/Navigation-Repeated-Windows-20260915-115310.json`
+- 境界: 起動／終了とNavigationの回帰であり、2時間編集、DPI 150/200%、IME、実アバターの全周fit・貫通・材質見た目、VRChat実機は未受入。生成物は公開ツリーへ追加していない。
