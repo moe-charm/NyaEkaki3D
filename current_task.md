@@ -4416,3 +4416,13 @@ Normal／metallic-roughness画像のWindows v1出力はUV0のみ対応するた�
 - 手動確認: **PASS**（stable BoneId装着、首位置表示、Polygon→skin衣装派生、骨近傍weight初期化、native保存）。
 - 出力確認: **PASS**。`C:\Users\tomoaki\AppData\LocalLow\NyaForge\NyaForge\Authoring\Project-3688f569\exports\clothing-20260915-055830-d894fa` に `clothing.glb`（26,400 bytes）、`binding.nyaforge.bin`（41,548 bytes）、`skeleton.nyaforge.bin`（3,153 bytes）、`skinned-clothing.nyaforge.json`（1,064 bytes）を生成。package metadataはvertex 225、triangle 384、stable skeleton/binding hashを保持し、statusでもGLBとBoneId sidecar同梱を確認した。
 - 境界: 今回はHead系BoneIdでの首装着とpackage経路の確認。avatar表面fitの全周見た目・貫通、Rig panelでの手修正、VRM実機、Unity／VRChat Build & Test、DPI・IME・長いパス、販売品質は別受入。生成packageはLocalLowのprivate出力で、公開ツリーへ追加していない。
+
+# 2026-09-15 MANUAL-20: native fit計測と安全な保留
+
+保存済み`Project-3688f569`をnative Computer Useで再開し、「装着・骨」モードから`fit状態を測定（変更なし）`を実行した。全三角形・全頂点（衣装225頂点）を対象に、最大投影距離90.772 mm、平均投影距離38.086 mm、最大移動量90.253 mm、裏側候補16頂点と表示された。既定の50 mmを超えるため、まずfit距離を500 mmへ変更して測定を完了できることも確認した。
+
+続けて`衣装をavatar表面へfit`を一度実行し、225/225頂点が移動候補になることを画面で確認したが、全周の見た目・貫通を実画面で判断できないため、直後にUndoした。トップ表示は再び保存済みとなり、既存の衣装package／保存状態を変更していない。
+
+- 手動確認: **PASS**（fit検査の変更なし計測、距離超過の安全な拒否、許容距離を広げた計測、fit適用後のUndoによる保存状態復元）。
+- 次の手修正: `Head`系BoneIdで作ったチョーカーの装着offset／avatar面領域を首へ限定し、50 mm以内・裏側候補0を目標に再計測する。自動fitの結果を採用する前に正面・背面・左右とposeで外観を確認する。
+- 境界: 数値は最近面候補の検査であり、交差ゼロや全周の販売品質を証明しない。Rig手修正、VRM実機、Unity／VRChat Build & Test、DPI・IME・長いパスは別受入。private素材・生成Player・Artifactsは公開ツリーへ追加していない。
