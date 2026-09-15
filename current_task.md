@@ -4426,3 +4426,11 @@ Normal／metallic-roughness画像のWindows v1出力はUV0のみ対応するた�
 - 手動確認: **PASS**（fit検査の変更なし計測、距離超過の安全な拒否、許容距離を広げた計測、fit適用後のUndoによる保存状態復元）。
 - 次の手修正: `Head`系BoneIdで作ったチョーカーの装着offset／avatar面領域を首へ限定し、50 mm以内・裏側候補0を目標に再計測する。自動fitの結果を採用する前に正面・背面・左右とposeで外観を確認する。
 - 境界: 数値は最近面候補の検査であり、交差ゼロや全周の販売品質を証明しない。Rig手修正、VRM実機、Unity／VRChat Build & Test、DPI・IME・長いパスは別受入。private素材・生成Player・Artifactsは公開ツリーへ追加していない。
+
+# 2026-09-15 MANUAL-21: Neck再装着と50mm fitガード
+
+保存済み`Project-3688f569`をnative Computer Useで再開し、保存データ上で`Tail_2`になっていたチョーカーのBoneIdを、RadDollV3 skeletonのstable BoneId `Neck · b7411bb3`へ変更した。「この小物を装着」を実行すると首位置へ追従し、statusにstable BoneId装着完了が表示された。fit最大距離を既定の50mmへ戻して`fit状態を測定（変更なし）`を実行したところ、`A clothing vertex is farther from the avatar surface than the configured limit.`で安全に停止した。fit適用は行わず、Neck装着状態だけを同じProjectへ保存し、headerが`保存済み`へ戻ることを確認した。
+
+- 手動確認: **PASS**（stable BoneIdの再選択、首位置への再装着、50mm距離ガード、未適用のまま保存）。
+- 未完了: 衣装225頂点を首まわりのavatar面・頂点へ限定する操作が必要。目標は50mm以内、裏側候補0。表面領域のクリック選択が現在の縮尺・重なりで安定しないため、次は首を拡大した状態でavatar面と衣装頂点を分けて選択し、再計測する。
+- 境界: 今回は首BoneIdと距離ガードの確認であり、fit適用後の外観・貫通、全周・pose、VRM実機、Unity／VRChat Build & Test、DPI・IME・長いパス、販売品質は別受入。private素材・生成Player・Artifactsは公開ツリーへ追加していない。
