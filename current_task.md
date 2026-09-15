@@ -4390,3 +4390,10 @@ Normal／metallic-roughness画像のWindows v1出力はUV0のみ対応するた�
 - 手動確認: **PASS**（Player再起動、Explorerからnative project再開、作業モード「確認・出力」への遷移、出力条件の明示ガード）。
 - 出力ガード: 基本形状がskin-bind前の状態では、statusに`Skinned GLB export requires one source, skeleton, skin binding and optional pose.`を表示し、出力を作成しなかった。Panelには標準GLB（表示形状）、標準GLB（skin/morph保持）、拡張GLB（全weight保持）、衣装skin packageの用途説明が表示された。
 - 境界: 今回はskin未バインド形状での拒否確認であり、手動の頂点ドラッグ、実skin-bind後のGLB/VRM出力、DPI 150/200%・IME・長いパス、全周fit・貫通・材質見た目、Unity／VRChat実機は未受入。private素材・生成Player・Artifactsは公開ツリーへ追加していない。
+
+# 2026-09-15 MANUAL-17: native Computer Use で Polygon 衣装派生・保存を再開
+
+作業が重なったため、`Builds/CurrentGoalV1/NyaForge.exe --authoring true` の既存ウィンドウをnative `@oai/sky`で再取得し、保存済み `Project-3688f569/project.nyaforge.json` をExplorerから開いた。現在の制作対象（基本形状・制作物）を装着・骨パネルで確認し、保存済みavatar骨格を派生先として `Polygon造形をskin衣装へ派生` を実行した。画面上で制作対象が `衣装 / スキン小物` に切り替わり、statusに元graph保持の派生完了を表示した後、保存を再実行して `C:\Users\tomoaki\AppData\LocalLow\NyaForge\NyaForge\Authoring\Project-3688f569` へ保存済み表示になることを確認した。
+
+- 結果: **native Computer Use接続、保存済みproject再開、Polygon→skin衣装派生、保存をPASS**。
+- 境界: 今回は派生と保存まで。衣装の全周fit・貫通、weight paint、実skin-bind後のGLB/VRM出力、DPI 150/200%・IME、Unity／VRChat実機表示は別受入。private素材、生成Player、Artifactsは公開ツリーへ追加していない。
