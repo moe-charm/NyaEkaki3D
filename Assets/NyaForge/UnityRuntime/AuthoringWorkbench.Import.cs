@@ -275,7 +275,7 @@ namespace NyaForge.UnityRuntime
                 try
                 {
                     InspectModelSelection(picker.Result);
-                    controls?.ScrollTo((VisualElement)modelImportSelectionStatus ?? modelImportPanel);
+                    ScheduleControlsScroll((VisualElement)modelImportSelectionStatus ?? modelImportPanel);
                     SetStatus("GLB / VRMの候補を確認しました。候補を選んで取り込んでください。");
                 }
                 catch (Exception error)

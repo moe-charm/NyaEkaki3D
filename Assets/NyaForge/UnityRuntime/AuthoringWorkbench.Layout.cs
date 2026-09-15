@@ -138,7 +138,11 @@ namespace NyaForge.UnityRuntime
             side.Add(Button("新しい空プロジェクト", () => ConfirmReplace(() => ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null)), "new-project"));
             side.Add(Button("モデルを開く…", () =>
             {
-                if (modelImportPanel != null) modelImportPanel.value = true;
+                // Keep the panel visible when the empty-state entry point is
+                // used. RefreshContextVisibility may have hidden it while
+                // the project was empty; changing Foldout.value alone does
+                // not override that display gate.
+                ShowModelImportPanel();
                 if (!modelPickerOpen) StartCoroutine(PickModel());
             }, "authoring-open-model"));
             side.Add(new Label("上部の「モデルを追加」または「基本形状を追加」から制作を始めます。"));

@@ -124,3 +124,5 @@ Paintと表示textureで同じ解像度・更新頻度を必要とするかを09
 - [glTF材質仕様](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#materials): 色画像と数値map、MR channel、normal/tangentをadapter間で明示する。
 
 本書の初回策定時の検証は持込文書、現行ソース、既存記録、上記公式情報の照合のみだった。実装後のCore/Player/Bridge/SDK検証結果は[current_task](../current_task.md)へ時系列で追記し、合成fixtureと実アバター・実VRChatの受入を混同しない。
+
+2026-09-15追記: 空projectの`モデルを開く…`は、Foldoutの表示値だけでなく表示ゲートを解除する共通処理へ統一した。ファイル選択後は候補欄のレイアウト確定を待って右controlsを追従させる。実ウィンドウで候補欄が到達可能になることを確認したが、実RadDollV3の取込・fit・材質・Unity／VRChat受入は別カードとして残す（詳細は[current_task](../current_task.md) GUI-16）。

@@ -4081,3 +4081,16 @@ AGENTS.mdの手順どおり`@oai/sky`で、隔離ビルド `C:\Users\tomoaki\App
 - 手動確認: **部分PASS**（初期空状態の表示・導線・折返し）
 - 未確認: 実Explorer選択、実モデル取込、装着先候補の表示名／tooltip、DPI 150/200%、IME、長時間編集、実RadDollV3の全周fit・貫通・材質見た目、Unity／VRChat実機
 - Computer Use: `@oai/sky`で実施。ブラウザ用CUAの`apps: []`判定は使用していない。
+
+# 2026-09-15 GUI-16: 空projectのモデル取込欄を表示・自動追従
+
+空projectで右側の`モデルを開く…`を押したとき、Foldoutの値だけが開き、`RefreshContextVisibility`の表示ゲートによりモデル取込欄が`display:none`のままになる経路があった。表示処理を`ShowModelImportPanel`へ統一し、ファイル選択後は候補欄のレイアウト確定を待って縦スクロールするようにした。候補確認のstatusと、node／mesh／skin選択・完全path欄が同じ操作欄内で見える状態を確認できる。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Layout.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ContextVisibility.cs`
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Import.cs`
+- Unity 6000.4.3f1 Player `Builds/ImportScrollV4/NyaForge.exe`: build成功
+- Authoring自動検証: **PASS**（`Artifacts/Authoring-20260915-091419-80188523b5714a6cb6df1692bffc4749/report.json`）
+- Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-3d69b6db6d854d59a3057a31f2942917`）
+- Windows native `@oai/sky`: 空projectの`モデルを開く…`からモデル取込Foldoutを表示し、右controlsがファイルパス・node／mesh／skin・`候補を確認`・取込ボタン付近へ自動追従することを目視確認した。実ファイルの選択と取込完了はこの確認では行っていない。
+- 境界: 自動スクロールの画面到達性と空project表示ゲートの確認であり、DPI 150/200%、IME、長いpath、実RadDollV3の取込・fit・貫通・材質、Unity／VRChat実機は未受入。生成Playerは公開ツリーへ追加していない。

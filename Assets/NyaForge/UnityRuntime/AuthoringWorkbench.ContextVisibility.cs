@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine.UIElements;
 
 namespace NyaForge.UnityRuntime
@@ -48,7 +49,37 @@ namespace NyaForge.UnityRuntime
             if (modelImportPanel == null) return;
             modelImportPanel.value = true;
             modelImportPanel.style.display = DisplayStyle.Flex;
-            controls?.ScrollTo(modelImportPanel);
+            ScheduleControlsScroll(modelImportPanel);
+        }
+
+        /// <summary>
+        /// ScrollView layout is not settled while a foldout is being opened or
+        /// a file picker has just returned. Queue the scroll for the next UI
+        /// tick so the target's final geometry is used instead of leaving the
+        /// user at the old position.
+        /// </summary>
+        void ScheduleControlsScroll(VisualElement target)
+        {
+            if (controls == null || target == null) return;
+            // ScrollTo can run before the file-picker return has produced the
+            // final content height. Retry after a few layout passes, then
+            // clamp the vertical scroller to the computed range. The helper
+            // is used only for the model-import flow, where the candidate
+            // choices live near the bottom of the long side pane.
+            StartCoroutine(ScrollControlsAfterLayout(target));
+        }
+
+        IEnumerator ScrollControlsAfterLayout(VisualElement target)
+        {
+            for (int attempt = 0; attempt < 6; attempt++)
+            {
+                yield return null;
+                if (controls == null || target == null) yield break;
+                controls.ScrollTo(target);
+                var scroller = controls.verticalScroller;
+                if (scroller != null && scroller.highValue > scroller.lowValue)
+                    scroller.value = scroller.highValue;
+            }
         }
 
         static void SetPanelVisible(VisualElement panel, bool visible)

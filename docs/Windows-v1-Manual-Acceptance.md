@@ -145,3 +145,14 @@ Core／Bridgeの自動回帰はコード変更後に再実行する。実SDK・�
 - [ ] 実RadDollV3の全周fit・貫通・材質見た目、Unity／VRChat実機
 
 これは初期レイアウトの部分受入であり、上の未確認項目を合格扱いしない。証跡の詳細は`current_task.md`のMANUAL-01に記録した。
+
+## 2026-09-15 MANUAL-07: 空projectのモデル取込欄への自動追従
+
+`Builds/ImportScrollV4/NyaForge.exe`を`@oai/sky`で起動し、空projectの`制作へ`から右controlsの`モデルを開く…`を実マウスクリックした。モデル取込Foldoutが表示され、右側が`ファイルパス`、`node（配置）`、`mesh（形状）`、`skin（骨・weight）`、`候補を確認`、`選択候補を取り込む`、`全meshをまとめて取り込む`付近へ自動追従することを目視確認した。以前のように折りたたみ値だけが変わり候補欄が非表示になる状態は再現しなかった。
+
+- [x] 空projectの入口からモデル取込Foldoutを表示
+- [x] 候補選択欄と取込ボタンまで自動追従
+- [ ] 実Explorerでファイルを選び候補確認・取込完了
+- [ ] DPI 150/200%、IME、長いpath、実RadDollV3のfit・貫通・材質、Unity／VRChat実機
+
+これは取込欄の表示・到達性の手動受入であり、実ファイル取込や販売品質の合格へは読み替えない。詳細は`current_task.md` GUI-16に記録した。
