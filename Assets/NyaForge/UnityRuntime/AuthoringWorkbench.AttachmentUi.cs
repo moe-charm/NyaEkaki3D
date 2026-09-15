@@ -48,11 +48,11 @@ namespace NyaForge.UnityRuntime
             accessorySurfaceWeight = Button("衣装の自動weight初期化（avatar表面）", TransferAccessorySurfaceWeights, "object-skin-surface-weight");
             attachmentPanel.Add(new Label("3  fit・weightを調整"));
             accessoryFitSummary = new Label { name = "object-surface-fit-summary" };
-            // Keep the compact controls column at its existing height. The
-            // visible text is deliberately short enough for a narrow panel;
-            // RefreshAccessoryFitSummary puts the full target identity and
-            // counts in the tooltip for inspection without shifting controls.
-            accessoryFitSummary.style.whiteSpace = WhiteSpace.NoWrap;
+            // The summary contains the selected target, region and vertex
+            // counts. Wrap it in the scrollable pane so narrow or DPI-scaled
+            // windows never hide the end of the sentence. The tooltip keeps
+            // the full identity available without relying on a clipped row.
+            accessoryFitSummary.style.whiteSpace = WhiteSpace.Normal;
             accessoryFitSummary.tooltip = "現在のfit／weight対象、選択範囲、測定結果の有効性を表示します。面や頂点の指定を変えたら再測定してください。";
             attachmentPanel.Add(accessoryFitSummary);
             accessoryFitOffsetMm = Number(attachmentPanel, "avatar表面からのfit offset (mm)", 2, "object-surface-fit-offset-mm");

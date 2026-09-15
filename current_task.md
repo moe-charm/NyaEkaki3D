@@ -1,3 +1,13 @@
+# 2026-09-15 GUI-READABILITY-02: 狭い窓で選択値とfit要約を折り返す
+
+通常のWindows窓（1069×698）で、fit対象要約を1行固定していたため右ペインの末尾が隠れる状態を確認した。`object-surface-fit-summary`を右ペイン内で折り返し、基本形状の種類Dropdownもラベル上段＋選択値折り返しへ揃えた。選択中のプリセット名はtooltipにも明示し、形状種類が「リング（チョーカー）」のように途中で見えなくならないようにした。UI回帰へ折り返し設定を追加した。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentUi.cs`、`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ShapeCreation.cs`、`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentVerification.cs`、`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ShapeCreationVerification.cs`
+- Core: **517 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-0bbef01d164d44578df3d39d709928ab`）
+- Player: `Builds/GuiReadableV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-170734-276.log`）ビルド成功。通常Authoring **PASS**（`Artifacts/Authoring-20260915-170802-df1e7870d6ad45a08f4fe2dac6a03cb0/report.json`）。
+- 実RadDollV3 Player **PASS 94 checks**（`Artifacts/Authoring-20260915-170845-007cc4eabbfa4eb296e9456d4ec71d91/report.json`）。衣装packageのUnity **2022.3.22f1** Bridgeも **PASS**（`Artifacts/BridgeReceiver-20260915-171221-281-445fd0c8dcdb4c0b998c733f082e616b/bridge-report.json`）。
+- 実画面スモーク: `GuiReadableV1`をnative Computer Useで起動し、ExplorerへVRMフルパスを入力、候補確認、全mesh取込、基本形状パネル表示まで確認。実マウスの全周fit・pose・保存再開・DPI/IME全条件・Unity Editor／VRChatは未受入。
+
 # 2026-09-15 FIT-REGION-BONE-04: fit前後のclearance候補を同じ画面・MCPへ公開
 
 fit計測が「適用前の裏側候補」だけを表示していたため、仮想的にfit後へ移動した頂点も同じ判定で再検査する `MeshSurfaceClearance.InspectPositions` を追加した。これにより、文書を変更せずに `裏側候補 X → fit後 Y` をWorkbench statusへ表示し、MCP `surfaceFitInspection` へ `projectedBehindSurfaceVertexCount` と符号付き距離を返せる。既存の候補値という境界は維持し、貫通ゼロの証明とは扱わない。

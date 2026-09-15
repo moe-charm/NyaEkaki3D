@@ -26,7 +26,7 @@ namespace NyaForge.UnityRuntime
             {
                 name = "shape-preset"
             };
-            shapePresetChoice.tooltip = "基本形状を選びます。アバターへ自動装着する機能ではありません。";
+            ConfigureModelImportChoice(shapePresetChoice, "基本形状を選びます。選択中の寸法を確認してから追加してください。アバターへ自動装着する機能ではありません。");
             shapePresetChoice.RegisterValueChangedCallback(_ => RefreshShapeCreationPanel());
             shapeCreationPanel.Add(shapePresetChoice);
 
@@ -75,6 +75,7 @@ namespace NyaForge.UnityRuntime
             shapeSecondarySize.label = preset.SecondaryLabel;
             shapeThickness.style.display = preset.HasThickness ? DisplayStyle.Flex : DisplayStyle.None;
             shapeCreationHelp.text = preset.HelpText;
+            shapePresetChoice.tooltip = "選択中: " + preset.DisplayName + "。寸法を確認してから追加してください。アバターへ自動装着する機能ではありません。";
             bool available = workspace != null && (workspace.Document.IsEmpty || IsGraph);
             shapeCreateButton?.SetEnabled(available);
         }

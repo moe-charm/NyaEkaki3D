@@ -49,7 +49,8 @@ namespace NyaForge.UnityRuntime
                     "Attachment GUI controls were not built");
                 Check(root.Q<Label>("object-attachment-guide") != null && root.Q<Foldout>("object-attachment-help") != null && !root.Q<Foldout>("object-attachment-help").value,
                     "Attachment GUI did not expose the compact guide and collapsed detailed help");
-                Check(root.Q<Label>("object-surface-fit-summary") != null && root.Q<Label>("object-surface-fit-summary").text.Contains("fit対象"),
+                Check(root.Q<Label>("object-surface-fit-summary") != null && root.Q<Label>("object-surface-fit-summary").text.Contains("fit対象") &&
+                    root.Q<Label>("object-surface-fit-summary").resolvedStyle.whiteSpace == WhiteSpace.Normal,
                     "Attachment GUI did not expose the fit target summary");
                 var attachment = GraphNode.AttachmentNode(Guid.NewGuid().ToString("D"), targetObjectId, boneId, skeleton.ContentHash, new Vec3());
                 Execute(AuthoringOperation.AddNode(attachment));

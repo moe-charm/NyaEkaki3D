@@ -22,6 +22,9 @@ namespace NyaForge.UnityRuntime
                 ReplaceWorkspace(AuthoringWorkspace.CreateEmpty(), null);
                 Check(shapeCreationPanel != null && shapePresetChoice != null && shapeCreateButton != null,
                     "Shape creation panel controls are missing");
+                Check(shapePresetChoice.style.flexDirection == FlexDirection.Column &&
+                    shapePresetChoice.tooltip.Contains("選択中:"),
+                    "Shape preset choice did not expose a readable wrapped value and current selection tooltip");
 
                 shapePrimarySize.SetValueWithoutNotify(73);
                 shapeSecondarySize.SetValueWithoutNotify(11);
