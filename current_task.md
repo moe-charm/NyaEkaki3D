@@ -2,7 +2,8 @@
 
 環境移行のため、共通Dropdown部品移管後の現行candidateを停止点として固定した。再開手順・検証証跡・未完了の外部受入境界を`docs/Development-Handoff-20260915.md`へまとめた。
 
-- 最新commit: `cd211e7 refactor: share wrapped choice layout`（`main`へpush済み）
+- 実装停止点: `cd211e7 refactor: share wrapped choice layout`
+- 引継ぎ文書更新commit: `367642b docs: add development handoff checkpoint`（`main`へpush済み）
 - Core **517 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-47d02caff3d14902bb6041e3d09ce6e0`）
 - Player: `Builds/WrappedChoiceV1/NyaForge.exe`、Authoring **PASS**（`Artifacts/Authoring-20260915-173638-ee084f4b08df45efb7163094701bf0b7/report.json`）
 - 実RadDollV3 Player **PASS**（`Artifacts/Authoring-20260915-173806-1ce32564863d4c6c931ca5229c9a94d7/report.json`）
