@@ -9,8 +9,8 @@
 - remote: `https://github.com/moe-charm/NyaEkaki3D.git`
 - GUI停止点: `cd211e7 refactor: share wrapped choice layout`
 - 最新実装commit: `5189309 feat: support sparse inverse-bind accessors`（sparse本体`eff6039`、Unity `.meta`を含む）
-- 最新記録commit: `fdc97cd docs: record handoffv2 navigation acceptance`
-- 引継ぎ文書更新commit: `fdc97cd docs: record handoffv2 navigation acceptance`
+- 最新記録commit: `5c3a141 refactor: centralize selection presentation refresh`
+- 引継ぎ文書更新commit: `5c3a141 refactor: centralize selection presentation refresh`
 - `main`はpush済み、作業ツリーはclean
 - Windows Player: `Builds/HandoffV2/NyaForge.exe`
 
