@@ -4382,3 +4382,11 @@ Normal／metallic-roughness画像のWindows v1出力はUV0のみ対応するた�
 - Unity Bridge: **PASS**（Unity 2022.3.22f1、16 checks、`Artifacts/BridgeReceiver-20260915-140128-404-cde924dab1974541b23d2dbb635d4579/bridge-report.json`）。衣装skeletonは4 bones。
 - 主な確認: 実VRMの全mesh編集、choker vertex edit、source診断、Save/Open、標準GLBの形状・材質・skin、VRM1のloss report、衣装packageのstable skeleton/BoneId binding、移動・回転・scale avatar rootへの配置、更新／削除ownership、normal/MR channel。
 - 境界: Player／Core／Bridgeの自動・合成受入であり、実EditorWindowの全周fit・貫通・材質見た目、DPI 150/200%・IME・長いパス、VRChat Build & Test／実機表示、完全VRM意味payloadの変換は未受入。private素材・生成Player・Artifactsは公開ツリーへ追加していない。
+
+# 2026-09-15 MANUAL-16: 現行候補のnative再開と出力条件ガード
+
+`Builds/CurrentGoalV1/NyaForge.exe --authoring true`をnative `@oai/sky`で起動し、未保存確認で「変更を破棄して進む」を選択した。空状態から保存済み制作をExplorerで指定し、`Project-3688f569/project.nyaforge.json`を開くと、制作対象の基本形状・制作物、保存済み状態、viewport表示が復元された。右Panelをスクロールして作業モードの「確認・出力」を実画面で開き、標準GLB（skin/morph保持）を選択した。
+
+- 手動確認: **PASS**（Player再起動、Explorerからnative project再開、作業モード「確認・出力」への遷移、出力条件の明示ガード）。
+- 出力ガード: 基本形状がskin-bind前の状態では、statusに`Skinned GLB export requires one source, skeleton, skin binding and optional pose.`を表示し、出力を作成しなかった。Panelには標準GLB（表示形状）、標準GLB（skin/morph保持）、拡張GLB（全weight保持）、衣装skin packageの用途説明が表示された。
+- 境界: 今回はskin未バインド形状での拒否確認であり、手動の頂点ドラッグ、実skin-bind後のGLB/VRM出力、DPI 150/200%・IME・長いパス、全周fit・貫通・材質見た目、Unity／VRChat実機は未受入。private素材・生成Player・Artifactsは公開ツリーへ追加していない。
