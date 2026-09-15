@@ -14,8 +14,8 @@
 `GlbImportDiagnostics.ForVrmSemantics`を追加し、取込時に検出した`lookAt`／`firstPerson`／material bind（VRM 0.xでは`materialValues`）を、既存の`ImportedGlbDiagnostics`へblocking診断として同梱するようにした。これにより、取込直後の表示だけでなくnative Save/Open後のinspection・GLB/VRM export report・strict complete-semantics判定でも、未保持の意味情報を同じsource pathで追跡できる。partial出力は従来どおり可能だが、strict出力では公開前に停止する。元payloadの保管・変換そのものはまだ実装していない。
 
 - 変更: `Assets/NyaForge/Authoring/Import/GlbImportDiagnostics.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Import.cs`
-- 回帰: `Tests/Authoring.Core/VrmMetadataTests.cs`でmodern 3件／legacy 2件のblocking診断とpathを確認
-- Core: **515 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-829e517d9504472a8bc5ec6f2d9fd312`）
+- 回帰: `Tests/Authoring.Core/VrmMetadataTests.cs`でmodern 3件／legacy 2件のblocking診断とpathを確認し、`ImportedGlbDiagnosticsTests.cs`でcodec往復も確認
+- Core: **515 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3b839abf5c3e430ca85590d353716f7d`）
 - Windows Player: `Builds/SemanticInventoryV2/NyaForge.exe` をUnity 6000.4.3f1でビルド成功（`Logs/build-player-20260915-105316-539.log`）
 - 実モデルimport-only: **PASS**（private一時RadDollV3 VRM、`Artifacts/Authoring-20260915-105403-126d9fa806c2419aa3c5119111e81dfc/report.json`、1600x1000 PNGあり）。これは自動Player経路の確認で、実マウスの全周fit・貫通・見た目、Unity／VRChat内表示は未受入。
 - 残り: MCP詳細reportの意味情報表示、未知payloadの依存込み保管、完全VRM各受取側検証、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。

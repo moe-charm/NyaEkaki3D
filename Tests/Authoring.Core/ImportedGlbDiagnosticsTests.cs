@@ -16,10 +16,11 @@ internal static partial class Program
             var record = new ImportedGlbDiagnostics(graphId, sourceHash, 3, 2, new[]
             {
                 new GlbImportDiagnostic("MATERIALS_NOT_RETAINED", "materials", true, "material is not retained"),
-                new GlbImportDiagnostic("EXTENSIONS_PARTIAL", "extensionsUsed", false, "extension is inventory-only")
+                new GlbImportDiagnostic("EXTENSIONS_PARTIAL", "extensionsUsed", false, "extension is inventory-only"),
+                new GlbImportDiagnostic("VRM_SEMANTICS_NOT_RETAINED", "VRMC_vrm.lookAt", true, "VRM semantic data is not retained")
             }, 17);
             var bytes = ImportedGlbDiagnosticsCodec.Write(new[] { record }); var reopened = ImportedGlbDiagnosticsCodec.Read(bytes);
-            Equal(1, reopened.Count); Equal(graphId, reopened[graphId].GraphId); Equal(3, reopened[graphId].MeshIndex); Equal(2, reopened[graphId].SkinIndex.Value); Equal(17, reopened[graphId].NodeIndex.Value); Equal(2, reopened[graphId].Diagnostics.Count);
+            Equal(1, reopened.Count); Equal(graphId, reopened[graphId].GraphId); Equal(3, reopened[graphId].MeshIndex); Equal(2, reopened[graphId].SkinIndex.Value); Equal(17, reopened[graphId].NodeIndex.Value); Equal(3, reopened[graphId].Diagnostics.Count); Equal("VRMC_vrm.lookAt", reopened[graphId].Diagnostics[2].Path);
             True(bytes.SequenceEqual(ImportedGlbDiagnosticsCodec.Write(reopened.Values)));
 
             var legacy = JObject.Parse(Encoding.UTF8.GetString(bytes)); legacy["version"] = 1; ((JObject)((JArray)legacy["records"]!)[0]!).Remove("nodeIndex");
