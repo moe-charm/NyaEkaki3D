@@ -88,7 +88,7 @@ TextField { min-height: 34px; }
 /* Model import choices are semantic fields, not compact index controls. Keep
    the meaning label above a full-width value so node/resource names remain
    readable in the Windows authoring sidebar. */
-#authoring-controls .model-import-choice { width: 100%; min-width: 0; flex-grow: 1; flex-shrink: 1; flex-direction: column; margin-top: 5px; margin-bottom: 5px; }
-#authoring-controls .model-import-choice .unity-base-field__label { width: 100%; min-width: 0; margin-right: 0; white-space: normal; }
-#authoring-controls .model-import-choice .unity-base-popup-field__input { width: 100%; min-width: 0; flex-shrink: 1; }
-#authoring-controls .model-import-choice .unity-base-popup-field__text { height: auto; min-height: 34px; white-space: normal; overflow: visible; text-overflow: clip; }
+#authoring-controls .wrapped-choice { width: 100%; min-width: 0; flex-grow: 1; flex-shrink: 1; flex-direction: column; margin-top: 5px; margin-bottom: 5px; }
+#authoring-controls .wrapped-choice .unity-base-field__label { width: 100%; min-width: 0; margin-right: 0; white-space: normal; }
+#authoring-controls .wrapped-choice .unity-base-popup-field__input { width: 100%; min-width: 0; flex-shrink: 1; }
+#authoring-controls .wrapped-choice .unity-base-popup-field__text { height: auto; min-height: 34px; white-space: normal; overflow: visible; text-overflow: clip; }

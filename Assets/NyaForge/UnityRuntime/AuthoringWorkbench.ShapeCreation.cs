@@ -26,7 +26,7 @@ namespace NyaForge.UnityRuntime
             {
                 name = "shape-preset"
             };
-            ConfigureModelImportChoice(shapePresetChoice, "基本形状を選びます。選択中の寸法を確認してから追加してください。アバターへ自動装着する機能ではありません。");
+            ConfigureWrappedChoice(shapePresetChoice, "基本形状を選びます。選択中の寸法を確認してから追加してください。アバターへ自動装着する機能ではありません。");
             shapePresetChoice.RegisterValueChangedCallback(_ => RefreshShapeCreationPanel());
             shapeCreationPanel.Add(shapePresetChoice);
 

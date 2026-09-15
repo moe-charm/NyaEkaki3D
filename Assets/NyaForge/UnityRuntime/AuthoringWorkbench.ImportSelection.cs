@@ -37,9 +37,9 @@ namespace NyaForge.UnityRuntime
             modelImportInstanceChoice = new DropdownField("node（配置）", new List<string> { "候補を確認してください" }, 0) { name = "model-import-instance-choice" };
             modelImportMeshChoice = new DropdownField("mesh（形状）", new List<string> { "候補を確認してください" }, 0) { name = "model-import-mesh-choice" };
             modelImportSkinChoice = new DropdownField("skin（骨・weight）", new List<string> { "候補を確認してください" }, 0) { name = "model-import-skin-choice" };
-            ConfigureModelImportChoice(modelImportInstanceChoice, "node（配置）を選ぶと、そのmesh・skin・配置を一組で取り込みます。先頭のresource指定では下の欄を選びます。");
-            ConfigureModelImportChoice(modelImportMeshChoice, "取り込むmesh（形状）を選びます。node（配置）を選ぶと自動で切り替わります。");
-            ConfigureModelImportChoice(modelImportSkinChoice, "取り込むskin（骨・weight）を選びます。skinなしの小物は「skinなし」のままにします。");
+            ConfigureWrappedChoice(modelImportInstanceChoice, "node（配置）を選ぶと、そのmesh・skin・配置を一組で取り込みます。先頭のresource指定では下の欄を選びます。");
+            ConfigureWrappedChoice(modelImportMeshChoice, "取り込むmesh（形状）を選びます。node（配置）を選ぶと自動で切り替わります。");
+            ConfigureWrappedChoice(modelImportSkinChoice, "取り込むskin（骨・weight）を選びます。skinなしの小物は「skinなし」のままにします。");
             parent.Add(modelImportInstanceChoice); parent.Add(modelImportMeshChoice); parent.Add(modelImportSkinChoice);
             parent.Add(Button("候補を確認", () => Try(() => InspectModelSelection(modelImportPath.value)), "model-import-inspect"));
             modelImportMeshIndex.RegisterValueChangedCallback(_ => ClearModelImportSelectionStatus());
@@ -63,47 +63,6 @@ namespace NyaForge.UnityRuntime
                     modelImportSkinIndex.SetValueWithoutNotify(ParseChoiceIndex(change.newValue));
                 ClearModelImportSelectionStatus();
             });
-        }
-
-        static void ConfigureModelImportChoice(DropdownField choice, string tooltip)
-        {
-            if (choice == null) return;
-            choice.tooltip = tooltip;
-            choice.AddToClassList("model-import-choice");
-            // Put the label above the value. The previous horizontal layout
-            // left only a narrow sliver for long node and mesh names on a
-            // normal 1069px Windows window.
-            choice.style.flexDirection = FlexDirection.Column;
-            choice.style.width = Length.Percent(100);
-            choice.style.minWidth = 0;
-            choice.style.flexShrink = 1;
-            choice.style.flexGrow = 1;
-            choice.style.marginTop = 5;
-            choice.style.marginBottom = 5;
-            var label = choice.Q<Label>(className: "unity-base-field__label");
-            if (label != null)
-            {
-                label.style.width = Length.Percent(100);
-                label.style.minWidth = 0;
-                label.style.whiteSpace = WhiteSpace.Normal;
-                label.style.marginRight = 0;
-            }
-            var input = choice.Q<VisualElement>(className: "unity-base-popup-field__input");
-            if (input != null)
-            {
-                input.style.width = Length.Percent(100);
-                input.style.minWidth = 0;
-                input.style.flexShrink = 1;
-            }
-            var selected = choice.Q<Label>(className: "unity-base-popup-field__text");
-            if (selected != null)
-            {
-                selected.style.whiteSpace = WhiteSpace.Normal;
-                selected.style.overflow = Overflow.Visible;
-                selected.style.textOverflow = TextOverflow.Clip;
-                selected.style.height = StyleKeyword.Auto;
-                selected.style.minHeight = 34;
-            }
         }
 
         void ClearModelImportSelectionStatus()

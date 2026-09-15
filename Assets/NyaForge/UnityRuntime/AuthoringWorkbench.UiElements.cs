@@ -42,6 +42,49 @@ namespace NyaForge.UnityRuntime
             return button;
         }
 
+        /// <summary>
+        /// Applies the shared compact-window layout to a DropdownField whose
+        /// label or selected value may be long. All panels use this helper so
+        /// names remain readable at narrow widths and high DPI.
+        /// </summary>
+        static void ConfigureWrappedChoice(DropdownField choice, string tooltip)
+        {
+            if (choice == null) return;
+            choice.tooltip = tooltip;
+            choice.AddToClassList("wrapped-choice");
+            choice.style.flexDirection = FlexDirection.Column;
+            choice.style.width = Length.Percent(100);
+            choice.style.minWidth = 0;
+            choice.style.flexShrink = 1;
+            choice.style.flexGrow = 1;
+            choice.style.marginTop = 5;
+            choice.style.marginBottom = 5;
+            var label = choice.Q<Label>(className: "unity-base-field__label");
+            if (label != null)
+            {
+                label.style.width = Length.Percent(100);
+                label.style.minWidth = 0;
+                label.style.whiteSpace = WhiteSpace.Normal;
+                label.style.marginRight = 0;
+            }
+            var input = choice.Q<VisualElement>(className: "unity-base-popup-field__input");
+            if (input != null)
+            {
+                input.style.width = Length.Percent(100);
+                input.style.minWidth = 0;
+                input.style.flexShrink = 1;
+            }
+            var selected = choice.Q<Label>(className: "unity-base-popup-field__text");
+            if (selected != null)
+            {
+                selected.style.whiteSpace = WhiteSpace.Normal;
+                selected.style.overflow = Overflow.Visible;
+                selected.style.textOverflow = TextOverflow.Clip;
+                selected.style.height = StyleKeyword.Auto;
+                selected.style.minHeight = 34;
+            }
+        }
+
         static FloatField Number(VisualElement parent, string label, float value, string name)
         {
             var field = new FloatField(label) { value = value, name = name };

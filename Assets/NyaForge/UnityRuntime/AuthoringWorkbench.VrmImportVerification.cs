@@ -21,7 +21,7 @@ namespace NyaForge.UnityRuntime
             modelImportMeshIndex.SetValueWithoutNotify(1); modelImportSkinIndex.SetValueWithoutNotify(0);
             InspectModelSelection(selectionPath);
             Check(modelImportSelectionStatus.text.Contains("mesh 1") && modelImportSelectionStatus.text.Contains("skins 1"), "Mesh selection inventory was not shown in the import GUI");
-            Check(modelImportInstanceChoice.ClassListContains("model-import-choice") && modelImportMeshChoice.ClassListContains("model-import-choice") && modelImportSkinChoice.ClassListContains("model-import-choice"), "Model import choices did not use the readable field style");
+            Check(modelImportInstanceChoice.ClassListContains("wrapped-choice") && modelImportMeshChoice.ClassListContains("wrapped-choice") && modelImportSkinChoice.ClassListContains("wrapped-choice"), "Model import choices did not use the shared wrapped field style");
             Check(modelImportInstanceChoice.style.flexDirection.value == UnityEngine.UIElements.FlexDirection.Column && modelImportMeshChoice.style.flexDirection.value == UnityEngine.UIElements.FlexDirection.Column && modelImportSkinChoice.style.flexDirection.value == UnityEngine.UIElements.FlexDirection.Column, "Model import choices did not stack their labels above the values");
             Check(modelImportPanel.Q<UnityEngine.UIElements.Button>("model-import-apply").text == "選択候補を取り込む" && modelImportPanel.Q<UnityEngine.UIElements.Button>("model-import-all").text == "全meshをまとめて取り込む", "Model import actions did not use compact readable labels");
             Check(modelImportMeshChoice != null && modelImportMeshChoice.choices.Count == 2 && modelImportMeshChoice.choices[1].Contains("mesh 1"), "Mesh candidates were not exposed by name");

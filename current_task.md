@@ -1,3 +1,13 @@
+# 2026-09-15 MOD-UI-CHOICE-01: 折返しDropdown設定を共通UI部品へ移管
+
+取込Panelに置かれていた長文Dropdownのレイアウト設定を`AuthoringWorkbench.UiElements.cs`の`ConfigureWrappedChoice`へ移し、取込・基本形状・装着Panelの全選択欄から同じ責務の共通部品を呼ぶようにした。USSと回帰検証も`wrapped-choice`へ統一し、Panelごとのクラス名依存をなくした。表示仕様（ラベル上段、選択値折返し、完全IDはtooltip）は変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.UiElements.cs`、`AuthoringWorkbench.ImportSelection.cs`、`AuthoringWorkbench.ShapeCreation.cs`、`AuthoringWorkbench.AttachmentUi.cs`、`AuthoringWorkbench.VrmImportVerification.cs`、`Assets/Resources/Viewer.uss`
+- Core: **517 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-47d02caff3d14902bb6041e3d09ce6e0`）
+- Player: `Builds/WrappedChoiceV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-173613-822.log`）ビルド成功。
+- Authoring自動検証: **PASS**（1069×698、`Artifacts/Authoring-20260915-173638-ee084f4b08df45efb7163094701bf0b7/report.json`）。取込・形状・装着のGUI回帰を含む。
+- 未完了: 実マウスでの3Panel長文表示、DPI・IME・長い実素材名、Unity Editor／VRChat内表示は未受入。
+
 # 2026-09-15 GUI-READABILITY-03: 装着先avatar／BoneIdの選択欄を折返し表示
 
 装着パネルの対象avatarとBoneIdが、長い表示名・役割・短縮IDを横一列のまま描画して末尾を隠す可能性があったため、GLB取込・基本形状で使用している`ConfigureModelImportChoice`を共通化した。ラベルを上段へ移し、選択値を折り返し、完全なobject ID／BoneIdはtooltipで確認できる。対象avatarの変更に合わせてBoneId候補を更新する既存のstable ID経路は変更していない。
