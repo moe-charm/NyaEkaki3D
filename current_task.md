@@ -4245,3 +4245,15 @@ GUIとMCPの履歴処理で個別に並んでいたrig／VRM expression／Spring
 - 手動確認: **PASS**（空状態→モデル追加→Explorer表示→キャンセル→取込Panel先頭導線）
 - 確認画像: `C:/Users/tomoaki/AppData/Local/Temp/nya-import-panel-home3.png`
 - 境界: 実モデルの取込・保存・再開、DPI／IME、長いパス、全周fit・貫通・材質見た目、Unity／VRChat実機、販売品質は別受入。Explorerで表示した場所はprivate素材領域で、追跡対象へ追加していない。
+
+# 2026-09-15 WINDOWS-CANDIDATE-01: 標準Windows候補を現行mainへ更新
+
+標準起動先の`Builds/Windows/NyaForge.exe`が古いビルドだったため、現行`main`で再ビルドした。Player buildは成功し、同じ候補で空状態のAuthoring回帰、Navigation回帰、private RadDollV3の実衣装一周を順に実行した。
+
+- Player: `Builds/Windows/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-114157-388.log`）
+- Core: **515 passed / 0 failed**（artifact `C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-5ee5363390014bfb82084abe9f9eb170`）
+- Authoring startup: **PASS**（`Artifacts/Authoring-20260915-114236-35f29d8f874540f784136b094cec120a/report.json`）
+- Navigation: **PASS**（`Artifacts/Navigation-20260915-114308-a2ccc377839e4bbfabe4bdd5cb79808a/report.json`）
+- 実RadDollV3一周: **97 checks PASS**（`Artifacts/Authoring-20260915-114332-958668cbb20444feab3e93741125c654/report.json`）。取込、全mesh、頂点編集、チョーカー、skin-bind、native Save/Open、GLB／VRM1、衣装packageまで確認。
+- Unity Bridge: **16 checks PASS**（`Artifacts/BridgeReceiver-20260915-114642-479-fa21e65183d946c98306b42cb5cabb02/bridge-report.json`）。移動・回転・scale avatar root、BoneId、更新／削除Undo、normal／MRを確認。
+- 境界: 自動Player／Bridgeの合格は、実EditorWindowのDPI／IME、全周fit・貫通・材質見た目、VRChat Build & Test／実機表示、販売品質の合格には読み替えない。private素材・生成物・Unity SDKは公開ツリーへ追加していない。
