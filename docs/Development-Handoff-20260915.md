@@ -4,6 +4,10 @@
 
 ## 現在地
 
+### 移行前の生成物整理（2026-09-15）
+
+圧縮・移行用に、再生成可能な`Artifacts/`、旧`Builds/`、`Library/`、`Logs/`、`UserSettings/`、`GeneratedPacks/`を整理した。`Builds/HandoffV2/`と`private/`、ソース・設計書は保持している。本文中の過去artifactパスは検証履歴の記録であり、現在の作業ツリーに実体があることを示さない。旧`Builds/AttachmentReadableV1/`だけは起動中プロセスが使用中のため残っている。
+
 - リポジトリ: `Z:\TextureVoice_local\git\NyaForge`
 - branch: `main`
 - remote: `https://github.com/moe-charm/NyaEkaki3D.git`

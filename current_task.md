@@ -1,3 +1,13 @@
+# 2026-09-15 MIGRATION-CLEANUP-01: 移行用の生成物を整理
+
+環境移行用の圧縮を軽くするため、再生成可能な`Artifacts/`を全削除し、`Builds/`は`HandoffV2/`だけを保持した。`Library/`、`Logs/`、`UserSettings/`、`GeneratedPacks/`も削除した。制作ソース、設計書、`private/`、`Builds/HandoffV2/`は保持している。
+
+- 削除: `Artifacts/`、旧`Builds/` 684件、`Library/`、`Logs/`、`UserSettings/`、`GeneratedPacks/`
+- 保持: `Builds/HandoffV2/`、`private/`、ソース／テスト／設計書
+- 例外: 起動中の旧`Builds/AttachmentReadableV1/`は`NyaForge.exe`が使用中のため残存。プロセス終了後に削除可能
+- 容量: NyaForge全体 約125.8GB → 約1.4GB（`RadDollV3-clothing`は別管理）
+- 境界: 生成物とキャッシュの整理であり、コード・制作素材・公開Git履歴は変更していない
+
 # 2026-09-15 MOD-05-NOTIFY-02: SelectionContextを選択表示の通知境界へ接続
 
 `SelectionContext.Changed`の購読先でprojectionだけでなく、選択数・面編集・Rig・fit要約など選択依存Panelの`RefreshSelectionPresentation()`も更新するようにした。viewportの`Select`／頂点pick側にあった手動の同じ更新を削り、viewport・MCP・将来のPanelが同じ通知経路を使う形へ揃えた。UI構築前の通知は安全に無視するガードを追加し、文書command・Undo・MCP wireは変更していない。
