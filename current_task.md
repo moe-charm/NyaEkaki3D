@@ -1,3 +1,15 @@
+# 2026-09-15 HANDOFF-02: 新buildで実モデル・Unity Bridgeまで再確認
+
+環境移行後の再現性を確認するため、現行`main`から新しい`HandoffV2` Playerをビルドし、Core／通常Authoring／実RadDollV3衣装工程／Unity Bridgeを順に再実行した。新buildでも経路はすべて **PASS** し、前回build固有の証跡に依存しない停止点を作れた。
+
+- Core: **521 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-aea1f92d753a4f87871c01f40fdf2574`）
+- Player build: `Builds/HandoffV2/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-182215-662.log`）
+- 通常Authoring: **PASS**（`Artifacts/Authoring-20260915-182308-272a6d1dfd7847a4b17868012c3665c3/report.json`、1069×698）
+- 実RadDollV3 Authoring: **PASS**（`Artifacts/Authoring-20260915-182352-e35ea993d1224ca99d2574cead259264/report.json`、1069×698）
+- 実衣装package: `real-clothing-project/exports/clothing-20260915-092543-2d0bbf/skinned-clothing.nyaforge.json`
+- Unity Bridge: **PASS**（Unity 2022.3.22f1、`Artifacts/BridgeReceiver-20260915-182632-565-6ebd5c0eb8f94ac0b261aff74fc9febc/bridge-report.json`）
+- 境界: 自動Player／Bridge検証であり、実マウス・DPI／IME、Unity EditorWindowの手動操作、VRChat Build & Test／実機表示は未受入。
+
 # 2026-09-15 UNITY-BRIDGE-SPARSE-01: 最新実衣装packageのUnity受け取りを確認
 
 疎accessor対応後に生成した実RadDollV3衣装packageを、Unity Bridge検証へ渡した。Unity **2022.3.22f1**で、stable BoneIdによるSkinnedMeshRenderer生成、avatar rootの移動／回転／scale、StateHash更新、管理対象の削除／Undo、複数package所有、normal／MRのglTF→Unity変換、package hash／sidecar検証を含む **PASS** を確認した。

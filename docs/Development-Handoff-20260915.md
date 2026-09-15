@@ -12,7 +12,9 @@
 - 最新記録commit: `4b9325c test: cover sparse skinned glb roundtrip`
 - 引継ぎ文書更新commit: `4b9325c test: cover sparse skinned glb roundtrip`
 - `main`はpush済み、作業ツリーはclean
-- Windows Player: `Builds/SparseMatrixV1/NyaForge.exe`
+- Windows Player: `Builds/HandoffV2/NyaForge.exe`
+
+移行後の再構築確認として、現行`main`から`HandoffV2`を新規ビルドし、Core／通常Authoring／実RadDollV3衣装工程／Unity Bridgeを再実行した。全て **PASS**。実モデルartifactは`Artifacts/Authoring-20260915-182352-e35ea993d1224ca99d2574cead259264/report.json`、packageは`real-clothing-project/exports/clothing-20260915-092543-2d0bbf/skinned-clothing.nyaforge.json`、Bridgeは`Artifacts/BridgeReceiver-20260915-182632-565-6ebd5c0eb8f94ac0b261aff74fc9febc/bridge-report.json`。
 
 環境移行直前の実モデル停止確認として、同PlayerへprivateのRadDollV3 VRMを渡した一周も **PASS** した。artifactは`Artifacts/Authoring-20260915-180348-8a01c5330e2f43b9a4f91ae158950f8c/report.json`、衣装packageは`real-clothing-project/exports/clothing-20260915-090538-6e3484/skinned-clothing.nyaforge.json`。171 bones／35 morphsの取込、チョーカー頂点編集、native Save/Open、標準skinned GLB／衣装package出力までを含む。これはWindows Player自動検証であり、実マウス・Unity Editor・VRChat実機の受入へは読み替えない。
 
@@ -21,7 +23,11 @@
 ## 検証済み証跡
 
 - Core: **521 passed / 0 failed**（sparse POSITION／weight／inverse-bindと、疎skinned GLBのwriter→再取込往復を含む）
-  - `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-772c519cc41044cc9adeeffc87677e83`
+  - `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-aea1f92d753a4f87871c01f40fdf2574`
+- HandoffV2 Player build: Unity **6000.4.3f1**（`Builds/HandoffV2/NyaForge.exe`、`Logs/build-player-20260915-182215-662.log`）
+- HandoffV2 Authoring: **PASS**（`Artifacts/Authoring-20260915-182308-272a6d1dfd7847a4b17868012c3665c3/report.json`）
+- HandoffV2 実RadDollV3 Authoring: **PASS**（`Artifacts/Authoring-20260915-182352-e35ea993d1224ca99d2574cead259264/report.json`）
+- HandoffV2 実衣装package Unity Bridge: **PASS**（Unity 2022.3.22f1、`Artifacts/BridgeReceiver-20260915-182632-565-6ebd5c0eb8f94ac0b261aff74fc9febc/bridge-report.json`）
 - Player build: Unity **6000.4.3f1**
   - `Builds/SparseMatrixV1/NyaForge.exe`
   - `Logs/build-player-20260915-175918-288.log`
