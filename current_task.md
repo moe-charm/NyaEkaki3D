@@ -1,5 +1,11 @@
 # 2026-09-15 ドキュメント同期: VRM意味情報診断とWindows v1残件
 
+# 2026-09-15 現行Windows候補のnative保存状態再開
+
+`Builds/Windows/NyaForge.exe --authoring true`をWindows native `@oai/sky`で起動し、制作画面の`保存済み制作を開く…`からprivateの`manual-real-model-choker-20260915/project.nyaforge.json`をExplorerで指定した。開く操作後、上部へ制作対象の`基本形状・制作物`と`保存済み`が表示され、ステータスに`制作状態を開きました。ここから新しい履歴を始めます。`が出た。保存済みプロジェクトを最新candidateで読み込めることを確認した。
+
+これはnative projectのExplorer指定・再開表示の手動スモークである。再開後の全周カメラ・衣装fit・貫通・材質見た目、Unity受け取り、VRChat Build & Testは未受入のまま残る。private検証状態は公開ツリーへ追加していない。
+
 # 2026-09-15 現行Windows候補の実ウィンドウ取込スモーク
 
 `Builds/Windows/NyaForge.exe`をWindows native `@oai/sky`で起動し、通常窓（約1069×698）でViewerから`制作へ`を開いた。上部の`モデルを追加`で取込Panelへ移動し、`GLB / VRMを選ぶ`からExplorerを開いてprivateの`RadDollV3_VRM.vrm`を選択した。候補欄に`mesh 0 · Bag.baked`、`skin 0 · 171 bone`、10 instancesが表示され、候補確認後に`全meshをまとめて取り込む`を実行した。取込後は制作対象へスキンモデルが表示され、statusに`10 objects`、source hash、`VRM意味情報: firstPerson（未解決・詳細は警告）`、右Panelに`SpringBone設定: 5 chain · 53 joint · 4 collider group`が表示された。
