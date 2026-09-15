@@ -58,7 +58,12 @@ namespace NyaForge.UnityRuntime
             RefreshReferenceProtectionFromWorkspace();
             RefreshDeliveryAllowlistFromWorkspace();
             projectPath.SetValueWithoutNotify(loadedPath ?? Path.Combine(Application.persistentDataPath, "Authoring", "Project-" + Guid.NewGuid().ToString("N").Substring(0, 8)));
-            Select(projection.Points.Length == 0 ? Array.Empty<int>() : new[] { 0 }); Frame(); Refresh();
+            Select(projection.Points.Length == 0 ? Array.Empty<int>() : new[] { 0 });
+            // Refresh projections before framing.  A workspace replacement
+            // invalidates the previous projection; framing first can leave a
+            // reopened model at the fallback distance and crop it severely.
+            Refresh();
+            Frame();
             SetStatus(loadedPath == null ? "新しい制作プロジェクトです。形を追加して始めてください。" : "制作状態を開きました。ここから新しい履歴を始めます。旧形式は別フォルダへ保存してください。");
         }
 

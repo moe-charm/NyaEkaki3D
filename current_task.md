@@ -4298,3 +4298,15 @@ Playerを終了して同じbuildを再起動し、`最後の制作を再開`を�
 - 手動確認: **PASS**（private実VRM選択、全mesh取込、チョーカー追加、保存、Player再起動、pointer再開）
 - 実体: `C:/Users/tomoaki/AppData/LocalLow/NyaForge/NyaForge/Authoring/Project-3688f569/project.nyaforge.json`
 - 境界: 再開後の全周fit・貫通・材質見た目、頂点編集の実マウス一周、DPI／IME、Unity／VRChat実機、販売品質は別受入。生成物とprivate素材は公開ツリーへ追加していない。
+
+# 2026-09-15 UX-FRAME-01: native再開後の表示フレーム順序を修正
+
+workspaceを開き直した直後にprojection更新前の点群で`Frame()`していたため、再開した実アバターが極端に拡大される場合があった。`ReplaceWorkspace`の順序を`Select → Refresh → Frame`へ変更し、新しいworkspaceの最終projectionを基準にカメラを合わせるようにした。保存形式・カメラの保存契約・編集操作は変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.ProjectActions.cs`
+- Core: **515 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-59afa0299f724a5eb7aaeb3daf3472b1`）
+- Player build: `Builds/RecentProjectFrameV1/NyaForge.exe`（`Logs/build-player-20260915-124019-665.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-124107-ab195aafab664431967bd76f2af987f6/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260915-124143-a877801d1e8346d7839eeabf16ab2cdd/report.json`）
+- 手動確認: Computer Useでpointerから実RadDollV3＋チョーカーを再開し、再開直後に全身がviewport内へ収まることを確認。旧実装で発生した極端な拡大状態を再現しない。
+- 境界: 実EditorWindowのDPI／IME、全周fit・貫通・材質見た目、Unity／VRChat実機、販売品質は別受入。生成Player・private素材は公開ツリーへ追加していない。
