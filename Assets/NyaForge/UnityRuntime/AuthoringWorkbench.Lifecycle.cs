@@ -17,6 +17,11 @@ namespace NyaForge.UnityRuntime
         void OnSelectionContextChanged()
         {
             if (projection != null) projection.Select(selection);
+            // SelectionContext is the single notification boundary for
+            // selection-dependent panels.  Keeping this here means viewport,
+            // MCP and future panel inputs all update the same presentation
+            // without each caller having to remember a second refresh call.
+            RefreshSelectionPresentation();
         }
 
         void OnSessionStateChanged()

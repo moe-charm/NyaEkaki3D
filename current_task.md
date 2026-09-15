@@ -1,3 +1,12 @@
+# 2026-09-15 MOD-05-NOTIFY-02: SelectionContextを選択表示の通知境界へ接続
+
+`SelectionContext.Changed`の購読先でprojectionだけでなく、選択数・面編集・Rig・fit要約など選択依存Panelの`RefreshSelectionPresentation()`も更新するようにした。viewportの`Select`／頂点pick側にあった手動の同じ更新を削り、viewport・MCP・将来のPanelが同じ通知経路を使う形へ揃えた。UI構築前の通知は安全に無視するガードを追加し、文書command・Undo・MCP wireは変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Lifecycle.cs`、`AuthoringWorkbench.SelectionRefresh.cs`、`AuthoringWorkbench.ViewportInput.cs`
+- Player build: `Builds/SelectionEventV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-183146-810.log`）
+- Authoring: **PASS**（88 checks、1069×700、`Artifacts/Authoring-20260915-183218-9e0160f220a1467f94fd74809db5a8f5/report.json`）
+- 境界: 自動pointer／状態検証であり、実マウス・DPI／IME・Unity EditorWindow・VRChat実機は未受入。
+
 # 2026-09-15 GUI-08-AUTO-01: HandoffV2狭幅Navigationを再確認
 
 現行`HandoffV2`で1069×700のNavigation suiteを実行し、Viewerのpack／recent／set／settingsからAuthoringへ進む導線、キャンセル・不正path時のsession／history保持、named sessionのSave/Open、utility panelの収まりとusable viewportを確認した。**PASS** で終了。

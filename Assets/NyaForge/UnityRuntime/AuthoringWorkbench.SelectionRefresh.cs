@@ -11,7 +11,7 @@ namespace NyaForge.UnityRuntime
         /// </summary>
         void RefreshSelectionPresentation()
         {
-            if (workspace == null) return;
+            if (workspace == null || faceMode == null) return;
             bool faceSelectionActive = faceMode != null && faceMode.value && faceMode.enabledSelf;
             // Vertex selection drives the face editing controls too (split,
             // edge insertion and weld), so refresh that dependent group before

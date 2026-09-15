@@ -30,7 +30,6 @@ namespace NyaForge.UnityRuntime
         {
             selection.Clear(); foreach (int i in indices) selection.Add(i);
             selectionContext.NotifyChanged();
-            projection.Select(selection); RefreshSelectionPresentation();
         }
 
         /// <summary>Resolves a click against world-space projection points after attachment transforms.</summary>
@@ -49,7 +48,6 @@ namespace NyaForge.UnityRuntime
             if (!add) selection.Clear();
             if (add && selection.Contains(closest)) selection.Remove(closest); else selection.Add(closest);
             selectionContext.NotifyChanged();
-            projection.Select(selection); RefreshSelectionPresentation();
         }
 
         Vector2 VertexPanelPoint(Vector3 point)
