@@ -4233,3 +4233,7 @@ GUIとMCPの履歴処理で個別に並んでいたrig／VRM expression／Spring
 - Authoring自動回帰: **PASS**（`Artifacts/Authoring-20260915-112716-68877039adb24fa486e3d6eda695dc45/report.json`）
 - 手動確認: Windows native `@oai/sky`で`--authoring true`を起動し、制作画面の`モデルを追加`から取込Panelを開くところまで確認。新ビルドの実スクリーンショット確認は継続中。
 - 境界: 既存のDPI・IME・長い日本語名、全周fit・貫通・材質見た目、Unity／VRChat実機受入は別カードのまま。
+
+# 2026-09-15 検証: UX-IMPORT-FIRST後のCore回帰
+
+`main`の`a6c74a6`（取込Panel先頭導線）へ対して、`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`を再実行し **515 passed / 0 failed** を確認した。artifactは`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-eace1477c19145728e36c48da68f8366`。この回帰はCoreの保存・再開・頂点編集・材質・GLB/VRM出力契約を確認するもので、実EditorWindowのDPI・IME・長いパス、実アバターの全周fit・貫通・材質見た目、Unity／VRChat実機受入とは別境界である。
