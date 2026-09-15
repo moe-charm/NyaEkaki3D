@@ -14,6 +14,8 @@
 - `main`はpush済み、作業ツリーはclean
 - Windows Player: `Builds/SparseMatrixV1/NyaForge.exe`
 
+環境移行直前の実モデル停止確認として、同PlayerへprivateのRadDollV3 VRMを渡した一周も **PASS** した。artifactは`Artifacts/Authoring-20260915-180348-8a01c5330e2f43b9a4f91ae158950f8c/report.json`、衣装packageは`real-clothing-project/exports/clothing-20260915-090538-6e3484/skinned-clothing.nyaforge.json`。171 bones／35 morphsの取込、チョーカー頂点編集、native Save/Open、標準skinned GLB／衣装package出力までを含む。これはWindows Player自動検証であり、実マウス・Unity Editor・VRChat実機の受入へは読み替えない。
+
 今回の停止点では、取込・基本形状・装着PanelのDropdownを共通`UiElements`部品へ移し、長い表示名を折り返すレイアウトとtooltipの責務を統一した。さらにGLB sparse accessorを共通readerへ接続し、静的POSITION／indices、skinned JOINTS_n／WEIGHTS_n、逆bind MAT4の差分形式をゼロ埋め＋検証済み上書きで読めるようにした。対象avatarは表示名・役割・短縮ID、BoneIdは骨名・短縮IDを画面に出し、完全なIDはtooltipで確認する。保存形式、stable ID、MCP wire、出力契約は変更していない。
 
 ## 検証済み証跡
@@ -24,6 +26,8 @@
   - `Builds/SparseMatrixV1/NyaForge.exe`
   - `Logs/build-player-20260915-175918-288.log`
 - Authoring自動検証: **PASS**（1069×698、`Artifacts/Authoring-20260915-175937-87f6de8879c64e8ea3948ed1d24a95af/report.json`）
+- 疎accessor対応後の実RadDollV3 Player: **PASS**（1069×698、`Artifacts/Authoring-20260915-180348-8a01c5330e2f43b9a4f91ae158950f8c/report.json`）
+  - 衣装package: `real-clothing-project/exports/clothing-20260915-090538-6e3484/skinned-clothing.nyaforge.json`
 - Player build: Unity **6000.4.3f1**
   - `Logs/build-player-20260915-173613-822.log`
   - `Builds/WrappedChoiceV1/NyaForge.exe`

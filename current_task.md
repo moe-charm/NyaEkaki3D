@@ -1,3 +1,13 @@
+# 2026-09-15 REAL-CLOTHING-SPARSE-01: 疎accessor対応後の実RadDollV3一周を確認
+
+環境移行前の停止確認として、最新の`SparseMatrixV1` Playerへ実RadDollV3 VRMを渡し、実モデル取込から衣装作成・編集・保存／再読込・標準skinned GLB／衣装package出力までを一周した。検証スクリプトは **PASS** で終了し、疎accessor対応後も実素材のauthoring経路が壊れていないことを確認した。
+
+- Player: `Builds/SparseMatrixV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-175918-288.log`）
+- 実モデルAuthoring: **PASS**（1069×698、`Artifacts/Authoring-20260915-180348-8a01c5330e2f43b9a4f91ae158950f8c/report.json`）
+- 実モデル証跡: `real-clothing-project/exports/clothing-20260915-090538-6e3484/skinned-clothing.nyaforge.json`
+- 内容: 171 bones／35 morphsのVRM取込、チョーカー頂点編集、native Save/Open、skinned GLB／衣装package出力を含む自動検証 **全項目PASS**。
+- 境界: これはWindows Playerの自動検証。実マウスの全工程、Unity Editorでの適用、VRChat Build & Test／実機表示は未受入。疎accessorを含む実素材のGLB往復は、出力GLBを別途再取込する手動／追加自動確認が残る。
+
 # 2026-09-15 I04-A-SPARSE-01: GLB sparse accessorの共通読取を追加
 
 GLB accessorのsparse表現を、ゼロ初期化したbase要素へ検証済みのindices／valuesを上書きする共通`GlbSparseAccessorReader`へまとめた。静的POSITION／indices、skinnedのJOINTS_n／WEIGHTS_n、source-skinの逆bind MAT4で同じ範囲・4byte bufferView境界・重複index検査を使う。
