@@ -166,3 +166,5 @@ GUI-04とMOD-02の第一段（基本形状パネル、寸法入力、生成処�
 | MOD-05 | 各抽出と同時、完了判定はGUI-08 | 古いUI構築／全体Refreshの重複撤去、検証harness移行、実装後の構成README | **第一段実装済み**（`AuthoringWorkbenchSession.cs`、`SelectionContext.cs`、`AuthoringWorkbench.Lifecycle.cs`、`AuthoringWorkbench.RefreshState.cs`、`AuthoringWorkbench.Execution.cs`、`AuthoringWorkbench.RefreshPipeline.cs`、対象一覧差分更新、[Authoringコードマップ](Authoring-Code-Map.md)）。同じ文書・Undo履歴を共有すること、更新群の責務境界をPlayer回帰で確認。dirty／metadata再同期、Panel単位の購読、検証harness移行、実操作受入は残る |
 
 改修単位は「GUIタスク1件＋そのパネルの抽出＋必要な回帰＋記録」。モジュール化だけの長期間の先行工事を避け、毎段階で起動可能な候補を残す。新しいassembly分割や名前空間の全面改名は、依存が実証されて必要になった時に別判断する。
+
+2026-09-15追記: GUI-08の狭幅対応として、実Windows Playerのcontrols欄を固定幅から画面幅32%（260〜420px）へ変更した。最大化した実ウィンドウで作業モード・基本形状・寸法入力の収まりを確認し、注入UI回帰は旧幅を維持して88 checks PASS、実RadDollV3一周は95 checks PASS、Unity Bridgeは16 checks PASS。DPI別、狭い非最大化窓、IME、実EditorWindow全周fit・貫通・材質、VRChat実機は引き続きGUI-08／E03〜E08の未受入項目とする。

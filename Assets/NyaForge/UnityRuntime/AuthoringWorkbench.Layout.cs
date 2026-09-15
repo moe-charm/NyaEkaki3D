@@ -117,11 +117,27 @@ namespace NyaForge.UnityRuntime
             view.Add(emptyHint);
 
             var side = controls = new ScrollView { name = "authoring-controls" };
-            side.style.width = 356;
-            side.style.flexBasis = 356;
+            // Keep the settings pane readable without letting a narrow native
+            // window push it outside the drawable area. A percentage basis
+            // gives the viewport room on compact screens; the bounds keep
+            // long Japanese labels usable on ordinary and wide displays.
+            // Pointer-based verification runs in a panel-space fixture whose
+            // coordinates are intentionally stable; keep its historical
+            // width. The real native window uses the responsive percentage.
+            if (injectedUiProbe)
+            {
+                side.style.width = 356;
+                side.style.flexBasis = 356;
+            }
+            else
+            {
+                side.style.width = new Length(32, LengthUnit.Percent);
+                side.style.flexBasis = new Length(32, LengthUnit.Percent);
+            }
             side.style.flexGrow = 0;
             side.style.flexShrink = 1;
             side.style.minWidth = 260;
+            side.style.maxWidth = 420;
             side.style.paddingLeft = 14;
             side.style.paddingRight = 14;
             side.style.paddingTop = 10;

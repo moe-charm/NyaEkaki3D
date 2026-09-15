@@ -162,3 +162,13 @@ Core／Bridgeの自動回帰はコード変更後に再実行する。実SDK・�
 実RadDollV3 VRMから生成した`skinned-clothing.nyaforge.json`を、Unity 2022.3.22f1 Bridge検証へ入力した。Bridge **16 checks PASS**。avatar rootの移動・回転・scale後もavatar-local衣装配置を保持し、BoneId割当、StateHash更新、所有物削除＋Undo、複数package、normal／MR変換、hash検証を確認した。
 
 これは自動Player／Bridge受入であり、実EditorWindowのマウス操作、全周fit・貫通・材質見た目、VRChat Build & Test／実機表示は未受入のまま残す。詳細は`current_task.md`のREAL-CLOTHING-09に記録した。
+
+## 2026-09-15 MANUAL-09: 最大化時のcontrols幅と実モデル回帰
+
+`Builds/CompactControlsV2/NyaForge.exe`をWindows native `@oai/sky`で起動・最大化し、制作画面の右controls欄を目視した。空project案内、作業モード4種、基本形状の種類・半径・管の太さ・分割数・追加ボタンが右欄内に収まり、横方向の切れを確認しなかった。UI変更後もprivate RadDollV3自動一周は95 checks、Unity 2022.3.22f1 Bridgeは16 checks PASS。
+
+- [x] 最大化画面で主要controlsの収まりを確認
+- [x] UI変更後の実モデル／Bridge自動回帰
+- [ ] DPI 100/150/200%、狭い非最大化窓、IME、全周fit・貫通・材質、VRChat実機
+
+これは最大化画面の目視と自動経路の受入であり、未確認項目を合格扱いしない。詳細は`current_task.md`のGUI-17に記録した。

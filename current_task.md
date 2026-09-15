@@ -4103,3 +4103,15 @@ AGENTS.mdの手順どおり`@oai/sky`で、隔離ビルド `C:\Users\tomoaki\App
 - Clothing package: `Artifacts/Authoring-20260915-091912-0de78bcafc1f48599416beae139509bd/real-clothing-project/exports/clothing-20260915-002121-35f3b0/skinned-clothing.nyaforge.json`
 - Bridge report: `Artifacts/BridgeReceiver-20260915-092331-827-721df21cdd2d42febe1976ab703625a0/bridge-report.json`
 - 境界: 自動Player／Bridge経路の確認であり、実EditorWindowでの全周fit・貫通・材質見た目、実マウスのDPI／IME、VRChat Build & Test／実機表示、販売品質の合格には読み替えない。private素材・生成物・Unity SDKは公開ツリーへ追加していない。
+
+# 2026-09-15 GUI-17: controls欄の狭幅レスポンシブ化
+
+固定356pxだった制作controlsを、実Windows Playerでは画面幅32%（最小260px・最大420px）でレイアウトするよう変更した。狭いウィンドウでviewportを確保しながら、通常／最大化画面では日本語ラベル・寸法入力・作業モードを読みやすく保つ。ポインタ座標を使う注入UI検証では従来幅を維持し、既存回帰の座標契約を変えていない。最大化した実Windowsウィンドウで、空projectの開始案内、作業モード、基本形状の種類・寸法・追加ボタンが右欄内に収まることを目視確認した。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Layout.cs`
+- Player: `Builds/CompactControlsV2/NyaForge.exe`（Unity 6000.4.3f1）build成功
+- Authoring: **88 checks PASS**（`Artifacts/Authoring-20260915-093040-d253b457a8514999bf1897a12830309c/report.json`）
+- Navigation: **PASS**（`Artifacts/Navigation-20260915-093316-fa72cfdb2c8e458d9b3408a3b1478854/report.json`）
+- Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-39aae153ab1f4a7683f5796b2008b4a7`）
+- 実RadDollV3自動一周: **95 checks PASS**（`Artifacts/Authoring-20260915-093345-debbe91188f949d7b59c6cdf22089fcd/report.json`）。生成packageのUnity 2022.3.22f1 Bridge受け取りも **16 checks PASS**（`Artifacts/BridgeReceiver-20260915-093632-021-5f3425a2c8c04b1db26ab057e1520374/bridge-report.json`）。
+- 境界: 最大化画面の実表示確認であり、DPI 100/150/200%を個別に切り替えた最終受入、狭い非最大化窓での全コントロール目視、IME、実EditorWindow全周fit・貫通・材質、VRChat実機は未受入。生成物・private素材は公開ツリーへ追加していない。
