@@ -91,7 +91,9 @@ namespace NyaForge.UnityRuntime
             var fitMeasurement = MeasureAccessorySurfaceFit();
             checks.Add("BoneId surface region fit probe: max " +
                 (fitMeasurement.Result.MaxProjectionDistance * 1000f).ToString("0.###") + "mm, backside " +
-                fitMeasurement.Clearance.BehindSurfaceVertexCount + " vertices (50mm acceptance remains manual)");
+                fitMeasurement.Clearance.BehindSurfaceVertexCount + " -> projected " +
+                fitMeasurement.ProjectedClearance.BehindSurfaceVertexCount +
+                " vertices (50mm acceptance remains manual)");
             var evaluation = clothing.EvaluateGraph();
             var edit = clothing.Graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.EditMesh);
             var bind = clothing.Graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);

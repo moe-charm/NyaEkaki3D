@@ -1,3 +1,12 @@
+# 2026-09-15 FIT-REGION-BONE-05: fit後候補値を実モデル証跡へ記録
+
+実RadDollV3の同じ衣装工程で、fit前の裏側候補と仮想fit後の候補を別々に記録するよう検証文を更新した。Neck近傍面を選び、最大投影距離32.5mm、fit前17頂点、仮想fit後0頂点を確認できた。これはrest姿勢の最近面法線による候補値であり、全周・全poseの交差ゼロや販売品質の合格ではない。
+
+- Player `Builds/FitReportV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-171459-256.log`）
+- 実RadDollV3 Player **PASS 94 checks**（`Artifacts/Authoring-20260915-171537-8da9e4567d7a440da53471626cb7b6f1/report.json`）
+- 衣装packageのUnity **2022.3.22f1** Bridge **PASS**（`Artifacts/BridgeReceiver-20260915-171824-783-970c245c7e4d44f5934aab3cbd022ddb/bridge-report.json`）
+- 未完了: 実マウスでfit適用後の全周・正面／背面／左右・pose・材質目視、移動／回転／scale済みavatar、Unity Editor／VRChat Build & Test／実機確認。
+
 # 2026-09-15 GUI-READABILITY-02: 狭い窓で選択値とfit要約を折り返す
 
 通常のWindows窓（1069×698）で、fit対象要約を1行固定していたため右ペインの末尾が隠れる状態を確認した。`object-surface-fit-summary`を右ペイン内で折り返し、基本形状の種類Dropdownもラベル上段＋選択値折り返しへ揃えた。選択中のプリセット名はtooltipにも明示し、形状種類が「リング（チョーカー）」のように途中で見えなくならないようにした。UI回帰へ折り返し設定を追加した。
