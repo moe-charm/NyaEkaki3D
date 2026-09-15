@@ -16,7 +16,7 @@ GLB accessorのsparse表現を、ゼロ初期化したbase要素へ検証済み�
 
 - 実装停止点: `cd211e7 refactor: share wrapped choice layout`
 - 引継ぎ文書更新commit: `367642b docs: add development handoff checkpoint`（`main`へpush済み）
-- 最新記録commit: `2a7d17d docs: record sparse accessor checkpoint`
+- 最新記録commit: `c372de5 docs: record sparse inverse-bind checkpoint`
 - Core **517 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-47d02caff3d14902bb6041e3d09ce6e0`）
 - Player: `Builds/WrappedChoiceV1/NyaForge.exe`、Authoring **PASS**（`Artifacts/Authoring-20260915-173638-ee084f4b08df45efb7163094701bf0b7/report.json`）
 - 実RadDollV3 Player **PASS**（`Artifacts/Authoring-20260915-173806-1ce32564863d4c6c931ca5229c9a94d7/report.json`）
