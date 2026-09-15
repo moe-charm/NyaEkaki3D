@@ -4372,3 +4372,13 @@ Normal／metallic-roughness画像のWindows v1出力はUV0のみ対応するた�
 - 形状追加後status: `チョーカー形状を追加しました。頂点編集・厚み・UV・材質を調整してください。`。保存先表示: `C:\Users\tomoaki\AppData\LocalLow\NyaForge\NyaForge\Authoring\Project-1d638f0d`。
 - 再起動後は別の保存済み制作（制作対象ID `f2d8c732-21b...`）を表示できたが、保存直後の `Project-1d638f0d` を指定した再読込とは分けて扱う。手動の頂点変更、GLB/VRM出力、Unity／VRChat実機表示は未受入。
 - 公開境界: private素材、生成Player、Artifactsは公開ツリーへ追加していない。
+
+# 2026-09-15 CURRENT-GOAL-V1: 現行ソースの実RadDollV3衣装一周を再検証
+
+`Builds/CurrentGoalV1/NyaForge.exe`を現行mainから再ビルドし、private `Z:\TextureVoice_local\git\RadDollV3-clothing\private\viewer-data\packs\avatar-raddollv3-local\RadDollV3_VRM.vrm`を入力として`Tools/Test-NyaForgeRealClothing.ps1`を実行した。取込候補選択、全mesh取込、EditMesh頂点編集、native Save/Open、標準skinned GLB出力／再取込、VRM 1.0 package出力、衣装package生成、Unity Bridge受け取りまでを一周確認した。
+
+- Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-f4a64781b4de4dd388b5975138a04631`）。
+- Windows Player: **PASS**（97 checks、`Artifacts/Authoring-20260915-135812-e0a722b8cfd341eabce1812020911a92/report.json`、画像 `authoring.png`）。
+- Unity Bridge: **PASS**（Unity 2022.3.22f1、16 checks、`Artifacts/BridgeReceiver-20260915-140128-404-cde924dab1974541b23d2dbb635d4579/bridge-report.json`）。衣装skeletonは4 bones。
+- 主な確認: 実VRMの全mesh編集、choker vertex edit、source診断、Save/Open、標準GLBの形状・材質・skin、VRM1のloss report、衣装packageのstable skeleton/BoneId binding、移動・回転・scale avatar rootへの配置、更新／削除ownership、normal/MR channel。
+- 境界: Player／Core／Bridgeの自動・合成受入であり、実EditorWindowの全周fit・貫通・材質見た目、DPI 150/200%・IME・長いパス、VRChat Build & Test／実機表示、完全VRM意味payloadの変換は未受入。private素材・生成Player・Artifactsは公開ツリーへ追加していない。
