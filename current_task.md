@@ -4264,3 +4264,12 @@ GUIとMCPの履歴処理で個別に並んでいたrig／VRM expression／Spring
 
 - 集約: `Artifacts/Navigation-Repeated-Windows-20260915-115310.json`
 - 境界: 起動／終了とNavigationの回帰であり、2時間編集、DPI 150/200%、IME、実アバターの全周fit・貫通・材質見た目、VRChat実機は未受入。生成物は公開ツリーへ追加していない。
+
+# 2026-09-15 MANUAL-14: 現行Windows候補の実Explorer取込・チョーカー・保存
+
+現行`Builds/Windows/NyaForge.exe`をWindows native `@oai/sky`で起動し、空の制作画面から実操作した。`モデルを追加`でExplorerを開き、privateの`RadDollV3_VRM.vrm`をフォルダ移動と行選択で指定した。候補欄に`mesh 0 (Bag.baked)`、skin 0・171 bone、10 instancesを確認し、`選択候補を取り込む`でviewportへモデルを表示した。`基本形状を追加`を開くと、既定の`リング（チョーカー）`寸法と`① GLB / VRMを選ぶ`から始まる取込導線が同一Panelに表示され、`この寸法で形状を追加`で編集可能なリングを追加できた。上部`保存`を実行し、制作対象が`保存済み`になり、native正本がAppData配下へ保存されたことを確認した。
+
+- 手動確認: **PASS**（現行標準候補、実Explorer、VRM候補確認、skin取込、チョーカー追加、保存）
+- 確認画像: `C:/Users/tomoaki/AppData/Local/Temp/nya-current-import-candidates.png`, `C:/Users/tomoaki/AppData/Local/Temp/nya-current-manual-imported.png`, `C:/Users/tomoaki/AppData/Local/Temp/nya-current-manual-choker-added.png`, `C:/Users/tomoaki/AppData/Local/Temp/nya-current-manual-saved.png`
+- 保存先表示: `C:/Users/tomoaki/AppData/LocalLow/NyaForge/NyaForge/Authoring/Project-14df807e`
+- 境界: 現行候補での実Explorer／取込／形状追加／保存の確認であり、再起動後の手動再Open、DPI 150/200%、IME、全周fit・貫通・材質見た目、Unity／VRChat実機は未受入。private素材・生成物は公開ツリーへ追加していない。
