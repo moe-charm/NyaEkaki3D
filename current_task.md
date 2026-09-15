@@ -1,3 +1,14 @@
+# 2026-09-15 HANDOFF-01: 環境移行の停止点を固定
+
+環境移行のため、共通Dropdown部品移管後の現行candidateを停止点として固定した。再開手順・検証証跡・未完了の外部受入境界を`docs/Development-Handoff-20260915.md`へまとめた。
+
+- 最新commit: `cd211e7 refactor: share wrapped choice layout`（`main`へpush済み）
+- Core **517 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-47d02caff3d14902bb6041e3d09ce6e0`）
+- Player: `Builds/WrappedChoiceV1/NyaForge.exe`、Authoring **PASS**（`Artifacts/Authoring-20260915-173638-ee084f4b08df45efb7163094701bf0b7/report.json`）
+- 実RadDollV3 Player **PASS**（`Artifacts/Authoring-20260915-173806-1ce32564863d4c6c931ca5229c9a94d7/report.json`）
+- 実衣装packageのUnity **2022.3.22f1** Bridge **PASS**（`Artifacts/BridgeReceiver-20260915-174102-609-23abb3f848b44f4fb12818755f7f8734/bridge-report.json`）
+- 未完了: 実マウスの全工程・DPI/IME、実RadDollV3全周fit／pose／材質、Unity Editorの手動更新／削除、VRChat Build & Test／実機表示。
+
 # 2026-09-15 MOD-UI-CHOICE-01: 折返しDropdown設定を共通UI部品へ移管
 
 取込Panelに置かれていた長文Dropdownのレイアウト設定を`AuthoringWorkbench.UiElements.cs`の`ConfigureWrappedChoice`へ移し、取込・基本形状・装着Panelの全選択欄から同じ責務の共通部品を呼ぶようにした。USSと回帰検証も`wrapped-choice`へ統一し、Panelごとのクラス名依存をなくした。表示仕様（ラベル上段、選択値折返し、完全IDはtooltip）は変更していない。
