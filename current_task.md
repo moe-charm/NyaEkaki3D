@@ -4237,3 +4237,11 @@ GUIとMCPの履歴処理で個別に並んでいたrig／VRM expression／Spring
 # 2026-09-15 検証: UX-IMPORT-FIRST後のCore回帰
 
 `main`の`a6c74a6`（取込Panel先頭導線）へ対して、`dotnet run --project Tests/Authoring.Core/Authoring.Core.Tests.csproj --no-restore`を再実行し **515 passed / 0 failed** を確認した。artifactは`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-eace1477c19145728e36c48da68f8366`。この回帰はCoreの保存・再開・頂点編集・材質・GLB/VRM出力契約を確認するもので、実EditorWindowのDPI・IME・長いパス、実アバターの全周fit・貫通・材質見た目、Unity／VRChat実機受入とは別境界である。
+
+# 2026-09-15 MANUAL-13: ImportFirstActionV1の取込導線を実画面確認
+
+`Builds/ImportFirstActionV1/NyaForge.exe --authoring true`をWindows native `@oai/sky`で起動し、空の制作画面の上部`モデルを追加`からGLB／VRM取込Panelを開いた。右Panelを先頭へ戻すと、短い案内の直後に`① GLB / VRMを選ぶ`ボタンと`選択したファイル`欄が表示され、技術診断より前に最初の操作へ到達できることを確認した。ボタンからExplorerが開き、キャンセル後も制作画面へ戻れることを確認した。
+
+- 手動確認: **PASS**（空状態→モデル追加→Explorer表示→キャンセル→取込Panel先頭導線）
+- 確認画像: `C:/Users/tomoaki/AppData/Local/Temp/nya-import-panel-home3.png`
+- 境界: 実モデルの取込・保存・再開、DPI／IME、長いパス、全周fit・貫通・材質見た目、Unity／VRChat実機、販売品質は別受入。Explorerで表示した場所はprivate素材領域で、追跡対象へ追加していない。
