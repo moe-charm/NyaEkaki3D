@@ -4148,3 +4148,14 @@ GUIとMCPの履歴処理で個別に並んでいたrig／VRM expression／Spring
 - Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-100209-925f3381c011428da8ec7ebbddb9edc6/report.json`）
 - Core: 直近 **515 passed / 0 failed**（MetadataRefreshはUnityRuntimeのみ）
 - 境界: 実VRM expression／Springを外部MCPでUndo/Redoする目視、実EditorWindowのDPI／IME、実Unity SDK／VRChat実機は別受入として未完了。
+
+# 2026-09-15 REAL-CLOTHING-10: metadata境界共通化後の実RadDollV3一周
+
+`Builds/MetadataBoundaryV1`へ`RefreshMetadataFromWorkspace`共通化を反映したPlayerで、privateの`RadDollV3_VRM.vrm`を使う実モデル自動一周を再実行した。前回の120秒検証は実モデル到達前にタイムアウトしていたため、今回は`-TimeoutSeconds 300`で切り分けた。GLB／VRM取込、候補確認、全mesh経路、チョーカー形状追加、頂点編集、明示Neck skin-bind、native Save/Open、選択衣装package出力まで完了し、**Authoring check PASS**。出力packageはGLBとBoneId付きsidecarを含む。
+
+- Player: `Builds/MetadataBoundaryV1/NyaForge.exe`（Unity 6000.4.3f1）
+- report: `Artifacts/Authoring-20260915-100811-909ac0e8d1c1407b9e393541fdbb9372/report.json`
+- capture: `Artifacts/Authoring-20260915-100811-909ac0e8d1c1407b9e393541fdbb9372/authoring.png`
+- clothing package: `Artifacts/Authoring-20260915-100811-909ac0e8d1c1407b9e393541fdbb9372/real-clothing-project/exports/clothing-20260915-010955-4556a5/skinned-clothing.nyaforge.json`
+- 実行ログには、衣装派生・保存・`skinned-clothing.nyaforge.json`出力・`NYAFORGE_AUTHORING_CHECK PASS`を確認した。
+- 境界: 自動Playerでの実モデル経路確認であり、実EditorWindowのDPI／IME／Explorer全周fit・貫通・材質見た目、Unity／VRChat実機、販売品質の合格には読み替えない。private素材・生成物は公開ツリーへ追加していない。
