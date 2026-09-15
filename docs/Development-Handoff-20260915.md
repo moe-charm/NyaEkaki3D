@@ -28,6 +28,7 @@
 - Authoring自動検証: **PASS**（1069×698、`Artifacts/Authoring-20260915-175937-87f6de8879c64e8ea3948ed1d24a95af/report.json`）
 - 疎accessor対応後の実RadDollV3 Player: **PASS**（1069×698、`Artifacts/Authoring-20260915-180348-8a01c5330e2f43b9a4f91ae158950f8c/report.json`）
   - 衣装package: `real-clothing-project/exports/clothing-20260915-090538-6e3484/skinned-clothing.nyaforge.json`
+- 同packageのUnity Bridge: **PASS**（Unity 2022.3.22f1、`Artifacts/BridgeReceiver-20260915-181855-184-cfebc7793a0c4b1b83b45e8ef17724c7/bridge-report.json`）
 - Player build: Unity **6000.4.3f1**
   - `Logs/build-player-20260915-173613-822.log`
   - `Builds/WrappedChoiceV1/NyaForge.exe`

@@ -1,3 +1,11 @@
+# 2026-09-15 UNITY-BRIDGE-SPARSE-01: 最新実衣装packageのUnity受け取りを確認
+
+疎accessor対応後に生成した実RadDollV3衣装packageを、Unity Bridge検証へ渡した。Unity **2022.3.22f1**で、stable BoneIdによるSkinnedMeshRenderer生成、avatar rootの移動／回転／scale、StateHash更新、管理対象の削除／Undo、複数package所有、normal／MRのglTF→Unity変換、package hash／sidecar検証を含む **PASS** を確認した。
+
+- package: `Artifacts/Authoring-20260915-180348-8a01c5330e2f43b9a4f91ae158950f8c/real-clothing-project/exports/clothing-20260915-090538-6e3484/skinned-clothing.nyaforge.json`
+- Bridge artifact: `Artifacts/BridgeReceiver-20260915-181855-184-cfebc7793a0c4b1b83b45e8ef17724c7/bridge-report.json`
+- 境界: Unity Bridge自動検証であり、Unity EditorWindowの実マウス操作、VRChat SDKのBuild & Test、VRChat内表示・負荷は未受入。
+
 # 2026-09-15 I04-A-SPARSE-02: sparse skinned GLBの出力・再取込往復を回帰化
 
 疎`WEIGHTS_0`を含むGLBを`GlbSkinImporter`で読み、実際の出力writerへ渡してから再び`GlbSkinImporter`で読み戻す回帰を追加した。頂点数・三角形数・全頂点座標と、骨名対応のウェイト値を比較し、疎入力がdense出力へ materialize された後も意味が変わらないことを固定した。
