@@ -6,6 +6,7 @@
 - Core: **517 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-618b1a99135b4290b9b2d9449657666e`）
 - Player: `Builds/AttachmentReadableV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-172424-653.log`）ビルド成功。
 - Authoring自動検証: **PASS**（1069×698、`Artifacts/Authoring-20260915-172504-b008c00520d64b7c9c6e6cbebf286626/report.json`）。Attachment GUI回帰を含む。
+- 実RadDollV3 Player: **PASS 94 checks**（`Artifacts/Authoring-20260915-172727-d44f59a3b672459eb7ab3a93fca7d1bd/report.json`）。実モデル取込・衣装工程の回帰も維持した。
 - 未完了: 実マウスでの狭い画面における装着先／BoneIdの目視、DPI・IME・長い実素材名、Unity Editor／VRChat内表示は未受入。自動PlayerのPASSを手動受入へ読み替えない。
 
 # 2026-09-15 FIT-REGION-BONE-05: fit後候補値を実モデル証跡へ記録
