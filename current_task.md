@@ -4406,3 +4406,13 @@ Normal／metallic-roughness画像のWindows v1出力はUV0のみ対応するた�
 - 標準skinned GLB: `Skinned GLB export requires one source, skeleton, skin binding and optional pose.` と表示して出力を作成しなかった。衣装graph単体にはavatar sourceがないため、avatar全体出力と衣装package出力を分ける既存ガードを確認した。
 - skin package: **PASS**。`C:\Users\tomoaki\AppData\LocalLow\NyaForge\NyaForge\Authoring\Project-3688f569\exports\clothing-20260915-053550-46dcdf` に `clothing.glb`、`binding.nyaforge.bin`、`skeleton.nyaforge.bin`、`skinned-clothing.nyaforge.json` を生成。画面statusでもGLBとBoneId sidecarの同梱を確認した。
 - 境界: 表面fitの全周見た目・貫通、weight paintの手修正、VRM実機、Unity／VRChat Build & Test、DPI・IME・長いパスは別受入。生成物はprivate LocalLow出力で、公開ツリーへ追加していない。
+
+# 2026-09-15 MANUAL-19: native装着済みチョーカーの衣装化と再出力
+
+`Builds/CurrentGoalV1/NyaForge.exe`をnative `@oai/sky`で操作し、保存済み`Project-3688f569`の新しいチョーカー形状を制作対象にした。装着先avatarを選択し、RadDollV3 skeletonの`Head`系stable BoneIdを指定して「この小物を装着」を実行。statusに`小物をstable BoneIdへ装着しました。pose変更時にプレビューが追従します。`と表示され、viewportでもリングが首位置へ移動した。
+
+続けて「Polygon造形をskin衣装へ派生」を実行し、`衣装 / スキン小物`へ切り替わること、装着位置をavatar rest座標へ焼き込んだ旨のstatus、元graph保持を確認した。衣装の「自動weight初期化（骨近傍）」を実行して成功し、保存後に確認・出力へ移動した。
+
+- 手動確認: **PASS**（stable BoneId装着、首位置表示、Polygon→skin衣装派生、骨近傍weight初期化、native保存）。
+- 出力確認: **PASS**。`C:\Users\tomoaki\AppData\LocalLow\NyaForge\NyaForge\Authoring\Project-3688f569\exports\clothing-20260915-055830-d894fa` に `clothing.glb`（26,400 bytes）、`binding.nyaforge.bin`（41,548 bytes）、`skeleton.nyaforge.bin`（3,153 bytes）、`skinned-clothing.nyaforge.json`（1,064 bytes）を生成。package metadataはvertex 225、triangle 384、stable skeleton/binding hashを保持し、statusでもGLBとBoneId sidecar同梱を確認した。
+- 境界: 今回はHead系BoneIdでの首装着とpackage経路の確認。avatar表面fitの全周見た目・貫通、Rig panelでの手修正、VRM実機、Unity／VRChat Build & Test、DPI・IME・長いパス、販売品質は別受入。生成packageはLocalLowのprivate出力で、公開ツリーへ追加していない。
