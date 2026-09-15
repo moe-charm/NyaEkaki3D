@@ -3,6 +3,7 @@
 GLB accessorのsparse表現を、ゼロ初期化したbase要素へ検証済みのindices／valuesを上書きする共通`GlbSparseAccessorReader`へまとめた。静的POSITION／indicesとskinnedのJOINTS_n／WEIGHTS_nの両方で同じ範囲・4byte bufferView境界・重複index検査を使う。source-skinの逆bind MAT4 sparseはまだ非対応として明示診断する。
 
 - 変更: `Assets/NyaForge/Authoring/Import/GlbSparseAccessorReader.cs`、`GlbImport.cs`、`GlbSkinImport.cs`、`GlbSourceSkinImporter.cs`、`Assets/NyaForge/Authoring/Import/README.md`
+- commit: `73ec1eb`（`eff6039`のsparse実装とUnity `.meta`を`main`へpush済み）
 - 回帰: 静的POSITION sparse、skinned weight sparse、既存の不正／負weight／8・16bit JOINTSを含む **519 passed / 0 failed**
 - artifact: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-1c284d2fe28944be8785d7118decea3a`
 - Player build: `Builds/SparseAccessorV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-175429-951.log`）成功。

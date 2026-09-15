@@ -7,7 +7,8 @@
 - リポジトリ: `Z:\TextureVoice_local\git\NyaForge`
 - branch: `main`
 - remote: `https://github.com/moe-charm/NyaEkaki3D.git`
-- 実装停止点: `cd211e7 refactor: share wrapped choice layout`
+- GUI停止点: `cd211e7 refactor: share wrapped choice layout`
+- 最新実装commit: `73ec1eb chore: track sparse accessor asset metadata`（sparse対応本体は`eff6039`）
 - 引継ぎ文書更新commit: `367642b docs: add development handoff checkpoint`
 - `main`はpush済み、作業ツリーはclean
 - Windows Player: `Builds/WrappedChoiceV1/NyaForge.exe`
