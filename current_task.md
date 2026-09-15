@@ -18,7 +18,7 @@
 - Core: **515 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3b839abf5c3e430ca85590d353716f7d`）
 - Windows Player: `Builds/SemanticInventoryV2/NyaForge.exe` をUnity 6000.4.3f1でビルド成功（`Logs/build-player-20260915-105316-539.log`）
 - 実モデルimport-only: **PASS**（private一時RadDollV3 VRM、`Artifacts/Authoring-20260915-105403-126d9fa806c2419aa3c5119111e81dfc/report.json`、1600x1000 PNGあり）。これは自動Player経路の確認で、実マウスの全周fit・貫通・見た目、Unity／VRChat内表示は未受入。
-- 残り: MCP詳細reportの意味情報表示、未知payloadの依存込み保管、完全VRM各受取側検証、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+- 残り: 未知payloadの依存込み保管、完全VRM各受取側検証、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
 # 2026-09-14 MOD-05: 保存状態Panelの通知境界
 
 Sessionの保存状態変更時に、Workbench全体を再構築せず保存状態表示だけを更新する`AuthoringWorkbench.PersistenceRefresh.cs`を追加した。`SaveIncomplete`／読込先変更の通知はLifecycleからこの境界を通り、保存先入力欄の編集中の値は上書きしない。通常のcommand確定時は従来どおり全体refreshを使い、geometryや他Panelの再生成を増やしていない。
