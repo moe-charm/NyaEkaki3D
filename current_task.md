@@ -4223,3 +4223,13 @@ GUIとMCPの履歴処理で個別に並んでいたrig／VRM expression／Spring
 - 確認できた表示: 最大化時の取込欄・寸法入力・頂点編集・Rig／Morph／出力の作業欄を右controlsで確認。長い説明文はパネル内で折返し、横方向の切れは見られなかった。
 - 未確認: DPI 150/200%、IME入力、全周fit・貫通・材質見た目、Unity／VRChat実機、実package受け取り。自動Player／Bridgeの合格や今回の手動保存を販売品質へ読み替えない。
 - private素材・手動制作データ・生成Playerは公開ツリーへ追加していない。
+
+# 2026-09-15 UX-IMPORT-FIRST: 取込Panelの最初の操作を先頭へ配置
+
+モデル取込Panelの短い3ステップ案内の直後に、`① GLB / VRMを選ぶ`と`選択したファイル`を配置した。VRMの技術説明・SpringBone・Rig・診断情報は長くなり得るため、初回利用者が長いスクロールをしなくても最初の操作へ到達できる導線にした。コマンドバーの`モデルを追加`と同じExplorer／PickModel経路を使い、選択ファイルの完全パスは従来どおりtooltipへ表示する。取込処理・保存形式・出力形式は変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Import.cs`
+- Windows Player: `Builds/ImportFirstActionV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-112654-684.log`）
+- Authoring自動回帰: **PASS**（`Artifacts/Authoring-20260915-112716-68877039adb24fa486e3d6eda695dc45/report.json`）
+- 手動確認: Windows native `@oai/sky`で`--authoring true`を起動し、制作画面の`モデルを追加`から取込Panelを開くところまで確認。新ビルドの実スクリーンショット確認は継続中。
+- 境界: 既存のDPI・IME・長い日本語名、全周fit・貫通・材質見た目、Unity／VRChat実機受入は別カードのまま。

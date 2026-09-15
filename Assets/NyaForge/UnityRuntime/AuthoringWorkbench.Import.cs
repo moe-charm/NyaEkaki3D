@@ -39,6 +39,19 @@ namespace NyaForge.UnityRuntime
             modelImportPanel = new Foldout { text = "GLB / VRMモデルを取り込む", value = false, name = "model-import" };
             modelImportStatus = new Label { name = "model-import-status" }; modelImportStatus.style.whiteSpace = WhiteSpace.Normal; modelImportPanel.Add(modelImportStatus);
             BuildModelImportGuidance(modelImportPanel);
+
+            // Keep the first action immediately below the short three-step
+            // guide. Diagnostics and source metadata can be long, especially
+            // for a VRM, so placing the file picker after them forced a new
+            // user to scroll before they could even choose a model. The
+            // command bar still opens this same picker; this is the in-panel
+            // path for users who are already reading the import instructions.
+            modelImportPanel.Add(Button("① GLB / VRMを選ぶ", () => { ShowModelImportPanel(); if (!modelPickerOpen) StartCoroutine(PickModel()); }, "model-import-browse"));
+            modelImportPath = new TextField("選択したファイル") { name = "model-import-path" }; modelImportPath.style.flexDirection = FlexDirection.Column;
+            modelImportPath.tooltip = "選択したGLB／VRMの完全パス";
+            modelImportPath.RegisterValueChangedCallback(change => modelImportPath.tooltip = string.IsNullOrWhiteSpace(change.newValue) ? "選択したGLB／VRMの完全パス" : change.newValue);
+            modelImportPanel.Add(modelImportPath);
+
             var importHelp = new Label("GLB / VRMの候補を確認してから、1メッシュまたはファイル内の全mesh instanceを追加します。nodeを選ぶと、その配置とmesh／skinの対応を使います。対応するVRM0・VRM1では揺れをプレビューできます。骨のTRS・行列とinverse-bindはsource原本へ保持します。FBXの直接読込は未対応です。")
             {
                 name = "model-import-technical-help"
@@ -48,11 +61,6 @@ namespace NyaForge.UnityRuntime
             BuildPhysBonesStatus(modelImportPanel);
             BuildImportedRigStatus(modelImportPanel);
             BuildModelImportDiagnostics(modelImportPanel);
-            modelImportPanel.Add(Button("GLB / VRMを選ぶ", () => { ShowModelImportPanel(); if (!modelPickerOpen) StartCoroutine(PickModel()); }, "model-import-browse"));
-            modelImportPath = new TextField("ファイルパス") { name = "model-import-path" }; modelImportPath.style.flexDirection = FlexDirection.Column;
-            modelImportPath.tooltip = "選択したGLB／VRMの完全パス";
-            modelImportPath.RegisterValueChangedCallback(change => modelImportPath.tooltip = string.IsNullOrWhiteSpace(change.newValue) ? "選択したGLB／VRMの完全パス" : change.newValue);
-            modelImportPanel.Add(modelImportPath);
             BuildModelImportSelection(modelImportPanel);
             modelImportPanel.Add(Button("選択候補を取り込む", () => Try(() => ImportModel(modelImportPath.value)), "model-import-apply"));
             modelImportPanel.Add(Button("全meshをまとめて取り込む", () => Try(() => ImportAllModelInstances(modelImportPath.value)), "model-import-all"));
