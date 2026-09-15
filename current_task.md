@@ -401,6 +401,8 @@ Workbenchの共有状態を整理するため、`AuthoringWorkbenchSession`を�
 
 ## 次の着手タスク（モジュール化後）
 
+> 注記（2026-09-15）: この節は2026-09-14時点の計画スナップショット。各項目の第一段実装結果は後続の時系列記録へ反映済みで、移行時の現在地・検証証跡・未完了境界は先頭の2026-09-15記録と`docs/Development-Handoff-20260915.md`を正本とする。
+
 - [x] **MOD-05 / WorkbenchSession 第一段**: workspace交換時にlive workspaceとcommand serviceを同じsession ownerから生成するようにした。Core／保存形式／MCP wire契約は変更していない。
 - [x] **MOD-05 / SelectionContext 第一段**: object・編集段・点／面選択を一つのcontextへ集約した。各Panelの別選択コピーを廃止した。
 - [x] **MOD-05 / Viewport境界**: Viewport／ViewportInput／ViewportInteraction／Layoutへ、カメラ・入力・UIイベント・画面構築の責務を分離した。V27〜V29のPlayer回帰を通過。
