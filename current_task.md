@@ -4288,3 +4288,13 @@ Windows向けの制作画面に、native保存した制作フォルダを再利�
 - Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-122007-81db73a7e35a4a32b4463bd5a0921eaa/report.json`）
 - Navigation回帰: **PASS**（`Artifacts/Navigation-20260915-122404-46e459705ff44a6f94351ace5e5150d6/report.json`）
 - 境界: pointerは再開を便利にする補助情報で、native manifestが正本。実RadDollV3の全周fit・貫通・材質見た目、DPI／IME、Unity／VRChat実機、販売品質は別受入のまま。private素材・生成物は公開ツリーへ追加していない。
+
+# 2026-09-15 MANUAL-15: 実RadDollV3の保存後再起動・pointer再開
+
+`Builds/RecentProjectV1/NyaForge.exe --authoring true`をComputer Useで最大化して起動し、private `RadDollV3_VRM.vrm`をExplorerから選択した。候補確認後に全mesh（10 objects、171 bone、SpringBone 5 chain / 53 joint / 4 collider group）を取り込み、既定リング（チョーカー）を追加して保存した。保存先は`C:/Users/tomoaki/AppData/LocalLow/NyaForge/NyaForge/Authoring/Project-3688f569`で、保存後pointerもこのnative projectを指した。
+
+Playerを終了して同じbuildを再起動し、`最後の制作を再開`を押した。未保存確認で`変更を破棄して進む`を選ぶと、実RadDollV3とチョーカーを含む制作状態が再読込され、上部に`保存済み`、statusに`制作状態を開きました`が表示された。pointerによる実モデルの再開を、Computer Useの再接続後に手動確認できた。
+
+- 手動確認: **PASS**（private実VRM選択、全mesh取込、チョーカー追加、保存、Player再起動、pointer再開）
+- 実体: `C:/Users/tomoaki/AppData/LocalLow/NyaForge/NyaForge/Authoring/Project-3688f569/project.nyaforge.json`
+- 境界: 再開後の全周fit・貫通・材質見た目、頂点編集の実マウス一周、DPI／IME、Unity／VRChat実機、販売品質は別受入。生成物とprivate素材は公開ツリーへ追加していない。
