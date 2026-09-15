@@ -146,11 +146,11 @@ namespace NyaForge.UnityRuntime
             // lossy-feature warnings. This keeps shared-resource identity
             // available after native Save/Open instead of making it depend on
             // whether a diagnostic happened to be emitted.
-            var diagnostics = new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, null, imported.Diagnostics, sourceNodeIndex);
+            var diagnostics = new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, null, ImportDiagnosticsWithVrm(imported.Diagnostics, vrm), sourceNodeIndex);
             var candidate = new ImportMetadataCandidate(null, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm, diagnostics);
             string display = (string.IsNullOrWhiteSpace(sourceName) ? "mesh " + meshIndex : sourceName) +
                 (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") +
-                " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(imported.Diagnostics) + ImportMaterialWarningSummary(materialWarnings) + VrmSemanticSummary(vrm);
+                " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(ImportDiagnosticsWithVrm(imported.Diagnostics, vrm)) + ImportMaterialWarningSummary(materialWarnings) + VrmSemanticSummary(vrm);
             return new ImportedGraphBuild(graph, candidate, meshIndex, null, display);
         }
 
@@ -183,12 +183,12 @@ namespace NyaForge.UnityRuntime
             // explicitly selected node affine).
             var sourceData = GlbSourceSkinImporter.ReadDataFromDocument(parsedDocument ?? GlbDocumentReader.Read(bytes), meshIndex, skinIndex, imported.Mesh);
             var rigSession = ImportedRigSession.Create(imported, vrm, graph.GraphId, skeletonId).WithSourceSkin(sourceData.Skin, sourceData.Binding);
-            var diagnostics = new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, imported.SkinIndex, imported.Diagnostics, sourceNodeIndex);
+            var diagnostics = new ImportedGlbDiagnostics(graph.GraphId, imported.SourceHash, imported.MeshIndex, imported.SkinIndex, ImportDiagnosticsWithVrm(imported.Diagnostics, vrm), sourceNodeIndex);
             var candidate = new ImportMetadataCandidate(rigSession, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm, diagnostics);
             string display = (string.IsNullOrWhiteSpace(sourceName) ? "mesh " + meshIndex : sourceName) +
                 " · bone " + imported.Skeleton.Bones.Count + " · weight " + imported.Binding.Weights.Count +
                 (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") +
-                " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(imported.Diagnostics) + ImportMaterialWarningSummary(materialWarnings) + VrmSemanticSummary(vrm);
+                " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(ImportDiagnosticsWithVrm(imported.Diagnostics, vrm)) + ImportMaterialWarningSummary(materialWarnings) + VrmSemanticSummary(vrm);
             return new ImportedGraphBuild(graph, candidate, meshIndex, skinIndex, display);
         }
 
@@ -246,6 +246,14 @@ namespace NyaForge.UnityRuntime
         {
             if (diagnostics == null || diagnostics.Count == 0) return "";
             return " · 診断 " + string.Join(" / ", diagnostics.Select(item => (item.IsBlocking ? "保持不可" : "一部保持") + ":" + item.Code));
+        }
+
+        static IReadOnlyList<GlbImportDiagnostic> ImportDiagnosticsWithVrm(IReadOnlyList<GlbImportDiagnostic> diagnostics, VrmMetadata metadata)
+        {
+            var values = new List<GlbImportDiagnostic>();
+            if (diagnostics != null) values.AddRange(diagnostics);
+            values.AddRange(GlbImportDiagnostics.ForVrmSemantics(metadata));
+            return values;
         }
 
         static string ImportMaterialWarningSummary(IReadOnlyList<string> warnings)

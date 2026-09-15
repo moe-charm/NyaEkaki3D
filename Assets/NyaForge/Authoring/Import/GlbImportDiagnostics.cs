@@ -56,6 +56,22 @@ namespace NyaForge.Authoring.Import
 
         public static IReadOnlyList<GlbImportDiagnostic> Empty { get; } = Array.AsReadOnly(Array.Empty<GlbImportDiagnostic>());
 
+        /// <summary>
+        /// Converts the VRM semantic inventory into the same persisted loss
+        /// report used by the selected GLB mesh.  The paths are intentionally
+        /// blocking: a caller may still publish a partial package, but a
+        /// strict complete-semantics profile must be able to stop before it
+        /// creates output.
+        /// </summary>
+        public static IReadOnlyList<GlbImportDiagnostic> ForVrmSemantics(VrmMetadata metadata)
+        {
+            if (metadata == null || metadata.Semantics == null || metadata.Semantics.UnresolvedPaths.Count == 0)
+                return Empty;
+            return new ReadOnlyCollection<GlbImportDiagnostic>(metadata.Semantics.UnresolvedPaths.Select(path =>
+                new GlbImportDiagnostic("VRM_SEMANTICS_NOT_RETAINED", path, true,
+                    "VRM semantic data is detected but is not retained by the initial editable/exportable profile.")).ToArray());
+        }
+
         public static IEnumerable<string> WarningText(IEnumerable<GlbImportDiagnostic> diagnostics)
             => (diagnostics ?? Empty).Select(item => item.Code + ": " + item.Message);
 
