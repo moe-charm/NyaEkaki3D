@@ -10,6 +10,7 @@ namespace NyaForge.UnityRuntime
     {
         public MeshSurfaceFitResult Result;
         public MeshSurfaceClearanceResult Clearance;
+        public MeshSurfaceClearanceResult ProjectedClearance;
         public string TargetObjectId;
         public string Region;
         public string Vertices;

@@ -111,6 +111,13 @@ internal static partial class Program
             Equal(2, clear.EvaluatedVertexCount);
             Equal(0, clear.BehindSurfaceVertexCount);
             True(clear.MinimumSignedDistance > .009f && clear.MaximumSignedDistance > .009f);
+            var projected = MeshSurfaceClearance.InspectPositions(
+                new[] { new Vec3(-.1f, -.1f, .02f), new Vec3(.1f, -.1f, .02f), new Vec3(0, .1f, .02f) },
+                new RestTransform(1, new Vec3()), avatar, new RestTransform(1, new Vec3()),
+                new[] { 0, 2 });
+            Equal(2, projected.EvaluatedVertexCount);
+            Equal(0, projected.BehindSurfaceVertexCount);
+            True(projected.MinimumSignedDistance > .019f && projected.MaximumSignedDistance > .019f);
             Expect("SELECTION_EMPTY", () => MeshSurfaceClearance.Inspect(clothing, new RestTransform(1, new Vec3()), avatar,
                 new RestTransform(1, new Vec3()), Array.Empty<int>()));
         });

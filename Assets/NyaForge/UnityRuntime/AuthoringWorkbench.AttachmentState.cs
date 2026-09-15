@@ -48,6 +48,9 @@ namespace NyaForge.UnityRuntime
         int surfaceFitInspectionBehindSurfaceVertexCount;
         float surfaceFitInspectionMinimumSignedDistance;
         float surfaceFitInspectionMaximumSignedDistance;
+        int surfaceFitInspectionProjectedBehindSurfaceVertexCount;
+        float surfaceFitInspectionProjectedMinimumSignedDistance;
+        float surfaceFitInspectionProjectedMaximumSignedDistance;
         int[] surfaceFitInspectionTriangleIds;
         int[] surfaceFitInspectionVertexIds;
         int[] surfaceFitInspectionBehindSurfaceVertexIds;

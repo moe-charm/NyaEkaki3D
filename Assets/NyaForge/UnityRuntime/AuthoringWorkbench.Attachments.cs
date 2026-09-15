@@ -600,6 +600,8 @@ namespace NyaForge.UnityRuntime
                 avatarMeshValue.Mesh, avatarMeshValue.Transform, offset, maxDistance, clothingVertices, surfaceTriangles);
             var clearance = MeshSurfaceClearance.Inspect(editValue.Mesh, editValue.Transform,
                 avatarMeshValue.Mesh, avatarMeshValue.Transform, clothingVertices, surfaceTriangles);
+            var projectedClearance = MeshSurfaceClearance.InspectPositions(fit.Positions, editValue.Transform,
+                avatarMeshValue.Mesh, avatarMeshValue.Transform, clothingVertices, surfaceTriangles);
             string region = surfaceTriangles == null ? "全三角形" : surfaceTriangles.Length.ToString(CultureInfo.InvariantCulture) + "面領域";
             string vertices = clothingVertices == null ? "全頂点" : clothingVertices.Length.ToString(CultureInfo.InvariantCulture) + "頂点";
             surfaceFitInspectionObjectId = workspace.Document.ActiveObjectId;
@@ -617,11 +619,14 @@ namespace NyaForge.UnityRuntime
             surfaceFitInspectionBehindSurfaceVertexCount = clearance.BehindSurfaceVertexCount;
             surfaceFitInspectionMinimumSignedDistance = clearance.MinimumSignedDistance;
             surfaceFitInspectionMaximumSignedDistance = clearance.MaximumSignedDistance;
+            surfaceFitInspectionProjectedBehindSurfaceVertexCount = projectedClearance.BehindSurfaceVertexCount;
+            surfaceFitInspectionProjectedMinimumSignedDistance = projectedClearance.MinimumSignedDistance;
+            surfaceFitInspectionProjectedMaximumSignedDistance = projectedClearance.MaximumSignedDistance;
             surfaceFitInspectionTriangleIds = surfaceTriangles;
             surfaceFitInspectionVertexIds = clothingVertices;
             surfaceFitInspectionBehindSurfaceVertexIds = clearance.BehindSurfaceVertexIndices.ToArray();
             RefreshAccessoryFitSummary();
-            return new AttachmentSurfaceFitMeasurement { Result = fit, Clearance = clearance, TargetObjectId = target.ObjectId, Region = region, Vertices = vertices,
+            return new AttachmentSurfaceFitMeasurement { Result = fit, Clearance = clearance, ProjectedClearance = projectedClearance, TargetObjectId = target.ObjectId, Region = region, Vertices = vertices,
                 TriangleIds = surfaceTriangles, VertexIds = clothingVertices, Offset = offset, MaxDistance = maxDistance };
         }
 
@@ -634,7 +639,7 @@ namespace NyaForge.UnityRuntime
                 SetStatus("fit状態を測定しました（変更なし、" + measurement.Region + "、" + measurement.Vertices + "、評価 " + fit.EvaluatedVertexCount + "頂点、" +
                     fit.MovedVertexCount + "頂点が移動する候補、最大投影距離 " + (fit.MaxProjectionDistance * 1000f).ToString("0.###") +
                     " mm、平均 " + (fit.AverageProjectionDistance * 1000f).ToString("0.###") + " mm、最大移動量 " +
-                    (fit.MaxDisplacement * 1000f).ToString("0.###") + " mm、裏側候補 " + measurement.Clearance.BehindSurfaceVertexCount + "頂点）。" +
+                    (fit.MaxDisplacement * 1000f).ToString("0.###") + " mm、裏側候補 " + measurement.Clearance.BehindSurfaceVertexCount + "→fit後 " + measurement.ProjectedClearance.BehindSurfaceVertexCount + "頂点）。" +
                     "これは最近面の法線による候補値で、貫通ゼロの証明ではありません。見た目はposeで確認してください。" );
             });
         }
@@ -694,6 +699,9 @@ namespace NyaForge.UnityRuntime
             result["behindSurfaceVertexCount"] = surfaceFitInspectionBehindSurfaceVertexCount;
             result["minimumSignedDistanceMetres"] = surfaceFitInspectionMinimumSignedDistance;
             result["maximumSignedDistanceMetres"] = surfaceFitInspectionMaximumSignedDistance;
+            result["projectedBehindSurfaceVertexCount"] = surfaceFitInspectionProjectedBehindSurfaceVertexCount;
+            result["projectedMinimumSignedDistanceMetres"] = surfaceFitInspectionProjectedMinimumSignedDistance;
+            result["projectedMaximumSignedDistanceMetres"] = surfaceFitInspectionProjectedMaximumSignedDistance;
             result["avatarTriangleIds"] = surfaceFitInspectionTriangleIds == null ? JValue.CreateNull() : new JArray(surfaceFitInspectionTriangleIds);
             result["clothingVertexIds"] = surfaceFitInspectionVertexIds == null ? JValue.CreateNull() : new JArray(surfaceFitInspectionVertexIds);
             result["behindSurfaceVertexIds"] = surfaceFitInspectionBehindSurfaceVertexIds == null ? JValue.CreateNull() : new JArray(surfaceFitInspectionBehindSurfaceVertexIds);

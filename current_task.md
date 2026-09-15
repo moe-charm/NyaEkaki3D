@@ -1,3 +1,12 @@
+# 2026-09-15 FIT-REGION-BONE-04: fit前後のclearance候補を同じ画面・MCPへ公開
+
+fit計測が「適用前の裏側候補」だけを表示していたため、仮想的にfit後へ移動した頂点も同じ判定で再検査する `MeshSurfaceClearance.InspectPositions` を追加した。これにより、文書を変更せずに `裏側候補 X → fit後 Y` をWorkbench statusへ表示し、MCP `surfaceFitInspection` へ `projectedBehindSurfaceVertexCount` と符号付き距離を返せる。既存の候補値という境界は維持し、貫通ゼロの証明とは扱わない。
+
+- 変更: `Assets/NyaForge/Authoring/Geometry/MeshSurfaceClearance.cs`、`Assets/NyaForge/UnityRuntime/AttachmentSurfaceFitMeasurement.cs`、`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentState.cs`、`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Attachments.cs`
+- 回帰: `MeshSurfaceClearance.InspectPositions` の選択頂点・fit後位置を `Tests/Authoring.Core/AccessorySkinBindingTests.cs` で確認。Core **517 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-65bdbc78447e4fb6a29495344b74148f`）
+- Player: `Builds/FitClearanceV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-164910-590.log`）ビルド成功。Authoring **PASS**（`Artifacts/Authoring-20260915-164950-18ea5b30e4b84a759b68fd2b1e9e5a1c/report.json`）
+- 未完了: 実RadDollV3の再実行でfit後件数を取得すること、実画面の全周・pose・材質、実EditorWindow／Unity／VRChatの受入。候補値は閉じた体積や全姿勢の衝突判定ではない。
+
 # 2026-09-15 FIT-REGION-BONE-03: 実モデルfit計測の残課題を定量化
 
 実RadDollV3の実モデル検証へ、BoneId面領域選択後のfit計測を追加した。Neckを明示的に再選択し、半径60mmで5938面を抽出したところ、500mm計測では最大投影距離32.5mmまで確認できた。一方、現在の`MeshSurfaceClearance`はfit適用前の衣装を検査するため、裏側候補17頂点を報告した。これは自動fit後の交差ゼロを意味しないため、50mm／裏側0の合否は手動の首周辺範囲調整とfit適用後の外観確認へ残す。検証はこの数値を記録して安全に完了するよう変更し、失敗をPASSへ隠していない。
