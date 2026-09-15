@@ -4346,3 +4346,11 @@ Normal／metallic-roughness画像のWindows v1出力はUV0のみ対応するた�
 - Unity Bridge: **PASS**（`Artifacts/BridgeReceiver-20260915-132325-203-1d27d21d1d4d487aa67cbc02c17cafb3/bridge-report.json`）
 - Computer Use: 再接続を試行したが、このセッションではnative `apps: []`、`cua.getApp`／`cua.listApps`未提供でWindowsアプリ操作は未接続。ブラウザ操作のみ利用可能。
 - 境界: 実EditorWindowのDPI／IME、実アバター全周fit・貫通・材質見た目、VRChat実機、販売品質は別受入。private素材・生成Player・Artifactsは公開ツリーへ追加していない。
+
+# 2026-09-15 COMPUTER-USE-RETRY-01: native Computer Use の再接続確認
+
+ブラウザ側の `cua` ではなく、AGENTS.mdで指定されたWindowsネイティブ `@oai/sky` 経路を再初期化した。`Z:\TextureVoice_local\git\NyaForge\Builds\AttachmentSummaryCompactV1\NyaForge.exe` のウィンドウを1件へ絞り、window id `11927658` を取得。起動時Viewer画面から座標クリックで「制作へ」を実行し、制作プレビュー画面へ遷移したことを直後のスクリーンショット（856×565）で確認した。
+
+- 結果: **native Computer Use 接続・クリック・画面更新を確認**。
+- 境界: AXツリーはUnity描画UIの子要素を公開しないため、今回の確認は座標クリックによる制作画面遷移まで。モデル選択・ファイルダイアログ・実アバター編集は次の手動受入で行う。
+- 公開境界: private素材、生成Player、Artifactsは公開ツリーへ追加していない。
