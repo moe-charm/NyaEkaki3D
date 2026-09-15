@@ -1,3 +1,10 @@
+# 2026-09-15 GUI-08-AUTO-01: HandoffV2狭幅Navigationを再確認
+
+現行`HandoffV2`で1069×700のNavigation suiteを実行し、Viewerのpack／recent／set／settingsからAuthoringへ進む導線、キャンセル・不正path時のsession／history保持、named sessionのSave/Open、utility panelの収まりとusable viewportを確認した。**PASS** で終了。
+
+- artifact: `Artifacts/Navigation-20260915-182919-cdbe56bb2b74443b8ce75f85c5fcab14/report.json`
+- 境界: Playerの自動pointer／状態検証であり、実マウス個体差、DPI 150/200%、IME、Explorer実クリック、Unity Editor／VRChat実機は未受入。
+
 # 2026-09-15 HANDOFF-02: 新buildで実モデル・Unity Bridgeまで再確認
 
 環境移行後の再現性を確認するため、現行`main`から新しい`HandoffV2` Playerをビルドし、Core／通常Authoring／実RadDollV3衣装工程／Unity Bridgeを順に再実行した。新buildでも経路はすべて **PASS** し、前回build固有の証跡に依存しない停止点を作れた。

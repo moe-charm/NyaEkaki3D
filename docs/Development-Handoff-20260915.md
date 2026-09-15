@@ -28,6 +28,7 @@
 - HandoffV2 Authoring: **PASS**（`Artifacts/Authoring-20260915-182308-272a6d1dfd7847a4b17868012c3665c3/report.json`）
 - HandoffV2 実RadDollV3 Authoring: **PASS**（`Artifacts/Authoring-20260915-182352-e35ea993d1224ca99d2574cead259264/report.json`）
 - HandoffV2 実衣装package Unity Bridge: **PASS**（Unity 2022.3.22f1、`Artifacts/BridgeReceiver-20260915-182632-565-6ebd5c0eb8f94ac0b261aff74fc9febc/bridge-report.json`）
+- HandoffV2 Navigation 1069×700: **PASS**（`Artifacts/Navigation-20260915-182919-cdbe56bb2b74443b8ce75f85c5fcab14/report.json`）。pack／recent／set／settings→Authoring、キャンセル／不正path保持、named session再開、utility panelの収まりを含む。
 - Player build: Unity **6000.4.3f1**
   - `Builds/SparseMatrixV1/NyaForge.exe`
   - `Logs/build-player-20260915-175918-288.log`
