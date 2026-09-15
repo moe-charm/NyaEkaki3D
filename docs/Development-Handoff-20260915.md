@@ -9,8 +9,8 @@
 - remote: `https://github.com/moe-charm/NyaEkaki3D.git`
 - GUI停止点: `cd211e7 refactor: share wrapped choice layout`
 - 最新実装commit: `5189309 feat: support sparse inverse-bind accessors`（sparse本体`eff6039`、Unity `.meta`を含む）
-- 最新記録commit: `0e6540d docs: record real clothing handoff checkpoint`
-- 引継ぎ文書更新commit: `0e6540d docs: record real clothing handoff checkpoint`
+- 最新記録commit: `4b9325c test: cover sparse skinned glb roundtrip`
+- 引継ぎ文書更新commit: `4b9325c test: cover sparse skinned glb roundtrip`
 - `main`はpush済み、作業ツリーはclean
 - Windows Player: `Builds/SparseMatrixV1/NyaForge.exe`
 

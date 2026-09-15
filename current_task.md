@@ -3,6 +3,7 @@
 疎`WEIGHTS_0`を含むGLBを`GlbSkinImporter`で読み、実際の出力writerへ渡してから再び`GlbSkinImporter`で読み戻す回帰を追加した。頂点数・三角形数・全頂点座標と、骨名対応のウェイト値を比較し、疎入力がdense出力へ materialize された後も意味が変わらないことを固定した。
 
 - 変更: `Tests/Authoring.Core/GlbExportServiceTests.cs`
+- 記録commit: `4b9325c test: cover sparse skinned glb roundtrip`（`main`へpush済み）
 - Core: **521 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-772c519cc41044cc9adeeffc87677e83`）
 - 境界: 合成疎fixtureのwriter往復を確認したもの。実RadDollV3の入力が疎形式であることや、Unity Editor／VRChat実機の表示・負荷は示さない。
 
