@@ -1,3 +1,13 @@
+# 2026-09-15 GUI-READABILITY-03: 装着先avatar／BoneIdの選択欄を折返し表示
+
+装着パネルの対象avatarとBoneIdが、長い表示名・役割・短縮IDを横一列のまま描画して末尾を隠す可能性があったため、GLB取込・基本形状で使用している`ConfigureModelImportChoice`を共通化した。ラベルを上段へ移し、選択値を折り返し、完全なobject ID／BoneIdはtooltipで確認できる。対象avatarの変更に合わせてBoneId候補を更新する既存のstable ID経路は変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentUi.cs`、`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentVerification.cs`
+- Core: **517 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-618b1a99135b4290b9b2d9449657666e`）
+- Player: `Builds/AttachmentReadableV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-172424-653.log`）ビルド成功。
+- Authoring自動検証: **PASS**（1069×698、`Artifacts/Authoring-20260915-172504-b008c00520d64b7c9c6e6cbebf286626/report.json`）。Attachment GUI回帰を含む。
+- 未完了: 実マウスでの狭い画面における装着先／BoneIdの目視、DPI・IME・長い実素材名、Unity Editor／VRChat内表示は未受入。自動PlayerのPASSを手動受入へ読み替えない。
+
 # 2026-09-15 FIT-REGION-BONE-05: fit後候補値を実モデル証跡へ記録
 
 実RadDollV3の同じ衣装工程で、fit前の裏側候補と仮想fit後の候補を別々に記録するよう検証文を更新した。Neck近傍面を選び、最大投影距離32.5mm、fit前17頂点、仮想fit後0頂点を確認できた。これはrest姿勢の最近面法線による候補値であり、全周・全poseの交差ゼロや販売品質の合格ではない。

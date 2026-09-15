@@ -23,6 +23,7 @@ namespace NyaForge.UnityRuntime
             attachmentPanel.Add(guide);
             attachmentPanel.Add(new Label("1  装着先を選択"));
             attachmentTarget = new DropdownField("アバター対象", new List<string> { "対象なし" }, 0) { name = "object-attachment-target" };
+            ConfigureModelImportChoice(attachmentTarget, "装着先のavatarを表示名と役割で選びます。完全な内部IDはtooltipに表示します。対象を変えるとBoneId候補も切り替わります。");
             attachmentTarget.RegisterValueChangedCallback(e =>
             {
                 // The dropdown shows a friendly label, while the graph stores
@@ -34,6 +35,7 @@ namespace NyaForge.UnityRuntime
             attachmentPanel.Add(attachmentTarget);
             attachmentPanel.Add(new Label("2  装着方法とBoneId"));
             attachmentBone = new DropdownField("BoneId", new List<string> { "対象なし" }, 0) { name = "object-attachment-bone" };
+            ConfigureModelImportChoice(attachmentBone, "装着先avatarのstable BoneIdを選びます。表示名の後ろに短縮IDを表示し、完全なBoneIdはtooltipで確認できます。");
             attachmentPanel.Add(attachmentBone);
             attachmentOffsetX = Number(attachmentPanel, "bone local X (mm)", 0, "object-attachment-offset-x");
             attachmentOffsetY = Number(attachmentPanel, "bone local Y (mm)", 0, "object-attachment-offset-y");

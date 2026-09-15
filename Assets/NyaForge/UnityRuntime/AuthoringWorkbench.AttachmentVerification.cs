@@ -52,6 +52,9 @@ namespace NyaForge.UnityRuntime
                 Check(root.Q<Label>("object-surface-fit-summary") != null && root.Q<Label>("object-surface-fit-summary").text.Contains("fit対象") &&
                     root.Q<Label>("object-surface-fit-summary").resolvedStyle.whiteSpace == WhiteSpace.Normal,
                     "Attachment GUI did not expose the fit target summary");
+                Check(root.Q<DropdownField>("object-attachment-target").Q<Label>(className: "unity-base-field__label").resolvedStyle.whiteSpace == WhiteSpace.Normal &&
+                    root.Q<DropdownField>("object-attachment-bone").Q<Label>(className: "unity-base-field__label").resolvedStyle.whiteSpace == WhiteSpace.Normal,
+                    "Attachment target and BoneId labels did not use the wrapped layout");
                 var attachment = GraphNode.AttachmentNode(Guid.NewGuid().ToString("D"), targetObjectId, boneId, skeleton.ContentHash, new Vec3());
                 Execute(AuthoringOperation.AddNode(attachment));
                 Refresh();
