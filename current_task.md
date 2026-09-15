@@ -3,6 +3,7 @@
 環境移行前の停止確認として、最新の`SparseMatrixV1` Playerへ実RadDollV3 VRMを渡し、実モデル取込から衣装作成・編集・保存／再読込・標準skinned GLB／衣装package出力までを一周した。検証スクリプトは **PASS** で終了し、疎accessor対応後も実素材のauthoring経路が壊れていないことを確認した。
 
 - Player: `Builds/SparseMatrixV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-175918-288.log`）
+- 記録commit: `0e6540d docs: record real clothing handoff checkpoint`（`main`へpush済み）
 - 実モデルAuthoring: **PASS**（1069×698、`Artifacts/Authoring-20260915-180348-8a01c5330e2f43b9a4f91ae158950f8c/report.json`）
 - 実モデル証跡: `real-clothing-project/exports/clothing-20260915-090538-6e3484/skinned-clothing.nyaforge.json`
 - 内容: 171 bones／35 morphsのVRM取込、チョーカー頂点編集、native Save/Open、skinned GLB／衣装package出力を含む自動検証 **全項目PASS**。
