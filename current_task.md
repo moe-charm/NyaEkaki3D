@@ -4397,3 +4397,12 @@ Normal／metallic-roughness画像のWindows v1出力はUV0のみ対応するた�
 
 - 結果: **native Computer Use接続、保存済みproject再開、Polygon→skin衣装派生、保存をPASS**。
 - 境界: 今回は派生と保存まで。衣装の全周fit・貫通、weight paint、実skin-bind後のGLB/VRM出力、DPI 150/200%・IME、Unity／VRChat実機表示は別受入。private素材、生成Player、Artifactsは公開ツリーへ追加していない。
+
+# 2026-09-15 MANUAL-18: 派生衣装のweight初期化とskin package出力
+
+`Project-3688f569`をnative Computer Useで再開し、派生した`衣装 / スキン小物`を装着・骨パネルから確認した。avatar表面weight初期化と表面fitは、設定距離を超える頂点があるためstatusで安全に拒否された。骨segment近傍の自動weight初期化は成功し、保存後に確認・出力へ移動した。
+
+- 手動確認: **PASS**（衣装graph再開、骨近傍weight初期化、保存、出力Panel遷移）。
+- 標準skinned GLB: `Skinned GLB export requires one source, skeleton, skin binding and optional pose.` と表示して出力を作成しなかった。衣装graph単体にはavatar sourceがないため、avatar全体出力と衣装package出力を分ける既存ガードを確認した。
+- skin package: **PASS**。`C:\Users\tomoaki\AppData\LocalLow\NyaForge\NyaForge\Authoring\Project-3688f569\exports\clothing-20260915-053550-46dcdf` に `clothing.glb`、`binding.nyaforge.bin`、`skeleton.nyaforge.bin`、`skinned-clothing.nyaforge.json` を生成。画面statusでもGLBとBoneId sidecarの同梱を確認した。
+- 境界: 表面fitの全周見た目・貫通、weight paintの手修正、VRM実機、Unity／VRChat Build & Test、DPI・IME・長いパスは別受入。生成物はprivate LocalLow出力で、公開ツリーへ追加していない。
