@@ -17,7 +17,7 @@ namespace NyaForge.UnityRuntime
             row.Add(Button("形状編集", () => FocusWorkMode("形状編集", shapeCreationPanel, graphDetailsPanel), "work-mode-shape"));
             row.Add(Button("UV・色", () => FocusWorkMode("UV・色", uvPanel, paintPanel, materialPanel), "work-mode-surface"));
             row.Add(Button("装着・骨", () => FocusWorkMode("装着・骨", attachmentPanel, rigPanel), "work-mode-rig"));
-            row.Add(Button("確認・出力", () => FocusWorkMode("確認・出力", morphPanel, evidencePanel, validationPanel, projectOutputPanel), "work-mode-output"));
+            row.Add(Button("確認・出力", () => FocusWorkMode("確認・出力", projectOutputPanel, validationPanel, evidencePanel, morphPanel), "work-mode-output"));
             parent.Add(panel);
         }
 

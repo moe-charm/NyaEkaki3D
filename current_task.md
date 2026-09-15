@@ -4310,3 +4310,14 @@ workspaceを開き直した直後にprojection更新前の点群で`Frame()`し�
 - Navigation回帰: **PASS**（`Artifacts/Navigation-20260915-124143-a877801d1e8346d7839eeabf16ab2cdd/report.json`）
 - 手動確認: Computer Useでpointerから実RadDollV3＋チョーカーを再開し、再開直後に全身がviewport内へ収まることを確認。旧実装で発生した極端な拡大状態を再現しない。
 - 境界: 実EditorWindowのDPI／IME、全周fit・貫通・材質見た目、Unity／VRChat実機、販売品質は別受入。生成Player・private素材は公開ツリーへ追加していない。
+
+# 2026-09-15 UX-OUTPUT-MODE-01: 確認・出力の導線を出力Panel優先へ整理
+
+作業モードの`確認・出力`がMorph／表情差分を先頭へ指定していたため、保存・GLB・VRM・衣装packageを探す利用者が別の編集欄へ移動していた。`FocusWorkMode`の対象順を`projectOutputPanel → validationPanel → evidencePanel → morphPanel`へ変更し、出力モードの最初の対象を保存／受け渡しPanelにした。各Panelの実装、command、保存形式、MCP wireは変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.WorkModes.cs`
+- Player build: `Builds/OutputModeV1/NyaForge.exe`（`Logs/build-player-20260915-124550-123.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-124614-ad0875c474404ae48b9a6c3aa6074ec4/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260915-124654-a257fd37f44147669be04e6e703a468e/report.json`）
+- 手動確認: Windows native Computer Useで`確認・出力`を押し、statusに`確認・出力の設定を表示しました`が表示されることを確認。出力Panel優先の順序を実画面へ反映した。
+- 境界: 実EditorWindowのDPI／IME、実RadDollV3の全周fit・貫通・材質見た目、Unity／VRChat実機、販売品質は別受入。生成Player・private素材は公開ツリーへ追加していない。
