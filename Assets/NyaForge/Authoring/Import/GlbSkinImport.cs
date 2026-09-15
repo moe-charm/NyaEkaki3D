@@ -208,9 +208,9 @@ namespace NyaForge.Authoring.Import
 
         static int[][] ReadIntegerVectors(JObject accessor, JArray views, byte[] bin, string label)
         {
-            int count = Count(accessor, AuthoringLimits.MaxVertices), viewId = IntProperty(accessor, "bufferView", 0, views.Count - 1, "bufferView"), viewOffset = IntOptional((JObject)views[viewId], "byteOffset"), accessorOffset = IntOptional(accessor, "byteOffset"); var view = (JObject)views[viewId]; int type = IntProperty(accessor, "componentType", 0, int.MaxValue, "componentType"), width = type == 5121 ? 1 : 2, stride = view["byteStride"] == null ? width * 4 : IntProperty(view, "byteStride", width * 4, 4096, "byteStride");
-            ValidateRange(viewOffset, accessorOffset, stride, count, width * 4, IntProperty(view, "byteLength", 0, bin.Length, "byteLength"), bin.Length, label); var result = new int[count][];
-            for (int i = 0; i < count; i++) { result[i] = new int[4]; for (int c = 0; c < 4; c++) { int offset = viewOffset + accessorOffset + i * stride + c * width; result[i][c] = width == 1 ? bin[offset] : BitConverter.ToUInt16(bin, offset); } } return result;
+            int count = Count(accessor, AuthoringLimits.MaxVertices), type = IntProperty(accessor, "componentType", 0, int.MaxValue, "componentType"), width = type == 5121 ? 1 : 2;
+            var raw = GlbSparseAccessorReader.ReadRaw(accessor, views, bin, bin.Length, width * 4, count, label); var result = new int[count][];
+            for (int i = 0; i < count; i++) { result[i] = new int[4]; for (int c = 0; c < 4; c++) { int offset = c * width; result[i][c] = width == 1 ? raw[i][offset] : raw[i][offset] | raw[i][offset + 1] << 8; } } return result;
         }
 
         static float[][] ReadWeightVectors(JArray accessors, JArray views, byte[] bin, int id, string label)
@@ -222,18 +222,14 @@ namespace NyaForge.Authoring.Import
             bool normalized = normalizedToken != null && (bool)normalizedToken;
             Checks.Require(type == 5126 ? !normalized : normalized, "UNSUPPORTED_FORMAT", label + " integer weights must be normalized (float weights must not be normalized).");
             int width = type == 5121 ? 1 : type == 5123 ? 2 : 4;
-            int count = Count(accessor, AuthoringLimits.MaxVertices), viewId = IntProperty(accessor, "bufferView", 0, views.Count - 1, "bufferView");
-            var view = (JObject)views[viewId]; int viewOffset = IntOptional(view, "byteOffset"), accessorOffset = IntOptional(accessor, "byteOffset");
-            int stride = view["byteStride"] == null ? width * 4 : IntProperty(view, "byteStride", width * 4, 4096, "byteStride");
-            ValidateRange(viewOffset, accessorOffset, stride, count, width * 4, IntProperty(view, "byteLength", 0, bin.Length, "byteLength"), bin.Length, label);
-            var result = new float[count][];
+            int count = Count(accessor, AuthoringLimits.MaxVertices); var raw = GlbSparseAccessorReader.ReadRaw(accessor, views, bin, bin.Length, width * 4, count, label); var result = new float[count][];
             for (int i = 0; i < count; i++)
             {
                 result[i] = new float[4];
                 for (int c = 0; c < 4; c++)
                 {
-                    int offset = viewOffset + accessorOffset + i * stride + c * width;
-                    result[i][c] = type == 5126 ? BitConverter.ToSingle(bin, offset) : (type == 5121 ? bin[offset] / 255f : BitConverter.ToUInt16(bin, offset) / 65535f);
+                    int offset = c * width;
+                    result[i][c] = type == 5126 ? BitConverter.ToSingle(raw[i], offset) : (type == 5121 ? raw[i][offset] / 255f : (raw[i][offset] | raw[i][offset + 1] << 8) / 65535f);
                     Checks.Finite(result[i][c]);
                 }
             }
@@ -249,7 +245,7 @@ namespace NyaForge.Authoring.Import
         static int IntOptional(JObject owner, string property) { return owner[property] == null ? 0 : IntProperty(owner, property, 0, int.MaxValue, property); }
         static int AccessorCount(JArray accessors, int id) { return Count(Accessor(accessors, id, "VEC3", new[] { 5126 }), AuthoringLimits.MaxVertices); }
         static int Count(JObject accessor, int maximum) { return IntProperty(accessor, "count", 1, maximum, "accessor count"); }
-        static JObject Accessor(JArray accessors, int id, string type, int[] componentTypes) { Checks.Require(id >= 0 && id < accessors.Count, "INVALID_IMPORT", "GLB accessor reference is out of range."); var accessor = accessors[id] as JObject; Checks.Require(accessor != null && (string)accessor["type"] == type, "UNSUPPORTED_FORMAT", "GLB accessor type is unsupported."); Checks.Require(componentTypes.Contains(IntProperty(accessor, "componentType", 0, int.MaxValue, "componentType")), "UNSUPPORTED_FORMAT", "GLB accessor component type is unsupported."); Checks.Require(accessor["sparse"] == null, "UNSUPPORTED_FORMAT", "Sparse accessors are not supported yet."); return accessor; }
+        static JObject Accessor(JArray accessors, int id, string type, int[] componentTypes) { Checks.Require(id >= 0 && id < accessors.Count, "INVALID_IMPORT", "GLB accessor reference is out of range."); var accessor = accessors[id] as JObject; Checks.Require(accessor != null && (string)accessor["type"] == type, "UNSUPPORTED_FORMAT", "GLB accessor type is unsupported."); Checks.Require(componentTypes.Contains(IntProperty(accessor, "componentType", 0, int.MaxValue, "componentType")), "UNSUPPORTED_FORMAT", "GLB accessor component type is unsupported."); return accessor; }
         static string StableId(string text) { using (var sha = SHA256.Create()) return new Guid(sha.ComputeHash(Encoding.UTF8.GetBytes(text)).Take(16).ToArray()).ToString("D"); }
     }
 }

@@ -1,3 +1,14 @@
+# 2026-09-15 I04-A-SPARSE-01: GLB sparse accessorの共通読取を追加
+
+GLB accessorのsparse表現を、ゼロ初期化したbase要素へ検証済みのindices／valuesを上書きする共通`GlbSparseAccessorReader`へまとめた。静的POSITION／indicesとskinnedのJOINTS_n／WEIGHTS_nの両方で同じ範囲・4byte bufferView境界・重複index検査を使う。source-skinの逆bind MAT4 sparseはまだ非対応として明示診断する。
+
+- 変更: `Assets/NyaForge/Authoring/Import/GlbSparseAccessorReader.cs`、`GlbImport.cs`、`GlbSkinImport.cs`、`GlbSourceSkinImporter.cs`、`Assets/NyaForge/Authoring/Import/README.md`
+- 回帰: 静的POSITION sparse、skinned weight sparse、既存の不正／負weight／8・16bit JOINTSを含む **519 passed / 0 failed**
+- artifact: `C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-1c284d2fe28944be8785d7118decea3a`
+- Player build: `Builds/SparseAccessorV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-175429-951.log`）成功。
+- Authoring自動検証: **PASS**（`Artifacts/Authoring-20260915-175457-b55456bf4152414c904f601bf41f3d60/report.json`、1069×698）。
+- 未完了: sparse inverse-bind MAT4、実素材での疎accessor往復、Unity Editor／VRChat受入。
+
 # 2026-09-15 HANDOFF-01: 環境移行の停止点を固定
 
 環境移行のため、共通Dropdown部品移管後の現行candidateを停止点として固定した。再開手順・検証証跡・未完了の外部受入境界を`docs/Development-Handoff-20260915.md`へまとめた。

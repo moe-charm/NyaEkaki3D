@@ -264,8 +264,10 @@ namespace NyaForge.Authoring.Import
         static int AccessorId(JObject attributes, string name) { return Int(attributes, name, 0, int.MaxValue); }
         static int[] IndexAccessor(JArray accessors, JArray views, byte[] bin, int accessorId)
         {
-            var accessor = Accessor(accessors, accessorId, "SCALAR", new[] { 5121, 5123, 5125 }); int components = 1; var result = new int[Count(accessor, AuthoringLimits.MaxIndices)];
-            for (int i = 0; i < result.Length; i++) result[i] = ReadComponent(accessor, views, bin, i, components, 0);
+            var accessor = Accessor(accessors, accessorId, "SCALAR", new[] { 5121, 5123, 5125 }); int count = Count(accessor, AuthoringLimits.MaxIndices);
+            int componentType = Int(accessor, "componentType", 0, int.MaxValue); int width = componentType == 5121 ? 1 : componentType == 5123 ? 2 : 4;
+            var raw = GlbSparseAccessorReader.ReadRaw(accessor, views, bin, bin.Length, width, count, "indices"); var result = new int[count];
+            for (int i = 0; i < result.Length; i++) result[i] = componentType == 5121 ? raw[i][0] : componentType == 5123 ? raw[i][0] | raw[i][1] << 8 : checked((int)BitConverter.ToUInt32(raw[i], 0));
             return result;
         }
         static Vec3[] Vec3Accessor(JArray accessors, JArray views, byte[] bin, int accessorId, string label)
@@ -277,21 +279,14 @@ namespace NyaForge.Authoring.Import
         static Vec2[] OptionalVec2(JObject attrs, string name, JArray accessors, JArray views, byte[] bin, int count, string label)
         { if (attrs[name] == null) return System.Array.Empty<Vec2>(); var accessor = Accessor(accessors, Int(attrs, name, 0, accessors.Count - 1), "VEC2", new[] { 5126 }); var result = ReadVectors(accessor, views, bin, 2, label).Select(v => new Vec2(v[0], v[1])).ToArray(); Checks.Require(result.Length == count, "INVALID_IMPORT", label + " count differs from POSITION."); return result; }
         static JObject Accessor(JArray accessors, int id, string type, int[] componentTypes)
-        { Checks.Require(id >= 0 && id < accessors.Count, "INVALID_IMPORT", "GLB accessor reference is out of range."); var accessor = accessors[id] as JObject; Checks.Require(accessor != null && (string)accessor["type"] == type, "UNSUPPORTED_FORMAT", "GLB accessor type is unsupported."); int component = Int(accessor, "componentType", 0, int.MaxValue); Checks.Require(componentTypes.Contains(component), "UNSUPPORTED_FORMAT", "GLB accessor component type is unsupported."); Checks.Require(accessor["sparse"] == null, "UNSUPPORTED_FORMAT", "Sparse accessors are not supported yet."); return accessor; }
+        { Checks.Require(id >= 0 && id < accessors.Count, "INVALID_IMPORT", "GLB accessor reference is out of range."); var accessor = accessors[id] as JObject; Checks.Require(accessor != null && (string)accessor["type"] == type, "UNSUPPORTED_FORMAT", "GLB accessor type is unsupported."); int component = Int(accessor, "componentType", 0, int.MaxValue); Checks.Require(componentTypes.Contains(component), "UNSUPPORTED_FORMAT", "GLB accessor component type is unsupported."); return accessor; }
         static int Count(JObject accessor) { return Count(accessor, AuthoringLimits.MaxVertices); }
         static int Count(JObject accessor, int maximum) { return Int(accessor, "count", 1, maximum); }
         static float[][] ReadVectors(JObject accessor, JArray views, byte[] bin, int components, string label)
         {
-            int count = Count(accessor), accessorOffset = accessor["byteOffset"] == null ? 0 : Int(accessor, "byteOffset", 0, int.MaxValue); int viewId = Int(accessor, "bufferView", 0, views.Count - 1); var view = (JObject)views[viewId];
-            int viewOffset = view["byteOffset"] == null ? 0 : Int(view, "byteOffset", 0, int.MaxValue); int stride = view["byteStride"] == null ? components * 4 : Int(view, "byteStride", components * 4, 4096); int viewLength = Int(view, "byteLength", 0, bin.Length);
-            int start = checked(viewOffset + accessorOffset); int last = checked(start + (count - 1) * stride + components * 4); Checks.Require(start >= 0 && last <= bin.Length && start + (count - 1) * stride + components * 4 <= viewOffset + viewLength, "INVALID_IMPORT", label + " accessor exceeds its bufferView.");
-            var result = new float[count][]; for (int i = 0; i < count; i++) { result[i] = new float[components]; for (int c = 0; c < components; c++) result[i][c] = BitConverter.ToSingle(bin, start + i * stride + c * 4); }
+            int count = Count(accessor); var raw = GlbSparseAccessorReader.ReadRaw(accessor, views, bin, bin.Length, components * 4, count, label);
+            var result = new float[count][]; for (int i = 0; i < count; i++) { result[i] = new float[components]; for (int c = 0; c < components; c++) result[i][c] = BitConverter.ToSingle(raw[i], c * 4); }
             return result;
-        }
-        static int ReadComponent(JObject accessor, JArray views, byte[] bin, int index, int components, int component)
-        {
-            int count = Count(accessor); Checks.Require(index >= 0 && index < count, "INVALID_IMPORT", "Index accessor is out of range."); int accessorOffset = accessor["byteOffset"] == null ? 0 : Int(accessor, "byteOffset", 0, int.MaxValue); int viewId = Int(accessor, "bufferView", 0, views.Count - 1); var view = (JObject)views[viewId]; int viewOffset = view["byteOffset"] == null ? 0 : Int(view, "byteOffset", 0, int.MaxValue); int componentType = Int(accessor, "componentType", 0, int.MaxValue); int width = componentType == 5121 ? 1 : componentType == 5123 ? 2 : 4; int stride = view["byteStride"] == null ? width * components : Int(view, "byteStride", width * components, 4096); int offset = checked(viewOffset + accessorOffset + index * stride + component * width); Checks.Require(offset + width <= bin.Length, "INVALID_IMPORT", "Index accessor exceeds its bufferView.");
-            if (componentType == 5121) return bin[offset]; if (componentType == 5123) return BitConverter.ToUInt16(bin, offset); return checked((int)BitConverter.ToUInt32(bin, offset));
         }
     }
 }

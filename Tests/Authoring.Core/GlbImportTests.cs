@@ -20,6 +20,21 @@ internal static partial class Program
             Near(result.Mesh.Positions[0].X + .05f, deformed.Positions[0].X); Near(result.Mesh.Positions[1].X, deformed.Positions[1].X);
             True(result.Warnings.Any(w => w.Contains("static triangle", StringComparison.Ordinal)));
         });
+        Test("GLB importer applies sparse overrides to static POSITION data", () =>
+        {
+            var root = JObject.Parse(ReadJsonChunk(BuildGlb())); var bin = ReadBinChunk(BuildGlb()).ToList();
+            while (bin.Count % 4 != 0) bin.Add(0);
+            int indexOffset = bin.Count; bin.Add(2); while (bin.Count % 4 != 0) bin.Add(0);
+            int valueOffset = bin.Count;
+            using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream))
+            { writer.Write(.42f); writer.Write(.13f); writer.Write(0f); writer.Flush(); bin.AddRange(stream.ToArray()); }
+            var views = (JArray)root["bufferViews"]!; int indexView = views.Count; views.Add(new JObject { ["buffer"] = 0, ["byteOffset"] = indexOffset, ["byteLength"] = 1 }); int valueView = views.Count; views.Add(new JObject { ["buffer"] = 0, ["byteOffset"] = valueOffset, ["byteLength"] = 12 });
+            var position = (JObject)((JArray)root["accessors"]!)[0]!;
+            position["sparse"] = new JObject { ["count"] = 1, ["indices"] = new JObject { ["bufferView"] = indexView, ["componentType"] = 5121 }, ["values"] = new JObject { ["bufferView"] = valueView } };
+            ((JObject)((JArray)root["buffers"]!)[0]!)["byteLength"] = bin.Count;
+            var imported = GlbImporter.Read(BuildGlbContainer(Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), bin.ToArray()));
+            Near(.42f, imported.Mesh.Positions[2].X); Near(.13f, imported.Mesh.Positions[2].Y); Near(.1f, imported.Mesh.Positions[1].X);
+        });
 
         Test("GLB importer combines bounded primitives and rejects unsupported structure", () =>
         {

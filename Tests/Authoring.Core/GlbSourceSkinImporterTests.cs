@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json.Linq;
 using NyaForge.Authoring;
 using NyaForge.Authoring.Import;
@@ -40,6 +42,15 @@ internal static partial class Program
             Near(.5f, source.Binding.Weights[1].Single(weight => weight.JointSlot == 0).Weight);
             Near(.5f, skin.Binding.Weights[1].First(weight => weight.BoneId != skin.Binding.Weights[0][0].BoneId).Weight);
         });
+        Test("GLB skin importers apply sparse accessor overrides to base weights", () =>
+        {
+            var bytes = BuildSparseWeightGlb();
+            var source = GlbSourceSkinImporter.Read(bytes); var skin = GlbSkinImporter.Read(bytes);
+            Near(.75f, source.Binding.Weights[1].Single(weight => weight.JointSlot == 0).Weight);
+            Near(.25f, source.Binding.Weights[1].Single(weight => weight.JointSlot == 1).Weight);
+            Near(.75f, skin.Binding.Weights[1].Single(weight => weight.BoneId == skin.Skeleton.Bones[0].BoneId).Weight);
+            Near(.25f, skin.Binding.Weights[1].Single(weight => weight.BoneId == skin.Skeleton.Bones[1].BoneId).Weight);
+        });
         Test("GLB skin importers reject negative weight components before filtering", () =>
         {
             var bytes = BuildSkinnedGlb(false, false, true);
@@ -72,7 +83,7 @@ internal static partial class Program
                 (root=>((JObject)((JArray)root["meshes"])[0])["primitives"][0]["attributes"]["JOINTS_0"]=999,"INVALID_IMPORT"),
                 (root=>root["accessors"][2]["componentType"]=5126,"UNSUPPORTED_FORMAT"),
                 (root=>root["accessors"][3]["type"]="VEC3","UNSUPPORTED_FORMAT"),
-                (root=>root["accessors"][3]["sparse"]=new JObject(),"UNSUPPORTED_FORMAT"),
+                (root=>root["accessors"][3]["sparse"]=new JObject(),"INVALID_IMPORT"),
                 (root=>root["bufferViews"][2]["byteOffset"]=45,"INVALID_IMPORT"),
                 (root=>root["buffers"][0]["byteLength"]=1,"INVALID_IMPORT")
             };
@@ -87,5 +98,22 @@ internal static partial class Program
     static string ChecksHashForTest(byte[] bytes)
     {
         using(var sha=System.Security.Cryptography.SHA256.Create()) return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-","").ToLowerInvariant();
+    }
+
+    static byte[] BuildSparseWeightGlb()
+    {
+        var source = BuildSkinnedGlb(); var root = JObject.Parse(ReadJsonChunk(source)); var bin = ReadBinChunk(source).ToList();
+        while (bin.Count % 4 != 0) bin.Add(0);
+        int indexOffset = bin.Count; bin.Add(1); while (bin.Count % 4 != 0) bin.Add(0);
+        int valueOffset = bin.Count;
+        using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream))
+        {
+            writer.Write(.75f); writer.Write(.25f); writer.Write(0f); writer.Write(0f); writer.Flush(); bin.AddRange(stream.ToArray());
+        }
+        var views = (JArray)root["bufferViews"]!; int indexView = views.Count; views.Add(new JObject { ["buffer"] = 0, ["byteOffset"] = indexOffset, ["byteLength"] = 1 }); int valueView = views.Count; views.Add(new JObject { ["buffer"] = 0, ["byteOffset"] = valueOffset, ["byteLength"] = 16 });
+        var weightAccessor = (JObject)((JArray)root["accessors"]!)[3]!;
+        weightAccessor["sparse"] = new JObject { ["count"] = 1, ["indices"] = new JObject { ["bufferView"] = indexView, ["componentType"] = 5121 }, ["values"] = new JObject { ["bufferView"] = valueView } };
+        ((JObject)((JArray)root["buffers"]!)[0]!)["byteLength"] = bin.Count;
+        return BuildGlbContainer(Encoding.UTF8.GetBytes(root.ToString(Newtonsoft.Json.Formatting.None)), bin.ToArray());
     }
 }

@@ -180,19 +180,7 @@ namespace NyaForge.Authoring.Import
 
         static byte[][] ReadRaw(JObject accessor, JArray views, byte[] bin, int bufferLength, int elementBytes, int expected, string label)
         {
-            Checks.Require(Integer(accessor["count"], 1, AuthoringLimits.MaxVertices, label + " count") == expected, "INVALID_IMPORT", label + " count differs from POSITION.");
-            Checks.Require(accessor["sparse"] == null, "UNSUPPORTED_FORMAT", label + " sparse accessor is not supported yet.");
-            Checks.Require(accessor["extensions"] == null, "UNSUPPORTED_FORMAT", label + " accessor extensions require a dedicated adapter.");
-            var viewId = Integer(accessor["bufferView"], 0, views.Count - 1, label + " bufferView"); var view = views[viewId] as JObject; Checks.Require(view != null, "INVALID_IMPORT", label + " bufferView is invalid.");
-            Checks.Require(view["extensions"] == null, "UNSUPPORTED_FORMAT", label + " bufferView extensions require a dedicated adapter.");
-            Checks.Require(Integer(view["buffer"], 0, 0, label + " buffer") == 0, "INVALID_IMPORT", label + " buffer reference is invalid.");
-            int viewOffset = OptionalInteger(view["byteOffset"], label + " view offset"), accessorOffset = OptionalInteger(accessor["byteOffset"], label + " accessor offset");
-            int stride = view["byteStride"] == null ? elementBytes : Integer(view["byteStride"], elementBytes, 252, label + " stride"); int viewLength = Integer(view["byteLength"], 1, AuthoringLimits.MaxGlbImportBytes, label + " view length");
-            int component = Integer(accessor["componentType"], 0, int.MaxValue, label + " componentType"); int componentWidth = component == 5121 ? 1 : component == 5123 ? 2 : 4;
-            Checks.Require(stride % 4 == 0 && accessorOffset % componentWidth == 0 && ((long)viewOffset + accessorOffset) % 4 == 0 && (long)viewOffset + viewLength <= bufferLength &&
-                (long)accessorOffset + (long)(expected - 1) * stride + elementBytes <= viewLength, "INVALID_IMPORT", label + " range or alignment is invalid.");
-            var result = new byte[expected][]; for (int row = 0; row < expected; row++) { result[row] = new byte[elementBytes]; Buffer.BlockCopy(bin, checked(viewOffset + accessorOffset + row * stride), result[row], 0, elementBytes); }
-            return result;
+            return GlbSparseAccessorReader.ReadRaw(accessor, views, bin, bufferLength, elementBytes, expected, label);
         }
 
         static JObject Accessor(JArray accessors, int id, string type, int[] components, string label)
