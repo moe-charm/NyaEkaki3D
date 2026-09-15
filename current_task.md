@@ -4126,3 +4126,13 @@ AGENTS.mdの手順どおり`@oai/sky`で、隔離ビルド `C:\Users\tomoaki\App
 - [ ] 全mesh一括、頂点編集、skin-bind、保存／再開、fit・貫通、Unity／VRChat実機（既存MANUAL-05／自動REAL-CLOTHINGで一部確認済み）
 
 これは実Explorerと実マウスによる取込・形状追加の手動受入であり、今回は保存を実行していない。private素材・制作データは公開ツリーへ追加していない。
+
+# 2026-09-15 MCP-03: Undo/Redo後のVRM metadata再同期
+
+MCPの`history.undo`／`history.redo`後に、workspaceのattachment bytesだけが履歴復元され、Workbenchが保持するgraph別のVRM rig・expression・Spring session辞書が旧状態のまま残る経路を修正した。`ExecuteMcpCommand`でもGUIの共通履歴経路と同じ`RefreshImportedVrmSessionsFromWorkspace`を先に呼び、続く表示更新・VRM出力が現在のdocumentとmetadataを参照するようにした。保存形式、MCP wire、通常の編集操作は変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.McpCommands.cs`
+- Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-799de624031b4c53b703b89b8e4438a8`）
+- Windows Player build: `Builds/McpMetadataRefreshV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-095556-250.log`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-095625-9d47e2d3351543b0a7c11dbce13cdf07/report.json`）
+- 境界: MCP実sidecarからのVRM表情／Spring Undo/Redo目視、実EditorWindowのDPI／IME、実VRChat SDK／実機表示は別受入として未完了。

@@ -63,6 +63,11 @@ namespace NyaForge.UnityRuntime
             if (result.Success && command?.Operations?.Length == 1 &&
                 (command.Operations[0].Kind == "history.undo" || command.Operations[0].Kind == "history.redo"))
             {
+                // Metadata attachments are restored by the command history too.
+                // Re-read the graph-keyed VRM rig/expression/Spring tables before
+                // the common refresh so the active graph and subsequent VRM
+                // export never keep a stale session from the pre-Undo state.
+                RefreshImportedVrmSessionsFromWorkspace();
                 RefreshSecondaryMotionAttachmentFromWorkspace();
                 RefreshReferenceProtectionFromWorkspace();
                 RefreshDeliveryAllowlistFromWorkspace();
