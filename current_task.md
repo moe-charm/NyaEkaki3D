@@ -4362,3 +4362,13 @@ Normal／metallic-roughness画像のWindows v1出力はUV0のみ対応するた�
 - 結果: **native Computer Use接続、Viewer→Authoring、Explorer選択、候補確認をPASS**。
 - 未完了: このビルドの候補欄は「取込対応: なし」と表示され、実モデルの取り込み完了・編集・保存までは確認していない。AXツリーはUnity描画UIの子要素を公開しないため、座標操作後のスクリーンショットで判定した。
 - 公開境界: private素材、生成Player、Artifactsは公開ツリーへ追加していない。
+
+# 2026-09-15 COMPUTER-USE-RETRY-03: 現行Windowsビルドで取込・形状追加・保存を確認
+
+前回の作業重複を避けるため、AGENTS.mdで指定されたnative `@oai/sky` 接続を再利用し、現行ビルド `Builds/Windows/NyaForge.exe` を1ウィンドウへ絞って確認した。2560×1440へ最大化した状態で、private `Z:\TextureVoice_local\git\RadDollV3-clothing\private\viewer-data\packs\avatar-raddollv3-local\RadDollV3_VRM.vrm` をExplorerから選択し、候補確認後に「全meshをまとめて取り込む」を実行した。
+
+- 結果: **native Computer Use接続、Explorer選択、候補確認、全mesh取込、モデル表示、チョーカー形状追加、保存をPASS**。
+- 取込後status: `10 objects · source 6e5e0a0a82c2 · VRM意味情報: firstPerson（未解決・詳細は警告）`。取込対応欄に `171 bone · humanoid 29 · node affine保存済み`、SpringBone欄に `5 chain · 53 joint · 4 collider group` を確認。
+- 形状追加後status: `チョーカー形状を追加しました。頂点編集・厚み・UV・材質を調整してください。`。保存先表示: `C:\Users\tomoaki\AppData\LocalLow\NyaForge\NyaForge\Authoring\Project-1d638f0d`。
+- 再起動後は別の保存済み制作（制作対象ID `f2d8c732-21b...`）を表示できたが、保存直後の `Project-1d638f0d` を指定した再読込とは分けて扱う。手動の頂点変更、GLB/VRM出力、Unity／VRChat実機表示は未受入。
+- 公開境界: private素材、生成Player、Artifactsは公開ツリーへ追加していない。
