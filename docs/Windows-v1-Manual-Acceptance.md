@@ -172,3 +172,14 @@ Core／Bridgeの自動回帰はコード変更後に再実行する。実SDK・�
 - [ ] DPI 100/150/200%、狭い非最大化窓、IME、全周fit・貫通・材質、VRChat実機
 
 これは最大化画面の目視と自動経路の受入であり、未確認項目を合格扱いしない。詳細は`current_task.md`のGUI-17に記録した。
+
+## 2026-09-15 MANUAL-10: 実Explorer取込とチョーカー追加
+
+`Builds/CompactControlsV2/NyaForge.exe`を最大化して、`モデルを追加`→Windowsファイルダイアログ→RadDollV3 VRM選択→候補確認→`選択候補を取り込む`を実マウスで操作した。statusにGLB skin取込、mesh／bone／weight件数、診断が表示され、対象meshをviewportで確認した。続けて上部`基本形状を追加`からリング（チョーカー）の寸法欄を開き、`この寸法で形状を追加`を押して追加表示を確認した。
+
+- [x] Explorerで実VRMを選択
+- [x] 候補確認・選択mesh取込
+- [x] チョーカー形状追加
+- [ ] 全mesh・頂点編集・skin-bind・保存／再開・fit／貫通・Unity／VRChat実機
+
+今回は保存していないため、private制作データは新規作成していない。詳細は`current_task.md`のMANUAL-10に記録した。

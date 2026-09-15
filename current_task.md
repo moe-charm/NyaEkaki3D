@@ -4115,3 +4115,14 @@ AGENTS.mdの手順どおり`@oai/sky`で、隔離ビルド `C:\Users\tomoaki\App
 - Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-39aae153ab1f4a7683f5796b2008b4a7`）
 - 実RadDollV3自動一周: **95 checks PASS**（`Artifacts/Authoring-20260915-093345-debbe91188f949d7b59c6cdf22089fcd/report.json`）。生成packageのUnity 2022.3.22f1 Bridge受け取りも **16 checks PASS**（`Artifacts/BridgeReceiver-20260915-093632-021-5f3425a2c8c04b1db26ab057e1520374/bridge-report.json`）。
 - 境界: 最大化画面の実表示確認であり、DPI 100/150/200%を個別に切り替えた最終受入、狭い非最大化窓での全コントロール目視、IME、実EditorWindow全周fit・貫通・材質、VRChat実機は未受入。生成物・private素材は公開ツリーへ追加していない。
+
+# 2026-09-15 MANUAL-10: 実Explorer取込と基本形状追加
+
+`Builds/CompactControlsV2/NyaForge.exe`を最大化したWindows native `@oai/sky`で操作した。上部の`モデルを追加`からWindowsファイルダイアログを開き、表示されたRadDollV3 VRMを選択して開いた。取込Panelで候補を確認し、mesh 0／skin 0を選択した状態から`選択候補を取り込む`を実行した。statusに`GLB skinを取り込みました`、mesh／bone／weight件数、取込診断が表示され、対象meshがviewportへ表示された。その後、上部の`基本形状を追加`でリング（チョーカー）の寸法欄を開き、既定値のまま`この寸法で形状を追加`を実行した。statusにチョーカー形状追加が表示され、viewportに追加形状が現れた。
+
+- [x] 実ExplorerでVRMを選択
+- [x] 候補確認と選択mesh取込
+- [x] 基本形状パネルを開いてチョーカー追加
+- [ ] 全mesh一括、頂点編集、skin-bind、保存／再開、fit・貫通、Unity／VRChat実機（既存MANUAL-05／自動REAL-CLOTHINGで一部確認済み）
+
+これは実Explorerと実マウスによる取込・形状追加の手動受入であり、今回は保存を実行していない。private素材・制作データは公開ツリーへ追加していない。
