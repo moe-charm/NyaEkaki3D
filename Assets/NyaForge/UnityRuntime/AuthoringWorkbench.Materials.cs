@@ -17,6 +17,7 @@ namespace NyaForge.UnityRuntime
         DropdownField materialChoice,materialAlphaMode;
         TextField materialTint,materialEmission;
         TextField normalTexturePath,metallicRoughnessTexturePath;
+        Button applyNormalTexture,applyMetallicRoughnessTexture;
         FloatField normalTextureScale;
         DropdownField semanticTextureTexCoord;
         bool semanticPickerOpen;
@@ -103,11 +104,23 @@ namespace NyaForge.UnityRuntime
             normalTextureScale = new FloatField("Normal scale") { value = 1f, name = "semantic-normal-scale" }; panel.Add(normalTextureScale);
             normalTexturePath = new TextField("Normal画像パス") { name = "semantic-normal-path" }; normalTexturePath.style.flexDirection = FlexDirection.Column; panel.Add(normalTexturePath);
             panel.Add(Button("Normal画像を選ぶ", () => { if (!semanticPickerOpen) StartCoroutine(PickSemanticTexture(MaterialTextureSemantic.Normal)); }, "semantic-normal-browse"));
-            panel.Add(Button("Normal画像を適用", () => Try(() => ApplySemanticTexture(MaterialTextureSemantic.Normal)), "semantic-normal-apply"));
+            applyNormalTexture = Button("Normal画像を適用", () => Try(() => ApplySemanticTexture(MaterialTextureSemantic.Normal)), "semantic-normal-apply"); panel.Add(applyNormalTexture);
             metallicRoughnessTexturePath = new TextField("MR画像パス") { name = "semantic-mr-path" }; metallicRoughnessTexturePath.style.flexDirection = FlexDirection.Column; panel.Add(metallicRoughnessTexturePath);
             panel.Add(Button("MR画像を選ぶ", () => { if (!semanticPickerOpen) StartCoroutine(PickSemanticTexture(MaterialTextureSemantic.MetallicRoughness)); }, "semantic-mr-browse"));
-            panel.Add(Button("MR画像を適用", () => Try(() => ApplySemanticTexture(MaterialTextureSemantic.MetallicRoughness)), "semantic-mr-apply"));
+            applyMetallicRoughnessTexture = Button("MR画像を適用", () => Try(() => ApplySemanticTexture(MaterialTextureSemantic.MetallicRoughness)), "semantic-mr-apply"); panel.Add(applyMetallicRoughnessTexture);
+            semanticTextureTexCoord.RegisterValueChangedCallback(_ => RefreshSemanticTextureAvailability());
             materialFields.Add(panel);
+        }
+
+        void RefreshSemanticTextureAvailability()
+        {
+            bool uv0 = semanticTextureTexCoord == null || semanticTextureTexCoord.index == 0;
+            bool canApply = loadedMaterial != null && selectedMaterial != "" && uv0;
+            applyNormalTexture?.SetEnabled(canApply);
+            applyMetallicRoughnessTexture?.SetEnabled(canApply);
+            if (semanticTextureInfo == null || loadedMaterial == null) return;
+            string summary = SemanticTextureSummary(loadedMaterial.Textures);
+            semanticTextureInfo.text = uv0 ? summary : summary + "\nUV1はWindows v1非対応。UV0へ戻してから適用してください。";
         }
 
         void ApplySemanticTexture(MaterialTextureSemantic semantic)
@@ -161,7 +174,7 @@ namespace NyaForge.UnityRuntime
             materialChoice.choices=materialIds.Count==0 ? new List<string>{"なし"} : materialIds.Select(id=>"材質 · "+id.Substring(0,8)).ToList();
             materialChoice.SetValueWithoutNotify(materialIds.Count==0 ? "なし" : materialChoice.choices[materialIds.IndexOf(selectedMaterial)]);materialChoice.SetEnabled(materialIds.Count>0);
             materialFields.style.display=selectedMaterial=="" ? DisplayStyle.None : DisplayStyle.Flex;
-            materialFields.SetEnabled(selectedMaterial!="");loadedMaterial=selectedMaterial=="" ? null : graph.Nodes[selectedMaterial].Material;if(loadedMaterial==null) return;
+            materialFields.SetEnabled(selectedMaterial!="");loadedMaterial=selectedMaterial=="" ? null : graph.Nodes[selectedMaterial].Material;if(loadedMaterial==null) { RefreshSemanticTextureAvailability(); return; }
             var p=loadedMaterial;loadedTint=MaterialHex(new Vec3(p.BaseColor.X,p.BaseColor.Y,p.BaseColor.Z));materialTint.SetValueWithoutNotify(loadedTint);
             materialOpacity.SetValueWithoutNotify(p.BaseColor.W);materialMetallic.SetValueWithoutNotify(p.Metallic);materialRoughness.SetValueWithoutNotify(p.Roughness);
             loadedEmissionStrength=Mathf.Max(p.Emission.X,p.Emission.Y,p.Emission.Z);
@@ -175,6 +188,7 @@ namespace NyaForge.UnityRuntime
                 var preferred = p.Textures?.Normal ?? p.Textures?.MetallicRoughness;
                 semanticTextureTexCoord.SetValueWithoutNotify(preferred?.TexCoord == 1 ? "UV1" : "UV0");
             }
+            RefreshSemanticTextureAvailability();
         }
 
         static string SemanticTextureSummary(MaterialTextureSet textures)

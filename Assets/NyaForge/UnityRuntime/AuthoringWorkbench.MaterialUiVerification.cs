@@ -64,11 +64,15 @@ namespace NyaForge.UnityRuntime
                     normalTexturePath.SetValueWithoutNotify(normalPath);normalTextureScale.SetValueWithoutNotify(.7f);semanticTextureTexCoord.index=1;
                     semanticTexturePanel.value=true;
                 });
+                yield return Step(semanticTexturePanel,() =>
+                {
+                    Check(!root.Q<Button>("semantic-normal-apply").enabledSelf && !root.Q<Button>("semantic-mr-apply").enabledSelf,"Unsupported UV1 did not disable semantic texture apply buttons");
+                    Check(workspace.Preview.Output.Material.Parameters.Textures==null,"GUI accepted an unsupported UV1 semantic texture");
+                    semanticTextureTexCoord.index=0;Check(root.Q<Button>("semantic-normal-apply").enabledSelf && root.Q<Button>("semantic-mr-apply").enabledSelf,"UV0 did not re-enable semantic texture apply buttons");
+                });
                 yield return Step(root.Q<Button>("semantic-normal-apply"),() =>
                 {
                     PointerProbe.Click(root.Q<Button>("semantic-normal-apply"));
-                    Check(workspace.Preview.Output.Material.Parameters.Textures==null,"GUI accepted an unsupported UV1 semantic texture");
-                    semanticTextureTexCoord.index=0;PointerProbe.Click(root.Q<Button>("semantic-normal-apply"));
                     Check(workspace.Preview.Output.Material.Parameters.Textures.Normal!=null && workspace.Preview.Output.Material.Parameters.Textures.Normal.TexCoord==0 && Math.Abs(workspace.Preview.Output.Material.Parameters.Textures.Normal.NormalScale-.7f)<.0001f,"Normal texture GUI import did not preserve supported semantic settings");
                 });
                 yield return Step(root.Q<Button>("semantic-mr-apply"),() =>

@@ -4321,3 +4321,15 @@ workspaceを開き直した直後にprojection更新前の点群で`Frame()`し�
 - Navigation回帰: **PASS**（`Artifacts/Navigation-20260915-124654-a257fd37f44147669be04e6e703a468e/report.json`）
 - 手動確認: Windows native Computer Useで`確認・出力`を押し、statusに`確認・出力の設定を表示しました`が表示されることを確認。出力Panel優先の順序を実画面へ反映した。
 - 境界: 実EditorWindowのDPI／IME、実RadDollV3の全周fit・貫通・材質見た目、Unity／VRChat実機、販売品質は別受入。生成Player・private素材は公開ツリーへ追加していない。
+
+# 2026-09-15 UX-SEMANTIC-TEXTURE-01: UV1 semantic texture の適用導線を明示
+
+Normal／metallic-roughness画像のWindows v1出力はUV0のみ対応するため、UV dropdownでUV1を選んだ状態では両方の「画像を適用」ボタンを無効化し、semantic summaryに「UV1はWindows v1非対応。UV0へ戻してから適用してください。」と表示するようにした。材質未選択・再読込後も同じ可否判定を更新し、UV0へ戻すと両ボタンが再び有効になる。既存のファイル選択、画像bytesの保存形式、UV1を将来保持する契約は変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Materials.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.MaterialUiVerification.cs`
+- Player build: `Builds/SemanticTextureUiV3/NyaForge.exe`（`Logs/build-player-20260915-130233-678.log`）
+- Core: **515 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-2d20e27182544e148854b992e3e5606b`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-130255-c57a3a62ed7f4d9bbdb81d3b3f6f3f7f/report.json`）。UV1で適用不可・UV0で再有効化・Normal/MR保存を確認。
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260915-130605-23d76250ce004bdbb6c71f102499a104/report.json`）
+- Computer Use: 再接続を試行したが、この時点のセッションは `Trusted RPC service is not configured: sky` で画面操作サービス未接続。自動Player検証のみ完了。
+- 境界: 実EditorWindowでのDPI／IME、実アバター材質のGPU画素見た目、Unity／VRChat実機は別受入。private素材・生成Playerは公開ツリーへ追加していない。
