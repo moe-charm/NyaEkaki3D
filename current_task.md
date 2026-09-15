@@ -1,5 +1,11 @@
 # 2026-09-15 ドキュメント同期: VRM意味情報診断とWindows v1残件
 
+# 2026-09-15 現行Windows候補の実ウィンドウ取込スモーク
+
+`Builds/Windows/NyaForge.exe`をWindows native `@oai/sky`で起動し、通常窓（約1069×698）でViewerから`制作へ`を開いた。上部の`モデルを追加`で取込Panelへ移動し、`GLB / VRMを選ぶ`からExplorerを開いてprivateの`RadDollV3_VRM.vrm`を選択した。候補欄に`mesh 0 · Bag.baked`、`skin 0 · 171 bone`、10 instancesが表示され、候補確認後に`全meshをまとめて取り込む`を実行した。取込後は制作対象へスキンモデルが表示され、statusに`10 objects`、source hash、`VRM意味情報: firstPerson（未解決・詳細は警告）`、右Panelに`SpringBone設定: 5 chain · 53 joint · 4 collider group`が表示された。
+
+これは現行ソースの通常窓でのViewer→制作→Explorer→候補確認→全mesh取込の手動スモークである。保存／再読込、長い日本語名・IME・DPI 150/200%、全周fit・貫通・材質見た目、Unity EditorWindowの適用、VRChat Build & Test／実機表示は別受入として残る。未保存の検証状態は終了時に破棄し、private素材を公開ツリーへ追加していない。
+
 # 2026-09-15 Windows標準candidate再検証: 実RadDollV3衣装一周
 
 現行main `69bed3d`から`Builds/Windows/NyaForge.exe`を再ビルドし、Core **515 passed / 0 failed**を再実行した。privateの`RadDollV3_VRM.vrm`を入力したPlayer Authoringは、取込・チョーカー生成／頂点編集・native Save/Open・標準skinned GLB／VRM 1.0出力・衣装package生成を含む **PASS**（`Artifacts/Authoring-20260915-111441-965632e9d6274b0badecf62de399d187/report.json`）。生成packageをUnity **2022.3.22f1** Bridgeへ渡した検証も **PASS**（`Artifacts/BridgeReceiver-20260915-111719-445-aa3b076eb92d4dda9afd832b6da6a880/bridge-report.json`）。
