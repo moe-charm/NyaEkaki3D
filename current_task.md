@@ -1,3 +1,11 @@
+# 2026-09-15 ドキュメント同期: VRM意味情報診断とWindows v1残件
+
+`docs/Development-Plan.md`と`docs/Windows-v1-Development-Plan.md`の現行main記述を更新した。Polygon→skin、衣装receiver、範囲限定fit／weight、semantic textureの実装・自動検証が進んでいること、初期profileで保持しないVRM LookAt／FirstPerson／表情material bindは`VRM_SEMANTICS_NOT_RETAINED`としてnative Save/Open・inspection・出力reportへ引き継ぐことを明記した。完全意味情報のpayload保管・変換、実EditorWindow／実SDK／実VRChat、全周fit・貫通・見た目は未受入／後続として残す。
+
+- 文書commit: `2b642415b067da23dfcc861e99804cb5b025b56f`（`main`へpush済み、remote SHA一致）
+- 検証: 文書差分の`git diff --check` PASS、private追跡ファイルなし
+- 次: 意味payloadの依存込み保管を将来profileとして設計するか判断し、まずはWindows v1の実EditorWindow／外部受入カードを進める
+
 # 2026-09-15 I04-E: VRM意味情報の在庫を明示
 
 `VrmMetadata`へ`VrmSemanticInventory`を追加し、VRM 1.0の`lookAt`／`firstPerson`／表情`materialColorBinds`と、VRM 0.xの`firstPerson`／`materialValues`を「検出したが初期profileでは未解決」のパスとして保持するようにした。`HasLookAt`、`HasFirstPerson`、`ExpressionMaterialBindCount`、`UnresolvedPaths`、`IsComplete`を取込後の確認・将来の厳格出力判定へ渡せる。既存のgeometry、session、GLB/VRM出力は変更せず、検出時は既存`Warnings`にも境界を表示する。元payloadを保存したり、look-at／first-person／material bindを編集・変換したりする実装ではない。
