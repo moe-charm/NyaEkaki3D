@@ -45,6 +45,12 @@ internal static partial class Program
             var second = GlbSourceSkinReader.Read(multiple,1);
             Equal(1,second.SkinIndex); Equal(2,second.Joints[0]); True(!second.HasExplicitInverseBindMatrices);
         });
+        Test("GLB source skin applies sparse inverse-bind matrix overrides", () =>
+        {
+            var skin = GlbSourceSkinReader.Read(BuildSparseInverseBindGlb());
+            Equal(3, skin.InverseBindMatrices.Count); True(skin.HasExplicitInverseBindMatrices);
+            SpringPointNear(new Vec3(.2f, .3f, .4f), skin.InverseBindMatrices[0].TransformPoint(new Vec3(.2f, .3f, .4f)));
+        });
         Test("GLB source skin rejects malformed matrix layouts and references", () =>
         {
             Action<JObject>[] edits = {
@@ -63,9 +69,24 @@ internal static partial class Program
                 root => root["skins"][0]["joints"] = new JArray(1,1)
             };
             foreach (var edit in edits) Expect("INVALID_IMPORT", () => GlbSourceSkinReader.Read(SourceSkinGlb(edit)));
-            Expect("UNSUPPORTED_FORMAT", () => GlbSourceSkinReader.Read(SourceSkinGlb(root => root["accessors"][0]["sparse"] = new JObject())));
+            Expect("INVALID_IMPORT", () => GlbSourceSkinReader.Read(SourceSkinGlb(root => root["accessors"][0]["sparse"] = new JObject())));
             Expect("UNSUPPORTED_FORMAT", () => GlbSourceSkinReader.Read(SourceSkinGlb(root => root["buffers"][0]["uri"] = "external.bin")));
             Expect("INVALID_IMPORT", () => GlbSourceSkinReader.Read(SourceSkinGlb(),3));
         });
+    }
+
+    static byte[] BuildSparseInverseBindGlb()
+    {
+        var source = SourceSkinGlb(); var root = JObject.Parse(ReadJsonChunk(source)); var bin = ReadBinChunk(source).ToList();
+        while (bin.Count % 4 != 0) bin.Add(0);
+        int indexOffset = bin.Count; bin.Add(0); while (bin.Count % 4 != 0) bin.Add(0);
+        int valueOffset = bin.Count;
+        using (var stream = new MemoryStream()) using (var writer = new BinaryWriter(stream))
+        { for (int i = 0; i < 16; i++) writer.Write(i == 0 || i == 5 || i == 10 || i == 15 ? 1f : 0f); writer.Flush(); bin.AddRange(stream.ToArray()); }
+        var views = (JArray)root["bufferViews"]!; int indexView = views.Count; views.Add(new JObject { ["buffer"] = 0, ["byteOffset"] = indexOffset, ["byteLength"] = 1 }); int valueView = views.Count; views.Add(new JObject { ["buffer"] = 0, ["byteOffset"] = valueOffset, ["byteLength"] = 64 });
+        var accessor = (JObject)((JArray)root["accessors"]!)[0]!;
+        accessor["sparse"] = new JObject { ["count"] = 1, ["indices"] = new JObject { ["bufferView"] = indexView, ["componentType"] = 5121 }, ["values"] = new JObject { ["bufferView"] = valueView } };
+        ((JObject)((JArray)root["buffers"]!)[0]!)["byteLength"] = bin.Count;
+        return BuildGlbContainer(Encoding.UTF8.GetBytes(root.ToString()), bin.ToArray());
     }
 }

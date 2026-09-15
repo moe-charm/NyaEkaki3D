@@ -73,6 +73,10 @@ namespace NyaForge.Authoring.Import
             int stride = view["byteStride"] == null ? elementBytes : Integer(view["byteStride"], elementBytes, 4096, label + " stride");
             int viewLength = Integer(view["byteLength"], 1, AuthoringLimits.MaxGlbImportBytes, label + " view length");
             Checks.Require(viewOffset % 4 == 0, "INVALID_IMPORT", label + " bufferView offset must be 4-byte aligned.");
+            int componentType = Integer(accessor["componentType"], 0, int.MaxValue, label + " componentType");
+            int componentWidth = componentType == 5121 ? 1 : componentType == 5123 ? 2 : componentType == 5125 || componentType == 5126 ? 4 : 0;
+            Checks.Require(componentWidth > 0 && accessorOffset % componentWidth == 0 && ((long)viewOffset + accessorOffset) % 4 == 0 && stride % componentWidth == 0,
+                "INVALID_IMPORT", label + " accessor alignment is invalid.");
             ValidateRange(viewOffset, accessorOffset, stride, count, elementBytes, viewLength, bufferLength, label);
             for (int row = 0; row < count; row++) Buffer.BlockCopy(bin, checked(viewOffset + accessorOffset + row * stride), destination[row], 0, elementBytes);
         }
