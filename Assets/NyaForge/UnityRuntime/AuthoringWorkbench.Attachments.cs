@@ -267,10 +267,13 @@ namespace NyaForge.UnityRuntime
             string measurement = measured ? "計測済み" : (string.IsNullOrEmpty(surfaceFitInspectionStateHash) ? "計測未実施" : "再計測が必要（対象・範囲・形状が変更）");
             string targetText = target == null ? "avatar未選択" : "avatar " + target.ObjectId.Substring(0, Math.Min(8, target.ObjectId.Length));
             string bindText = hasSkinBind ? "skin-bind済み" : "skin-bind前";
-            accessoryFitSummary.text = "fit対象: 衣装 " + clothingScope + "（全 " + clothingCount.ToString(CultureInfo.InvariantCulture) + "頂点） · " +
+            string fullSummary = "fit対象: 衣装 " + clothingScope + "（全 " + clothingCount.ToString(CultureInfo.InvariantCulture) + "頂点） · " +
                 targetText + " " + avatarScope + "（全 " + avatarTriangleCount.ToString(CultureInfo.InvariantCulture) + "面） · " + bindText + " · " + measurement;
-            if (!surfaceReady && target != null) accessoryFitSummary.text += " · avatar表面rest mesh／weightを確認";
-            accessoryFitSummary.tooltip = accessoryFitSummary.text;
+            if (!surfaceReady && target != null) fullSummary += " · avatar表面rest mesh／weightを確認";
+            // Keep the actionable state visible without clipping the control
+            // column. Detailed identity/counts remain available on hover.
+            accessoryFitSummary.text = "fit対象: " + clothingScope + "・" + avatarScope + "・" + measurement;
+            accessoryFitSummary.tooltip = fullSummary;
         }
 
         void ClearAccessoryFitSummaryEvaluation()

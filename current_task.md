@@ -4333,3 +4333,16 @@ Normal／metallic-roughness画像のWindows v1出力はUV0のみ対応するた�
 - Navigation回帰: **PASS**（`Artifacts/Navigation-20260915-130605-23d76250ce004bdbb6c71f102499a104/report.json`）
 - Computer Use: 再接続を試行したが、この時点のセッションは `Trusted RPC service is not configured: sky` で画面操作サービス未接続。自動Player検証のみ完了。
 - 境界: 実EditorWindowでのDPI／IME、実アバター材質のGPU画素見た目、Unity／VRChat実機は別受入。private素材・生成Playerは公開ツリーへ追加していない。
+
+# 2026-09-15 UX-FIT-SUMMARY-01: 装着Panelのfit要約を狭い画面向けに整理
+
+装着Panelのfit要約は、avatarの内部ID・頂点数・三角形数・bind状態を一行へ詰め込んでいたため、右側の狭いcontrolsで末尾が見えにくかった。Panelの高さを増やして折り返すと既存のポインタ検証で下部操作が画面外へ移るため、表示欄の高さは維持し、画面には「fit対象: 衣装範囲・avatar面範囲・計測状態」の短い要約だけを表示するようにした。完全な対象ID、件数、bind状態、rest mesh確認はツールチップへ残し、選択範囲と計測状態の変更時も同じ情報源から更新する。保存形式、fit／weight計算、MCP wireは変更していない。
+
+- 変更: `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Attachments.cs`, `Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentUi.cs`
+- Player build: `Builds/AttachmentSummaryCompactV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-131933-535.log`）
+- Core: **515 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-19edabfe884446da8ecb06641927d191`）
+- Authoring回帰: **PASS**（`Artifacts/Authoring-20260915-131955-0a72f29e4e984820989fc9bbe4814a6c/report.json`）
+- Navigation回帰: **PASS**（`Artifacts/Navigation-20260915-132305-751a18cb65034f7db32e6f706b5a3fd7/report.json`）
+- Unity Bridge: **PASS**（`Artifacts/BridgeReceiver-20260915-132325-203-1d27d21d1d4d487aa67cbc02c17cafb3/bridge-report.json`）
+- Computer Use: 再接続を試行したが、このセッションではnative `apps: []`、`cua.getApp`／`cua.listApps`未提供でWindowsアプリ操作は未接続。ブラウザ操作のみ利用可能。
+- 境界: 実EditorWindowのDPI／IME、実アバター全周fit・貫通・材質見た目、VRChat実機、販売品質は別受入。private素材・生成Player・Artifactsは公開ツリーへ追加していない。
