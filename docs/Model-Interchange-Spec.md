@@ -172,6 +172,8 @@ I04-Eのreport設計はAと同時に進め、完全取込の公開にはA〜Eの
 
 `VrmExportService.ExportVrm1` は、既存のrest-pose `SkinnedGeometry` GLBを基礎に、VRM 1.0の`VRMC_vrm` extension、明示的なmeta、humanoid必須15骨を付けて`.vrm`へ包装する。Workbenchでは、取込時のgraph単位`ImportedRigSession`からstable `BoneId`を出力GLTF nodeへ解決し、名前・作者・作品のlicense URLを入力して実行する。選択したhumanoid avatarと、同じskeleton hashへskin-bindした複数の衣装graph objectを一つのVRMへ含められる。static object、剛体attachment、異なるskeletonは出力先を作らず拒否する。保存済みsource skinがある場合は、BoneIdに対応するinverse-bindとsourceの親子を考慮したjoint local matrixも出力し、骨配列の並び替えで対応がずれないようにする。
 
+取込時の`VrmMetadata.Semantics`は、既知だが初期profileで編集・出力していない意味情報の在庫を保持する。`HasLookAt`／`HasFirstPerson`／`ExpressionMaterialBindCount`と、`UnresolvedPaths`（例: `VRMC_vrm.lookAt`、`VRMC_vrm.firstPerson`、`VRMC_vrm.expressions.*.materialColorBinds`）を確認できる。これは元payloadの保管や変換を意味せず、`IsComplete=false`の入力を完全VRMとして扱わないための診断境界である。VRM 0.xでは`VRM.firstPerson`と`VRM.blendShapeMaster.*.materialValues`を同じ規則で在庫化する。
+
 この初期profileはMorphSetへ解決できる`morphTargetBinds`と、詳細形状・gravityDirを持つVRM 1.0由来sessionの`VRMC_springBone`（sphere/capsule、collider group、spring joint）を出力する。VRM 0.x由来、詳細不足、空のcollider group、未対応BoneIdは変換せず拒否する。material bind、texture transform、LookAt、FirstPerson、MToon、アニメーションおよび任意VRM拡張は出力しない。これらの情報を保持した完全VRM出力とは扱わず、同梱`export-report.json`へ制限とnative `sourceDiagnostics`を記録する。入力診断にblocking項目がある場合はreportの`sourceSemanticStatus`を`partial`として記録し、`requireCompleteSourceSemantics`を指定した呼出しでは`VRM_SEMANTICS_INCOMPLETE`で公開前に停止する。出力後は`VrmMetadataReader`でextension、表情bind、SpringBone inventoryを再読込し、GLBのBIN／mesh geometryが変わらないことをCoreで検証する。
 
 `GlbExportService` はnative制作データを変更せず、明示的な3 profileで標準glTF 2.0 GLBを生成する。

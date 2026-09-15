@@ -150,7 +150,7 @@ namespace NyaForge.UnityRuntime
             var candidate = new ImportMetadataCandidate(null, PrepareImportedExpressions(bytes, vrm, imported.Morphs), vrm, diagnostics);
             string display = (string.IsNullOrWhiteSpace(sourceName) ? "mesh " + meshIndex : sourceName) +
                 (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") +
-                " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(imported.Diagnostics) + ImportMaterialWarningSummary(materialWarnings);
+                " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(imported.Diagnostics) + ImportMaterialWarningSummary(materialWarnings) + VrmSemanticSummary(vrm);
             return new ImportedGraphBuild(graph, candidate, meshIndex, null, display);
         }
 
@@ -188,7 +188,7 @@ namespace NyaForge.UnityRuntime
             string display = (string.IsNullOrWhiteSpace(sourceName) ? "mesh " + meshIndex : sourceName) +
                 " · bone " + imported.Skeleton.Bones.Count + " · weight " + imported.Binding.Weights.Count +
                 (imported.Morphs == null ? " · morphなし" : " · morph " + imported.Morphs.Targets.Count + "個") +
-                " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(imported.Diagnostics) + ImportMaterialWarningSummary(materialWarnings);
+                " · source " + imported.SourceHash.Substring(0, 12) + ImportDiagnosticSummary(imported.Diagnostics) + ImportMaterialWarningSummary(materialWarnings) + VrmSemanticSummary(vrm);
             return new ImportedGraphBuild(graph, candidate, meshIndex, skinIndex, display);
         }
 
@@ -239,7 +239,7 @@ namespace NyaForge.UnityRuntime
             if (builds.Count == 0) throw new InvalidOperationException("取り込めるmesh instanceがありません。");
             if (workspace.Document.Objects.Count + builds.Count > 64) throw new InvalidOperationException("全mesh instanceを追加するとobject上限64件を超えます。候補を選んで分割して取り込んでください。");
             CommitImportedGraphs(builds);
-            Refresh(); Frame(); SetStatus("GLB / VRMの全mesh instanceを取り込みました。" + builds.Count + " objects · source " + inventory.SourceHash.Substring(0, 12));
+            Refresh(); Frame(); SetStatus("GLB / VRMの全mesh instanceを取り込みました。" + builds.Count + " objects · source " + inventory.SourceHash.Substring(0, 12) + VrmSemanticSummary(vrm));
         }
 
         static string ImportDiagnosticSummary(IReadOnlyList<GlbImportDiagnostic> diagnostics)
@@ -251,6 +251,17 @@ namespace NyaForge.UnityRuntime
         static string ImportMaterialWarningSummary(IReadOnlyList<string> warnings)
         {
             return warnings == null || warnings.Count == 0 ? "" : " · 材質画像の注意 " + warnings.Count + "件（詳細は取込ステータス）";
+        }
+
+        static string VrmSemanticSummary(VrmMetadata metadata)
+        {
+            if (metadata == null || metadata.Semantics == null) return "";
+            var values = new List<string>();
+            if (metadata.Semantics.HasLookAt) values.Add("lookAt");
+            if (metadata.Semantics.HasFirstPerson) values.Add("firstPerson");
+            if (metadata.Semantics.ExpressionMaterialBindCount > 0) values.Add("material bind " + metadata.Semantics.ExpressionMaterialBindCount);
+            if (values.Count == 0) return " · VRM意味情報: 初期profile内";
+            return " · VRM意味情報: " + string.Join(", ", values) + (metadata.Semantics.IsComplete ? "" : "（未解決・詳細は警告）");
         }
 
         IEnumerator PickModel()

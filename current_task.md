@@ -1,3 +1,15 @@
+# 2026-09-15 I04-E: VRM意味情報の在庫を明示
+
+`VrmMetadata`へ`VrmSemanticInventory`を追加し、VRM 1.0の`lookAt`／`firstPerson`／表情`materialColorBinds`と、VRM 0.xの`firstPerson`／`materialValues`を「検出したが初期profileでは未解決」のパスとして保持するようにした。`HasLookAt`、`HasFirstPerson`、`ExpressionMaterialBindCount`、`UnresolvedPaths`、`IsComplete`を取込後の確認・将来の厳格出力判定へ渡せる。既存のgeometry、session、GLB/VRM出力は変更せず、検出時は既存`Warnings`にも境界を表示する。元payloadを保存したり、look-at／first-person／material bindを編集・変換したりする実装ではない。
+
+- 変更: `Assets/NyaForge/Authoring/Import/VrmMetadata.cs`
+- 回帰: `Tests/Authoring.Core/VrmMetadataTests.cs`へmodern／legacy semantic inventory確認を追加
+- Core: **515 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-92f21edb619b4f5fa116c019941aeea4`）
+- Windows Player: `Builds/SemanticInventoryV1/NyaForge.exe` をUnity 6000.4.3f1でビルド成功（`Logs/build-player-20260915-104932-512.log`）
+- Authoring起動probe: **PASS**（`Artifacts/AuthoringStartup-20260915-105005-992cbcd877654492b422114fa673761f/report.json`、起動画面PNGあり）
+- 文書: `docs/Model-Interchange-Spec.md`へ在庫と完全VRM出力の境界を追記
+- 残り: 在庫をWorkbench/MCPの詳細reportへ表示、未知payloadの依存込み保管、完全VRMの各受取側検証、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
+
 # 2026-09-14 MOD-05: 保存状態Panelの通知境界
 
 Sessionの保存状態変更時に、Workbench全体を再構築せず保存状態表示だけを更新する`AuthoringWorkbench.PersistenceRefresh.cs`を追加した。`SaveIncomplete`／読込先変更の通知はLifecycleからこの境界を通り、保存先入力欄の編集中の値は上書きしない。通常のcommand確定時は従来どおり全体refreshを使い、geometryや他Panelの再生成を増やしていない。

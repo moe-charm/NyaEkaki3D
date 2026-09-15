@@ -38,6 +38,33 @@ namespace NyaForge.Authoring.Import
         }
     }
 
+    /// <summary>
+    /// Describes VRM semantic fields that were present in the source but are
+    /// outside the current editable/exportable profile.  This is deliberately
+    /// an inventory rather than an opaque copy: callers can show the exact
+    /// paths that still need an adapter without claiming that the source was
+    /// fully preserved.
+    /// </summary>
+    public sealed class VrmSemanticInventory
+    {
+        public bool HasLookAt { get; }
+        public bool HasFirstPerson { get; }
+        public int ExpressionMaterialBindCount { get; }
+        public IReadOnlyList<string> UnresolvedPaths { get; }
+        public bool IsComplete { get { return UnresolvedPaths.Count == 0; } }
+
+        internal VrmSemanticInventory(bool hasLookAt, bool hasFirstPerson,
+            int expressionMaterialBindCount, IEnumerable<string> unresolvedPaths)
+        {
+            Checks.Require(expressionMaterialBindCount >= 0, "INVALID_VRM", "VRM semantic bind count is invalid.");
+            var paths = (unresolvedPaths ?? Array.Empty<string>()).Distinct(StringComparer.Ordinal).ToArray();
+            Checks.Require(paths.All(path => !string.IsNullOrWhiteSpace(path) && path.Length <= 256), "INVALID_VRM", "VRM unresolved semantic path is invalid.");
+            HasLookAt = hasLookAt; HasFirstPerson = hasFirstPerson;
+            ExpressionMaterialBindCount = expressionMaterialBindCount;
+            UnresolvedPaths = Array.AsReadOnly(paths);
+        }
+    }
+
     /// <summary>Bounded source SpringBone joint settings. This is inventory only; it does not simulate dynamics.</summary>
     public sealed class VrmSpringJoint
     {
@@ -110,13 +137,15 @@ namespace NyaForge.Authoring.Import
         public IReadOnlyList<VrmSpringBoneGroup> SpringBones { get; }
         public IReadOnlyList<VrmSpringColliderGroup> SpringColliderGroups { get; }
         public IReadOnlyList<string> Warnings { get; }
+        public VrmSemanticInventory Semantics { get; }
 
-        internal VrmMetadata(string sourceHash, string format, string specVersion, string title, string author, IDictionary<string, int> humanoidNodes, IEnumerable<VrmExpression> expressions, IEnumerable<VrmSpringBoneGroup> springBones, IEnumerable<VrmSpringColliderGroup> springColliderGroups, IEnumerable<string> warnings, IEnumerable<string> authors = null)
+        internal VrmMetadata(string sourceHash, string format, string specVersion, string title, string author, IDictionary<string, int> humanoidNodes, IEnumerable<VrmExpression> expressions, IEnumerable<VrmSpringBoneGroup> springBones, IEnumerable<VrmSpringColliderGroup> springColliderGroups, IEnumerable<string> warnings, IEnumerable<string> authors = null, VrmSemanticInventory semantics = null)
         {
             Checks.HashText(sourceHash); Checks.Name(format); Checks.Name(specVersion); Checks.Require(humanoidNodes != null, "INVALID_VRM", "Humanoid mapping is required.");
             SourceHash = sourceHash; Format = format; SpecVersion = specVersion; Title = title ?? ""; Authors = authors == null ? VrmAuthorNames.Legacy(author) : VrmAuthorNames.Copy(authors); Author = string.Join(", ", Authors);
             var expressionValues = (expressions ?? Array.Empty<VrmExpression>()).ToArray(); Checks.Require(expressionValues.Length <= MaxExpressions, "BUDGET_EXCEEDED", "VRM expression count exceeds capacity.");
             Expressions = Array.AsReadOnly(expressionValues); HumanoidNodes = new ReadOnlyDictionary<string, int>(new Dictionary<string, int>(humanoidNodes, StringComparer.Ordinal)); Warnings = Array.AsReadOnly((warnings ?? Array.Empty<string>()).ToArray());
+            Semantics = semantics ?? new VrmSemanticInventory(false, false, 0, Array.Empty<string>());
             var springValues = (springBones ?? Array.Empty<VrmSpringBoneGroup>()).ToArray(); var colliderValues = (springColliderGroups ?? Array.Empty<VrmSpringColliderGroup>()).ToArray();
             Checks.Require(springValues.Length <= MaxSpringGroups && colliderValues.Length <= MaxSpringColliderGroups, "BUDGET_EXCEEDED", "VRM spring inventory exceeds capacity."); SpringBones = Array.AsReadOnly(springValues); SpringColliderGroups = Array.AsReadOnly(colliderValues);
         }
@@ -148,8 +177,9 @@ namespace NyaForge.Authoring.Import
             var map = ParseModernHumanoid(document.Root, extension["humanoid"] as JObject);
             var expressions = ParseModernExpressions(document.Root, extension);
             var spring = ParseModernSpring(document.Root, extensions: document.Root["extensions"] as JObject);
-            var warnings = new List<string> { "VRM 1.0 identity, humanoid, expression and SpringBone inventory were read; expression application, spring simulation, look-at and material conversion remain separate adapters." };
-            return new VrmMetadata(document.SourceHash, "vrm1", spec, OptionalString(meta, "name", 256), "", map, expressions, spring.Bones, spring.Colliders, warnings, VrmAuthorNames.Read(meta, true));
+            var semantics = ReadModernSemantics(extension, expressions);
+            var warnings = SemanticWarnings("VRM 1.0 identity, humanoid, expression and SpringBone inventory were read; expression application, spring simulation, look-at and material conversion remain separate adapters.", semantics);
+            return new VrmMetadata(document.SourceHash, "vrm1", spec, OptionalString(meta, "name", 256), "", map, expressions, spring.Bones, spring.Colliders, warnings, VrmAuthorNames.Read(meta, true), semantics);
         }
 
         static VrmMetadata ParseLegacy(GlbDocument document, JObject extension)
@@ -159,8 +189,39 @@ namespace NyaForge.Authoring.Import
             var map = ParseLegacyHumanoid(document.Root, extension["humanoid"] as JObject);
             var expressions = ParseLegacyExpressions(document.Root, extension);
             var spring = ParseLegacySpring(document.Root, extension);
-            var warnings = new List<string> { "VRM 0.x identity, humanoid, expression and SpringBone inventory were read; VRM 1.0 conversion, expression application, spring simulation and material conversion remain separate adapters." };
-            return new VrmMetadata(document.SourceHash, "vrm0", spec == "" ? "0.0" : spec, OptionalString(meta, "title", 256), OptionalString(meta, "author", 256), map, expressions, spring.Bones, spring.Colliders, warnings);
+            var semantics = ReadLegacySemantics(extension, expressions);
+            var warnings = SemanticWarnings("VRM 0.x identity, humanoid, expression and SpringBone inventory were read; VRM 1.0 conversion, expression application, spring simulation and material conversion remain separate adapters.", semantics);
+            return new VrmMetadata(document.SourceHash, "vrm0", spec == "" ? "0.0" : spec, OptionalString(meta, "title", 256), OptionalString(meta, "author", 256), map, expressions, spring.Bones, spring.Colliders, warnings, null, semantics);
+        }
+
+        static VrmSemanticInventory ReadModernSemantics(JObject extension, IReadOnlyList<VrmExpression> expressions)
+        {
+            bool lookAt = extension["lookAt"] is JObject;
+            bool firstPerson = extension["firstPerson"] is JObject;
+            int materialBinds = (expressions ?? System.Array.Empty<VrmExpression>()).Sum(item => item.MaterialBindCount);
+            var paths = new List<string>();
+            if (lookAt) paths.Add("VRMC_vrm.lookAt");
+            if (firstPerson) paths.Add("VRMC_vrm.firstPerson");
+            if (materialBinds > 0) paths.Add("VRMC_vrm.expressions.*.materialColorBinds");
+            return new VrmSemanticInventory(lookAt, firstPerson, materialBinds, paths);
+        }
+
+        static VrmSemanticInventory ReadLegacySemantics(JObject extension, IReadOnlyList<VrmExpression> expressions)
+        {
+            bool firstPerson = extension["firstPerson"] is JObject;
+            int materialBinds = (expressions ?? System.Array.Empty<VrmExpression>()).Sum(item => item.MaterialBindCount);
+            var paths = new List<string>();
+            if (firstPerson) paths.Add("VRM.firstPerson");
+            if (materialBinds > 0) paths.Add("VRM.blendShapeMaster.*.materialValues");
+            return new VrmSemanticInventory(false, firstPerson, materialBinds, paths);
+        }
+
+        static List<string> SemanticWarnings(string summary, VrmSemanticInventory semantics)
+        {
+            var warnings = new List<string> { summary };
+            if (semantics != null && semantics.UnresolvedPaths.Count > 0)
+                warnings.Add("現在のprofileで未解決のVRM意味情報: " + string.Join(", ", semantics.UnresolvedPaths));
+            return warnings;
         }
 
         static (IReadOnlyList<VrmSpringBoneGroup> Bones, IReadOnlyList<VrmSpringColliderGroup> Colliders) ParseModernSpring(JObject root, JObject extensions)
