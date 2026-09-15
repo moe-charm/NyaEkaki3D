@@ -18,6 +18,7 @@
 - Core: **515 passed / 0 failed**（`C:/Users/tomoaki/AppData/Local/Temp/NyaForge-Core-Tests-3b839abf5c3e430ca85590d353716f7d`）
 - Windows Player: `Builds/SemanticInventoryV2/NyaForge.exe` をUnity 6000.4.3f1でビルド成功（`Logs/build-player-20260915-105316-539.log`）
 - 実モデルimport-only: **PASS**（private一時RadDollV3 VRM、`Artifacts/Authoring-20260915-105403-126d9fa806c2419aa3c5119111e81dfc/report.json`、1600x1000 PNGあり）。これは自動Player経路の確認で、実マウスの全周fit・貫通・見た目、Unity／VRChat内表示は未受入。
+- 実モデルVRM-output-only: **PASS**（`Artifacts/Authoring-20260915-105911-bb5ba9ac2d634987807f0aaea55bbe0e/report.json`）。出力`export-report.json`で`sourceSemanticStatus=partial`、`sourceBlockingDiagnosticCount=2`、`VRM_SEMANTICS_NOT_RETAINED`（`VRM.firstPerson`）を確認し、partial出力と未保持情報の追跡が両立している。これは自動Player／ファイル再読込の確認で、実受取側の見た目・挙動は未受入。
 - 残り: 未知payloadの依存込み保管、完全VRM各受取側検証、実RadDollV3全周fit・貫通・見た目、Unity／VRChat実機受入。
 # 2026-09-14 MOD-05: 保存状態Panelの通知境界
 
