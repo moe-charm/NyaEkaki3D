@@ -126,3 +126,5 @@ Paintと表示textureで同じ解像度・更新頻度を必要とするかを09
 本書の初回策定時の検証は持込文書、現行ソース、既存記録、上記公式情報の照合のみだった。実装後のCore/Player/Bridge/SDK検証結果は[current_task](../current_task.md)へ時系列で追記し、合成fixtureと実アバター・実VRChatの受入を混同しない。
 
 2026-09-15追記: 空projectの`モデルを開く…`は、Foldoutの表示値だけでなく表示ゲートを解除する共通処理へ統一した。ファイル選択後は候補欄のレイアウト確定を待って右controlsを追従させる。実ウィンドウで候補欄が到達可能になることを確認したが、実RadDollV3の取込・fit・材質・Unity／VRChat受入は別カードとして残す（詳細は[current_task](../current_task.md) GUI-16）。
+
+2026-09-15追記: 最新実RadDollV3自動一周のPlayer reportは95 checks PASS、生成skinned clothing packageをUnity 2022.3.22f1 Bridgeへ渡した受け取り検証は16 checks PASS。座標変換・BoneId割当・更新／削除Undo・材質チャンネルまで自動経路を確認した。実EditorWindowの全周fit・貫通・材質見た目、VRChat実機は引き続き外部受入E03〜E08で確認する（詳細は[current_task](../current_task.md) REAL-CLOTHING-09）。

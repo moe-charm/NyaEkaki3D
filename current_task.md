@@ -4094,3 +4094,12 @@ AGENTS.mdの手順どおり`@oai/sky`で、隔離ビルド `C:\Users\tomoaki\App
 - Core: **515 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-3d69b6db6d854d59a3057a31f2942917`）
 - Windows native `@oai/sky`: 空projectの`モデルを開く…`からモデル取込Foldoutを表示し、右controlsがファイルパス・node／mesh／skin・`候補を確認`・取込ボタン付近へ自動追従することを目視確認した。実ファイルの選択と取込完了はこの確認では行っていない。
 - 境界: 自動スクロールの画面到達性と空project表示ゲートの確認であり、DPI 150/200%、IME、長いpath、実RadDollV3の取込・fit・貫通・材質、Unity／VRChat実機は未受入。生成Playerは公開ツリーへ追加していない。
+
+# 2026-09-15 REAL-CLOTHING-09: 最新実モデルpackageのUnity Bridge受け取り
+
+`Builds/ImportScrollV4`を反映した実RadDollV3自動一周で、private VRMから生成したskinned clothing packageをUnity Bridgeへ渡した。Player側は **95 checks PASS**（GLB/VRM取込、全mesh取込、形状追加、頂点編集、明示skin-bind、native Save/Open、GLB/VRM出力、package生成）。package manifestは225 vertices／384 trianglesで、skeleton sidecarは4 bonesだった。Unity **2022.3.22f1** Bridge側も **16 checks PASS**。移動・回転・scaleしたavatar rootでのavatar-local配置、BoneId map、StateHash更新、所有物削除＋Undo、複数package所有権、normal／MR変換、package hash検証を確認した。
+
+- Player report: `Artifacts/Authoring-20260915-091912-0de78bcafc1f48599416beae139509bd/report.json`
+- Clothing package: `Artifacts/Authoring-20260915-091912-0de78bcafc1f48599416beae139509bd/real-clothing-project/exports/clothing-20260915-002121-35f3b0/skinned-clothing.nyaforge.json`
+- Bridge report: `Artifacts/BridgeReceiver-20260915-092331-827-721df21cdd2d42febe1976ab703625a0/bridge-report.json`
+- 境界: 自動Player／Bridge経路の確認であり、実EditorWindowでの全周fit・貫通・材質見た目、実マウスのDPI／IME、VRChat Build & Test／実機表示、販売品質の合格には読み替えない。private素材・生成物・Unity SDKは公開ツリーへ追加していない。

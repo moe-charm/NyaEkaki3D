@@ -156,3 +156,9 @@ Core／Bridgeの自動回帰はコード変更後に再実行する。実SDK・�
 - [ ] DPI 150/200%、IME、長いpath、実RadDollV3のfit・貫通・材質、Unity／VRChat実機
 
 これは取込欄の表示・到達性の手動受入であり、実ファイル取込や販売品質の合格へは読み替えない。詳細は`current_task.md` GUI-16に記録した。
+
+## 2026-09-15 MANUAL-08: 実モデルpackageの自動Bridge受け取り
+
+実RadDollV3 VRMから生成した`skinned-clothing.nyaforge.json`を、Unity 2022.3.22f1 Bridge検証へ入力した。Bridge **16 checks PASS**。avatar rootの移動・回転・scale後もavatar-local衣装配置を保持し、BoneId割当、StateHash更新、所有物削除＋Undo、複数package、normal／MR変換、hash検証を確認した。
+
+これは自動Player／Bridge受入であり、実EditorWindowのマウス操作、全周fit・貫通・材質見た目、VRChat Build & Test／実機表示は未受入のまま残す。詳細は`current_task.md`のREAL-CLOTHING-09に記録した。
