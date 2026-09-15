@@ -4354,3 +4354,11 @@ Normal／metallic-roughness画像のWindows v1出力はUV0のみ対応するた�
 - 結果: **native Computer Use 接続・クリック・画面更新を確認**。
 - 境界: AXツリーはUnity描画UIの子要素を公開しないため、今回の確認は座標クリックによる制作画面遷移まで。モデル選択・ファイルダイアログ・実アバター編集は次の手動受入で行う。
 - 公開境界: private素材、生成Player、Artifactsは公開ツリーへ追加していない。
+
+# 2026-09-15 COMPUTER-USE-RETRY-02: native ExplorerでRadDollV3候補を確認
+
+同じWindows native `@oai/sky`接続でNyaForgeを再取得し、Viewerの「制作へ」からAuthoringへ遷移した。上部の「モデルを追加」を押してExplorerを開き、private `Z:\TextureVoice_local\git\RadDollV3-clothing\private\viewer-data\packs\avatar-raddollv3-local\RadDollV3_VRM.vrm`を選択・確定した。NyaForgeの「候補を確認」で `mesh 0 (Bag.baked, 1 primitive)・skins 10・instances 10・source 6e5e0a0a82c2` を表示でき、ファイル選択と候補確認までを実画面で確認した。
+
+- 結果: **native Computer Use接続、Viewer→Authoring、Explorer選択、候補確認をPASS**。
+- 未完了: このビルドの候補欄は「取込対応: なし」と表示され、実モデルの取り込み完了・編集・保存までは確認していない。AXツリーはUnity描画UIの子要素を公開しないため、座標操作後のスクリーンショットで判定した。
+- 公開境界: private素材、生成Player、Artifactsは公開ツリーへ追加していない。
