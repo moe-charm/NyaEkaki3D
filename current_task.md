@@ -5,7 +5,8 @@ fit計測が「適用前の裏側候補」だけを表示していたため、�
 - 変更: `Assets/NyaForge/Authoring/Geometry/MeshSurfaceClearance.cs`、`Assets/NyaForge/UnityRuntime/AttachmentSurfaceFitMeasurement.cs`、`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.AttachmentState.cs`、`Assets/NyaForge/UnityRuntime/AuthoringWorkbench.Attachments.cs`
 - 回帰: `MeshSurfaceClearance.InspectPositions` の選択頂点・fit後位置を `Tests/Authoring.Core/AccessorySkinBindingTests.cs` で確認。Core **517 passed / 0 failed**（`C:\Users\tomoaki\AppData\Local\Temp\NyaForge-Core-Tests-65bdbc78447e4fb6a29495344b74148f`）
 - Player: `Builds/FitClearanceV1/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-164910-590.log`）ビルド成功。Authoring **PASS**（`Artifacts/Authoring-20260915-164950-18ea5b30e4b84a759b68fd2b1e9e5a1c/report.json`）
-- 未完了: 実RadDollV3の再実行でfit後件数を取得すること、実画面の全周・pose・材質、実EditorWindow／Unity／VRChatの受入。候補値は閉じた体積や全姿勢の衝突判定ではない。
+- 実RadDollV3 Player **PASS 94 checks**（`Artifacts/Authoring-20260915-165146-38e53a14b45d4d608eac08e263f729ec/report.json`）。同出力の衣装packageをUnity **2022.3.22f1** Bridgeへ渡し **PASS**（`Artifacts/BridgeReceiver-20260915-165445-528-cdc829bad3654925abadae9b5c345417/bridge-report.json`）。fit probeは従来どおり最大32.5mm／fit前裏側17頂点を記録し、fit後候補値も算出可能になった。
+- 未完了: 実画面でfit後件数を目視確認、全周・pose・材質、実EditorWindow／Unity／VRChatの受入。候補値は閉じた体積や全姿勢の衝突判定ではない。
 
 # 2026-09-15 FIT-REGION-BONE-03: 実モデルfit計測の残課題を定量化
 
