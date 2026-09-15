@@ -78,11 +78,20 @@ namespace NyaForge.UnityRuntime
             // depend on a hard-coded "Neck" name.
             accessorySurfaceRegionRadiusMm.SetValueWithoutNotify(60);
             RefreshAttachmentControls();
+            neckIndex = attachmentBoneIds.IndexOf(neck.BoneId);
+            Check(neckIndex >= 0, "Real clothing probe lost the Neck BoneId after skin materialization.");
+            attachmentBone.index = neckIndex;
             SelectBoneSurfaceRegion();
             var selectedSurfaceTriangles = SurfaceTriangleSelection()?.ToArray() ?? Array.Empty<int>();
             Check(selectedSurfaceTriangles.Length > 0,
                 "Real clothing probe did not select avatar faces near the chosen BoneId.");
             checks.Add("stable BoneId-based avatar surface region selection feeds fit and weight");
+            accessoryFitOffsetMm.SetValueWithoutNotify(2);
+            accessoryFitMaxDistanceMm.SetValueWithoutNotify(500);
+            var fitMeasurement = MeasureAccessorySurfaceFit();
+            checks.Add("BoneId surface region fit probe: max " +
+                (fitMeasurement.Result.MaxProjectionDistance * 1000f).ToString("0.###") + "mm, backside " +
+                fitMeasurement.Clearance.BehindSurfaceVertexCount + " vertices (50mm acceptance remains manual)");
             var evaluation = clothing.EvaluateGraph();
             var edit = clothing.Graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.EditMesh);
             var bind = clothing.Graph.Nodes.Values.SingleOrDefault(node => node.TypeId == BuiltinNodes.SkinBind && node.Binding != null);

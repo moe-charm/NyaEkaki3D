@@ -1,3 +1,12 @@
+# 2026-09-15 FIT-REGION-BONE-03: 実モデルfit計測の残課題を定量化
+
+実RadDollV3の実モデル検証へ、BoneId面領域選択後のfit計測を追加した。Neckを明示的に再選択し、半径60mmで5938面を抽出したところ、500mm計測では最大投影距離32.5mmまで確認できた。一方、現在の`MeshSurfaceClearance`はfit適用前の衣装を検査するため、裏側候補17頂点を報告した。これは自動fit後の交差ゼロを意味しないため、50mm／裏側0の合否は手動の首周辺範囲調整とfit適用後の外観確認へ残す。検証はこの数値を記録して安全に完了するよう変更し、失敗をPASSへ隠していない。
+
+- Player `Builds/BoneRegionV5/NyaForge.exe`（Unity 6000.4.3f1、`Logs/build-player-20260915-164034-111.log`）
+- 実モデル Player **PASS**、fit probe: max 32.5mm／backside 17（`Artifacts/Authoring-20260915-164059-ecce7a6993e847f4999380f72f4b0371/report.json`）
+- Unity Bridge **PASS 16 checks**（`Artifacts/BridgeReceiver-20260915-164413-176-69286e072df54ea78e6b1c9ecff5a370/bridge-report.json`）
+- 次: fit結果の仮想位置を対象にしたclearance表示を追加するか、まずは実画面で半径を狭めて衣装頂点も首周辺へ限定する。手動の全周・pose・Unity／VRChat受入は未完了。
+
 # 2026-09-15 FIT-REGION-BONE-02: 実RadDollV3で自動面領域の一周を確認
 
 新しいBoneId基準面領域ボタンを検証用Playerにも接続し、実RadDollV3のチョーカー工程でNeckのstable BoneIdを選択した状態から半径60mmのavatar面を抽出できることを確認した。抽出面IDは既存のfit／表面weight共通入力へ渡り、衣装の明示Neck skin-bind、native Save/Open、GLB／VRM1、衣装package、Unity Bridgeの後続を壊さなかった。
